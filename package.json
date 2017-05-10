@@ -1,0 +1,27 @@
+{
+  "name": "safetyjim",
+  "version": "0.0.1",
+  "description": "A moderation bot for discord.",
+  "main": "main.js",
+  "scripts": {
+    "test": "return 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Samoxive/SafetyJim.git"
+  },
+  "author": "Samoxive & Aetheryx",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Samoxive/SafetyJim/issues"
+  },
+  "homepage": "https://github.com/Samoxive/SafetyJim#readme",
+  "dependencies": {
+    "discord.js": "^11.1.0",
+    "sqlite3": "^3.1.8"
+  },
+  "devDependencies": {
+    "tslint": "^5.2.0",
+    "typescript": "^2.3.2"
+  }
+}
