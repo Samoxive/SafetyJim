@@ -3,7 +3,7 @@ import * as log from 'winston';
 import * as fs from 'fs';
 
 const client = new Discord.Client();
-const config = JSON.parse(fs.readFileSync('./config.json').toString()) as IConfig;
+const config = require('./config.json') as IConfig;
 
 interface IConfig {
     token: string;
