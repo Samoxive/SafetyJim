@@ -8,6 +8,7 @@
         "prefer-const": false,
         "ordered-imports": [
             false
-        ]
+        ],
+        "no-var-requires": false
     }
 }
