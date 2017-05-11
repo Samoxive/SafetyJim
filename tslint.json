@@ -5,6 +5,9 @@
             true,
             "single"
         ],
-        "prefer-const": false
+        "prefer-const": false,
+        "ordered-imports": [
+            false
+        ]
     }
 }
