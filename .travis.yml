@@ -5,3 +5,5 @@ notifications:
     email:
         on_success: never
         on_failure: always
+git:
+    depth: 3
