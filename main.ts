@@ -1,6 +1,6 @@
 import * as Discord from 'discord.js';
-import * as log from 'winston';
-import * as fs from 'fs';
+import * as log from 'winston'
+import * as fs from 'fs'
 
 const client = new Discord.Client();
 const config = JSON.parse(fs.readFileSync('./config.json').toString()) as IConfig;
@@ -18,7 +18,7 @@ client.on('message', (msg) => {
         return;
     }
     if (msg.content === 'ping') {
-        msg.reply('pong');
+        msg.channel.send('pong', { reply: msg.author })
     }
 });
 
