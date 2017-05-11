@@ -2,7 +2,4 @@ language: node_js
 node_js:
     - "7"
 notifications:
-    webhooks:
-        urls:
-            - https://discordapp.com/api/webhooks/312285131970707456/iK7cunt5NFsSy40dcaafRKaxd9H0HkiuF0Xum7yaQJjVDtNZeU3Q9MjDvS4womxFm4xA
     email: false
