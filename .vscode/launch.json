@@ -8,10 +8,11 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceRoot}\\main.js",
+            "program": "${workspaceRoot}\\main.ts",
             "outFiles": [
                 "${workspaceRoot}/out/**/*.js"
-            ]
+            ],
+            "preLaunchTask": "tsc"
         }
     ]
 }
