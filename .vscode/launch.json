@@ -12,7 +12,8 @@
             "outFiles": [
                 "${workspaceRoot}/out/**/*.js"
             ],
-            "preLaunchTask": "tsc"
+            "preLaunchTask": "tsc",
+            "protocol": "inspector"
         }
     ]
 }
