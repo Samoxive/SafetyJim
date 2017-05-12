@@ -13,7 +13,6 @@
                 "${workspaceRoot}/out/**/*.js"
             ],
             "preLaunchTask": "tsc",
-            "protocol": "inspector"
         }
     ]
 }
