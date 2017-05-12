@@ -1,12 +1,12 @@
 import {Config} from '../config/config';
 import * as log from 'winston';
 import * as Discord from 'discord.js';
-import * as sqlite from 'sqlite';
+import { BotDatabase } from '../database/database';
 
 export class SafetyJim {
     private client: Discord.Client;
 
-    constructor(private config: Config, private database: sqlite.Database) {
+    constructor(private config: Config, private database: BotDatabase) {
         this.client = new Discord.Client();
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
@@ -22,7 +22,7 @@ export class SafetyJim {
 
     private onMessage(): (msg: Discord.Message) => void {
         return ((msg: Discord.Message) => {
-            if (msg.channel.type === 'dm') {
+            if (msg.channel.type === 'dm' || msg.author.bot) {
                 return;
             }
             if (msg.content === 'ping') {
