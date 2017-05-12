@@ -20,7 +20,7 @@
     "@types/node": "^7.0.18",
     "@types/winston": "^2.3.2",
     "discord.js": "^11.1.0",
-    "sqlite3": "^3.1.8",
+    "sqlite": "^2.7.0",
     "winston": "^2.3.1"
   },
   "devDependencies": {
