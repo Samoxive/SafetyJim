@@ -7,4 +7,8 @@ import { Config } from './config/config';
 import { SafetyJim } from './safetyjim/safetyjim';
 
 const config = new Config(path.join(__dirname, '..', 'config.json'));
-const bot = new SafetyJim(config);
+const database = new BotDatabase(path.join(__dirname, '..', 'bot.db'));
+
+database.init().then((db) => {
+    const bot = new SafetyJim(config, db);
+});
