@@ -1,0 +1,10 @@
+CREATE TABLE BanList (
+    BannedUserID      TEXT    PRIMARY KEY ON CONFLICT FAIL,
+    BannedUserName    TEXT,
+    ModeratorID       TEXT,
+    ModeratorUserName TEXT,
+    BanTime           INTEGER,
+    ExpireTime        INTEGER,
+    Reason            TEXT,
+    Expires           BOOLEAN
+);
