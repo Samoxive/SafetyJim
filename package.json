@@ -2,7 +2,7 @@
   "name": "safetyjim",
   "version": "0.0.1",
   "description": "A moderation bot for discord.",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
     "test": "tslint *.ts"
   },
