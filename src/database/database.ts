@@ -14,10 +14,6 @@ export class BotDatabase {
     constructor(private config: Config) {
         this.sqlStatements = {
             initDatabase: getSqlStatementFromFile('initDatabase.sql'),
-            getModeratorsBans: getSqlStatementFromFile('getModeratorsBans.sql'),
-            getGuildBans: getSqlStatementFromFile('getGuildBans.sql'),
-            getUserBan: getSqlStatementFromFile('getUserBan.sql'),
-            delUserBan: getSqlStatementFromFile('delUserBan.sql'),
             createUserBan: getSqlStatementFromFile('createUserBan.sql'),
         };
     }
@@ -34,22 +30,27 @@ export class BotDatabase {
     }
 
     public getModeratorsBans(modID: string, guildID: string): Promise<BanRecord[]> {
-        return this.database.all(this.sqlStatements.getModeratorsBans, modID, guildID)
+        return this.database.all('SELECT * FROM BanList WHERE ModeratorID = ? AND GuildID = ?;', modID, guildID)
             .then((rows) => rows as BanRecord[]);
     }
 
     public getGuildBans(guildID: string): Promise<BanRecord[]> {
-        return this.database.all(this.sqlStatements.getModeratorsBans, guildID)
+        return this.database.all('SELECT * FROM BanList WHERE GuildID = ?;', guildID)
             .then((rows) => rows as BanRecord[]);
     }
 
     public getUserBan(userID: string, guildID: string): Promise<BanRecord> {
-        return this.database.get(this.sqlStatements.getUserBan, userID, guildID)
+        return this.database.get('SELECT * FROM BanList WHERE GuildID = ? and BannedUserID = ?;', guildID, userID)
             .then((row) => row as BanRecord);
     }
 
+    public getExpiredBans(): Promise<BanRecord[]> {
+        return this.database.all('SELECT * FROM BanList WHERE ExpireTime < (strftime(\'%s\',\'now\')) and Expires = 1;')
+            .then((rows) => rows as BanRecord[]);
+    }
+
     public delUserBan(userID: string, guildID: string): void {
-        this.database.run(this.sqlStatements.delUserBan, userID, guildID);
+        this.database.run('DELETE FROM BanList WHERE UserID = ? AND GuildID = ?;', userID, guildID);
     }
 
     public createUserBan(bannedUser: User,
