@@ -9,6 +9,9 @@
         "ordered-imports": [
             false
         ],
-        "no-var-requires": false
+        "no-var-requires": false,
+        "interface-name": [
+            false
+        ]
     }
 }
