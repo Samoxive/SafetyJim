@@ -3,8 +3,8 @@ CREATE TABLE BanList (
     BannedUserName    TEXT,
     ModeratorID       TEXT,
     ModeratorUserName TEXT,
+    GuildID           TEXT,
     BanTime           INTEGER,
     ExpireTime        INTEGER,
     Reason            TEXT,
-    Expires           BOOLEAN
-);
+    Expires           BOOLEAN);
