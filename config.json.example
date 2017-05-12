@@ -1,3 +1,4 @@
 {
-    "token": "your-token"
+    "token": "your-token",
+    "dbFileName": "sqlite-database-file-name"
 }
