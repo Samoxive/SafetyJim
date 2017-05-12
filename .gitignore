@@ -74,3 +74,4 @@ typings/
 *.js
 *.js.map
 config.json
+*.db
