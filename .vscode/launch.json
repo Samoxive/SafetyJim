@@ -12,7 +12,7 @@
             "outFiles": [
                 "${workspaceRoot}/out/**/*.js"
             ],
-            "preLaunchTask": "tsc",
+            "preLaunchTask": "tsc"
         }
     ]
 }
