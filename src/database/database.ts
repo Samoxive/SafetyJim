@@ -23,7 +23,19 @@ export class BotDatabase {
     public async init(): Promise<BotDatabase> {
         this.database = await sqlite.open(this.config.dbFileName);
 
-        await this.database.run(this.sqlStatements.initDatabase);
+        await this.database.run(`CREATE TABLE IF NOT EXISTS BanList (
+                                    BannedUserID      TEXT,
+                                    BannedUserName    TEXT,
+                                    ModeratorID       TEXT,
+                                    ModeratorUserName TEXT,
+                                    GuildID           TEXT,
+                                    BanTime           INTEGER,
+                                    ExpireTime        INTEGER,
+                                    Reason            TEXT,
+                                    Expires           BOOLEAN);`);
+
+        await this.database.run('CREATE INDEX IF NOT EXISTS "" ON BanList (ModeratorID, GuildID, BannedUserID);');
+        await this.database.run('CREATE TABLE IF NOT EXISTS PrefixList (GuildID TEXT, Prefix TEXT);');
 
         // seriously, fix this.
         return Promise.resolve(this);
