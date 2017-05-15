@@ -63,7 +63,6 @@ export class BotDatabase {
 
     public createGuildPrefix(guild: Guild, prefix: string): void {
         this.database.run('INSERT INTO PrefixList (GuildID, Prefix) VALUES (?, ?);', guild.id, prefix);
-')
     }
 
     public delUserBan(userID: string, guildID: string): void {
@@ -108,5 +107,5 @@ interface BanRecord {
 }
 
 interface PrefixRecord {
-    Prefix: string
+    Prefix: string;
 }
