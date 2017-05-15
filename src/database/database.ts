@@ -49,6 +49,23 @@ export class BotDatabase {
             .then((rows) => rows as BanRecord[]);
     }
 
+    public getGuildPrefix(guild: Guild): Promise<PrefixRecord> {
+        return this.database.get('SELECT Prefix from PrefixList WHERE GuildID = ?', guild.id);
+    }
+
+    public updateGuildPrefix(guild: Guild, newPrefix: string): void {
+        this.database.run('UPDATE PrefixList SET Prefix = ? WHERE GuildID = ?', newPrefix, guild.id);
+    }
+
+    public delGuildPrefix(guild: Guild): void {
+        this.database.run('DELETE FROM PrefixList WHERE GuildID = ?', guild.id);
+    }
+
+    public createGuildPrefix(guild: Guild, prefix: string): void {
+        this.database.run('INSERT INTO PrefixList (GuildID, Prefix) VALUES (?, ?);', guild.id, prefix);
+')
+    }
+
     public delUserBan(userID: string, guildID: string): void {
         this.database.run('DELETE FROM BanList WHERE UserID = ? AND GuildID = ?;', userID, guildID);
     }
@@ -88,4 +105,8 @@ interface BanRecord {
     ExpireTime: number;
     Reason: string;
     Expires: boolean;
+}
+
+interface PrefixRecord {
+    Prefix: string
 }

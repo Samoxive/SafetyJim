@@ -8,3 +8,10 @@ CREATE TABLE BanList (
     ExpireTime        INTEGER,
     Reason            TEXT,
     Expires           BOOLEAN);
+
+CREATE TABLE PrefixList (
+    GuildID TEXT PRIMARY KEY
+                 UNIQUE
+                 NOT NULL,
+    Prefix  TEXT NOT NULL
+);
