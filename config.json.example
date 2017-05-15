@@ -1,4 +1,5 @@
 {
     "token": "your-token",
-    "dbFileName": "sqlite-database-file-name"
+    "dbFileName": "sqlite-database-file-name",
+    "defaultPrefix": "default-prefix"
 }
