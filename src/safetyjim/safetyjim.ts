@@ -1,12 +1,12 @@
 import {Config} from '../config/config';
-import * as log from 'winston';
+import * as winston from 'winston';
 import * as Discord from 'discord.js';
 import { BotDatabase } from '../database/database';
 
 export class SafetyJim {
     private client: Discord.Client;
 
-    constructor(private config: Config, private database: BotDatabase) {
+    constructor(private config: Config, private database: BotDatabase, public log: winston.LoggerInstance) {
         this.client = new Discord.Client();
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
@@ -17,8 +17,8 @@ export class SafetyJim {
 
     private onReady(): () => void {
         return (() => {
-            log.info(`Client is ready, username: ${this.client.user.username}.`);
-            this.client.generateInvite([]).then((link) => log.info(`Bot invite link: ${link}`));
+            this.log.info(`Client is ready, username: ${this.client.user.username}.`);
+            this.client.generateInvite([]).then((link) => this.log.info(`Bot invite link: ${link}`));
         });
     }
 
@@ -37,7 +37,7 @@ export class SafetyJim {
         return ((guild: Discord.Guild) => {
             guild.defaultChannel.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`);
             this.database.createGuildPrefix(guild, this.config.defaultPrefix);
-            log.info(`Joined guild ${guild.name}`);
+            this.log.info(`Joined guild ${guild.name}`);
         });
     }
 }

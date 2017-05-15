@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Config } from '../config/config';
 import { User, Guild } from 'discord.js';
+import * as winston from 'winston';
 
 function getSqlStatementFromFile(sqlFileName: string): string {
     return fs.readFileSync(path.join(__dirname, 'sql', sqlFileName)).toString();
@@ -11,9 +12,8 @@ function getSqlStatementFromFile(sqlFileName: string): string {
 export class BotDatabase {
     private database: sqlite.Database;
     private sqlStatements;
-    constructor(private config: Config) {
+    constructor(private config: Config, private log: winston.LoggerInstance) {
         this.sqlStatements = {
-            initDatabase: getSqlStatementFromFile('initDatabase.sql'),
             createUserBan: getSqlStatementFromFile('createUserBan.sql'),
         };
     }
@@ -32,10 +32,13 @@ export class BotDatabase {
                                     BanTime           INTEGER,
                                     ExpireTime        INTEGER,
                                     Reason            TEXT,
-                                    Expires           BOOLEAN);`);
+                                    Expires           BOOLEAN);`)
+                                    .catch((err) => { this.log.error('Couldn\'t create BanList table!'); });
 
-        await this.database.run('CREATE INDEX IF NOT EXISTS "" ON BanList (ModeratorID, GuildID, BannedUserID);');
-        await this.database.run('CREATE TABLE IF NOT EXISTS PrefixList (GuildID TEXT, Prefix TEXT);');
+        await this.database.run('CREATE INDEX IF NOT EXISTS "" ON BanList (ModeratorID, GuildID, BannedUserID);')
+                           .catch((err) => { this.log.error('Couldn\'t create index for Banlist table!'); });
+        await this.database.run('CREATE TABLE IF NOT EXISTS PrefixList (GuildID TEXT, Prefix TEXT);')
+                           .catch((err) => { this.log.error('Couldn\'t create PrefixList table!'); });
 
         // seriously, fix this.
         return Promise.resolve(this);
