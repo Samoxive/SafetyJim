@@ -18,6 +18,7 @@ export class SafetyJim {
     private onReady(): () => void {
         return (() => {
             log.info(`Client is ready, username: ${this.client.user.username}.`);
+            this.client.generateInvite([]).then((link) => log.info(`Bot invite link: ${link}`));
         });
     }
 
@@ -34,8 +35,9 @@ export class SafetyJim {
 
     private guildCreate(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
+            guild.defaultChannel.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`);
             this.database.createGuildPrefix(guild, this.config.defaultPrefix);
-            guild.defaultChannel.send(`Hello! I am Safety Jim, ${this.config.defaultPrefix} is my default prefix!`);
+            log.info(`Joined guild ${guild.name}`);
         });
     }
 }
