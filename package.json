@@ -4,7 +4,8 @@
   "description": "A moderation bot for discord.",
   "main": "src/main.js",
   "scripts": {
-    "test": "tslint *.ts"
+    "test": "tslint *.ts",
+    "start": "tsc & node ./src/main.js"
   },
   "repository": {
     "type": "git",
