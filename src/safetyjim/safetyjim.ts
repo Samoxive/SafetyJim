@@ -10,6 +10,7 @@ export class SafetyJim {
         this.client = new Discord.Client();
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
+        this.client.on('guildCreate', this.guildCreate());
 
         this.client.login(config.discordToken);
     }
@@ -28,6 +29,13 @@ export class SafetyJim {
             if (msg.content === 'ping') {
                 msg.channel.send('pong', {reply: msg.author});
             }
+        });
+    }
+
+    private guildCreate(): (guild: Discord.Guild) => void {
+        return ((guild: Discord.Guild) => {
+            this.database.createGuildPrefix(guild, this.config.defaultPrefix);
+            guild.defaultChannel.send(`Hello! I am Safety Jim, ${this.config.defaultPrefix} is my default prefix!`);
         });
     }
 }
