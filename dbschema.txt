@@ -15,3 +15,8 @@ CREATE TABLE PrefixList (
                  NOT NULL,
     Prefix  TEXT NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS "" ON BanList (
+    ModeratorID,
+    GuildID,
+    BannedUserID);
