@@ -31,8 +31,8 @@ gulp.task('build', () => {
 });
 
 gulp.task('run', ['build'], () => {
-    let proc = exec('node .\\src\\main.js')
+    let proc = exec('node .\\src\\main.js');
 
     proc.stdout.pipe(process.stdout);
     proc.stderr.pipe(process.stderr);
-})
+});
