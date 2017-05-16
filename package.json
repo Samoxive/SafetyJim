@@ -5,7 +5,10 @@
   "main": "src/main.js",
   "scripts": {
     "test": "tslint *.ts",
-    "start": "tsc & node ./src/main.js"
+    "start": "gulp run",
+    "build": "gulp build",
+    "clean": "gulp clean",
+    "clean-build": "gulp clean-build"
   },
   "repository": {
     "type": "git",
