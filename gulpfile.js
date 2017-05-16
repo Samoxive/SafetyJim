@@ -23,3 +23,5 @@ gulp.task('clean', () => {
     gulp.src('jims_memory.db', {read: false})
         .pipe(clean());
 });
+
+gulp.task('clean-build', ['clean', 'default'], () => {});
