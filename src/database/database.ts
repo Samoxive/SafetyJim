@@ -33,12 +33,12 @@ export class BotDatabase {
                                     ExpireTime        INTEGER,
                                     Reason            TEXT,
                                     Expires           BOOLEAN);`)
-                                    .catch((err) => { this.log.error('Couldn\'t create BanList table!'); });
+                                    .catch((err) => { this.log.error('Could not create BanList table!'); });
 
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON BanList (ModeratorID, GuildID, BannedUserID);')
-                           .catch((err) => { this.log.error('Couldn\'t create index for Banlist table!'); });
+                           .catch((err) => { this.log.error('Could not create index for Banlist table!'); });
         await this.database.run('CREATE TABLE IF NOT EXISTS PrefixList (GuildID TEXT, Prefix TEXT);')
-                           .catch((err) => { this.log.error('Couldn\'t create PrefixList table!'); });
+                           .catch((err) => { this.log.error('Could not create PrefixList table!'); });
 
         // seriously, fix this.
         return Promise.resolve(this);
@@ -46,42 +46,51 @@ export class BotDatabase {
 
     public getModeratorsBans(modID: string, guildID: string): Promise<BanRecord[]> {
         return this.database.all('SELECT * FROM BanList WHERE ModeratorID = ? AND GuildID = ?;', modID, guildID)
-            .then((rows) => rows as BanRecord[]);
+            .then((rows) => rows as BanRecord[])
+            .catch((err) => { this.log.error('Could not retrieve moderator ban records!'); });
     }
 
     public getGuildBans(guildID: string): Promise<BanRecord[]> {
         return this.database.all('SELECT * FROM BanList WHERE GuildID = ?;', guildID)
-            .then((rows) => rows as BanRecord[]);
+            .then((rows) => rows as BanRecord[])
+            .catch((err) => { this.log.error('Could not retrieve guild ban records!'); });
     }
 
     public getUserBan(userID: string, guildID: string): Promise<BanRecord> {
         return this.database.get('SELECT * FROM BanList WHERE GuildID = ? and BannedUserID = ?;', guildID, userID)
-            .then((row) => row as BanRecord);
+            .then((row) => row as BanRecord)
+            .catch((err) => { this.log.error('Could not retrieve user ban record!'); });
     }
 
     public getExpiredBans(): Promise<BanRecord[]> {
         return this.database.all('SELECT * FROM BanList WHERE ExpireTime < (strftime(\'%s\',\'now\')) and Expires = 1;')
-            .then((rows) => rows as BanRecord[]);
+            .then((rows) => rows as BanRecord[])
+            .catch((err) => { this.log.error('Could not retrieve expired ban records!'); });
     }
 
     public getGuildPrefix(guild: Guild): Promise<PrefixRecord> {
-        return this.database.get('SELECT Prefix from PrefixList WHERE GuildID = ?', guild.id);
+        return this.database.get('SELECT Prefix from PrefixList WHERE GuildID = ?', guild.id)
+            .catch((err) => { this.log.error('Could not retrieve prefix record!'); });
     }
 
     public updateGuildPrefix(guild: Guild, newPrefix: string): void {
-        this.database.run('UPDATE PrefixList SET Prefix = ? WHERE GuildID = ?', newPrefix, guild.id);
+        this.database.run('UPDATE PrefixList SET Prefix = ? WHERE GuildID = ?', newPrefix, guild.id)
+            .catch((err) => { this.log.error('Could not update prefix record!'); });
     }
 
     public delGuildPrefix(guild: Guild): void {
-        this.database.run('DELETE FROM PrefixList WHERE GuildID = ?', guild.id);
+        this.database.run('DELETE FROM PrefixList WHERE GuildID = ?', guild.id)
+            .catch((err) => { this.log.error('Could not delete prefix record!'); });
     }
 
     public createGuildPrefix(guild: Guild, prefix: string): void {
-        this.database.run('INSERT INTO PrefixList (GuildID, Prefix) VALUES (?, ?);', guild.id, prefix);
+        this.database.run('INSERT INTO PrefixList (GuildID, Prefix) VALUES (?, ?);', guild.id, prefix)
+            .catch((err) => { this.log.error('Could not create prefix record!'); });
     }
 
     public delUserBan(userID: string, guildID: string): void {
-        this.database.run('DELETE FROM BanList WHERE UserID = ? AND GuildID = ?;', userID, guildID);
+        this.database.run('DELETE FROM BanList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
+            .catch((err) => { this.log.error('Could not delete ban record!'); });
     }
 
     public createUserBan(bannedUser: User,
@@ -105,7 +114,8 @@ export class BotDatabase {
                           (new Date()).getSeconds(),
                           expireTime,
                           reason,
-                          expires);
+                          expires)
+                      .catch((err) => { this.log.error('Could not create a ban record!'); });
     }
 }
 
