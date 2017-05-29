@@ -10,7 +10,14 @@ export class Config {
     public defaultPrefix: string;
 
     constructor(private configPath: string) {
-        let configData = require(this.configPath) as IConfigFile;
+
+        let configData = null;
+        try {
+            configData = require(this.configPath) as IConfigFile;
+        } catch(e) {
+            console.error("Loading config file failed with error: " + e.message);
+            process.exit(e.code);
+        }
 
         this.discordToken = configData.token;
         this.dbFileName = configData.dbFileName;
