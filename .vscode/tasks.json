@@ -9,15 +9,6 @@
     ],
     "tasks": [
         {
-            "taskName": "clean-build",
-            "args": [],
-            "problemMatcher": [
-                "$lessCompile",
-                "$tsc",
-                "$jshint"
-            ]
-        },
-        {
             "taskName": "build",
             "args": [],
             "isBuildCommand": true,

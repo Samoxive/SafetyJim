@@ -8,12 +8,13 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceRoot}/src/main.ts",
-            "sourceMaps": true,
+            "program": "${workspaceRoot}\\src\\main.ts",
             "outFiles": [
-                "${workspaceRoot}/src/**/*.js"
+                "${workspaceRoot}/src/**/*.js",
+                "${workspaceRoot}/src/**/*.js.map"
             ],
-            "preLaunchTask": "tsc"
+            "preLaunchTask": "build",
+            "sourceMaps": true
         }
     ]
 }
