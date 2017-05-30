@@ -4,7 +4,7 @@
   "description": "A moderation bot for discord.",
   "main": "src/main.js",
   "scripts": {
-    "test": "tslint *.ts",
+    "test": "tslint src/**/*.ts",
     "start": "gulp run",
     "build": "gulp build",
     "clean": "gulp clean",
