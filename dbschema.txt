@@ -1,5 +1,5 @@
 CREATE TABLE BanList (
-    BannedUserID      TEXT    PRIMARY KEY ON CONFLICT FAIL,
+    BannedUserID      TEXT,
     BannedUserName    TEXT,
     ModeratorID       TEXT,
     ModeratorUserName TEXT,
