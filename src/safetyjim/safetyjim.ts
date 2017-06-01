@@ -44,7 +44,7 @@ export class SafetyJim {
             });
 
             if (guildsNotInDatabaseCount) {
-                this.log.info(`Added ${guildsNotInDatabaseCount} guilds to database with default prefix.`);
+                this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default prefix.`);
             }
         });
     }
@@ -64,6 +64,7 @@ export class SafetyJim {
         return ((guild: Discord.Guild) => {
             guild.defaultChannel.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`);
             this.database.createGuildPrefix(guild, this.config.defaultPrefix);
+            this.createRegexForGuild(guild.id, this.config.defaultPrefix);
             this.log.info(`Joined guild ${guild.name}`);
         });
     }
