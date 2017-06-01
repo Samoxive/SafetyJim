@@ -9,6 +9,13 @@ CREATE TABLE BanList (
     Reason            TEXT,
     Expires           BOOLEAN);
 
+CREATE TABLE JoinList (
+    UserID    TEXT,
+    GuildID   TEXT,
+    JoinTime  INTEGER,
+    AllowTime INTEGER,
+    Allowed   BOOLEAN);
+
 CREATE TABLE PrefixList (
     GuildID TEXT PRIMARY KEY
                  UNIQUE
@@ -20,3 +27,5 @@ CREATE INDEX IF NOT EXISTS "" ON BanList (
     ModeratorID,
     GuildID,
     BannedUserID);
+
+CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed);
