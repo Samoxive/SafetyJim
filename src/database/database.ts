@@ -68,9 +68,15 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not retrieve expired ban records!'); });
     }
 
-    public getGuildPrefix(guild: Guild): Promise<PrefixRecord> {
+    public getGuildPrefix(guild: Guild): Promise<string> {
         return this.database.get('SELECT Prefix from PrefixList WHERE GuildID = ?', guild.id)
             .catch((err) => { this.log.error('Could not retrieve prefix record!'); });
+    }
+
+    public getGuildPrefixes(): Promise<PrefixRecord[]> {
+        return this.database.get('SELECT * from PrefixList;')
+            .then((rows) => rows as PrefixRecord[])
+            .catch((err) => { this.log.error('Could not retrieve prefix recods!'); });
     }
 
     public updateGuildPrefix(guild: Guild, newPrefix: string): void {
@@ -132,5 +138,6 @@ interface BanRecord {
 }
 
 interface PrefixRecord {
+    GuildID: string;
     Prefix: string;
 }
