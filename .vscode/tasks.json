@@ -16,7 +16,8 @@
                 "$lessCompile",
                 "$tsc",
                 "$jshint"
-            ]
+            ],
+            "showOutput": "silent"
         }
     ]
 }
