@@ -11,12 +11,8 @@ function getSqlStatementFromFile(sqlFileName: string): string {
 
 export class BotDatabase {
     private database: sqlite.Database;
-    private sqlStatements;
-    constructor(private config: Config, private log: winston.LoggerInstance) {
-        this.sqlStatements = {
-            createUserBan: getSqlStatementFromFile('createUserBan.sql'),
-        };
-    }
+
+    constructor(private config: Config, private log: winston.LoggerInstance) {}
 
     // TODO (sam): This function doesn't need to return anything,
     // try to fix this later.
@@ -111,7 +107,17 @@ export class BotDatabase {
             expireTime = 0;
         }
 
-        this.database.run(this.sqlStatements.createUserBan,
+        this.database.run(`INSERT INTO BanList (
+                            BannedUserID,
+                            BannedUserName,
+                            ModeratorID,
+                            ModeratorUserName,
+                            GuildID,
+                            BanTime,
+                            ExpireTime,
+                            Reason,
+                            Expires)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
                           bannedUser.id,
                           bannedUser.username + bannedUser.discriminator,
                           modUser.id,
