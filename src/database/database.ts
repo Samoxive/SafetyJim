@@ -35,6 +35,15 @@ export class BotDatabase {
                            .catch((err) => { this.log.error('Could not create index for Banlist table!'); });
         await this.database.run('CREATE TABLE IF NOT EXISTS PrefixList (GuildID TEXT, Prefix TEXT);')
                            .catch((err) => { this.log.error('Could not create PrefixList table!'); });
+        await this.database.run(`CREATE TABLE IF NOT EXISTS JoinList (
+                                    UserID   TEXT,
+                                    GuildID  TEXT,
+                                    JoinTime INTEGER,
+                                    AllowTime INTEGER,
+                                    Allowed  BOOLEAN);`)
+                                    .catch((err) => { this.log.error('Could not create JoinList table!'); });
+        await this.database.run('CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed)')
+                           .catch((err) => { this.log.error('Could not create index for JoinLis table!'); });
 
         // seriously, fix this.
         return Promise.resolve(this);
@@ -75,6 +84,12 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not retrieve prefix recods!'); });
     }
 
+    public getUsersThatCanBeAllowed(): Promise<JoinRecord[]> {
+        return this.database.all('SELECT * FROM JoinList WHERE AllowTime < (strftime(\'%s\',\'now\')) and Allowed = 0')
+            .then((rows) => rows as JoinRecord[])
+            .catch((err) => { this.log.error('Could not retrieve users that can be allowed'); });
+    }
+
     public updateGuildPrefix(guild: Guild, newPrefix: string): void {
         this.database.run('UPDATE PrefixList SET Prefix = ? WHERE GuildID = ?', newPrefix, guild.id)
             .catch((err) => { this.log.error('Could not update prefix record!'); });
@@ -88,6 +103,13 @@ export class BotDatabase {
     public createGuildPrefix(guild: Guild, prefix: string): void {
         this.database.run('INSERT INTO PrefixList (GuildID, Prefix) VALUES (?, ?);', guild.id, prefix)
             .catch((err) => { this.log.error('Could not create prefix record!'); });
+    }
+
+    public createJoinRecord(user: User, guild: Guild, minutes: number): void {
+        let now = (new Date()).getSeconds();
+        this.database.run(`INSERT INTO JoinList (UserId, GuildID, JoinTime, AllowTime, Allowed)
+                            VALUES (?, ?, ?, ?, ?)`,
+                            user.id, guild.id, now, now + minutes * 60, false);
     }
 
     public delUserBan(userID: string, guildID: string): void {
@@ -146,4 +168,11 @@ interface BanRecord {
 interface PrefixRecord {
     GuildID: string;
     Prefix: string;
+}
+
+interface JoinRecord {
+    UserID: string;
+    GuildID: string;
+    JoinTime: number;
+    Allowed: boolean;
 }
