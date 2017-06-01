@@ -18,6 +18,7 @@ export class SafetyJim {
     private commandRegex = {} as RegexRecords;
     private prefixTestRegex = {} as RegexRecords;
     private commands = {} as Commands;
+    private allowUsersCronJob;
 
     constructor(private config: Config,
                 public database: BotDatabase,
@@ -57,6 +58,9 @@ export class SafetyJim {
             if (guildsNotInDatabaseCount) {
                 this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default prefix.`);
             }
+
+            this.allowUsersCronJob = new cron.CronJob({cronTime: '*/30 * * * * *',
+                                                       onTick: this.allowUsers.bind(this), start: true, context: this});
         });
     }
 
@@ -108,6 +112,19 @@ export class SafetyJim {
             this.createRegexForGuild(guild.id, this.config.defaultPrefix);
             this.log.info(`Joined guild ${guild.name}`);
         });
+    }
+
+    private async allowUsers(): Promise<any> {
+        let usersToBeAllowed = await this.database.getUsersThatCanBeAllowed();
+
+        for (let user of usersToBeAllowed) {
+            let guildConfig = await this.database.getGuildConfiguration(this.client.guilds.get(user.GuildID));
+
+            if (guildConfig.HoldingRoomActive === 1) {
+                this.client.guilds.get(user.GuildID).members.get(user.UserID).addRole(guildConfig.HoldingRoomRoleID);
+                this.database.updateJoinRecord(user);
+            }
+        }
     }
 
     private createRegexForGuild(guildID: string, prefix: string) {
