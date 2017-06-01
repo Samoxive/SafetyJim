@@ -7,7 +7,6 @@
         {
             "type": "node",
             "request": "launch",
-            "protocol": "inspector",
             "name": "Launch Program",
             "program": "${workspaceRoot}\\src\\main.ts",
             "outFiles": [
@@ -15,12 +14,7 @@
                 "${workspaceRoot}/src/**/*.js.map"
             ],
             "preLaunchTask": "build",
-            "sourceMaps": true,
-            "runtimeArgs": [
-                "--inspect-brk=25412",
-                "--nolazy"
-            ],
-            "port": 25412
+            "sourceMaps": true
         }
     ]
 }
