@@ -74,7 +74,7 @@ export class BotDatabase {
     }
 
     public getGuildPrefixes(): Promise<PrefixRecord[]> {
-        return this.database.get('SELECT * from PrefixList;')
+        return this.database.all('SELECT * from PrefixList;')
             .then((rows) => rows as PrefixRecord[])
             .catch((err) => { this.log.error('Could not retrieve prefix recods!'); });
     }
