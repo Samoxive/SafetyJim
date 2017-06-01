@@ -23,11 +23,7 @@ gulp.task('clean', () => {
 gulp.task('clean-build', ['clean', 'default'], () => {});
 
 gulp.task('build', () => {
-    gulp.src('src/**/*.ts')
-        .pipe(sourcemaps.init())
-        .pipe(tsProject())
-        .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('src'));
+    exec('tsc');
 });
 
 gulp.task('run', ['build'], () => {
