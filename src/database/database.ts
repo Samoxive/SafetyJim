@@ -31,6 +31,13 @@ export class BotDatabase {
                                     Expires           BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create BanList table!'); });
 
+        await this.database.run(`CREATE TABLE IF NOT EXISTS GuildSettings (
+                                    GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
+                                    HoldingRoomRoleID TEXT,
+                                    HoldingRoomActive BOOLEAN,
+                                    EmbedColor TEXT);`)
+                                .catch((err) => { this.log.error('Could not create GuildSettings table!'); });
+
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON BanList (ModeratorID, GuildID, BannedUserID);')
                            .catch((err) => { this.log.error('Could not create index for Banlist table!'); });
         await this.database.run('CREATE TABLE IF NOT EXISTS PrefixList (GuildID TEXT, Prefix TEXT);')
@@ -84,15 +91,38 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not retrieve prefix recods!'); });
     }
 
+    public getGuildConfiguration(guild: Guild): Promise<GuildConfig> {
+        return this.database.get('SELECT * FROM GuildSettings WHERE GuildID = ?', guild.id)
+                            .then((row) => row as GuildConfig)
+                            .catch((err) => { this.log.error('Could not retrieve guild config!'); });
+    }
+
     public getUsersThatCanBeAllowed(): Promise<JoinRecord[]> {
         return this.database.all('SELECT * FROM JoinList WHERE AllowTime < (strftime(\'%s\',\'now\')) and Allowed = 0')
             .then((rows) => rows as JoinRecord[])
-            .catch((err) => { this.log.error('Could not retrieve users that can be allowed'); });
+            .catch((err) => { this.log.error('Could not retrieve users that can be allowed!'); });
     }
 
     public updateGuildPrefix(guild: Guild, newPrefix: string): void {
         this.database.run('UPDATE PrefixList SET Prefix = ? WHERE GuildID = ?', newPrefix, guild.id)
             .catch((err) => { this.log.error('Could not update prefix record!'); });
+    }
+
+    // tslint:disable-next-line:variable-name
+    public updateGuildConfig(guild: Guild,
+                             options: {roleID?: string, embedColor?: string, holdingRoom: boolean}): void {
+        this.getGuildConfiguration(guild).then((origConfig) => {
+            this.database.run(`UPDATE GuildSettings SET HoldingRoomRoleID= ?, HoldingRoomActive = ?, EmbedColor= ?
+                                WHERE GuildID = ?;`, options.roleID || origConfig.HoldingRoomRoleID,
+                                options.holdingRoom || origConfig.HoldingRoomActive,
+                                options.embedColor || origConfig.EmbedColor);
+        });
+    }
+
+    public updateJoinRecord(jRecord: JoinRecord) {
+        this.database.run(`UPDATE JoinList SET Allowed = ? WHERE UserID = ? and GuildID = ?`,
+                          true, jRecord.UserID, jRecord.GuildID)
+                          .catch((err) => { this.log.error('Could not update JoinRecord!'); });
     }
 
     public delGuildPrefix(guild: Guild): void {
@@ -112,9 +142,9 @@ export class BotDatabase {
                             user.id, guild.id, now, now + minutes * 60, false);
     }
 
-    public delUserBan(userID: string, guildID: string): void {
-        this.database.run('DELETE FROM BanList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
-            .catch((err) => { this.log.error('Could not delete ban record!'); });
+    public createGuildSettings(guild: Guild): void {
+        this.database.run(`INSERT INTO GuildSettings (GuildID, HoldingRoomRoleID, HoldingRoomActive, EmbedColor)
+                            Values (?, ?, ?, ?)`, guild.id, null, false, '#4286f4');
     }
 
     public createUserBan(bannedUser: User,
@@ -151,6 +181,18 @@ export class BotDatabase {
                           expires)
                       .catch((err) => { this.log.error('Could not create a ban record!'); });
     }
+
+    public delUserBan(userID: string, guildID: string): void {
+        this.database.run('DELETE FROM BanList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
+            .catch((err) => { this.log.error('Could not delete ban record!'); });
+    }
+}
+
+interface GuildConfig {
+    GuildID: string;
+    HoldingRoomRoleID: string;
+    HoldingRoomActive: number;
+    EmbedColor: string;
 }
 
 interface BanRecord {
@@ -162,7 +204,7 @@ interface BanRecord {
     BanTime: number;
     ExpireTime: number;
     Reason: string;
-    Expires: boolean;
+    Expires: number;
 }
 
 interface PrefixRecord {
@@ -174,5 +216,5 @@ interface JoinRecord {
     UserID: string;
     GuildID: string;
     JoinTime: number;
-    Allowed: boolean;
+    Allowed: number;
 }
