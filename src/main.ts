@@ -6,7 +6,6 @@ import { BotDatabase } from './database/database';
 import { Config } from './config/config';
 import { SafetyJim } from './safetyjim/safetyjim';
 
-const config = new Config(path.join(__dirname, '..', 'config.json'));
 const log = new winston.Logger({
     transports: [
         new winston.transports.Console({
@@ -18,6 +17,7 @@ const log = new winston.Logger({
     ],
 });
 
+const config = new Config(path.join(__dirname, '..', 'config.json'), log);
 const database = new BotDatabase(config, log);
 database.init().then((db) => {
     const bot = new SafetyJim(config, db, log);
