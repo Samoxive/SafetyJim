@@ -38,6 +38,7 @@ export class SafetyJim {
         this.client.on('guildCreate', this.guildCreate());
         this.client.on('guildDelete', this.guildDelete());
         this.client.on('guildMemberAdd', this.guildMemberAdd());
+        this.client.on('guildMemberRemove', this.guildMemberRemove());
 
         this.client.login(config.discordToken);
     }
@@ -123,6 +124,12 @@ export class SafetyJim {
 
                 this.database.createJoinRecord(member.user, member.guild, guildConfig.HoldingRoomMinutes);
             }
+        });
+    }
+
+    private guildMemberRemove(): (member: Discord.GuildMember) => void {
+        return ((member: Discord.GuildMember) => {
+            this.database.delJoinEntry(member.user.id, member.guild.id);
         });
     }
 
