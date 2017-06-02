@@ -26,7 +26,8 @@
     "cron": "^1.2.1",
     "discord.js": "hydrabolt/discord.js#11.1-dev",
     "sqlite": "^2.7.0",
-    "winston": "^2.3.1"
+    "winston": "^2.3.1",
+    "winston-daily-rotate-file": "^1.4.6"
   },
   "devDependencies": {
     "concurrently": "^3.4.0",
