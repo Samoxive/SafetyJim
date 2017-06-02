@@ -87,6 +87,7 @@ export class BotDatabase {
 
     public getGuildPrefix(guild: Guild): Promise<string> {
         return this.database.get('SELECT Prefix from PrefixList WHERE GuildID = ?', guild.id)
+            .then((row) => row.Prefix)
             .catch((err) => { this.log.error('Could not retrieve prefix record!'); });
     }
 
