@@ -9,7 +9,7 @@ class Ping implements Command {
 
     public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
         msg.channel.send('pong');
-        return true;
+        return;
     }
 }
 
