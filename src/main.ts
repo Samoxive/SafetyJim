@@ -1,5 +1,6 @@
 import * as Discord from 'discord.js';
 import * as winston from 'winston';
+require('winston-daily-rotate-file');
 import * as fs from 'fs';
 import * as path from 'path';
 import { BotDatabase } from './database/database';
@@ -13,6 +14,15 @@ const log = new winston.Logger({
             handleExceptions: true,
             json: false,
             colorize: true,
+        }),
+        new winston.transports.DailyRotateFile({
+            level: 'debug',
+            handleExceptions: true,
+            json: false,
+            filename: './logs/.log',
+            zippedArchive: true,
+            prepend: true,
+            datePattern: 'yyyy-MM-dd',
         }),
     ],
 });
