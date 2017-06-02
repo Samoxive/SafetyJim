@@ -33,8 +33,10 @@ export class BotDatabase {
 
         await this.database.run(`CREATE TABLE IF NOT EXISTS GuildSettings (
                                     GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
-                                    HoldingRoomRoleID TEXT,
-                                    HoldingRoomActive BOOLEAN,
+                                    HoldingRoomRoleID    TEXT,
+                                    HoldingRoomActive    BOOLEAN,
+                                    HoldingRoomMinutes   INTEGER,
+                                    HoldingRoomChannelID TEXT,
                                     EmbedColor TEXT);`)
                                 .catch((err) => { this.log.error('Could not create GuildSettings table!'); });
 
@@ -110,12 +112,17 @@ export class BotDatabase {
 
     // tslint:disable-next-line:variable-name
     public updateGuildConfig(guild: Guild,
-                             options: {roleID?: string, embedColor?: string, holdingRoom: boolean}): void {
+                             options: {roleID?: string, embedColor?: string,
+                                       holdingRoom?: boolean, minutes?: number, holdingRoomID: string}): void {
         this.getGuildConfiguration(guild).then((origConfig) => {
-            this.database.run(`UPDATE GuildSettings SET HoldingRoomRoleID= ?, HoldingRoomActive = ?, EmbedColor= ?
-                                WHERE GuildID = ?;`, options.roleID || origConfig.HoldingRoomRoleID,
+            this.database.run(`UPDATE GuildSettings SET HoldingRoomRoleID= ?, HoldingRoomActive = ?,
+                                HoldingRoomMinutes = ?, HoldingRoomChannelID = ?, EmbedColor= ?
+                              WHERE GuildID = ?;`, options.roleID || origConfig.HoldingRoomRoleID,
                                 options.holdingRoom || origConfig.HoldingRoomActive,
-                                options.embedColor || origConfig.EmbedColor);
+                                options.minutes || origConfig.HoldingRoomMinutes,
+                                options.holdingRoomID, origConfig.HoldingRoomChannelID,
+                                options.embedColor || origConfig.EmbedColor,
+                                guild.id);
         });
     }
 
@@ -143,8 +150,9 @@ export class BotDatabase {
     }
 
     public createGuildSettings(guild: Guild): void {
-        this.database.run(`INSERT INTO GuildSettings (GuildID, HoldingRoomRoleID, HoldingRoomActive, EmbedColor)
-                            Values (?, ?, ?, ?)`, guild.id, null, false, '#4286f4');
+        this.database.run(`INSERT INTO GuildSettings (
+                GuildID, HoldingRoomRoleID, HoldingRoomActive, HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor)
+                Values (?, ?, ?, ?, ?, ?)`, guild.id, null, false, 3, guild.defaultChannel.id, '#4286f4');
     }
 
     public createUserBan(bannedUser: User,
@@ -192,6 +200,8 @@ interface GuildConfig {
     GuildID: string;
     HoldingRoomRoleID: string;
     HoldingRoomActive: number;
+    HoldingRoomMinutes: number;
+    HoldingRoomChannelID: string;
     EmbedColor: string;
 }
 

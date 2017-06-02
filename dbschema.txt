@@ -25,9 +25,11 @@ CREATE TABLE PrefixList (
 
 CREATE TABLE GuildSettings (
     GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
-    HoldingRoomRoleID TEXT,
-    HoldingRoomActive BOOLEAN,
-    EmbedColor TEXT,
+    HoldingRoomRoleID    TEXT,
+    HoldingRoomActive    BOOLEAN,
+    HoldingRoomMinutes   INTEGER,
+    HoldingRoomChannelID TEXT,
+    EmbedColor           TEXT
 );
 
 CREATE INDEX IF NOT EXISTS "" ON BanList (
