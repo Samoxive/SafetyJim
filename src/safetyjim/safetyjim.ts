@@ -23,7 +23,7 @@ export class SafetyJim {
     constructor(private config: Config,
                 public database: BotDatabase,
                 public log: winston.LoggerInstance) {
-        log.info('Populating regex dictionary.');
+        log.info('Populating prefix regex dictionary.');
         this.database.getGuildPrefixes().then((prefixList) => {
             if (prefixList != null) {
                 prefixList.map((record) => {
@@ -36,6 +36,8 @@ export class SafetyJim {
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
         this.client.on('guildCreate', this.guildCreate());
+        this.client.on('guildDelete', this.guildDelete());
+        this.client.on('guildMemberAdd', this.guildMemberAdd());
 
         this.client.login(config.discordToken);
     }
@@ -45,19 +47,8 @@ export class SafetyJim {
             this.log.info(`Client is ready, username: ${this.client.user.username}.`);
             this.client.generateInvite([]).then((link) => this.log.info(`Bot invite link: ${link}`));
 
-            let existingRegexList = Object.keys(this.commandRegex);
-            let guildsNotInDatabaseCount = 0;
-            this.client.guilds.map((guild) => {
-                if (!existingRegexList.includes(guild.id)) {
-                    this.createRegexForGuild(guild.id, this.config.defaultPrefix);
-                    this.database.createGuildPrefix(guild, this.config.defaultPrefix);
-                    guildsNotInDatabaseCount++;
-                }
-            });
-
-            if (guildsNotInDatabaseCount) {
-                this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default prefix.`);
-            }
+            this.populateGuildConfigDatabase();
+            this.populatePrefixDatabase();
 
             this.allowUsersCronJob = new cron.CronJob({cronTime: '*/30 * * * * *',
                                                        onTick: this.allowUsers.bind(this), start: true, context: this});
@@ -114,15 +105,45 @@ export class SafetyJim {
         });
     }
 
-    private async allowUsers(): Promise<any> {
+    private guildMemberAdd(): (member: Discord.GuildMember) => void {
+        return (async (member: Discord.GuildMember) => {
+            this.log.info(`${this.getUserDiscriminator(member.user)} joined guild ${member.guild.name}.`);
+            let guildConfig = await this.database.getGuildConfiguration(member.guild);
+
+            if (guildConfig.HoldingRoomActive) {
+                if (this.client.channels.has(guildConfig.HoldingRoomChannelID)) {
+                    let channel = this.client.channels.get(guildConfig.HoldingRoomChannelID) as Discord.TextChannel;
+                    // tslint:disable-next-line:max-line-length
+                    channel.send(`Welcome to ${member.guild.name} ${member.toString()}. You are in our holding room for ${guildConfig.HoldingRoomMinutes} minutes, please take this time to review our rules.`)
+                           .catch((err) => { this.log.error(`There was an error when trying to send welcome message in ${member.guild.name}: ${err.toString()}`); });
+                } else {
+                    this.log.warn(`Could not find holding room channel for ${member.guild.name} : ${member.guild.id}`);
+                    member.guild.defaultChannel.send('WARNING: Invalid channel is set as a holding room!');
+                }
+
+                this.database.createJoinRecord(member.user, member.guild, guildConfig.HoldingRoomMinutes);
+            }
+        });
+    }
+
+    private guildDelete(): (guild: Discord.Guild) => void {
+        return ((guild: Discord.Guild) => {
+            this.database.delGuildSettings(guild);
+        });
+    }
+
+    private async allowUsers(): Promise<void> {
         let usersToBeAllowed = await this.database.getUsersThatCanBeAllowed();
 
         for (let user of usersToBeAllowed) {
             let guildConfig = await this.database.getGuildConfiguration(this.client.guilds.get(user.GuildID));
 
             if (guildConfig.HoldingRoomActive === 1) {
-                this.client.guilds.get(user.GuildID).members.get(user.UserID).addRole(guildConfig.HoldingRoomRoleID);
+                let dGuild = this.client.guilds.get(user.GuildID)
+                let dUser = dGuild.members.get(user.UserID);
+                dUser.addRole(guildConfig.HoldingRoomRoleID);
                 this.database.updateJoinRecord(user);
+                this.log.info(`Allowed ${this.getUserDiscriminator(dUser.user)} in guild ${dGuild.name}.`);
             }
         }
     }
@@ -130,5 +151,47 @@ export class SafetyJim {
     private createRegexForGuild(guildID: string, prefix: string) {
         this.commandRegex[guildID] = new RegExp(`^${prefix}\\s+([^\\s]+)\\s*([^]*)\\s*`, 'i');
         this.prefixTestRegex[guildID] = new RegExp(`^${prefix}[\\s]*( .*)?$`, 'i');
+    }
+
+    private getUserDiscriminator(user: Discord.User) {
+        return user.username + '#' + user.discriminator;
+    }
+
+    private populateGuildConfigDatabase(): void {
+        let guildsNotInDatabaseCount = 0;
+
+        this.database.getGuildConfigurations()
+                     .then((configs) => configs.map((config) => config.GuildID))
+                     .then((existingGuildIds) => {
+                        this.client.guilds.map((guild) => {
+                            if (!existingGuildIds.includes(guild.id)) {
+                                this.database.createGuildSettings(guild);
+                                guildsNotInDatabaseCount++;
+                            }
+                        });
+                     })
+                     .then((_) => {
+                         if (guildsNotInDatabaseCount) {
+                             // tslint:disable-next-line:max-line-length
+                             this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config`);
+                         }
+                     });
+    }
+
+    private populatePrefixDatabase(): void {
+        let existingRegexList = Object.keys(this.commandRegex);
+        let guildsNotInDatabaseCount = 0;
+
+        this.client.guilds.map((guild) => {
+            if (!existingRegexList.includes(guild.id)) {
+                this.createRegexForGuild(guild.id, this.config.defaultPrefix);
+                this.database.createGuildPrefix(guild, this.config.defaultPrefix);
+                guildsNotInDatabaseCount++;
+            }
+        });
+
+        if (guildsNotInDatabaseCount) {
+            this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default prefix.`);
+        }
     }
 }
