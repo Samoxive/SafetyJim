@@ -155,6 +155,11 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not delete ban record!'); });
     }
 
+    public delJoinEntry(userID: string, guildID: string): void {
+        this.database.run('DELETE FROM JoinList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
+                     .catch((err) => { this.log.error('Could not delete join record!'); });
+    }
+
     public createGuildPrefix(guild: Guild, prefix: string): void {
         this.database.run('INSERT INTO PrefixList (GuildID, Prefix) VALUES (?, ?);', guild.id, prefix)
             .catch((err) => { this.log.error('Could not create prefix record!'); });
