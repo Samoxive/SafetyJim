@@ -2,19 +2,20 @@ import {Config} from '../config/config';
 import * as winston from 'winston';
 import * as Discord from 'discord.js';
 import * as cron from 'cron';
+import * as fs from 'fs';
+import * as path from 'path';
 import { BotDatabase } from '../database/database';
 
 type RegexRecords = {string: RegExp};
 type Commands = {string: Command};
 
-interface Command {
-    usage: string[] | string;
+export interface Command {
+    usage: string | string[];
     run: (bot: SafetyJim, msg: Discord.Message, args: string) => boolean;
-    init?: (bot: SafetyJim) => void;
 }
 
 export class SafetyJim {
-    private client: Discord.Client;
+    public client: Discord.Client;
     private commandRegex = {} as RegexRecords;
     private prefixTestRegex = {} as RegexRecords;
     private commands = {} as Commands;
@@ -23,6 +24,7 @@ export class SafetyJim {
     constructor(private config: Config,
                 public database: BotDatabase,
                 public log: winston.LoggerInstance) {
+        this.loadCommands();
         log.info('Populating prefix regex dictionary.');
         this.database.getGuildPrefixes().then((prefixList) => {
             if (prefixList != null) {
@@ -69,7 +71,6 @@ export class SafetyJim {
                     // TODO(sam): List commands or pm user
                     msg.channel.send('I didn\'t understand you man.');
                 }
-
                 return;
             }
 
@@ -87,14 +88,12 @@ export class SafetyJim {
 
             if (showUsage === true) {
                 let usage = this.commands[command].usage;
-
-                if (typeof usage !== 'string') {
-                    usage = usage.join('\n');
-                }
-
-                msg.channel.send('```\n' + usage + '\n```');
+                this.database.getGuildPrefix(msg.guild)
+                             .then((prefix) => {
+                                 msg.channel.send(this.getUsageString(prefix, usage), {code: ''});
+                             });
             }
-        });
+        }).bind(this);
     }
 
     private guildCreate(): (guild: Discord.Guild) => void {
@@ -139,6 +138,30 @@ export class SafetyJim {
         });
     }
 
+    private loadCommands(): void {
+        let commandsFolderPath = path.join(__dirname, '..', 'commands');
+        if (!fs.existsSync(commandsFolderPath) || !fs.statSync(commandsFolderPath).isDirectory()) {
+            this.log.error('Commands directory could not be found!');
+            process.exit(1);
+        }
+
+        let commandList = fs.readdirSync(commandsFolderPath);
+
+        for (let command of commandList) {
+            if (!fs.statSync(path.join(commandsFolderPath, command)).isDirectory()) {
+                this.log.warn(`Found file "${command}", ignoring...`);
+            } else {
+                try {
+                    let cmd = require(path.join(commandsFolderPath, command, command + '.js')) as Command;
+                    this.commands[command] = new cmd(this);
+                    this.log.info(`Loaded command "${command}"`);
+                } catch (e) {
+                    this.log.warn(`Could not load command "${command}"!`);
+                }
+            }
+        }
+    }
+
     private async allowUsers(): Promise<void> {
         let usersToBeAllowed = await this.database.getUsersThatCanBeAllowed();
 
@@ -164,6 +187,14 @@ export class SafetyJim {
         return user.username + '#' + user.discriminator;
     }
 
+    private getUsageString(prefix: string, usage: string | string[]): string {
+        if (typeof usage === 'string') {
+            return prefix + ' ' + usage;
+        }
+
+        return usage.map((u) => prefix + ' ' + u).join('\n');
+    }
+
     private populateGuildConfigDatabase(): void {
         let guildsNotInDatabaseCount = 0;
 
@@ -180,7 +211,7 @@ export class SafetyJim {
                      .then((_) => {
                          if (guildsNotInDatabaseCount) {
                              // tslint:disable-next-line:max-line-length
-                             this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config`);
+                             this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config.`);
                          }
                      });
     }
