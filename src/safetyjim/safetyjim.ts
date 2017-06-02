@@ -139,7 +139,7 @@ export class SafetyJim {
             let guildConfig = await this.database.getGuildConfiguration(this.client.guilds.get(user.GuildID));
 
             if (guildConfig.HoldingRoomActive === 1) {
-                let dGuild = this.client.guilds.get(user.GuildID)
+                let dGuild = this.client.guilds.get(user.GuildID);
                 let dUser = dGuild.members.get(user.UserID);
                 dUser.addRole(guildConfig.HoldingRoomRoleID);
                 this.database.updateJoinRecord(user);
