@@ -79,12 +79,12 @@ export class SafetyJim {
                                 let output = '';
 
                                 for (let cmdString of Object.keys(this.commands)) {
-                                   output += this.getUsageString(prefix, this.commands[cmdString].usage);
+                                   output += this.getUsageString(prefix, this.commands[cmdString].usage) + '\n';
                                 }
 
-                                return output;
+                                return output.trim();
                             })
-                            .then((s) => msg.author.send(s, { code: '' }));
+                            .then((s) => msg.channel.send(s, { code: '' }));
                     }
                 }
                 return;
