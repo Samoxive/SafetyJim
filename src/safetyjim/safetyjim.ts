@@ -60,8 +60,12 @@ export class SafetyJim {
 
     private onMessage(): (msg: Discord.Message) => void {
         return ((msg: Discord.Message) => {
-            if (msg.author.bot || msg.channel.type === 'dm' || !msg.member.hasPermission('BAN_MEMBERS')) {
+            if (msg.author.bot || msg.channel.type === 'dm') {
                 return;
+            }
+
+            if (!msg.member.hasPermission('BAN_MEMBERS')) {
+                msg.author.send('You don\'t have enough permissions to use this bot!');
             }
 
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
