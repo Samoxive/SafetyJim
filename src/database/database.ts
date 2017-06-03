@@ -215,7 +215,7 @@ export class BotDatabase {
     }
 }
 
-interface GuildConfig {
+export interface GuildConfig {
     GuildID: string;
     HoldingRoomRoleID: string;
     HoldingRoomActive: number;
@@ -224,7 +224,7 @@ interface GuildConfig {
     EmbedColor: string;
 }
 
-interface BanRecord {
+export interface BanRecord {
     BannedUserID: string;
     BannedUserName: string;
     ModeratorID: string;
@@ -236,12 +236,12 @@ interface BanRecord {
     Expires: number;
 }
 
-interface PrefixRecord {
+export interface PrefixRecord {
     GuildID: string;
     Prefix: string;
 }
 
-interface JoinRecord {
+export interface JoinRecord {
     UserID: string;
     GuildID: string;
     JoinTime: number;
