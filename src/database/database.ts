@@ -121,19 +121,32 @@ export class BotDatabase {
     }
 
     // tslint:disable-next-line:variable-name
-    public updateGuildConfig(guild: Guild,
-                             options: {roleID?: string, embedColor?: string,
-                                       holdingRoom?: boolean, minutes?: number, holdingRoomID: string}): void {
-        this.getGuildConfiguration(guild).then((origConfig) => {
-            this.database.run(`UPDATE GuildSettings SET HoldingRoomRoleID= ?, HoldingRoomActive = ?,
-                                HoldingRoomMinutes = ?, HoldingRoomChannelID = ?, EmbedColor= ?
-                              WHERE GuildID = ?;`, options.roleID || origConfig.HoldingRoomRoleID,
-                                options.holdingRoom || origConfig.HoldingRoomActive,
-                                options.minutes || origConfig.HoldingRoomMinutes,
-                                options.holdingRoomID, origConfig.HoldingRoomChannelID,
-                                options.embedColor || origConfig.EmbedColor,
-                                guild.id);
-        });
+    public async updateGuildConfig(guild: Guild,
+                                   options: {roleID?: string, embedColor?: string,
+                                             holdingRoom?: boolean, minutes?: number,
+                                             holdingRoomID?: string}): Promise<void> {
+        let origConfig = await this.getGuildConfiguration(guild);
+
+        let active: boolean;
+
+        if (options.holdingRoom === true) {
+            active = true;
+        } else if (options.holdingRoom === false) {
+            active = false;
+        } else {
+            active = origConfig.HoldingRoomActive === 1;
+        }
+
+        this.database.run(`UPDATE GuildSettings
+                            SET HoldingRoomRoleID = ?, HoldingRoomActive = ?, HoldingRoomMinutes = ?,
+                            HoldingRoomChannelID = ?, EmbedColor = ? WHERE GuildID = ?;`,
+                            options.roleID || origConfig.HoldingRoomRoleID,
+                            active,
+                            options.minutes || origConfig.HoldingRoomMinutes,
+                            options.holdingRoomID || origConfig.HoldingRoomChannelID,
+                            options.embedColor || origConfig.EmbedColor,
+                            guild.id)
+                            .catch((e) => { this.log.error('Could not update GuildSettings'); });
     }
 
     public updateJoinRecord(jRecord: JoinRecord) {
