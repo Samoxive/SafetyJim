@@ -60,6 +60,10 @@ export class SafetyJim {
 
     private onMessage(): (msg: Discord.Message) => void {
         return ((msg: Discord.Message) => {
+            if (msg.author.bot || msg.channel.type === 'dm' || !msg.member.hasPermission('BAN_MEMBERS')) {
+                return;
+            }
+
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
             let cmdRegex: RegExp = this.commandRegex[msg.guild.id];
 
