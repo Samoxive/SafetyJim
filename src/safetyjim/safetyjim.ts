@@ -64,10 +64,6 @@ export class SafetyJim {
                 return;
             }
 
-            if (!msg.member.hasPermission('BAN_MEMBERS')) {
-                msg.author.send('You don\'t have enough permissions to use this bot!');
-            }
-
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
             let cmdRegex: RegExp = this.commandRegex[msg.guild.id];
 
@@ -75,9 +71,21 @@ export class SafetyJim {
             // Check if user called bot without command or command was not found
             if (!cmdMatch || !Object.keys(this.commands).includes(cmdMatch[1])) {
                 if (msg.cleanContent.match(testRegex)) {
-                    // User used prefix but command is invalid
-                    // TODO(sam): List commands or pm user
-                    msg.channel.send('I didn\'t understand you man.');
+                    if (!msg.member.hasPermission('BAN_MEMBERS')) {
+                        msg.author.send('You don\'t have enough permissions to use this bot!');
+                    } else {
+                        this.database.getGuildPrefix(msg.guild)
+                            .then((prefix) => {
+                                let output = '';
+
+                                for (let cmdString of Object.keys(this.commands)) {
+                                   output += this.getUsageString(prefix, this.commands[cmdString].usage);
+                                }
+
+                                return output;
+                            })
+                            .then((s) => msg.author.send(s, { code: '' }));
+                    }
                 }
                 return;
             }
