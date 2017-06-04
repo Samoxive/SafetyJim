@@ -45,6 +45,11 @@ export class SafetyJim {
         this.client.login(config.discordToken);
     }
 
+    public createRegexForGuild(guildID: string, prefix: string) {
+        this.commandRegex[guildID] = new RegExp(`^${prefix}\\s+([^\\s]+)\\s*([^]*)\\s*`, 'i');
+        this.prefixTestRegex[guildID] = new RegExp(`^${prefix}[\\s]*( .*)?$`, 'i');
+    }
+
     private onReady(): () => void {
         return (() => {
             this.log.info(`Client is ready, username: ${this.client.user.username}.`);
@@ -67,7 +72,7 @@ export class SafetyJim {
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
             let cmdRegex: RegExp = this.commandRegex[msg.guild.id];
 
-            let cmdMatch = msg.cleanContent.match(cmdRegex);
+            let cmdMatch = msg.content.match(cmdRegex);
             // Check if user called bot without command or command was not found
             if (!cmdMatch || !Object.keys(this.commands).includes(cmdMatch[1])) {
                 if (msg.cleanContent.match(testRegex)) {
@@ -192,11 +197,6 @@ export class SafetyJim {
                 this.log.info(`Allowed ${this.getUserDiscriminator(dUser.user)} in guild ${dGuild.name}.`);
             }
         }
-    }
-
-    private createRegexForGuild(guildID: string, prefix: string) {
-        this.commandRegex[guildID] = new RegExp(`^${prefix}\\s+([^\\s]+)\\s*([^]*)\\s*`, 'i');
-        this.prefixTestRegex[guildID] = new RegExp(`^${prefix}[\\s]*( .*)?$`, 'i');
     }
 
     private getUserDiscriminator(user: Discord.User) {
