@@ -5,6 +5,7 @@ import * as Discord from 'discord.js';
 class Settings implements Command {
     public usage = [
         'settings display - shows current state of settings',
+        'settings prefix set <newPrefix> - sets a new prefix',
         'settings holdingRoom <enable/disable> - enables or disables holding room feature',
         'settings holdingRoom set role <roleName> - sets the role assigned to users when holding time passes',
         // tslint:disable-next-line:max-line-length
@@ -17,7 +18,7 @@ class Settings implements Command {
 
     public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
         let splitArgs = args.split(' ');
-        if (!args || !['display', 'holdingRoom'].includes(splitArgs[0])) {
+        if (!args || !['display', 'holdingRoom', 'prefix'].includes(splitArgs[0])) {
             return true;
         }
 
@@ -35,7 +36,7 @@ class Settings implements Command {
                     this.handleHoldingRoomSwitch(bot, msg, splitArgs[1] === 'enable');
                     break;
                 case 'set':
-                    if (splitArgs.length < 3 || !['role', 'minutes', 'channel'].includes(splitArgs[2])) {
+                    if (splitArgs.length < 3 || !['role', 'minutes', 'channel', 'prefix'].includes(splitArgs[2])) {
                         return true;
                     }
                     this.handleHoldingRoomSet(bot, msg, splitArgs.slice(2));
@@ -43,11 +44,21 @@ class Settings implements Command {
             }
 
             return;
+        } else if (splitArgs[0] === 'prefix') {
+            if (splitArgs[1] !== 'set' || splitArgs.length < 3) {
+                return true;
+            }
+
+            let newPrefix = splitArgs[2];
+            bot.createRegexForGuild(msg.guild.id, newPrefix);
+            bot.database.updateGuildPrefix(msg.guild, newPrefix);
+            bot.log.info(`Updated prefix for guild "${msg.guild}" with id: "${msg.guild.id} with "${newPrefix}"`);
         }
     }
 
-    private getSettingsString(msg: Discord.Message, config: GuildConfig): string {
+    private getSettingsString(msg: Discord.Message, config: GuildConfig, prefix: string): string {
         let output = '';
+        output += `Prefix: ${prefix}\n`;
         output += `Embed color: ${config.EmbedColor}\n`;
 
         if (config.HoldingRoomActive === 0) {
@@ -63,9 +74,9 @@ class Settings implements Command {
     }
 
     private handleSettingsDisplay(bot: SafetyJim, msg: Discord.Message): void {
-        bot.database.getGuildConfiguration(msg.guild)
-            .then((c) => this.getSettingsString(msg, c))
-            .then((s) => msg.channel.send(s, {code: 'yaml'}))
+        Promise.all([bot.database.getGuildConfiguration(msg.guild), bot.database.getGuildPrefix(msg.guild)])
+            .then((c) => this.getSettingsString(msg, c[0], c[1]))
+            .then((s) => msg.channel.send(s, {code: 'http'}))
             .catch((e) => {
                 msg.channel.send('There was an error while trying to display settings, this incident has been logged.');
                 bot.log.error(`Could not display settings for guild: "${msg.guild.name}" with id: "${msg.guild.id}"`);
