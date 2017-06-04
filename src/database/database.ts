@@ -153,9 +153,9 @@ export class BotDatabase {
                             SET ModLogActive = ?, ModLogChannelID = ?,
                             HoldingRoomRoleID = ?, HoldingRoomActive = ?, HoldingRoomMinutes = ?,
                             HoldingRoomChannelID = ?, EmbedColor = ? WHERE GuildID = ?;`,
-                            options.holdingRoomRoleID || origConfig.HoldingRoomRoleID,
                             modLogActive,
                             options.modLogChannelID || origConfig.ModLogChannelID,
+                            options.holdingRoomRoleID || origConfig.HoldingRoomRoleID,
                             holdingRoomActive,
                             options.minutes || origConfig.HoldingRoomMinutes,
                             options.holdingRoomID || origConfig.HoldingRoomChannelID,
@@ -202,10 +202,9 @@ export class BotDatabase {
     }
 
     public createGuildSettings(guild: Guild): void {
-        this.database.run(`INSERT INTO GuildSettings (
-                GuildID, ModLogActive, ModLogChannelID, HoldingRoomRoleID, HoldingRoomActive,
-                HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor)
-                Values (?, ?, ?, ?, ?, ?, ?, ?)`, guild.id, false, guild.defaultChannel.id,
+        this.database.run(`INSERT INTO GuildSettings (GuildID, ModLogActive, ModLogChannelID,
+                            HoldingRoomRoleID, HoldingRoomActive, HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor)
+                            VALUES(?, ?, ?, ?, ?, ?, ?, ?);`, guild.id, false, guild.defaultChannel.id,
                                                   null, false, 3, guild.defaultChannel.id, '#4286f4');
     }
 
