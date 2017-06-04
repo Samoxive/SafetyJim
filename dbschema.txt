@@ -25,6 +25,8 @@ CREATE TABLE PrefixList (
 
 CREATE TABLE GuildSettings (
     GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
+    ModLogActive         BOOLEAN,
+    ModLogChannelID      TEXT,
     HoldingRoomRoleID    TEXT,
     HoldingRoomActive    BOOLEAN,
     HoldingRoomMinutes   INTEGER,

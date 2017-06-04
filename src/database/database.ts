@@ -33,6 +33,8 @@ export class BotDatabase {
 
         await this.database.run(`CREATE TABLE IF NOT EXISTS GuildSettings (
                                     GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
+                                    ModLogActive         BOOLEAN,
+                                    ModLogChannelID      TEXT,
                                     HoldingRoomRoleID    TEXT,
                                     HoldingRoomActive    BOOLEAN,
                                     HoldingRoomMinutes   INTEGER,
@@ -122,31 +124,44 @@ export class BotDatabase {
 
     // tslint:disable-next-line:variable-name
     public async updateGuildConfig(guild: Guild,
-                                   options: {roleID?: string, embedColor?: string,
+                                   options: {holdingRoomRoleID?: string, embedColor?: string,
+                                             modLog?: boolean, modLogChannelID?: string,
                                              holdingRoom?: boolean, minutes?: number,
                                              holdingRoomID?: string}): Promise<void> {
         let origConfig = await this.getGuildConfiguration(guild);
 
-        let active: boolean;
+        let holdingRoomActive: boolean;
+        let modLogActive;
 
         if (options.holdingRoom === true) {
-            active = true;
+            holdingRoomActive = true;
         } else if (options.holdingRoom === false) {
-            active = false;
+            holdingRoomActive = false;
         } else {
-            active = origConfig.HoldingRoomActive === 1;
+            holdingRoomActive = origConfig.HoldingRoomActive === 1;
+        }
+
+        if (options.modLog === true) {
+            modLogActive = true;
+        } else if (options.modLog === false) {
+            modLogActive = false;
+        } else {
+            modLogActive = origConfig.ModLogActive === 1;
         }
 
         this.database.run(`UPDATE GuildSettings
-                            SET HoldingRoomRoleID = ?, HoldingRoomActive = ?, HoldingRoomMinutes = ?,
+                            SET ModLogActive = ?, ModLogChannelID = ?,
+                            HoldingRoomRoleID = ?, HoldingRoomActive = ?, HoldingRoomMinutes = ?,
                             HoldingRoomChannelID = ?, EmbedColor = ? WHERE GuildID = ?;`,
-                            options.roleID || origConfig.HoldingRoomRoleID,
-                            active,
+                            options.holdingRoomRoleID || origConfig.HoldingRoomRoleID,
+                            modLogActive,
+                            options.modLogChannelID || origConfig.ModLogChannelID,
+                            holdingRoomActive,
                             options.minutes || origConfig.HoldingRoomMinutes,
                             options.holdingRoomID || origConfig.HoldingRoomChannelID,
                             options.embedColor || origConfig.EmbedColor,
                             guild.id)
-                            .catch((e) => { this.log.error('Could not update GuildSettings'); });
+                            .catch((e) => { this.log.error('Could not update GuildSettings!'); });
     }
 
     public updateJoinRecord(jRecord: JoinRecord) {
@@ -188,8 +203,10 @@ export class BotDatabase {
 
     public createGuildSettings(guild: Guild): void {
         this.database.run(`INSERT INTO GuildSettings (
-                GuildID, HoldingRoomRoleID, HoldingRoomActive, HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor)
-                Values (?, ?, ?, ?, ?, ?)`, guild.id, null, false, 3, guild.defaultChannel.id, '#4286f4');
+                GuildID, ModLogActive, ModLogChannelID, HoldingRoomRoleID, HoldingRoomActive,
+                HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor)
+                Values (?, ?, ?, ?, ?, ?, ?, ?)`, guild.id, false, guild.defaultChannel.id,
+                                                  null, false, 3, guild.defaultChannel.id, '#4286f4');
     }
 
     public createUserBan(bannedUser: User,
@@ -230,6 +247,8 @@ export class BotDatabase {
 
 export interface GuildConfig {
     GuildID: string;
+    ModLogActive: number;
+    ModLogChannelID: string;
     HoldingRoomRoleID: string;
     HoldingRoomActive: number;
     HoldingRoomMinutes: number;

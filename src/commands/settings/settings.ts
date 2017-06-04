@@ -127,7 +127,7 @@ class Settings implements Command {
                     return;
                 } else {
                     bot.log.info(`Updated role for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
-                    bot.database.updateGuildConfig(msg.guild, { roleID: id });
+                    bot.database.updateGuildConfig(msg.guild, { holdingRoomRoleID: id });
                 }
                 break;
             case 'minutes':
