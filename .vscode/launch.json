@@ -10,6 +10,7 @@
             "protocol": "legacy",
             "name": "Launch Program",
             "program": "${workspaceRoot}\\src\\main.ts",
+            "cwd": "${workspaceRoot}",
             "outFiles": [
                 "${workspaceRoot}/src/**/*.js",
                 "${workspaceRoot}/src/**/*.js.map"
