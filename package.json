@@ -5,7 +5,7 @@
   "main": "src/main.js",
   "scripts": {
     "test": "tslint src/**/*.ts",
-    "start": "gulp run",
+    "start": "gulp build & node ./src/main.js",
     "build": "gulp build",
     "clean": "gulp clean",
     "clean-build": "gulp clean-build"
