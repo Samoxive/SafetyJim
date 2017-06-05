@@ -121,9 +121,27 @@ export class BotDatabase {
     }
 
     public getUserKick(userID: string, guildID: string): Promise<KickRecord> {
-        return this.database.get('SELECT * FROM KickList WHERE GuildID = ? and BannedUserID = ?;', guildID, userID)
+        return this.database.get('SELECT * FROM KickList WHERE GuildID = ? and KickedUserID = ?;', guildID, userID)
             .then((row) => row as KickRecord)
             .catch((err) => { this.log.error('Could not retrieve user kick record!'); });
+    }
+
+    public getModeratorsWarns(modID: string, guildID: string): Promise<WarnRecord[]> {
+        return this.database.all('SELECT * FROM WarnList WHERE ModeratorID = ? AND GuildID = ?;', modID, guildID)
+                            .then((rows) => rows as WarnRecord[])
+                            .catch((err) => { this.log.error('Could not retrieve moderator warning records'); });
+    }
+
+    public getGuildWarns(guildID: string): Promise<WarnRecord[]> {
+        return this.database.all('SELECT * FROM WarnList WHERE GuildID = ?;', guildID)
+            .then((rows) => rows as WarnRecord[])
+            .catch((err) => { this.log.error('Could not retrieve guild warning records!'); });
+    }
+
+    public getUserWarn(userID: string, guildID: string): Promise<WarnRecord> {
+        return this.database.get('SELECT * FROM WarnList WHERE GuildID = ? and WarnedUserID = ?;', guildID, userID)
+            .then((row) => row as WarnRecord)
+            .catch((err) => { this.log.error('Could not retrieve user warning record!'); });
     }
 
     public getGuildPrefix(guild: Guild): Promise<string> {
@@ -229,6 +247,11 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not delete kick record!'); });
     }
 
+    public delUserWarn(userID: string, guildID: string): void {
+        this.database.run('DELETE FROM WarnList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
+            .catch((err) => { this.log.error('Could not delete warn record!'); });
+    }
+
     public delJoinEntry(userID: string, guildID: string): void {
         this.database.run('DELETE FROM JoinList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
                      .catch((err) => { this.log.error('Could not delete join record!'); });
@@ -253,6 +276,16 @@ export class BotDatabase {
                             VALUES(?, ?, ?, ?, ?, ?, ?, ?);`, guild.id, false, guild.defaultChannel.id,
                                                   null, false, 3, guild.defaultChannel.id, '4286f4')
                           .catch((err) => { this.log.error('Could not create guild settings!'); });
+    }
+
+    public createUserWarn(warnedUser: User, modUser: User, guild: Guild, reason: string): void {
+        let now = Math.round((new Date()).getTime() / 1000);
+
+        this.database.run(`INSERT INTO WarnList
+                            (WarnedUserID, WarnedUserName, ModeratorID, ModeratorUserName, GuildID, WarnTime, Reason)
+                          VALUES(?, ?, ?, ?, ?, ?, ?);`, warnedUser.id, warnedUser.tag,
+                          modUser.id, modUser.tag, guild.id, now, reason)
+                          .catch((err) => { this.log.error('Could not create a warning record!'); });
     }
 
     public createUserKick(kickedUser: User, modUser: User, guild: Guild, reason: string): void {
@@ -290,9 +323,9 @@ export class BotDatabase {
                             Expires)
                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
                           bannedUser.id,
-                          bannedUser.username + bannedUser.discriminator,
+                          bannedUser.tag,
                           modUser.id,
-                          modUser.username + modUser.discriminator,
+                          modUser.tag,
                           guild.id,
                           now,
                           expireTime,
@@ -332,6 +365,16 @@ export interface KickRecord {
     ModeratorUserName: string;
     GuildID: string;
     KickTime: number;
+    Reason: string;
+}
+
+export interface WarnRecord {
+    WarnedUserID: string;
+    WarnedUserName: string;
+    ModeratorID: string;
+    ModeratorUserName: string;
+    GuildID: string;
+    WarnTime: number;
     Reason: string;
 }
 
