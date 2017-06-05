@@ -18,6 +18,15 @@ CREATE TABLE KickList (
     KickTime          INTEGER,
     Reason            TEXT);
 
+REATE TABLE WarnList (
+    WarnedUserID      TEXT,
+    WarnedUserName    TEXT,
+    ModeratorID       TEXT,
+    ModeratorUserName TEXT,
+    GuildID           TEXT,
+    WarnTime          INTEGER,
+    Reason            TEXT);
+
 CREATE TABLE JoinList (
     UserID    TEXT,
     GuildID   TEXT,
