@@ -18,7 +18,7 @@ CREATE TABLE KickList (
     KickTime          INTEGER,
     Reason            TEXT);
 
-REATE TABLE WarnList (
+CREATE TABLE WarnList (
     WarnedUserID      TEXT,
     WarnedUserName    TEXT,
     ModeratorID       TEXT,
