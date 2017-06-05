@@ -51,6 +51,7 @@ class Settings implements Command {
 
                     let channel = msg.mentions.channels.first();
 
+                    msg.channel.send('Updated guild settings.');
                     bot.log.info(`Updated channel for mod log in guild "${msg.guild}" with id: "${msg.guild.id}".`);
                     bot.database.updateGuildConfig(msg.guild, { modLogChannelID: channel.id });
                     break;
