@@ -16,6 +16,7 @@ export interface Command {
 
 export class SafetyJim {
     public client: Discord.Client;
+    public bootTime: Date;
     private commandRegex = {} as RegexRecords;
     private prefixTestRegex = {} as RegexRecords;
     private commands = {} as Commands;
@@ -24,6 +25,7 @@ export class SafetyJim {
     constructor(private config: Config,
                 public database: BotDatabase,
                 public log: winston.LoggerInstance) {
+        this.bootTime = new Date();
         this.loadCommands();
         log.info('Populating prefix regex dictionary.');
         this.database.getGuildPrefixes().then((prefixList) => {
