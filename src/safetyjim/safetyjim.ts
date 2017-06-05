@@ -130,7 +130,7 @@ export class SafetyJim {
 
     private guildMemberAdd(): (member: Discord.GuildMember) => void {
         return (async (member: Discord.GuildMember) => {
-            this.log.info(`${this.getUserDiscriminator(member.user)} joined guild ${member.guild.name}.`);
+            this.log.info(`${member.user.tag} joined guild ${member.guild.name}.`);
             let guildConfig = await this.database.getGuildConfiguration(member.guild);
 
             if (guildConfig.HoldingRoomActive) {
@@ -196,13 +196,9 @@ export class SafetyJim {
                 let dUser = dGuild.members.get(user.UserID);
                 dUser.addRole(guildConfig.HoldingRoomRoleID);
                 this.database.updateJoinRecord(user);
-                this.log.info(`Allowed ${this.getUserDiscriminator(dUser.user)} in guild ${dGuild.name}.`);
+                this.log.info(`Allowed ${dUser.user.tag} in guild ${dGuild.name}.`);
             }
         }
-    }
-
-    private getUserDiscriminator(user: Discord.User) {
-        return user.username + '#' + user.discriminator;
     }
 
     private getUsageString(prefix: string, usage: string | string[]): string {
