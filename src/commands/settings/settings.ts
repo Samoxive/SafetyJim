@@ -5,6 +5,7 @@ import * as Discord from 'discord.js';
 class Settings implements Command {
     public usage = [
         'settings display - shows current state of settings',
+        'settings embedColor set <newColor> - sets the embed color to a different color (ex. 2D7FFF)',
         'settings prefix set <newPrefix> - sets a new prefix',
         'settings modlog <enable/disable> - enables or disables mod log feature',
         'settings modlog set channel <#channelName> - sets what channel mod logs are posted to',
@@ -14,13 +15,13 @@ class Settings implements Command {
         'settings holdingRoom set minutes <minutes> - sets how much minutes a new user has to wait before being allowed',
         'settings holdingRoom set channel <#channelName> - sets what channel welcome messages are posted to',
     ];
-
+    
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
     public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
         let splitArgs = args.split(' ');
-        if (!args || !['display', 'holdingRoom', 'prefix', 'modlog'].includes(splitArgs[0])) {
+        if (!args || !['display', 'holdingRoom', 'prefix', 'modlog', 'embedColor'].includes(splitArgs[0])) {
             return true;
         }
 
@@ -84,6 +85,20 @@ class Settings implements Command {
             bot.createRegexForGuild(msg.guild.id, newPrefix);
             bot.database.updateGuildPrefix(msg.guild, newPrefix);
             bot.log.info(`Updated prefix for guild "${msg.guild}" with id: "${msg.guild.id} with "${newPrefix}"`);
+        } else if (splitArgs[0] === 'embedColor') {
+            if (splitArgs[1] !== 'set' || splitArgs.length < 3) {
+                return true;
+            }
+
+            let newColor = splitArgs[2];
+            let newColorParsed = parseInt(newColor, 16);
+            if (newColor.length !== 6 || isNaN(newColorParsed)) {
+                msg.channel.send('Invalid color input, try a six digit hexadecimal number.');
+                return;
+            }
+            msg.channel.send('Updated embed color.');
+            bot.database.updateGuildConfig(msg.guild, { embedColor: newColor.toUpperCase() });
+            bot.log.info(`Updated embed color for guild "${msg.guild}" with id: "${msg.guild.id} with "${newColor}"`);
         }
     }
 
