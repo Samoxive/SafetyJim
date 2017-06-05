@@ -30,10 +30,11 @@ class Kick implements Command {
         let reason = args || 'No reason specified';
 
         bot.log.info(`Kicked user "${member.user.tag}" in "${msg.guild.name}".`);
-        // tslint:disable-next-line:max-line-length
-        member.send(`**Time out!** You have been kicked from ${msg.guild.name}.\n\n**Kicked by:** ${msg.author.tag}\n\n**Reason:** ${reason}`);
         // Audit log compatibility :) (Known Caveat: sometimes reason won't appear, or add if reason has symbols.)
-        member.kick(reason);
+        // tslint:disable-next-line:max-line-length
+        member.send(`**Time out!** You have been kicked from ${msg.guild.name}.\n\n**Kicked by:** ${msg.author.tag}\n\n**Reason:** ${reason}`)
+              .then(() => { member.kick(reason); });
+
         bot.database.createUserKick(member.user, msg.author, msg.guild, reason);
 
         let db = await bot.database.getGuildConfiguration(msg.guild);
