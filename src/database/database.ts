@@ -57,7 +57,7 @@ export class BotDatabase {
                                     Allowed  BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create JoinList table!'); });
 
-        await this.database.run(`CREATE TABLE KickList (
+        await this.database.run(`CREATE TABLE IF NOT EXISTS  KickList (
                                     KickedUserID      TEXT,
                                     KickedUserName    TEXT,
                                     ModeratorID       TEXT,
@@ -66,6 +66,16 @@ export class BotDatabase {
                                     KickTime          INTEGER,
                                     Reason            TEXT);`)
                                     .catch((err) => { this.log.error('Could not create KickList table!'); });
+
+        await this.database.run(`CREATE TABLE IF NOT EXISTS WarnList (
+                                    WarnedUserID      TEXT,
+                                    WarnedUserName    TEXT,
+                                    ModeratorID       TEXT,
+                                    ModeratorUserName TEXT,
+                                    GuildID           TEXT,
+                                    WarnTime          INTEGER,
+                                    Reason            TEXT);`)
+                                    .catch((err) => { this.log.error('Could not create WarnList table!'); });
 
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed)')
                            .catch((err) => { this.log.error('Could not create index for JoinLis table!'); });
