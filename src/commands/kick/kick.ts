@@ -42,7 +42,7 @@ class Kick implements Command {
         let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
 
         let embed = {
-            color: parseInt(db.EmbedColor, 16), // placeholder, dunno if you want different colours based on action type
+            color: 0xFF9900, // placeholder, dunno if you want different colours based on action type
             fields: [
                 { name: 'Action:', value: 'Kick', inline: false },
                 { name: 'User:', value: member.user.tag, inline: false },
