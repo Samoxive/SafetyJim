@@ -15,7 +15,7 @@ class Settings implements Command {
         'settings holdingRoom set minutes <minutes> - sets how much minutes a new user has to wait before being allowed',
         'settings holdingRoom set channel <#channelName> - sets what channel welcome messages are posted to',
     ];
-    
+
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
