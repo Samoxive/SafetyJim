@@ -56,6 +56,17 @@ export class BotDatabase {
                                     AllowTime INTEGER,
                                     Allowed  BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create JoinList table!'); });
+
+        await this.database.run(`CREATE TABLE KickList (
+                                    KickedUserID      TEXT,
+                                    KickedUserName    TEXT,
+                                    ModeratorID       TEXT,
+                                    ModeratorUserName TEXT,
+                                    GuildID           TEXT,
+                                    KickTime          INTEGER,
+                                    Reason            TEXT);`)
+                                    .catch((err) => { this.log.error('Could not create KickList table!'); });
+
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed)')
                            .catch((err) => { this.log.error('Could not create index for JoinLis table!'); });
 
@@ -85,6 +96,24 @@ export class BotDatabase {
         return this.database.all('SELECT * FROM BanList WHERE ExpireTime < (strftime(\'%s\',\'now\')) and Expires = 1;')
             .then((rows) => rows as BanRecord[])
             .catch((err) => { this.log.error('Could not retrieve expired ban records!'); });
+    }
+
+    public getModeratorsKicks(modID: string, guildID: string): Promise<KickRecord[]> {
+        return this.database.all('SELECT * FROM KickList WHERE ModeratorID = ? AND GuildID = ?;', modID, guildID)
+                            .then((rows) => rows as KickRecord[])
+                            .catch((err) => { this.log.error('Could not retrieve moderator kick records'); });
+    }
+
+    public getGuildKicks(guildID: string): Promise<KickRecord[]> {
+        return this.database.all('SELECT * FROM KickList WHERE GuildID = ?;', guildID)
+            .then((rows) => rows as KickRecord[])
+            .catch((err) => { this.log.error('Could not retrieve guild kick records!'); });
+    }
+
+    public getUserKick(userID: string, guildID: string): Promise<KickRecord> {
+        return this.database.get('SELECT * FROM KickList WHERE GuildID = ? and BannedUserID = ?;', guildID, userID)
+            .then((row) => row as KickRecord)
+            .catch((err) => { this.log.error('Could not retrieve user kick record!'); });
     }
 
     public getGuildPrefix(guild: Guild): Promise<string> {
@@ -176,12 +205,18 @@ export class BotDatabase {
     }
 
     public delGuildSettings(guild: Guild): void {
-        this.database.run('DELETE FROM GuildSettings WHERE GuildID = ?', guild.id);
+        this.database.run('DELETE FROM GuildSettings WHERE GuildID = ?', guild.id)
+                     .catch((err) => { this.log.error('Could not delete guild settings!'); });
     }
 
     public delUserBan(userID: string, guildID: string): void {
         this.database.run('DELETE FROM BanList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
             .catch((err) => { this.log.error('Could not delete ban record!'); });
+    }
+
+    public delUserKick(userID: string, guildID: string): void {
+        this.database.run('DELETE FROM KickList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
+            .catch((err) => { this.log.error('Could not delete kick record!'); });
     }
 
     public delJoinEntry(userID: string, guildID: string): void {
@@ -198,14 +233,26 @@ export class BotDatabase {
         let now = Math.round((new Date()).getTime() / 1000);
         this.database.run(`INSERT INTO JoinList (UserId, GuildID, JoinTime, AllowTime, Allowed)
                             VALUES (?, ?, ?, ?, ?)`,
-                            user.id, guild.id, now, now + minutes * 60, false);
+                            user.id, guild.id, now, now + minutes * 60, false)
+                        .catch((err) => { this.log.error('Could not create join record!'); });
     }
 
     public createGuildSettings(guild: Guild): void {
         this.database.run(`INSERT INTO GuildSettings (GuildID, ModLogActive, ModLogChannelID,
                             HoldingRoomRoleID, HoldingRoomActive, HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor)
                             VALUES(?, ?, ?, ?, ?, ?, ?, ?);`, guild.id, false, guild.defaultChannel.id,
-                                                  null, false, 3, guild.defaultChannel.id, '4286f4');
+                                                  null, false, 3, guild.defaultChannel.id, '4286f4')
+                          .catch((err) => { this.log.error('Could not create guild settings!'); });
+    }
+
+    public createUserKick(kickedUser: User, modUser: User, guild: Guild, reason: string): void {
+        let now = Math.round((new Date()).getTime() / 1000);
+
+        this.database.run(`INSERT INTO KickList
+                            (KickedUserID, KickedUserName, ModeratorID, ModeratorUserName, GuildID, KickTime, Reason)
+                          VALUES(?, ?, ?, ?, ?, ?, ?);`, kickedUser.id, kickedUser.tag,
+                          modUser.id, modUser.tag, guild.id, now, reason)
+                          .catch((err) => { this.log.error('Could not create a kick record!'); });
     }
 
     public createUserBan(bannedUser: User,
@@ -213,6 +260,7 @@ export class BotDatabase {
                          guild: Guild,
                          reason: string,
                          expireTime?: number): void {
+        let now = Math.round((new Date()).getTime() / 1000);
         let expires = true;
 
         if (expireTime == null) {
@@ -236,7 +284,7 @@ export class BotDatabase {
                           modUser.id,
                           modUser.username + modUser.discriminator,
                           guild.id,
-                          (new Date()).getSeconds(),
+                          now,
                           expireTime,
                           reason,
                           expires)
@@ -265,6 +313,16 @@ export interface BanRecord {
     ExpireTime: number;
     Reason: string;
     Expires: number;
+}
+
+export interface KickRecord {
+    KickedUserID: string;
+    KickedUserName: string;
+    ModeratorID: string;
+    ModeratorUserName: string;
+    GuildID: string;
+    KickTime: number;
+    Reason: string;
 }
 
 export interface PrefixRecord {

@@ -9,6 +9,15 @@ CREATE TABLE BanList (
     Reason            TEXT,
     Expires           BOOLEAN);
 
+CREATE TABLE KickList (
+    KickedUserID      TEXT,
+    KickedUserName    TEXT,
+    ModeratorID       TEXT,
+    ModeratorUserName TEXT,
+    GuildID           TEXT,
+    KickTime          INTEGER,
+    Reason            TEXT);
+
 CREATE TABLE JoinList (
     UserID    TEXT,
     GuildID   TEXT,
