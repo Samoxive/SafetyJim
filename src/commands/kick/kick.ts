@@ -27,15 +27,18 @@ class Kick implements Command {
             return;
         }
 
-        // tslint:disable-next-line:max-line-length
+        let reason = args || 'No reason specified';
+
         bot.log.info(`Kicked user "${member.user.tag}" in "${msg.guild.name}".`);
-        member.kick(args || 'No reason specified'); // Audit log compatibility :) (Known Caveat: sometimes reason won't appear, or add if reason has symbols.)
-        bot.database.createUserKick(member.user, msg.author, msg.guild, args || 'No reason specified');
+        // tslint:disable-next-line:max-line-length
+        member.send(`**Time out!** You have been kicked from ${msg.guild.name}.\n\n**Kicked by:** ${msg.author.tag}\n\n**Reason:** ${reason}`);
+        // Audit log compatibility :) (Known Caveat: sometimes reason won't appear, or add if reason has symbols.)
+        member.kick(reason);
+        bot.database.createUserKick(member.user, msg.author, msg.guild, reason);
 
         let db = await bot.database.getGuildConfiguration(msg.guild);
         let prefix = await bot.database.getGuildPrefix(msg.guild);
 
-        // tslint:disable-next-line:max-line-length
         if (!db  || !db.ModLogActive) {
             return;
         }
@@ -49,11 +52,11 @@ class Kick implements Command {
         let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
 
         let embed = {
-            color: 0xFF9900, // placeholder, dunno if you want different colours based on action type
+            color: 0xFF9900, // orange
             fields: [
                 { name: 'Action:', value: 'Kick', inline: false },
                 { name: 'User:', value: member.user.tag, inline: false },
-                { name: 'Reason:', value: args || 'No reason specified', inline: false },
+                { name: 'Reason:', value: reason, inline: false },
                 { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
             ],
             timestamp: new Date(),
