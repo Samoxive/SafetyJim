@@ -28,14 +28,14 @@ class Kick implements Command {
         }
 
         // tslint:disable-next-line:max-line-length
-        bot.log.info(`${member.user.tag} was kicked by ${msg.author.tag} (${args || 'No reason specified'})`);
+        bot.log.info(`Kicked user ${member.user.tag} in ${msg.guild.name}`);
         member.kick(args || 'No reason specified'); // Audit log compatibility :) (Known Caveat: sometimes reason won't appear, or add if reason has symbols.)
         bot.database.createUserKick(member.user, msg.author, msg.guild, args || 'No reason specified');
 
         let db = await bot.database.getGuildConfiguration(msg.guild);
 
         // tslint:disable-next-line:max-line-length
-        if (!db || !db.ModLogChannelID || !db.ModLogActive || bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
+        if (!db  || !db.ModLogActive || !bot.client.channels.has(db.ModLogChannelID) || bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
             return;
         }
 
