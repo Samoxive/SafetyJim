@@ -2,7 +2,7 @@ import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
 
 class Kick implements Command {
-    public usage = 'kick - boot the naughty people <:';
+    public usage = 'kick @user [reason] - Kicks the user with the specified reason';
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
@@ -28,11 +28,11 @@ class Kick implements Command {
         }
 
         // tslint:disable-next-line:max-line-length
+        bot.log.info(`${member.user.tag} was kicked by ${msg.author.tag} (${args || 'No reason specified'})`);
         member.kick(args || 'No reason specified'); // Audit log compatibility :) (Known Caveat: sometimes reason won't appear, or add if reason has symbols.)
         bot.database.createUserKick(member.user, msg.author, msg.guild, args || 'No reason specified');
 
-        let db = await bot.database.getGuildConfiguration(msg.guild)
-        .catch(console.warn);
+        let db = await bot.database.getGuildConfiguration(msg.guild);
 
         // tslint:disable-next-line:max-line-length
         if (!db || !db.ModLogChannelID || !db.ModLogActive || bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
@@ -46,7 +46,7 @@ class Kick implements Command {
             fields: [
                 { name: 'Action:', value: 'Kick', inline: false },
                 { name: 'User:', value: member.user.tag, inline: false },
-                { name: 'Reason:', value: args || 'No reason specified.', inline: false },
+                { name: 'Reason:', value: args || 'No reason specified', inline: false },
                 { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
             ],
             timestamp: new Date(),
