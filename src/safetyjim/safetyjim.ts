@@ -97,6 +97,11 @@ export class SafetyJim {
                 return;
             }
 
+            if (!msg.member.hasPermission('BAN_MEMBERS')) {
+                msg.author.send('You don\'t have enough permissions to use this bot!');
+                return;
+            }
+
             let command = cmdMatch[1];
             let args = cmdMatch[2].trim();
             let showUsage;
