@@ -8,18 +8,12 @@ class Kick implements Command {
     constructor(bot: SafetyJim) {}
 
     public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
-        this.runAsync(bot, msg, args);
-        return;
-    }
-
-    private async runAsync(bot: SafetyJim, msg: Discord.Message, args: string): Promise<void> {
         let splitArgs = args.split(' ');
         args = splitArgs.slice(1).join(' ');
 
         if (msg.mentions.users.size === 0 ||
             !Discord.MessageMentions.USERS_PATTERN.test(splitArgs[0])) {
-            msg.channel.send('You need to mention the user to kick.');
-            return;
+            return true;
         }
 
         let member = msg.guild.member(msg.mentions.users.first());
@@ -38,7 +32,12 @@ class Kick implements Command {
               .then(() => { member.kick(reason); });
 
         bot.database.createUserKick(member.user, msg.author, msg.guild, reason);
+        this.createModLogEntry(bot, msg, member, reason);
+        return;
+    }
 
+    private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
+                                    member: Discord.GuildMember, reason: string): Promise<void> {
         let db = await bot.database.getGuildConfiguration(msg.guild);
         let prefix = await bot.database.getGuildPrefix(msg.guild);
 
@@ -48,7 +47,8 @@ class Kick implements Command {
 
         if (!bot.client.channels.has(db.ModLogChannelID) ||
             bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
-            msg.channel.send('Invalid channel in guild configuration, set a proper one via `prefix settings` command.');
+            // tslint:disable-next-line:max-line-length
+            msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
             return;
         }
 
