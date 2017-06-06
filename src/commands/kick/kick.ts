@@ -13,9 +13,11 @@ class Kick implements Command {
     }
 
     private async runAsync(bot: SafetyJim, msg: Discord.Message, args: string): Promise<void> {
-        args = args.split(' ').slice(1).join(' ');
+        let splitArgs = args.split(' ');
+        args = splitArgs.slice(1).join(' ');
 
-        if (msg.mentions.users.size === 0) {
+        if (msg.mentions.users.size === 0 ||
+            !Discord.MessageMentions.USERS_PATTERN.test(splitArgs[0])) {
             msg.channel.send('You need to mention the user to kick.');
             return;
         }
