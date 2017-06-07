@@ -45,7 +45,7 @@ class Kick implements Command {
             title: `Kicked from ${msg.guild.name}`,
             color: parseInt(config.EmbedColor, 16),
             description: `You were kicked from ${msg.guild.name}.\n\n**Reason:**\n${reason}`,
-            footer: { text: `Warned by: ${msg.author.tag}`},
+            footer: { text: `Kicked by: ${msg.author.tag}`},
             timestamp: new Date(),
         };
 
