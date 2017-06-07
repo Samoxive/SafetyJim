@@ -1,4 +1,5 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { GuildConfig } from '../../database/database';
 import * as Discord from 'discord.js';
 
 class Warn implements Command {
@@ -22,31 +23,45 @@ class Warn implements Command {
 
         bot.log.info(`Warned user "${member.user.tag}" in "${msg.guild.name}".`);
 
-        // tslint:disable-next-line:max-line-length
-        member.send(`**Time out!** You have been warned in ${msg.guild.name}.\n\n**Warned by:** ${msg.author.tag}\n\n**Reason:** ${reason}`);
+        bot.database.getGuildConfiguration(msg.guild)
+                    .then((config) => {
+                        this.warnUser(msg, member, reason, config);
+                        this.createModLogEntry(bot, msg, member, reason, config);
+                    });
 
         bot.database.createUserWarn(member.user, msg.author, msg.guild, reason);
-        this.createModLogEntry(bot, msg, member, reason);
         return;
     }
 
+    private async warnUser(msg: Discord.Message, member: Discord.GuildMember,
+                           reason: string, config: GuildConfig): Promise<void> {
+        let embed = {
+            title: `Warned in ${msg.guild.name}`,
+            color: parseInt(config.EmbedColor, 16),
+            description: `You were warned in ${msg.guild.name}.\n\n**Reason:**\n${reason}`,
+            footer: { text: `Warned by: ${msg.author.tag}`},
+            timestamp: new Date(),
+        };
+
+        member.send('', { embed });
+    }
+
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
-                                    member: Discord.GuildMember, reason: string): Promise<void> {
-        let db = await bot.database.getGuildConfiguration(msg.guild);
+                                    member: Discord.GuildMember, reason: string, config: GuildConfig): Promise<void> {
         let prefix = await bot.database.getGuildPrefix(msg.guild);
 
-        if (!db  || !db.ModLogActive) {
+        if (!config  || !config.ModLogActive) {
             return;
         }
 
-        if (!bot.client.channels.has(db.ModLogChannelID) ||
-            bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
+        if (!bot.client.channels.has(config.ModLogChannelID) ||
+            bot.client.channels.get(config.ModLogChannelID).type !== 'text') {
             // tslint:disable-next-line:max-line-length
             msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
             return;
         }
 
-        let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
+        let logChannel = bot.client.channels.get(config.ModLogChannelID) as Discord.TextChannel;
 
         let embed = {
             color: 0xFFEB00, // yellow
