@@ -16,7 +16,7 @@ gulp.task('clean', () => {
     gulp.src('src/**/*.js.map', {read: false})
         .pipe(clean());
 
-    gulp.src('jims_memory.db', {read: false})
+    gulp.src('*.db', {read: false})
         .pipe(clean());
 });
 
