@@ -12,7 +12,7 @@ class Kick implements Command {
         args = splitArgs.slice(1).join(' ');
 
         if (msg.mentions.users.size === 0 ||
-            !Discord.MessageMentions.USERS_PATTERN.test(splitArgs[0])) {
+            !splitArgs[0].match(Discord.MessageMentions.USERS_PATTERN)) {
             return true;
         }
 
