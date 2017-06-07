@@ -1,1 +1,0 @@
-SELECT * FROM BanList WHERE ModeratorID = ? AND GuildID = ?;
