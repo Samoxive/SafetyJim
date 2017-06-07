@@ -1,4 +1,5 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { GuildConfig } from '../../database/database';
 import * as Discord from 'discord.js';
 
 class Kick implements Command {
@@ -28,31 +29,46 @@ class Kick implements Command {
         bot.log.info(`Kicked user "${member.user.tag}" in "${msg.guild.name}".`);
         // Audit log compatibility :) (Known Caveat: sometimes reason won't appear, or add if reason has symbols.)
         // tslint:disable-next-line:max-line-length
-        member.send(`**Time out!** You have been kicked from ${msg.guild.name}.\n\n**Kicked by:** ${msg.author.tag}\n\n**Reason:** ${reason}`)
-              .then(() => { member.kick(reason); });
+        bot.database.getGuildConfiguration(msg.guild)
+                    .then((config) => {
+                        this.kickUser(msg, member, reason, config);
+                        this.createModLogEntry(bot, msg, member, reason, config);
+                    });
 
         bot.database.createUserKick(member.user, msg.author, msg.guild, reason);
-        this.createModLogEntry(bot, msg, member, reason);
         return;
     }
 
+    private async kickUser(msg: Discord.Message, member: Discord.GuildMember,
+                           reason: string, config: GuildConfig): Promise<void> {
+        let embed = {
+            title: `Kicked from ${msg.guild.name}`,
+            color: parseInt(config.EmbedColor, 16),
+            description: `You were kicked from ${msg.guild.name}.\n\n**Reason:**\n${reason}`,
+            footer: { text: `Warned by: ${msg.author.tag}`},
+            timestamp: new Date(),
+        };
+
+        member.send('', { embed })
+              .then(() => { member.kick(reason); });
+    }
+
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
-                                    member: Discord.GuildMember, reason: string): Promise<void> {
-        let db = await bot.database.getGuildConfiguration(msg.guild);
+                                    member: Discord.GuildMember, reason: string, config: GuildConfig): Promise<void> {
         let prefix = await bot.database.getGuildPrefix(msg.guild);
 
-        if (!db  || !db.ModLogActive) {
+        if (!config  || !config.ModLogActive) {
             return;
         }
 
-        if (!bot.client.channels.has(db.ModLogChannelID) ||
-            bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
+        if (!bot.client.channels.has(config.ModLogChannelID) ||
+            bot.client.channels.get(config.ModLogChannelID).type !== 'text') {
             // tslint:disable-next-line:max-line-length
             msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
             return;
         }
 
-        let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
+        let logChannel = bot.client.channels.get(config.ModLogChannelID) as Discord.TextChannel;
 
         let embed = {
             color: 0xFF9900, // orange
