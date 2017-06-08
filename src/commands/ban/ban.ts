@@ -61,7 +61,6 @@ class Ban implements Command {
             description: `You were banned from ${msg.guild.name}.`,
             fields: [
                 { name: 'Reason:', value: reason, inline: false },
-                { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
                 { name: 'Banned until', value: parsedTime ? new Date(parsedTime.absolute).toString() : 'Indefinitely' },
             ],
             footer: { text: `Banned by ${msg.author.tag}` },
@@ -71,7 +70,7 @@ class Ban implements Command {
         member.send({ embed })
             .then(() => {
                 member.ban(reason);
-                msg.react('☑');
+                msg.react('322352183226007554');
             });
         });
 
@@ -80,7 +79,7 @@ class Ban implements Command {
             msg.author,
             msg.guild,
             reason,
-            parsedTime ? parsedTime.absolute : null);
+            parsedTime ? Math.round(parsedTime.absolute / 1000) : null);
 
         this.createModLogEntry(bot, msg, member,
                                reason, parsedTime ? parsedTime.absolute : null);
