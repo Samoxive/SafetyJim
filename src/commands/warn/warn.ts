@@ -19,6 +19,11 @@ class Warn implements Command {
 
         let member = msg.guild.member(msg.mentions.users.first());
 
+        if (member.id === msg.author.id) {
+            msg.channel.send('You can\'t warn yourself, dummy!');
+            return;
+        }
+
         let reason = args || 'No reason specified';
 
         bot.log.info(`Warned user "${member.user.tag}" in "${msg.guild.name}".`);
