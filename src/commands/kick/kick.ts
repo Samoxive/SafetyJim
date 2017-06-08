@@ -19,6 +19,10 @@ class Kick implements Command {
 
         let member = msg.guild.member(msg.mentions.users.first());
 
+        if (member.id === msg.author.id) {
+            msg.channel.send('You can\'t kick yourself, dummy!');
+        }
+
         if (!member || !member.kickable || msg.member.highestRole.comparePositionTo(member.highestRole) <= 0) {
             msg.channel.send('The specified member is not kickable.');
             return;
