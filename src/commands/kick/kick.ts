@@ -59,7 +59,11 @@ class Kick implements Command {
               .then(() => {
                   msg.react('322352183226007554');
                   member.kick(reason);
-                });
+                })
+              .catch(() => {
+                  msg.react('322352183226007554');
+                  member.kick(reason);
+              });
     }
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
