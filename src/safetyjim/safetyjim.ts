@@ -104,12 +104,15 @@ export class SafetyJim {
                 return;
             }
 
+            // TODO(sam): replace with something better
+            /*
             if (msg.isMentioned(this.client.user)) {
                 this.database.getGuildPrefix(msg.guild)
                   .then((prefix) => {
                       msg.channel.send(`Hello, Safety Jim is my name, try typing ${prefix} to get a list of commands.`);
                   });
             }
+            */
 
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
             let cmdRegex: RegExp = this.commandRegex[msg.guild.id];
@@ -119,7 +122,8 @@ export class SafetyJim {
             if (!cmdMatch || !Object.keys(this.commands).includes(cmdMatch[1])) {
                 if (msg.cleanContent.match(testRegex)) {
                     if (!msg.member.hasPermission('BAN_MEMBERS')) {
-                        msg.author.send('You don\'t have enough permissions to use this bot!');
+                        msg.channel.send('You need to have ban permissions to use this bot!');
+                        // msg.author.send('You don\'t have enough permissions to use this bot!');
                     } else {
                         this.database.getGuildPrefix(msg.guild)
                             .then((prefix) => {
@@ -138,7 +142,8 @@ export class SafetyJim {
             }
 
             if (!msg.member.hasPermission('BAN_MEMBERS')) {
-                msg.author.send('You don\'t have enough permissions to use this bot!');
+                msg.channel.send('You need to have ban permissions to use this bot!');
+                // msg.author.send('You don\'t have enough permissions to use this bot!');
                 return;
             }
 
