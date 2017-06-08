@@ -221,7 +221,7 @@ export class SafetyJim {
             g.unban(user.BannedUserID)
              .then(() => {
                  this.database.updateBanRecord(user);
-                 this.log.info(`Allowed "${user.BannedUserName}" in guild "${g.name}".`);
+                 this.log.info(`Unbanned "${user.BannedUserName}" in guild "${g.name}".`);
              })
              .catch(() => { this.log.warn('Could not unban a user.'); });
         }
