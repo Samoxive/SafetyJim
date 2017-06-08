@@ -59,7 +59,7 @@ class Kick implements Command {
             timestamp: new Date(),
         };
 
-        member.send('', { embed })
+        member.send({ embed })
               .then(() => {
                   msg.react('322352183226007554');
                   member.kick(reason);
