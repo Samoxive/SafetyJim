@@ -28,7 +28,14 @@ class Settings implements Command {
         if (splitArgs[0] === 'display') {
             this.handleSettingsDisplay(bot, msg);
             return;
-        } else if (splitArgs[0] === 'modlog') {
+        }
+
+        if (!msg.member.hasPermission('ADMINISTRATOR')) {
+            msg.author.send('You don\'t have enough permissions to modify guild settings!');
+            return;
+        }
+
+        if (splitArgs[0] === 'modlog') {
             if (!splitArgs[1] || !['enable', 'disable', 'set'].includes(splitArgs[1])) {
                 return true;
             }
