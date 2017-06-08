@@ -37,7 +37,29 @@ export class SafetyJim {
             }
         });
 
-        this.client = new Discord.Client();
+        this.client = new Discord.Client({
+            disableEveryone: true,
+            disabledEvents: [
+                'TYPING_START',
+                'GUILD_ROLE_CREATE',
+                'GUILD_ROLE_DELETE',
+                'GUILD_ROLE_UPDATE',
+                'CHANNEL_CREATE',
+                'CHANNEL_DELETE',
+                'CHANNEL_UPDATE',
+                'CHANNEL_PINS_UPDATE',
+                'MESSAGE_UPDATE',
+                'MESSAGE_REACTION_ADD',
+                'MESSAGE_REACTION_REMOVE',
+                'MESSAGE_REACTION_REMOVE_ALL',
+                'USER_UPDATE',
+                'USER_NOTE_UPDATE',
+                'PRESENCE_UPDATE',
+                'VOICE_SERVER_UPDATE',
+                'RELATIONSHIP_ADD',
+                'RELATIONSHIP_REMOVE',
+            ],
+        });
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
         this.client.on('guildCreate', this.guildCreate());
@@ -72,6 +94,13 @@ export class SafetyJim {
         return ((msg: Discord.Message) => {
             if (msg.author.bot || msg.channel.type === 'dm') {
                 return;
+            }
+
+            if (msg.isMentioned(this.client.user)) {
+                this.database.getGuildPrefix(msg.guild)
+                  .then((prefix) => {
+                      msg.channel.send(`Hello, Safety Jim is my name, try typing ${prefix} to get a list of commands.`);
+                  });
             }
 
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
