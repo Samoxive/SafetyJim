@@ -90,8 +90,10 @@ class Settings implements Command {
             }
 
             let newPrefix = splitArgs[2];
+
             bot.createRegexForGuild(msg.guild.id, newPrefix);
             bot.database.updateGuildPrefix(msg.guild, newPrefix);
+            msg.channel.send('Updated guild prefix.');
             bot.log.info(`Updated prefix for guild "${msg.guild}" with id: "${msg.guild.id} with "${newPrefix}"`);
         } else if (splitArgs[0] === 'embedColor') {
             if (splitArgs[1] !== 'set' || splitArgs.length < 3) {
@@ -191,6 +193,7 @@ class Settings implements Command {
         if (!config.HoldingRoomRoleID) {
             let prefix = await bot.database.getGuildPrefix(msg.guild);
             let output = '';
+            // TODO(sam): make this prettier
             output += 'Couldn\'t enable holding room because role is missing in your config!\n';
             output += `Try ${prefix + ' ' + 'settings holdingRoom set role <roleName>'}`;
             msg.channel.send(output);
