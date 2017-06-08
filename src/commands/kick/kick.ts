@@ -17,6 +17,10 @@ class Kick implements Command {
             return true;
         }
 
+        if (!msg.guild.me.hasPermission('KICK_MEMBERS')) {
+            msg.channel.send('I don\'t have enough permissions to do that!');
+        }
+
         let member = msg.guild.member(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
