@@ -21,6 +21,7 @@ class Kick implements Command {
 
         if (member.id === msg.author.id) {
             msg.channel.send('You can\'t kick yourself, dummy!');
+            return;
         }
 
         if (!member || !member.kickable || msg.member.highestRole.comparePositionTo(member.highestRole) <= 0) {
