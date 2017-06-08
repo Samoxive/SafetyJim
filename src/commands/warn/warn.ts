@@ -50,7 +50,7 @@ class Warn implements Command {
             timestamp: new Date(),
         };
 
-        member.send('', { embed });
+        member.send({ embed });
     }
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
