@@ -30,7 +30,7 @@ class Warn implements Command {
 
         bot.database.getGuildConfiguration(msg.guild)
                     .then((config) => {
-                        this.warnUser(msg, member, reason, config);
+                        this.warnUser(bot, msg, member, reason, config);
                         this.createModLogEntry(bot, msg, member, reason, config);
                         msg.react('322352183226007554');
                     });
@@ -39,7 +39,7 @@ class Warn implements Command {
         return;
     }
 
-    private async warnUser(msg: Discord.Message, member: Discord.GuildMember,
+    private async warnUser(bot: SafetyJim, msg: Discord.Message, member: Discord.GuildMember,
                            reason: string, config: GuildConfig): Promise<void> {
         let embed = {
             title: `Warned in ${msg.guild.name}`,
@@ -50,7 +50,10 @@ class Warn implements Command {
             timestamp: new Date(),
         };
 
-        member.send({ embed });
+        member.send({ embed })
+              .catch(() => {
+                  bot.log.info(`Could not send a warning to user "${member.user.tag}" in guild "${msg.guild.name}".`);
+              });
     }
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
