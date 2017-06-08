@@ -28,7 +28,8 @@ export class BotDatabase {
                                     BanTime           INTEGER,
                                     ExpireTime        INTEGER,
                                     Reason            TEXT,
-                                    Expires           BOOLEAN);`)
+                                    Expires           BOOLEAN,
+                                    Unbanned          BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create BanList table!'); });
 
         await this.database.run(`CREATE TABLE IF NOT EXISTS GuildSettings (
@@ -103,7 +104,8 @@ export class BotDatabase {
     }
 
     public getExpiredBans(): Promise<BanRecord[]> {
-        return this.database.all('SELECT * FROM BanList WHERE ExpireTime < (strftime(\'%s\',\'now\')) and Expires = 1;')
+        return this.database.all(`SELECT * FROM BanList WHERE ExpireTime < (strftime(\'%s\',\'now\'))
+                                                              and Expires = 1 and Unbanned = 0;`)
             .then((rows) => rows as BanRecord[])
             .catch((err) => { this.log.error('Could not retrieve expired ban records!'); });
     }
@@ -227,6 +229,12 @@ export class BotDatabase {
                           .catch((err) => { this.log.error('Could not update JoinRecord!'); });
     }
 
+    public updateBanRecord(bRecord: BanRecord) {
+        this.database.run(`UPDATE BanList SET Unbanned = ? WHERE BannedUserID = ? and GuildID = ?`,
+                          true, bRecord.BannedUserID, bRecord.GuildID)
+                          .catch((err) => { this.log.error('Could not update BanRecord!'); });
+    }
+
     public delGuildPrefix(guild: Guild): void {
         this.database.run('DELETE FROM PrefixList WHERE GuildID = ?', guild.id)
             .catch((err) => { this.log.error('Could not delete prefix record!'); });
@@ -320,8 +328,9 @@ export class BotDatabase {
                             BanTime,
                             ExpireTime,
                             Reason,
-                            Expires)
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+                            Expires,
+                            Unbanned)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
                           bannedUser.id,
                           bannedUser.tag,
                           modUser.id,
@@ -330,7 +339,8 @@ export class BotDatabase {
                           now,
                           expireTime,
                           reason,
-                          expires)
+                          expires,
+                          false)
                       .catch((err) => { this.log.error('Could not create a ban record!'); });
     }
 }

@@ -7,7 +7,8 @@ CREATE TABLE BanList (
     BanTime           INTEGER,
     ExpireTime        INTEGER,
     Reason            TEXT,
-    Expires           BOOLEAN);
+    Expires           BOOLEAN,
+    Unbanned          BOOLEAN);
 
 CREATE TABLE KickList (
     KickedUserID      TEXT,
