@@ -78,7 +78,15 @@ export class SafetyJim {
     private onReady(): () => void {
         return (() => {
             this.log.info(`Client is ready, username: ${this.client.user.username}.`);
-            this.client.generateInvite([]).then((link) => this.log.info(`Bot invite link: ${link}`));
+            this.client.generateInvite([
+                'KICK_MEMBERS',
+                'BAN_MEMBERS',
+                'ADD_REACTIONS',
+                'READ_MESSAGES',
+                'SEND_MESSAGES',
+                'MANAGE_MESSAGES',
+                'MANAGE_ROLES',
+            ]).then((link) => this.log.info(`Bot invite link: ${link}`));
 
             this.populateGuildConfigDatabase();
             this.populatePrefixDatabase();
