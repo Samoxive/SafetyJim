@@ -43,7 +43,8 @@ class Warn implements Command {
         let embed = {
             title: `Warned in ${msg.guild.name}`,
             color: parseInt(config.EmbedColor, 16),
-            description: `You were warned in ${msg.guild.name}.\n\n**Reason:**\n${reason}`,
+            fields: [{ name: 'Reason:', value: reason, inline: false }],
+            description: `You were warned in ${msg.guild.name}.`,
             footer: { text: `Warned by: ${msg.author.tag}`},
             timestamp: new Date(),
         };

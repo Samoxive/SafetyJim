@@ -49,7 +49,8 @@ class Kick implements Command {
         let embed = {
             title: `Kicked from ${msg.guild.name}`,
             color: parseInt(config.EmbedColor, 16),
-            description: `You were kicked from ${msg.guild.name}.\n\n**Reason:**\n${reason}`,
+            fields: [{ name: 'Reason:', value: reason, inline: false }],
+            description: `You were kicked from ${msg.guild.name}.`,
             footer: { text: `Kicked by: ${msg.author.tag}`},
             timestamp: new Date(),
         };
