@@ -10,10 +10,6 @@ class Ban implements Command {
 
     public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
         let splitArgs = args.split(' ');
-        if (!msg.member.hasPermission('BAN_MEMBERS')) {
-            msg.channel.send('You don\'t have permission to use this command.');
-            return false;
-        }
 
         if (msg.mentions.users.size === 0 ||
             !splitArgs[0].match(Discord.MessageMentions.USERS_PATTERN)) {
