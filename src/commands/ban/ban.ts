@@ -72,6 +72,10 @@ class Ban implements Command {
                 member.ban(reason);
                 msg.react('322352183226007554');
             });
+        })
+            .catch(() => {
+                member.ban(reason);
+                msg.react('322352183226007554');
         });
 
         bot.database.createUserBan(
