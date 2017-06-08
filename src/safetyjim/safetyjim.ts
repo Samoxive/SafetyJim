@@ -21,6 +21,7 @@ export class SafetyJim {
     private prefixTestRegex = {} as RegexRecords;
     private commands = {} as Commands;
     private allowUsersCronJob;
+    private unbanUserCronJob;
 
     constructor(private config: Config,
                 public database: BotDatabase,
@@ -60,8 +61,10 @@ export class SafetyJim {
             this.populateGuildConfigDatabase();
             this.populatePrefixDatabase();
 
-            this.allowUsersCronJob = new cron.CronJob({cronTime: '*/30 * * * * *',
+            this.allowUsersCronJob = new cron.CronJob({cronTime: '*/10 * * * * *',
                                                        onTick: this.allowUsers.bind(this), start: true, context: this});
+            this.unbanUserCronJob = new cron.CronJob({ cronTime: '*/60 * * * * *',
+                                                       onTick: this.unbanUsers.bind(this), start: true, context: this});
         });
     }
 
@@ -126,7 +129,10 @@ export class SafetyJim {
 
     private guildCreate(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
-            guild.defaultChannel.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`);
+            guild.defaultChannel.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`)
+                                // tslint:disable-next-line:max-line-length
+                                .catch(() => { guild.owner.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`); });
+            this.database.createGuildSettings(guild);
             this.database.createGuildPrefix(guild, this.config.defaultPrefix);
             this.createRegexForGuild(guild.id, this.config.defaultPrefix);
             this.log.info(`Joined guild ${guild.name}`);
@@ -163,6 +169,7 @@ export class SafetyJim {
     private guildDelete(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
             this.database.delGuildSettings(guild);
+            this.database.delGuildPrefix(guild);
         });
     }
 
@@ -201,8 +208,22 @@ export class SafetyJim {
                 let dUser = dGuild.members.get(user.UserID);
                 dUser.addRole(guildConfig.HoldingRoomRoleID);
                 this.database.updateJoinRecord(user);
-                this.log.info(`Allowed ${dUser.user.tag} in guild ${dGuild.name}.`);
+                this.log.info(`Allowed "${dUser.user.tag}" in guild "${dGuild.name}".`);
             }
+        }
+    }
+
+    private async unbanUsers(): Promise<void> {
+        let usersToBeUnbanned = await this.database.getExpiredBans();
+
+        for (let user of usersToBeUnbanned) {
+            let g = this.client.guilds.get(user.GuildID);
+            g.unban(user.BannedUserID)
+             .then(() => {
+                 this.database.updateBanRecord(user);
+                 this.log.info(`Allowed "${user.BannedUserName}" in guild "${g.name}".`);
+             })
+             .catch(() => { this.log.warn('Could not unban a user.'); });
         }
     }
 
