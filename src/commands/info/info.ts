@@ -12,6 +12,9 @@ class Info implements Command {
         [1000, 'seconds'],
     ];
 
+    // tslint:disable-next-line:max-line-length
+    private inviteLink = 'https://discordapp.com/oauth2/authorize?client_id=313749262687141888&permissions=268446790&scope=bot';
+
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
@@ -33,7 +36,7 @@ class Info implements Command {
                 { name: 'Websocket Ping', value: `${bot.client.ping.toFixed(0)}ms`, inline: true},
                 // tslint:disable-next-line:max-line-length
                 { name: 'RAM usage', value: `${(process.memoryUsage().rss / (1024 * 1024)).toFixed(0)}MB`, inline: true },
-                { name: 'Links', value: '[Support](https://discord.io/safetyjim) | [Github](https://github.com/samoxive/safetyjim)', inline: true },
+                { name: 'Links', value: `[Support](https://discord.io/safetyjim) | [Github](https://github.com/samoxive/safetyjim) | [Invite](${this.inviteLink})`, inline: true },
             ],
             footer: { text: `Made by Safety Jim team.`},
             color: parseInt(config.EmbedColor, 16),
