@@ -39,6 +39,7 @@ class Info implements Command {
             color: parseInt(config.EmbedColor, 16),
         };
 
+        bot.successReact(msg);
         msg.channel.send({ embed });
     }
 
