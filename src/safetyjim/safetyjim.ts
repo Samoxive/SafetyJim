@@ -75,6 +75,38 @@ export class SafetyJim {
         this.prefixTestRegex[guildID] = new RegExp(`^${prefix}[\\s]*( .*)?$`, 'i');
     }
 
+    public getUsageString(prefix: string, usage: string | string[]): string {
+        if (typeof usage === 'string') {
+            usage = usage.split(' - ');
+            return `\`${prefix} ${usage[0]}\` - ${usage[1]}`;
+        }
+
+        return usage.map((cmdUsage) => {
+            let u = cmdUsage.split(' - ');
+            return `\`${prefix} ${u[0]}\` - ${u[1]}`;
+        }).join('\n');
+    }
+
+    public getUsageStrings(prefix: string): string {
+        return Object.keys(this.commands)
+              .map((u) => this.getUsageString(prefix, this.commands[u].usage))
+              .join('\n');
+    }
+
+    public failReact(msg: Discord.Message): void {
+        msg.react('322698553980092417')
+            .catch(() => {
+            this.log.warn(`Could not react with fail emoji in guild "${msg.guild.name}"`);
+        });
+    }
+
+    public successReact(msg: Discord.Message): void {
+        msg.react('322698554294534144')
+            .catch(() => {
+                this.log.warn(`Could not react with success emoji in guild "${msg.guild.name}"`);
+        });
+    }
+
     private onReady(): () => void {
         return (() => {
             this.log.info(`Client is ready, username: ${this.client.user.username}.`);
@@ -104,15 +136,31 @@ export class SafetyJim {
                 return;
             }
 
-            // TODO(sam): replace with something better
-            /*
             if (msg.isMentioned(this.client.user)) {
-                this.database.getGuildPrefix(msg.guild)
-                  .then((prefix) => {
-                      msg.channel.send(`Hello, Safety Jim is my name, try typing ${prefix} to get a list of commands.`);
-                  });
+                if (msg.content.includes('help') ||
+                    msg.content.includes('commands')) {
+                    this.database.getGuildPrefix(msg.guild)
+                        .then((prefix) => {
+                            this.successReact(msg);
+                            msg.author.send('', { embed: {
+                                author: { name: 'Safety Jim - Commands', icon_url: this.client.user.avatarURL },
+                                description: this.getUsageStrings(prefix),
+                                color: 0x4286f4,
+                            }});
+                        });
+                } else if (msg.content.includes('prefix')) {
+                    this.database.getGuildPrefix(msg.guild)
+                        .then((prefix) => {
+                            this.successReact(msg);
+                            msg.author.send('', { embed: {
+                                author: { name: 'Safety Jim - Prefix', icon_url: this.client.user.avatarURL },
+                                description: `"${msg.guild.name}"s prefix is: ${prefix}`,
+                                color: 0x4286f4,
+                            }});
+                        });
+                }
+                return;
             }
-            */
 
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
             let cmdRegex: RegExp = this.commandRegex[msg.guild.id];
@@ -121,29 +169,14 @@ export class SafetyJim {
             // Check if user called bot without command or command was not found
             if (!cmdMatch || !Object.keys(this.commands).includes(cmdMatch[1])) {
                 if (msg.cleanContent.match(testRegex)) {
-                    if (!msg.member.hasPermission('BAN_MEMBERS')) {
-                        msg.channel.send('You need to have ban permissions to use this bot!');
-                        // msg.author.send('You don\'t have enough permissions to use this bot!');
-                    } else {
-                        this.database.getGuildPrefix(msg.guild)
-                            .then((prefix) => {
-                                let output = '';
-
-                                for (let cmdString of Object.keys(this.commands)) {
-                                   output += this.getUsageString(prefix, this.commands[cmdString].usage) + '\n';
-                                }
-
-                                return output.trim();
-                            })
-                            .then((s) => msg.channel.send(s, { code: '' }));
-                    }
+                    this.failReact(msg);
                 }
                 return;
             }
 
             if (!msg.member.hasPermission('BAN_MEMBERS')) {
-                msg.channel.send('You need to have ban permissions to use this bot!');
-                // msg.author.send('You don\'t have enough permissions to use this bot!');
+                this.failReact(msg);
+                msg.channel.send('You need to have enough permissions to use this bot!');
                 return;
             }
 
@@ -154,16 +187,25 @@ export class SafetyJim {
             try {
                 showUsage = this.commands[command].run(this, msg, args);
             } catch (e) {
+                this.failReact(msg);
                 msg.channel.send('There was an error running the command:\n' +
                                 '```\n' + e.toString() + '\n```');
-                this.log.error(`${command} failed with arguments: ${args}`);
+                this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}"`);
             }
 
             if (showUsage === true) {
                 let usage = this.commands[command].usage;
                 this.database.getGuildPrefix(msg.guild)
                              .then((prefix) => {
-                                 msg.channel.send(this.getUsageString(prefix, usage), {code: ''});
+                                    this.failReact(msg);
+                                    msg.channel.send('', { embed: {
+                                    author: {
+                                        name: `Safety Jim - "${command}" Syntax`,
+                                        icon_url: this.client.user.avatarURL,
+                                    },
+                                    description: this.getUsageString(prefix, usage),
+                                    color: 0x4286f4,
+                                }});
                              });
             }
         }).bind(this);
@@ -267,14 +309,6 @@ export class SafetyJim {
              })
              .catch(() => { this.log.warn('Could not unban a user.'); });
         }
-    }
-
-    private getUsageString(prefix: string, usage: string | string[]): string {
-        if (typeof usage === 'string') {
-            return prefix + ' ' + usage;
-        }
-
-        return usage.map((u) => prefix + ' ' + u).join('\n');
     }
 
     private populateGuildConfigDatabase(): void {
