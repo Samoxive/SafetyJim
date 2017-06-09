@@ -18,17 +18,21 @@ class Kick implements Command {
         }
 
         if (!msg.guild.me.hasPermission('KICK_MEMBERS')) {
+            bot.failReact(msg);
             msg.channel.send('I don\'t have enough permissions to do that!');
+            return;
         }
 
         let member = msg.guild.member(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
+            bot.failReact(msg);
             msg.channel.send('You can\'t kick yourself, dummy!');
             return;
         }
 
         if (!member || !member.kickable || msg.member.highestRole.comparePositionTo(member.highestRole) <= 0) {
+            bot.failReact(msg);
             msg.channel.send('The specified member is not kickable.');
             return;
         }
@@ -40,6 +44,7 @@ class Kick implements Command {
         // tslint:disable-next-line:max-line-length
         bot.database.getGuildConfiguration(msg.guild)
                     .then((config) => {
+                        bot.successReact(msg);
                         this.kickUser(msg, member, reason, config);
                         this.createModLogEntry(bot, msg, member, reason, config);
                     });
@@ -59,15 +64,8 @@ class Kick implements Command {
             timestamp: new Date(),
         };
 
-        member.send({ embed })
-              .then(() => {
-                  msg.react('322352183226007554');
-                  member.kick(reason);
-                })
-              .catch(() => {
-                  msg.react('322352183226007554');
-                  member.kick(reason);
-              });
+        member.send({ embed }).then(() => { member.kick(reason); })
+              .catch(() => { member.kick(reason); });
     }
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,

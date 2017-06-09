@@ -17,18 +17,22 @@ class Ban implements Command {
         }
 
         if (!msg.guild.me.hasPermission('BAN_MEMBERS')) {
+            bot.failReact(msg);
             msg.channel.send('I don\'t have enough permissions to do that!');
+            return;
         }
 
         let member = msg.guild.member(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
+            bot.failReact(msg);
             msg.channel.send('You can\'t ban yourself, dummy!');
             return false;
         }
 
         if (!member.bannable) {
-            msg.channel.send('My role isn\'t high enough to ban this person.');
+            bot.failReact(msg);
+            msg.channel.send('I don\'t have enough permissions to do that!');
             return;
         }
 
@@ -73,13 +77,13 @@ class Ban implements Command {
 
         member.send({ embed })
             .then(() => {
+                bot.successReact(msg);
                 member.ban(reason);
-                msg.react('322352183226007554');
             });
         })
             .catch(() => {
-                member.ban(reason);
                 msg.react('322352183226007554');
+                member.ban(reason);
         });
 
         bot.database.createUserBan(

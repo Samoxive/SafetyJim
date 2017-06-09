@@ -32,7 +32,7 @@ class Warn implements Command {
                     .then((config) => {
                         this.warnUser(bot, msg, member, reason, config);
                         this.createModLogEntry(bot, msg, member, reason, config);
-                        msg.react('322352183226007554');
+                        bot.successReact(msg);
                     });
 
         bot.database.createUserWarn(member.user, msg.author, msg.guild, reason);
