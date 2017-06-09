@@ -1,6 +1,6 @@
 {
   "name": "safetyjim",
-  "version": "0.0.1",
+  "version": "1.1.0",
   "description": "A moderation bot for discord.",
   "main": "src/main.js",
   "scripts": {
