@@ -70,6 +70,7 @@ typings/
 
 # End of https://www.gitignore.io/api/node,visualstudiocode
 
+config_production.json
 src/**/*.js
 src/**/*.js.map
 config.json
