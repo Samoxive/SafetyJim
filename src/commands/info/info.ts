@@ -23,8 +23,8 @@ class Info implements Command {
     private async asyncRun(bot: SafetyJim, msg: Discord.Message, args: string): Promise<void> {
         let config = await bot.database.getGuildConfiguration(msg.guild);
         let uptimeString = this.timeElapsed((new Date()).getTime(), bot.bootTime.getTime());
-        let embed = new Discord.RichEmbed({
-            author: { name: 'Safety Jim - v0.0.1', icon_url: bot.client.user.avatarURL },
+        let embed = {
+            author: { name: 'Safety Jim - v1.0.0', icon_url: bot.client.user.avatarURL },
             description: `Lifting the :hammer: since ${uptimeString} ago.`,
             fields: [
                 { name: 'Server Count', value:  bot.client.guilds.size.toString(), inline: true },
@@ -37,9 +37,9 @@ class Info implements Command {
             ],
             footer: { text: `Made by Safety Jim team.`},
             color: parseInt(config.EmbedColor, 16),
-        });
+        };
 
-        msg.channel.send('', {embed});
+        msg.channel.send({ embed });
     }
 
     private timeElapsed(before: number, after: number) {
