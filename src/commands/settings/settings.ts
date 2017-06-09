@@ -114,7 +114,7 @@ class Settings implements Command {
                 return;
             }
 
-            bot.failReact(msg);
+            bot.successReact(msg);
             msg.channel.send('Updated embed color.');
             bot.database.updateGuildConfig(msg.guild, { embedColor: newColor.toUpperCase() });
             bot.log.info(`Updated embed color for guild "${msg.guild}" with id: "${msg.guild.id} with "${newColor}"`);
