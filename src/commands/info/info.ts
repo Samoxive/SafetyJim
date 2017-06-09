@@ -24,7 +24,7 @@ class Info implements Command {
         let config = await bot.database.getGuildConfiguration(msg.guild);
         let uptimeString = this.timeElapsed((new Date()).getTime(), bot.bootTime.getTime());
         let embed = {
-            author: { name: 'Safety Jim - v1.1.0', icon_url: bot.client.user.avatarURL },
+            author: { name: `Safety Jim - v${bot.config.version}`, icon_url: bot.client.user.avatarURL },
             description: `Lifting the :hammer: since ${uptimeString} ago.`,
             fields: [
                 { name: 'Server Count', value:  bot.client.guilds.size.toString(), inline: true },

@@ -2,17 +2,20 @@ import * as winston from 'winston';
 
 let defaultConfigDbName = 'database.db';
 let defaultConfigPrefix = '!';
+let defaultConfigVersion = '1.0.0';
 
 interface IConfigFile {
     token: string;
     dbFileName: string;
     defaultPrefix: string;
+    version: string;
 }
 
 export class Config {
     public discordToken: string;
     public dbFileName: string;
     public defaultPrefix: string;
+    public version: string;
 
     constructor(private configPath: string, private log: winston.LoggerInstance) {
 
@@ -21,6 +24,14 @@ export class Config {
             configData = require(this.configPath) as IConfigFile;
         } catch (e) {
             log.error(`Loading config file failed with error: \`${e.message}\``);
+            process.exit(e.code);
+        }
+
+        let packageData = null;
+        try {
+            packageData = require('../../package.json');
+        } catch (e) {
+            log.error(`Loading package file failed with error: \`${e.message}\``);
             process.exit(e.code);
         }
 
@@ -40,6 +51,12 @@ export class Config {
         if (this.defaultPrefix === undefined) {
             log.error(`Default prefix not provided!\nUsing \` ${defaultConfigPrefix} \` as default!`);
             this.defaultPrefix = defaultConfigPrefix;
+        }
+
+        this.version = packageData.version;
+        if (this.version === undefined) {
+            log.error(`Default prefix not provided!\nUsing \` ${defaultConfigVersion} \` as default!`);
+            this.version = defaultConfigVersion;
         }
     }
 }

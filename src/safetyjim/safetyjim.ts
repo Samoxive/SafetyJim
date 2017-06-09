@@ -23,7 +23,7 @@ export class SafetyJim {
     private allowUsersCronJob;
     private unbanUserCronJob;
 
-    constructor(private config: Config,
+    constructor(public config: Config,
                 public database: BotDatabase,
                 public log: winston.LoggerInstance) {
         this.bootTime = new Date();
