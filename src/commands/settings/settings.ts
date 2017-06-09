@@ -26,11 +26,13 @@ class Settings implements Command {
         }
 
         if (splitArgs[0] === 'display') {
+            bot.successReact(msg);
             this.handleSettingsDisplay(bot, msg);
             return;
         }
 
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
+            bot.failReact(msg);
             msg.author.send('You don\'t have enough permissions to modify guild settings!');
             return;
         }
@@ -52,12 +54,14 @@ class Settings implements Command {
 
                     if (msg.mentions.channels.size === 0 ||
                         !Discord.MessageMentions.CHANNELS_PATTERN.test(splitArgs[3])) {
+                        bot.failReact(msg);
                         msg.channel.send('Invalid channel input, no changes were made!');
                         return;
                     }
 
                     let channel = msg.mentions.channels.first();
 
+                    bot.successReact(msg);
                     msg.channel.send('Updated guild settings.');
                     bot.log.info(`Updated channel for mod log in guild "${msg.guild}" with id: "${msg.guild.id}".`);
                     bot.database.updateGuildConfig(msg.guild, { modLogChannelID: channel.id });
@@ -79,6 +83,7 @@ class Settings implements Command {
                     if (splitArgs.length < 3 || !['role', 'minutes', 'channel', 'prefix'].includes(splitArgs[2])) {
                         return true;
                     }
+
                     this.handleHoldingRoomSet(bot, msg, splitArgs.slice(2));
                     break;
             }
@@ -91,6 +96,7 @@ class Settings implements Command {
 
             let newPrefix = splitArgs[2];
 
+            bot.successReact(msg);
             bot.createRegexForGuild(msg.guild.id, newPrefix);
             bot.database.updateGuildPrefix(msg.guild, newPrefix);
             msg.channel.send('Updated guild prefix.');
@@ -103,9 +109,12 @@ class Settings implements Command {
             let newColor = splitArgs[2];
             let newColorParsed = parseInt(newColor, 16);
             if (newColor.length !== 6 || isNaN(newColorParsed)) {
+                bot.failReact(msg);
                 msg.channel.send('Invalid color input, try a six digit hexadecimal number.');
                 return;
             }
+
+            bot.failReact(msg);
             msg.channel.send('Updated embed color.');
             bot.database.updateGuildConfig(msg.guild, { embedColor: newColor.toUpperCase() });
             bot.log.info(`Updated embed color for guild "${msg.guild}" with id: "${msg.guild.id} with "${newColor}"`);
@@ -139,8 +148,12 @@ class Settings implements Command {
     private handleSettingsDisplay(bot: SafetyJim, msg: Discord.Message): void {
         Promise.all([bot.database.getGuildConfiguration(msg.guild), bot.database.getGuildPrefix(msg.guild)])
             .then((c) => this.getSettingsString(msg, c[0], c[1]))
-            .then((s) => msg.channel.send(s, {code: 'http'}))
+            .then((s) => {
+                bot.successReact(msg);
+                msg.channel.send(s, {code: 'http'});
+            })
             .catch((e) => {
+                bot.failReact(msg);
                 msg.channel.send('There was an error while trying to display settings, this incident has been logged.');
                 bot.log.error(`Could not display settings for guild: "${msg.guild.name}" with id: "${msg.guild.id}"`);
             });
@@ -151,8 +164,10 @@ class Settings implements Command {
 
         if (!enable) {
             if (config.ModLogActive === 0) {
+                bot.failReact(msg);
                 msg.channel.send('Mod log is already disabled silly.');
             } else {
+                bot.successReact(msg);
                 msg.channel.send('Disabled mod log.');
                 bot.log.info(`Disabled mod log for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
                 bot.database.updateGuildConfig(msg.guild, { modLog: false });
@@ -160,8 +175,10 @@ class Settings implements Command {
             }
         } else {
             if (config.ModLogActive === 1) {
-            msg.channel.send('Mod log is already enabled silly.');
+                bot.failReact(msg);
+                msg.channel.send('Mod log is already enabled silly.');
             } else {
+                bot.successReact(msg);
                 bot.database.updateGuildConfig(msg.guild, { modLog: true });
                 bot.log.info(`Enabled mod log for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
                 msg.channel.send('Enabled mod log.');
@@ -174,8 +191,10 @@ class Settings implements Command {
 
         if (!enable) {
             if (config.HoldingRoomActive === 0) {
+                bot.failReact(msg);
                 msg.channel.send('Holding room is already disabled silly.');
             } else {
+                bot.successReact(msg);
                 msg.channel.send('Disabled holding room.');
                 bot.log.info(`Disabled holding room for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
                 bot.database.updateGuildConfig(msg.guild, { holdingRoom: false });
@@ -184,6 +203,7 @@ class Settings implements Command {
         }
 
         if (config.HoldingRoomActive === 1) {
+            bot.failReact(msg);
             msg.channel.send('Holding room is already enabled silly.');
             return;
         }
@@ -192,12 +212,14 @@ class Settings implements Command {
         // at initialization of guild configs
         if (!config.HoldingRoomRoleID) {
             let prefix = await bot.database.getGuildPrefix(msg.guild);
+            bot.failReact(msg);
             let output = '';
             // TODO(sam): make this prettier
             output += 'Couldn\'t enable holding room because role is missing in your config!\n';
             output += `Try ${prefix + ' ' + 'settings holdingRoom set role <roleName>'}`;
             msg.channel.send(output);
         } else {
+            bot.successReact(msg);
             bot.database.updateGuildConfig(msg.guild, { holdingRoom: true });
             bot.log.info(`Enabled holding room for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
             msg.channel.send('Enabled holding room.');
@@ -210,9 +232,11 @@ class Settings implements Command {
                 let roleName = args.slice(1).join(' ');
                 let id = msg.guild.roles.filter((r) => r.name === roleName).array()[0].id;
                 if (!roleName) {
+                    bot.failReact(msg);
                     msg.channel.send('Invalid role name, no changes were made!');
                     return;
                 } else {
+                    bot.successReact(msg);
                     bot.log.info(`Updated role for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
                     bot.database.updateGuildConfig(msg.guild, { holdingRoomRoleID: id });
                 }
@@ -221,9 +245,11 @@ class Settings implements Command {
                 let input = args[1];
                 let minute = parseInt(input);
                 if (!minute) {
+                    bot.failReact(msg);
                     msg.channel.send('Invalid input in minutes field, no changes were made!');
                     return;
                 } else {
+                    bot.successReact(msg);
                     // tslint:disable-next-line:max-line-length
                     bot.log.info(`Updated minutes for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
                     bot.database.updateGuildConfig(msg.guild, {minutes: minute});
@@ -231,17 +257,20 @@ class Settings implements Command {
                 break;
             case 'channel':
                 if (msg.mentions.channels.size === 0 || !Discord.MessageMentions.CHANNELS_PATTERN.test(args[1])) {
+                    bot.failReact(msg);
                     msg.channel.send('Invalid channel input, no changes were made!');
                     return;
                 }
 
                 let channel = msg.mentions.channels.first();
 
+                bot.successReact(msg);
                 bot.log.info(`Updated channel for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
                 bot.database.updateGuildConfig(msg.guild, { holdingRoomID: channel.id });
                 break;
         }
 
+        bot.successReact(msg);
         msg.channel.send('Updated guild configuration.');
     }
 }
