@@ -79,8 +79,18 @@ export class BotDatabase {
                                     .catch((err) => { this.log.error('Could not create WarnList table!'); });
 
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed)')
-                           .catch((err) => { this.log.error('Could not create index for JoinLis table!'); });
+                           .catch((err) => { this.log.error('Could not create index for JoinList table!'); });
 
+        await this.database.run(`CREATE TABLE IF NOT EXISTS TagList (
+                                    TagName         TEXT,
+                                    TagResponse     TEXT,
+                                    GuildID         TEXT);`)
+                                    .catch((err) => { this.log.error('Could not create TagList table!'); });
+
+        /* TODO: Index TagList?
+        await this.database.run('CREATE INDEX IF NOT EXISTS "" on TagList (TagName, GuildID)')
+                           .catch((err) => { this.log.error('Could not create index for TagList table!'); });
+        */
         // seriously, fix this.
         return Promise.resolve(this);
     }
@@ -176,6 +186,18 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not retrieve users that can be allowed!'); });
     }
 
+    public getTagResponse(tagName: string, guild: Guild): Promise<string> {
+        return this.database.get('SELECT TagResponse FROM TagList WHERE TagName = ? and GuildID = ?',
+            tagName, guild.id)
+            .then((response) => response.TagResponse);
+    }
+
+    public getAllTags(guild: Guild): Promise<TagRecord[]> {
+        return this.database.all('SELECT * FROM TagList WHERE GuildID = ?', guild.id)
+            .then((rows) => rows as TagRecord[])
+            .catch((err) => { this.log.error('Could not retrieve tags!'); });
+    }
+
     public updateGuildPrefix(guild: Guild, newPrefix: string): void {
         this.database.run('UPDATE PrefixList SET Prefix = ? WHERE GuildID = ?', newPrefix, guild.id)
             .catch((err) => { this.log.error('Could not update prefix record!'); });
@@ -235,6 +257,12 @@ export class BotDatabase {
                           .catch((err) => { this.log.error('Could not update BanRecord!'); });
     }
 
+    public updateTagResponse(name: string, response: string, guild: Guild) {
+        this.database.run(`UPDATE TagList SET TagResponse = ? WHERE TagName = ? and GuildID = ?`,
+            response, name, guild.id)
+            .catch((err) => { this.log.error('Could not update TagResponses!'); });
+    }
+
     public delGuildPrefix(guild: Guild): void {
         this.database.run('DELETE FROM PrefixList WHERE GuildID = ?', guild.id)
             .catch((err) => { this.log.error('Could not delete prefix record!'); });
@@ -263,6 +291,11 @@ export class BotDatabase {
     public delJoinEntry(userID: string, guildID: string): void {
         this.database.run('DELETE FROM JoinList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
                      .catch((err) => { this.log.error('Could not delete join record!'); });
+    }
+
+    public delTagResponse(name: string, guild: Guild) {
+        this.database.run('DELETE FROM TagList WHERE TagName = ? AND GuildID = ?', name, guild.id)
+                        .catch((err) => { this.log.error('Could not delete join record!'); });
     }
 
     public createGuildPrefix(guild: Guild, prefix: string): void {
@@ -343,6 +376,12 @@ export class BotDatabase {
                           false)
                       .catch((err) => { this.log.error('Could not create a ban record!'); });
     }
+
+    public createTag(name: string, response: string, guild: Guild) {
+        this.database.run(`INSERT INTO TagList (TagName, TagResponse, GuildID) VALUES (?, ?, ?);`,
+            name, response, guild.id)
+            .catch((err) => { this.log.error('Could not create a Tag!'); });
+    }
 }
 
 export interface GuildConfig {
@@ -398,4 +437,10 @@ export interface JoinRecord {
     GuildID: string;
     JoinTime: number;
     Allowed: number;
+}
+
+export interface TagRecord {
+    TagName: string;
+    TagResponse: string;
+    GuildID: string;
 }
