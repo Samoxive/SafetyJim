@@ -1,14 +1,14 @@
-import {Config} from '../config/config';
+import { Config } from '../config/config';
 import * as winston from 'winston';
 import * as Discord from 'discord.js';
 import * as cron from 'cron';
-import * as r from 'request-promise';
+import * as snekfetch from 'snekfetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import { BotDatabase } from '../database/database';
 
-type RegexRecords = {string: RegExp};
-type Commands = {string: Command};
+type RegexRecords = { string: RegExp };
+type Commands = { string: Command };
 
 export interface Command {
     usage: string | string[];
@@ -109,29 +109,21 @@ export class SafetyJim {
     }
 
     public updateDiscordBotLists(): void {
-        r({
-            method: 'POST',
-            uri: `https://bots.discord.pw/api/bots/${this.client.user.id}/stats`,
-            headers: {
-                Authorization: this.config.discordbotspwToken,
-            },
-            body: {
-                server_count: this.client.guilds.size,
-            },
-            json: true,
-        }).catch((err) => { this.log.error(`Could not update pw with error ${err}`); });
+        if (this.config.discordbotspwToken) {
+            snekfetch
+                .post(`https://bots.discord.pw/api/bots/${this.client.user.id}/stats`)
+                .set('Authorization', this.config.discordbotspwToken)
+                .send({ server_count: this.client.guilds.size })
+                .end((err) => { this.log.error(`Could not update pw with error ${err.stack}`); });
+        }
 
-        r({
-            method: 'POST',
-            uri: `https://discordbots.org/api/bots/${this.client.user.id}/stats`,
-            headers: {
-                Authorization: this.config.discordbotsToken,
-            },
-            body: {
-                server_count: this.client.guilds.size,
-            },
-            json: true,
-        }).catch((err) => { this.log.error(`Could not update discordbots with error ${err}`); });
+        if (this.config.discordbotsToken) {
+            snekfetch
+                .post(`https://bots.discord.pw/api/bots/${this.client.user.id}/stats`)
+                .set('Authorization', this.config.discordbotsToken)
+                .send({ server_count: this.client.guilds.size })
+                .end((err) => { this.log.error(`Could not update discordbots with error ${err.stack}`); });
+        }
     }
 
     private onReady(): () => void {
@@ -170,7 +162,7 @@ export class SafetyJim {
                     this.database.getGuildPrefix(msg.guild)
                         .then((prefix) => {
                             this.successReact(msg);
-                            msg.author.send('', { embed: {
+                            msg.author.send({ embed: {
                                 author: { name: 'Safety Jim - Commands', icon_url: this.client.user.avatarURL },
                                 description: this.getUsageStrings(prefix),
                                 color: 0x4286f4,
@@ -180,7 +172,7 @@ export class SafetyJim {
                     this.database.getGuildPrefix(msg.guild)
                         .then((prefix) => {
                             this.successReact(msg);
-                            msg.author.send('', { embed: {
+                            msg.author.send({ embed: {
                                 author: { name: 'Safety Jim - Prefix', icon_url: this.client.user.avatarURL },
                                 description: `"${msg.guild.name}"s prefix is: ${prefix}`,
                                 color: 0x4286f4,
