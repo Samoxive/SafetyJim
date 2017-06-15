@@ -285,7 +285,7 @@ export class BotDatabase {
                             HoldingRoomRoleID, HoldingRoomActive, HoldingRoomMinutes,
                             HoldingRoomChannelID, MuteRoleID, EmbedColor)
                             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);`, guild.id, false, guild.defaultChannel.id,
-                                                  null, false, 3, guild.defaultChannel.id, '4286f4')
+                                                  null, false, 3, guild.defaultChannel.id, null, '4286f4')
                           .catch((err) => { this.log.error('Could not create guild settings!'); });
     }
 
