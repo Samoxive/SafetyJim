@@ -28,6 +28,7 @@ class Unban implements Command {
                          bot.successReact(msg);
                          msg.guild.unban(bannee.id);
                          bot.database.updateBanRecordWithID(bannee.id, msg.guild.id);
+                         msg.channel.send(`Unbanned user ${bannee.tag}.`);
                      }
                  });
         return;
