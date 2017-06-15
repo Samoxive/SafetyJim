@@ -17,6 +17,7 @@ class Ban implements Command {
         }
 
         if (!msg.guild.me.hasPermission('BAN_MEMBERS')) {
+            bot.log.info('hi');
             bot.failReact(msg);
             msg.channel.send('I don\'t have enough permissions to do that!');
             return;
@@ -31,6 +32,7 @@ class Ban implements Command {
         }
 
         if (!member.bannable) {
+            bot.log.info('hi');
             bot.failReact(msg);
             msg.channel.send('I don\'t have enough permissions to do that!');
             return;
@@ -52,7 +54,14 @@ class Ban implements Command {
             }
             parsedTime = time(timeArg);
             if (!parsedTime.relative) {
+                bot.failReact(msg);
                 msg.channel.send(`Invalid time argument \`${timeArg}\`. Try again.`);
+                return;
+            }
+            if (parsedTime.relative < 0) {
+                bot.failReact(msg);
+                msg.channel.send('Your time argument was set for the past. Try again.' +
+                '\nIf you\'re specifying a date, e.g. `30 December`, make sure you pass the year.');
                 return;
             }
         } else if (args.length > 0) {
