@@ -40,6 +40,7 @@ export class BotDatabase {
                                     HoldingRoomActive    BOOLEAN,
                                     HoldingRoomMinutes   INTEGER,
                                     HoldingRoomChannelID TEXT,
+                                    MuteRoleID           TEXT,
                                     EmbedColor TEXT);`)
                                 .catch((err) => { this.log.error('Could not create GuildSettings table!'); });
 
@@ -186,7 +187,7 @@ export class BotDatabase {
                                    options: {holdingRoomRoleID?: string, embedColor?: string,
                                              modLog?: boolean, modLogChannelID?: string,
                                              holdingRoom?: boolean, minutes?: number,
-                                             holdingRoomID?: string}): Promise<void> {
+                                             holdingRoomID?: string, muteRoleID: string}): Promise<void> {
         let origConfig = await this.getGuildConfiguration(guild);
 
         let holdingRoomActive: boolean;
@@ -211,7 +212,7 @@ export class BotDatabase {
         this.database.run(`UPDATE GuildSettings
                             SET ModLogActive = ?, ModLogChannelID = ?,
                             HoldingRoomRoleID = ?, HoldingRoomActive = ?, HoldingRoomMinutes = ?,
-                            HoldingRoomChannelID = ?, EmbedColor = ? WHERE GuildID = ?;`,
+                            HoldingRoomChannelID = ?, MuteRoleID = ?, EmbedColor = ? WHERE GuildID = ?;`,
                             modLogActive,
                             options.modLogChannelID || origConfig.ModLogChannelID,
                             options.holdingRoomRoleID || origConfig.HoldingRoomRoleID,
@@ -219,6 +220,7 @@ export class BotDatabase {
                             options.minutes || origConfig.HoldingRoomMinutes,
                             options.holdingRoomID || origConfig.HoldingRoomChannelID,
                             options.embedColor || origConfig.EmbedColor,
+                            options.muteRoleID || origConfig.MuteRoleID,
                             guild.id)
                             .catch((e) => { this.log.error('Could not update GuildSettings!'); });
     }
@@ -280,8 +282,9 @@ export class BotDatabase {
 
     public createGuildSettings(guild: Guild): void {
         this.database.run(`INSERT INTO GuildSettings (GuildID, ModLogActive, ModLogChannelID,
-                            HoldingRoomRoleID, HoldingRoomActive, HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor)
-                            VALUES(?, ?, ?, ?, ?, ?, ?, ?);`, guild.id, false, guild.defaultChannel.id,
+                            HoldingRoomRoleID, HoldingRoomActive, HoldingRoomMinutes,
+                            HoldingRoomChannelID, MuteRoleID, EmbedColor)
+                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);`, guild.id, false, guild.defaultChannel.id,
                                                   null, false, 3, guild.defaultChannel.id, '4286f4')
                           .catch((err) => { this.log.error('Could not create guild settings!'); });
     }
@@ -353,6 +356,7 @@ export interface GuildConfig {
     HoldingRoomActive: number;
     HoldingRoomMinutes: number;
     HoldingRoomChannelID: string;
+    MuteRoleID: string;
     EmbedColor: string;
 }
 

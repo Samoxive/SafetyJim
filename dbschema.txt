@@ -50,6 +50,7 @@ CREATE TABLE GuildSettings (
     HoldingRoomActive    BOOLEAN,
     HoldingRoomMinutes   INTEGER,
     HoldingRoomChannelID TEXT,
+    MuteRoleID           TEXT,
     EmbedColor           TEXT
 );
 
