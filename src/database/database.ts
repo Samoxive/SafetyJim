@@ -237,6 +237,12 @@ export class BotDatabase {
                           .catch((err) => { this.log.error('Could not update BanRecord!'); });
     }
 
+    public updateBanRecordWithID(userID: string, guildID: string) {
+        this.database.run(`UPDATE BanList SET Unbanned = ? WHERE BannedUserID = ? and GuildID = ?`,
+                          true, userID, guildID)
+                          .catch((err) => { this.log.error('Could not update BanRecord!'); });
+    }
+
     public delGuildPrefix(guild: Guild): void {
         this.database.run('DELETE FROM PrefixList WHERE GuildID = ?', guild.id)
             .catch((err) => { this.log.error('Could not delete prefix record!'); });
