@@ -78,6 +78,19 @@ export class BotDatabase {
                                     Reason            TEXT);`)
                                     .catch((err) => { this.log.error('Could not create WarnList table!'); });
 
+        await this.database.run(`CREATE TABLE IF NOT EXISTS MuteList (
+                                    MutedUserID       TEXT,
+                                    MutedUserName     TEXT,
+                                    ModeratorID       TEXT,
+                                    ModeratorUserName TEXT,
+                                    GuildID           TEXT,
+                                    MuteTime          INTEGER,
+                                    ExpireTime        INTEGER,
+                                    Reason            INTEGER,
+                                    Expires           BOOLEAN,
+                                    Unmuted           BOOLEAN);`)
+                                    .catch((err) => { this.log.error('Could not create MuteList table!'); });
+
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed)')
                            .catch((err) => { this.log.error('Could not create index for JoinLis table!'); });
 
@@ -141,9 +154,34 @@ export class BotDatabase {
     }
 
     public getUserWarn(userID: string, guildID: string): Promise<WarnRecord> {
-        return this.database.get('SELECT * FROM WarnList WHERE GuildID = ? and WarnedUserID = ?;', guildID, userID)
+        return this.database.get('SELECT * FROM WarnList WHERE GuildID = ? AND WarnedUserID = ?;', guildID, userID)
             .then((row) => row as WarnRecord)
             .catch((err) => { this.log.error('Could not retrieve user warning record!'); });
+    }
+
+    public getModeratorsMutes(modID: string, guildID: string): Promise<MuteRecord[]> {
+        return this.database.all('SELECT * FROM MuteList WHERE ModeratorID = ? AND GuildID = ?;', modID, guildID)
+                     .then((rows) => rows as MuteRecord[])
+                     .catch((err) => { this.log.error('Could not retrieve moderator warning records'); });
+    }
+
+    public getGuildMutes(guildID: string): Promise<MuteRecord[]> {
+        return this.database.all('SELECT * FROM MuteList WHERE GuildID = ?;', guildID)
+            .then((rows) => rows as MuteRecord[])
+            .catch((err) => { this.log.error('Could not retrieve guild mute records!'); });
+    }
+
+    public getUserMute(userID: string, guildID: string): Promise<MuteRecord> {
+        return this.database.get('SELECT * FROM MuteList WHERE GuildID = ? AND MutedUserID = ?;', guildID, userID)
+            .then((row) => row as MuteRecord)
+            .catch((err) => { this.log.error('Could not retrieve user mute record!'); });
+    }
+
+    public getExpiredMutes(): Promise<MuteRecord[]> {
+        return this.database.all(`SELECT * FROM MuteList WHERE ExpireTime < (strftime(\'%s\',\'now\'))
+                                                              and Expires = 1 and Unmuted = 0;`)
+            .then((rows) => rows as MuteRecord[])
+            .catch((err) => { this.log.error('Could not retrieve expired mute records!'); });
     }
 
     public getGuildPrefix(guild: Guild): Promise<string> {
@@ -230,7 +268,7 @@ export class BotDatabase {
     }
 
     public updateBanRecord(bRecord: BanRecord) {
-        this.database.run(`UPDATE BanList SET Unbanned = ? WHERE BannedUserID = ? and GuildID = ?`,
+        this.database.run(`UPDATE BanList SET Unbanned = ? WHERE BannedUserID = ? and GuildID = ?;`,
                           true, bRecord.BannedUserID, bRecord.GuildID)
                           .catch((err) => { this.log.error('Could not update BanRecord!'); });
     }
@@ -239,6 +277,18 @@ export class BotDatabase {
         this.database.run(`UPDATE BanList SET Unbanned = ? WHERE BannedUserID = ? and GuildID = ?`,
                           true, userID, guildID)
                           .catch((err) => { this.log.error('Could not update BanRecord!'); });
+    }
+
+    public updateMuteRecord(mRecord: MuteRecord) {
+        this.database.run(`UPDATE MuteList SET Unmuted = ? WHERE MutedUserID = ? AND GuildID = ?;`,
+                            true, mRecord.MutedUserID, mRecord.GuildID)
+                            .catch((err) => { this.log.error('Could not update MuteRecord!'); });
+    }
+
+    public updateMuteRecordWithID(userID: string, guildID: string) {
+        this.database.run(`UPDATE MuteList SET Unmuted = ? WHERE MutedUserID = ? and GuildID = ?`,
+                          true, userID, guildID)
+                          .catch((err) => { this.log.error('Could not update MuteRecord!'); });
     }
 
     public delGuildPrefix(guild: Guild): void {
@@ -264,6 +314,11 @@ export class BotDatabase {
     public delUserWarn(userID: string, guildID: string): void {
         this.database.run('DELETE FROM WarnList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
             .catch((err) => { this.log.error('Could not delete warn record!'); });
+    }
+
+    public delUserMute(userID: string, guildID: string): void {
+        this.database.run('DELETE FROM MuteList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
+            .catch((err) => { this.log.error('Could not delete mute record!'); });
     }
 
     public delJoinEntry(userID: string, guildID: string): void {
@@ -352,6 +407,25 @@ export class BotDatabase {
                           false)
                       .catch((err) => { this.log.error('Could not create a ban record!'); });
     }
+
+    public createUserMute(mutedUser: User, modUser: User, guild: Guild, reason: string, expireTime?: number): void {
+        let now = Math.round((new Date()).getTime() / 1000);
+
+        let expires = true;
+
+        if (expireTime == null) {
+            expires = false;
+            expireTime = 0;
+        }
+
+        this.database.run(`INSERT INTO MuteList
+                            (MutedUserID, MutedUserName, ModeratorID, ModeratorUserName,
+                            GuildID, MuteTime, ExpireTime, Reason, Expires, Unmuted)
+                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+                            mutedUser.id, mutedUser.tag, modUser.id, modUser.tag, guild.id,
+                            now, expireTime, reason, expires, false)
+                            .catch((err) => { this.log.error('Could not create mute record!'); });
+    }
 }
 
 export interface GuildConfig {
@@ -395,6 +469,19 @@ export interface WarnRecord {
     GuildID: string;
     WarnTime: number;
     Reason: string;
+}
+
+export interface MuteRecord {
+    MutedUserID: string;
+    MutedUserName: string;
+    ModeratorID: string;
+    ModeratorUserName: string;
+    GuildID: string;
+    MuteTime: number;
+    ExpireTime: number;
+    Reason: string;
+    Expires: number;
+    Unmuted: number;
 }
 
 export interface PrefixRecord {
