@@ -46,31 +46,31 @@ export class Config {
 
         this.dbFileName = configData.dbFileName;
         if (this.dbFileName === undefined) {
-            log.error(`Database file name not provided!\nUsing \`${defaultConfigDbName}\` as default!`);
+            log.error(`Database file name not provided! Using \`${defaultConfigDbName}\` as default!`);
             this.dbFileName = defaultConfigDbName;
         }
 
         this.defaultPrefix = configData.defaultPrefix;
         if (this.defaultPrefix === undefined) {
-            log.error(`Default prefix not provided!\nUsing \` ${defaultConfigPrefix} \` as default!`);
+            log.error(`Default prefix not provided! Using \` ${defaultConfigPrefix} \` as default!`);
             this.defaultPrefix = defaultConfigPrefix;
         }
 
         this.discordbotsToken = configData.discordbotsToken;
         if (this.discordbotsToken === undefined) {
-            log.error(`Default discordbotsToken not provided!\nUsing \` "" \` as default!`);
+            log.error(`Default discordbotsToken not provided! Using \` "" \` as default!`);
             this.discordbotsToken = '';
         }
 
         this.discordbotspwToken = configData.discordbotspwToken;
         if (this.discordbotspwToken === undefined) {
-            log.error(`Default discordbotspwToken not provided!\nUsing \` "" \` as default!`);
+            log.error(`Default discordbotspwToken not provided! Using \` "" \` as default!`);
             this.discordbotspwToken = '';
         }
 
         this.version = packageData.version;
         if (this.version === undefined) {
-            log.error(`Default prefix not provided!\nUsing \` ${defaultConfigVersion} \` as default!`);
+            log.error(`Default prefix not provided! Using \` ${defaultConfigVersion} \` as default!`);
             this.version = defaultConfigVersion;
         }
     }
