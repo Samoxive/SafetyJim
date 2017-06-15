@@ -2,6 +2,7 @@ import {Config} from '../config/config';
 import * as winston from 'winston';
 import * as Discord from 'discord.js';
 import * as cron from 'cron';
+import * as r from 'request-promise';
 import * as fs from 'fs';
 import * as path from 'path';
 import { BotDatabase } from '../database/database';
@@ -107,6 +108,32 @@ export class SafetyJim {
         });
     }
 
+    public updateDiscordBotLists(): void {
+        r({
+            method: 'POST',
+            uri: `https://bots.discord.pw/api/bots/${this.client.user.id}/stats`,
+            headers: {
+                Authorization: this.config.discordbotspwToken,
+            },
+            body: {
+                server_count: this.client.guilds.size,
+            },
+            json: true,
+        }).catch((err) => { this.log.error(`Could not update pw with error ${err}`); });
+
+        r({
+            method: 'POST',
+            uri: `https://discordbots.org/api/bots/${this.client.user.id}/stats`,
+            headers: {
+                Authorization: this.config.discordbotsToken,
+            },
+            body: {
+                server_count: this.client.guilds.size,
+            },
+            json: true,
+        }).catch((err) => { this.log.error(`Could not update discordbots with error ${err}`); });
+    }
+
     private onReady(): () => void {
         return (() => {
             this.log.info(`Client is ready, username: ${this.client.user.username}.`);
@@ -122,6 +149,7 @@ export class SafetyJim {
 
             this.populateGuildConfigDatabase();
             this.populatePrefixDatabase();
+            this.updateDiscordBotLists();
 
             this.allowUsersCronJob = new cron.CronJob({cronTime: '*/10 * * * * *',
                                                        onTick: this.allowUsers.bind(this), start: true, context: this});
@@ -219,6 +247,7 @@ export class SafetyJim {
             this.database.createGuildSettings(guild);
             this.database.createGuildPrefix(guild, this.config.defaultPrefix);
             this.createRegexForGuild(guild.id, this.config.defaultPrefix);
+            this.updateDiscordBotLists();
             this.log.info(`Joined guild ${guild.name}`);
         });
     }
@@ -254,6 +283,7 @@ export class SafetyJim {
         return ((guild: Discord.Guild) => {
             this.database.delGuildSettings(guild);
             this.database.delGuildPrefix(guild);
+            this.updateDiscordBotLists();
         });
     }
 

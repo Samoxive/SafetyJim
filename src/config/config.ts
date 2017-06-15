@@ -8,13 +8,16 @@ interface IConfigFile {
     token: string;
     dbFileName: string;
     defaultPrefix: string;
-    version: string;
+    discordbotsToken: string;
+    discordbotspwToken: string;
 }
 
 export class Config {
     public discordToken: string;
     public dbFileName: string;
     public defaultPrefix: string;
+    public discordbotsToken: string;
+    public discordbotspwToken: string;
     public version: string;
 
     constructor(private configPath: string, private log: winston.LoggerInstance) {
@@ -51,6 +54,18 @@ export class Config {
         if (this.defaultPrefix === undefined) {
             log.error(`Default prefix not provided!\nUsing \` ${defaultConfigPrefix} \` as default!`);
             this.defaultPrefix = defaultConfigPrefix;
+        }
+
+        this.discordbotsToken = configData.discordbotsToken;
+        if (this.discordbotsToken === undefined) {
+            log.error(`Default discordbotsToken not provided!\nUsing \` "" \` as default!`);
+            this.discordbotsToken = '';
+        }
+
+        this.discordbotspwToken = configData.discordbotspwToken;
+        if (this.discordbotspwToken === undefined) {
+            log.error(`Default discordbotspwToken not provided!\nUsing \` "" \` as default!`);
+            this.discordbotspwToken = '';
         }
 
         this.version = packageData.version;

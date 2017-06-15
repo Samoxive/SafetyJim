@@ -22,9 +22,13 @@
   "homepage": "https://github.com/Samoxive/SafetyJim#readme",
   "dependencies": {
     "@types/node": "^7.0.18",
+    "@types/request": "0.0.43",
+    "@types/request-promise": "^4.1.33",
     "@types/winston": "^2.3.2",
     "cron": "^1.2.1",
     "discord.js": "hydrabolt/discord.js#11.1-dev",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
     "sqlite": "^2.7.0",
     "time-parser": "^0.2.10",
     "winston": "^2.3.1",
