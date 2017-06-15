@@ -10,6 +10,18 @@ CREATE TABLE BanList (
     Expires           BOOLEAN,
     Unbanned          BOOLEAN);
 
+CREATE TABLE MuteList (
+    MutedUserID       TEXT,
+    MutedUserName     TEXT,
+    ModeratorID       TEXT,
+    ModeratorUserName TEXT,
+    GuildID           TEXT,
+    MuteTime          INTEGER,
+    ExpireTime        INTEGER,
+    Reason            INTEGER,
+    Expires           BOOLEAN,
+    Unmuted           BOOLEAN);
+
 CREATE TABLE KickList (
     KickedUserID      TEXT,
     KickedUserName    TEXT,
