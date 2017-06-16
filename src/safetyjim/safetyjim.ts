@@ -26,6 +26,7 @@ export class SafetyJim {
     private commands = {} as Commands;
     private allowUsersCronJob;
     private unbanUserCronJob;
+    private unmuteUserCronJob;
 
     constructor(public config: Config,
                 public database: BotDatabase,
@@ -147,10 +148,12 @@ export class SafetyJim {
             this.populateWelcomeMessageDatabase();
             this.updateDiscordBotLists();
 
-            this.allowUsersCronJob = new cron.CronJob({cronTime: '*/10 * * * * *',
-                                                       onTick: this.allowUsers.bind(this), start: true, context: this});
+            this.allowUsersCronJob = new cron.CronJob({ cronTime: '*/10 * * * * *',
+                                                    onTick: this.allowUsers.bind(this), start: true, context: this });
             this.unbanUserCronJob = new cron.CronJob({ cronTime: '*/60 * * * * *',
-                                                       onTick: this.unbanUsers.bind(this), start: true, context: this});
+                                                    onTick: this.unbanUsers.bind(this), start: true, context: this });
+            this.unmuteUserCronJob = new cron.CronJob({ cronTime: '*/60 * * * * *',
+                                                    onTick: this.unmuteUsers.bind(this), start: true, context: this });
         });
     }
 
@@ -340,6 +343,22 @@ export class SafetyJim {
                  this.log.info(`Unbanned "${user.BannedUserName}" in guild "${g.name}".`);
              })
              .catch(() => { this.log.warn('Could not unban a user.'); });
+        }
+    }
+
+    private async unmuteUsers(): Promise<void> {
+        let usersToBeUnmuted = await this.database.getExpiredMutes();
+
+        for (let user of usersToBeUnmuted) {
+            let guild = this.client.guilds.get(user.GuildID);
+            if (!guild.roles.find('name', 'Muted')) {
+                return;
+            }
+            guild.members.get(user.MutedUserID).removeRole(guild.roles.find('name', 'Muted'))
+                .then(() => {
+                    this.database.updateMuteRecord(user);
+                })
+                .catch(() => { this.log.warn('Could not unmute a user.'); });
         }
     }
 
