@@ -259,11 +259,11 @@ export class SafetyJim {
                     let channel = this.client.channels.get(guildConfig.HoldingRoomChannelID) as Discord.TextChannel;
                     let message = await this.database.getWelcomeMessage(member.guild);
                     let guildMinutes = guildConfig.HoldingRoomMinutes;
-                    message = message.replace('$minute', guildMinutes + guildMinutes === 1 ? 'minute' : 'minutes')
+                    message = message.replace('$minute', guildMinutes + (guildMinutes === 1 ? ' minute' : ' minutes'))
                                      .replace('$user', member.user.toString())
                                      .replace('$guild', member.guild.name);
                     // tslint:disable-next-line:max-line-length
-                    channel.send(member)
+                    channel.send(message)
                            .catch((err) => { this.log.error(`There was an error when trying to send welcome message in ${member.guild.name}: ${err.toString()}`); });
                 } else {
                     this.log.warn(`Could not find holding room channel for ${member.guild.name} : ${member.guild.id}`);
