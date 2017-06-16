@@ -7,6 +7,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BotDatabase } from '../database/database';
 
+// tslint:disable-next-line:max-line-length
+const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
+
 type RegexRecords = { string: RegExp };
 type Commands = { string: Command };
 
@@ -141,6 +144,7 @@ export class SafetyJim {
 
             this.populateGuildConfigDatabase();
             this.populatePrefixDatabase();
+            this.populateWelcomeMessageDatabase();
             this.updateDiscordBotLists();
 
             this.allowUsersCronJob = new cron.CronJob({cronTime: '*/10 * * * * *',
@@ -238,6 +242,7 @@ export class SafetyJim {
                                 .catch(() => { guild.owner.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`); });
             this.database.createGuildSettings(guild);
             this.database.createGuildPrefix(guild, this.config.defaultPrefix);
+            this.database.createWelcomeMessage(guild, defaultWelcomeMessage);
             this.createRegexForGuild(guild.id, this.config.defaultPrefix);
             this.updateDiscordBotLists();
             this.log.info(`Joined guild ${guild.name}`);
@@ -252,8 +257,13 @@ export class SafetyJim {
             if (guildConfig.HoldingRoomActive) {
                 if (this.client.channels.has(guildConfig.HoldingRoomChannelID)) {
                     let channel = this.client.channels.get(guildConfig.HoldingRoomChannelID) as Discord.TextChannel;
+                    let message = await this.database.getWelcomeMessage(member.guild);
+                    let guildMinutes = guildConfig.HoldingRoomMinutes;
+                    message = message.replace('$minute', guildMinutes + guildMinutes === 1 ? 'minute' : 'minutes')
+                                     .replace('$user', member.user.toString())
+                                     .replace('$guild', member.guild.name);
                     // tslint:disable-next-line:max-line-length
-                    channel.send(`Welcome to ${member.guild.name} ${member.toString()}. You are in our holding room for ${guildConfig.HoldingRoomMinutes} minutes, please take this time to review our rules.`)
+                    channel.send(member)
                            .catch((err) => { this.log.error(`There was an error when trying to send welcome message in ${member.guild.name}: ${err.toString()}`); });
                 } else {
                     this.log.warn(`Could not find holding room channel for ${member.guild.name} : ${member.guild.id}`);
@@ -331,6 +341,27 @@ export class SafetyJim {
              })
              .catch(() => { this.log.warn('Could not unban a user.'); });
         }
+    }
+
+    private populateWelcomeMessageDatabase(): void {
+        let guildsNotInDatabaseCount = 0;
+
+        this.database.getWelcomeMessages()
+                     .then((welcomeMessages) => welcomeMessages.map((m) => m.GuildID))
+                     .then((existingGuildIds) => {
+                         this.client.guilds.map((guild) => {
+                             if (!existingGuildIds.includes(guild.id)) {
+                                 this.database.createWelcomeMessage(guild, defaultWelcomeMessage);
+                                 guildsNotInDatabaseCount++;
+                             }
+                         });
+                     })
+                     .then(() => {
+                         if (guildsNotInDatabaseCount) {
+                             // tslint:disable-next-line:max-line-length
+                             this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default welcome message.`);
+                         }
+                     });
     }
 
     private populateGuildConfigDatabase(): void {
