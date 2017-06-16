@@ -91,6 +91,11 @@ export class BotDatabase {
                                     Unmuted           BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create MuteList table!'); });
 
+        await this.database.run(`CREATE TABLE WelcomeMessages (
+                                    GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
+                                    Message TEXT);`)
+                                    .catch((err) => { this.log.error('Could not create WelcomeMessages table!'); });
+
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed)')
                            .catch((err) => { this.log.error('Could not create index for JoinLis table!'); });
 
@@ -214,6 +219,23 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not retrieve users that can be allowed!'); });
     }
 
+    public getWelcomeMessage(guild: Guild): Promise<string> {
+        return this.database.get('SELECT * FROM WelcomeMessages WHERE GuildID = ?;', guild.id)
+            .then((rows) => rows.Message as string)
+            .catch((err) => { this.log.error('Could not retrieve welcome message!'); });
+    }
+
+    public getWelcomeMessages(): Promise<WelcomeMessage[]> {
+        return this.database.all('SELECT * FROM WelcomeMessages;')
+            .then((rows) => rows as WelcomeMessage[])
+            .catch((err) => { this.log.error('Could not retrieve welcome messages!'); });
+    }
+
+    public updateWelcomeMessage(guild: Guild, newMessage: string): void {
+        this.database.run('UPDATE WelcomeMessage SET Message = ? WHERE GuildID = ?;', newMessage, guild.id)
+            .catch((err) => { this.log.error('Could not update welcome message!'); });
+    }
+
     public updateGuildPrefix(guild: Guild, newPrefix: string): void {
         this.database.run('UPDATE PrefixList SET Prefix = ? WHERE GuildID = ?', newPrefix, guild.id)
             .catch((err) => { this.log.error('Could not update prefix record!'); });
@@ -291,6 +313,11 @@ export class BotDatabase {
                           .catch((err) => { this.log.error('Could not update MuteRecord!'); });
     }
 
+    public delWelcomeMessage(guild: Guild): void {
+        this.database.run('DELETE FROM WelcomeMessages WHERE GuildID = ?;', guild.id)
+            .catch((err) => { this.log.error('Could not delete welcome message'); });
+    }
+
     public delGuildPrefix(guild: Guild): void {
         this.database.run('DELETE FROM PrefixList WHERE GuildID = ?', guild.id)
             .catch((err) => { this.log.error('Could not delete prefix record!'); });
@@ -324,6 +351,11 @@ export class BotDatabase {
     public delJoinEntry(userID: string, guildID: string): void {
         this.database.run('DELETE FROM JoinList WHERE UserID = ? AND GuildID = ?;', userID, guildID)
                      .catch((err) => { this.log.error('Could not delete join record!'); });
+    }
+
+    public createWelcomeMessage(guild: Guild, message: string): void {
+        this.database.run('INSERT INTO WelcomeMessages (GuildID, Message) VALUES (?, ?);', guild.id, message)
+            .catch((err) => { this.log.error('Could not create welcome message!'); });
     }
 
     public createGuildPrefix(guild: Guild, prefix: string): void {
@@ -487,6 +519,11 @@ export interface MuteRecord {
 export interface PrefixRecord {
     GuildID: string;
     Prefix: string;
+}
+
+export interface WelcomeMessage {
+    GuildID: string;
+    Message: string;
 }
 
 export interface JoinRecord {

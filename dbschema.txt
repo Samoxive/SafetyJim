@@ -65,6 +65,10 @@ CREATE TABLE GuildSettings (
     EmbedColor           TEXT
 );
 
+CREATE TABLE WelcomeMessages (
+    GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
+    Message TEXT);
+
 CREATE INDEX IF NOT EXISTS "" ON BanList (
     ModeratorID,
     GuildID,
