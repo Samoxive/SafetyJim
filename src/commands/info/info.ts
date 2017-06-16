@@ -25,16 +25,16 @@ class Info implements Command {
 
     private async asyncRun(bot: SafetyJim, msg: Discord.Message, args: string): Promise<void> {
         let config = await bot.database.getGuildConfiguration(msg.guild);
-        let uptimeString = this.timeElapsed((new Date()).getTime(), bot.bootTime.getTime());
+        let uptimeString = this.timeElapsed(Date.now(), bot.bootTime.getTime());
         let embed = {
             author: { name: `Safety Jim - v${bot.config.version}`,
                       icon_url: bot.client.user.avatarURL, 
                       url: 'https://discordbots.org/bot/313749262687141888' },
             description: `Lifting the :hammer: since ${uptimeString} ago.`,
             fields: [
-                { name: 'Server Count', value:  bot.client.guilds.size.toString(), inline: true },
-                { name: 'User Count', value: bot.client.users.size.toString(), inline: true },
-                { name: 'Channel Count', value: bot.client.channels.size.toString(), inline: true },
+                { name: 'Server Count', value:  bot.client.guilds.size, inline: true },
+                { name: 'User Count', value: bot.client.users.size, inline: true },
+                { name: 'Channel Count', value: bot.client.channels.size, inline: true },
                 { name: 'Websocket Ping', value: `${bot.client.ping.toFixed(0)}ms`, inline: true},
                 // tslint:disable-next-line:max-line-length
                 { name: 'RAM usage', value: `${(process.memoryUsage().rss / (1024 * 1024)).toFixed(0)}MB`, inline: true },
