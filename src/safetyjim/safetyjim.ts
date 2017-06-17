@@ -150,9 +150,9 @@ export class SafetyJim {
 
             this.allowUsersCronJob = new cron.CronJob({ cronTime: '*/10 * * * * *',
                                                     onTick: this.allowUsers.bind(this), start: true, context: this });
-            this.unbanUserCronJob = new cron.CronJob({ cronTime: '*/60 * * * * *',
+            this.unbanUserCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
                                                     onTick: this.unbanUsers.bind(this), start: true, context: this });
-            this.unmuteUserCronJob = new cron.CronJob({ cronTime: '*/60 * * * * *',
+            this.unmuteUserCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
                                                     onTick: this.unmuteUsers.bind(this), start: true, context: this });
         });
     }
