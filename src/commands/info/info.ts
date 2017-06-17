@@ -28,7 +28,7 @@ class Info implements Command {
         let uptimeString = this.timeElapsed(Date.now(), bot.bootTime.getTime());
         let embed = {
             author: { name: `Safety Jim - v${bot.config.version}`,
-                      icon_url: bot.client.user.avatarURL, 
+                      icon_url: bot.client.user.avatarURL,
                       url: 'https://discordbots.org/bot/313749262687141888' },
             description: `Lifting the :hammer: since ${uptimeString} ago.`,
             fields: [
