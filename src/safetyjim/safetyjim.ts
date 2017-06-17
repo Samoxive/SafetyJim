@@ -9,6 +9,8 @@ import { BotDatabase } from '../database/database';
 
 // tslint:disable-next-line:max-line-length
 const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
+const DiscordBotsGuildID = '110373943822540800';
+const DiscordBotListGuildID = '264445053596991498';
 
 type RegexRecords = { string: RegExp };
 type Commands = { string: Command };
@@ -143,6 +145,8 @@ export class SafetyJim {
                 'MANAGE_ROLES',
             ]).then((link) => this.log.info(`Bot invite link: ${link}`));
 
+            this.client.guilds.filter((guild) => this.isBotFarm(guild)).map((guild) => guild.leave());
+
             this.populateGuildConfigDatabase();
             this.populatePrefixDatabase();
             this.populateWelcomeMessageDatabase();
@@ -240,6 +244,11 @@ export class SafetyJim {
 
     private guildCreate(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
+            if (this.isBotFarm(guild)) {
+                guild.leave();
+                return;
+            }
+
             guild.defaultChannel.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`)
                                 // tslint:disable-next-line:max-line-length
                                 .catch(() => { guild.owner.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`); });
@@ -314,6 +323,12 @@ export class SafetyJim {
                 }
             }
         }
+    }
+
+    private isBotFarm(guild: Discord.Guild) {
+        return (guild.id !== DiscordBotListGuildID) &&
+               (guild.id !== DiscordBotsGuildID) &&
+               (guild.members.filter((member) => member.user.bot).size > 20);
     }
 
     private async allowUsers(): Promise<void> {
