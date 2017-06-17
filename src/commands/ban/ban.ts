@@ -17,7 +17,6 @@ class Ban implements Command {
         }
 
         if (!msg.guild.me.hasPermission('BAN_MEMBERS')) {
-            bot.log.info('hi');
             bot.failReact(msg);
             msg.channel.send('I don\'t have enough permissions to do that!');
             return;
@@ -32,7 +31,6 @@ class Ban implements Command {
         }
 
         if (!member.bannable) {
-            bot.log.info('hi');
             bot.failReact(msg);
             msg.channel.send('I don\'t have enough permissions to do that!');
             return;
