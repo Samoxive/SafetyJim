@@ -233,7 +233,7 @@ export class BotDatabase {
 
     public updateWelcomeMessage(guild: Guild, newMessage: string): void {
         this.database.run('UPDATE WelcomeMessages SET Message = ? WHERE GuildID = ?;', newMessage, guild.id)
-            .catch((err) => { this.log.error('Could not update welcome message!' + err); });
+            .catch((err) => { this.log.error('Could not update welcome message!'); });
     }
 
     public updateGuildPrefix(guild: Guild, newPrefix: string): void {
