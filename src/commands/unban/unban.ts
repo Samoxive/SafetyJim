@@ -12,7 +12,7 @@ class Unban implements Command {
             return true;
         }
 
-        let unbanUsername = args.toLowerCase();
+        let unbanUsername = args;
 
         if (!msg.guild.me.hasPermission('BAN_MEMBERS')) {
             bot.failReact(msg);
@@ -20,7 +20,7 @@ class Unban implements Command {
             return;
         }
         msg.guild.fetchBans()
-                 .then((bans) => bans.find('username', unbanUsername))
+                 .then((bans) => bans.find('tag', unbanUsername))
                  .then((bannee) => {
                      if (!bannee) {
                          this.userNotFound(bot, msg, args);
@@ -35,7 +35,7 @@ class Unban implements Command {
 
     public userNotFound(bot: SafetyJim, msg: Discord.Message, username: string): void {
         bot.failReact(msg);
-        msg.channel.send(`Could not find a banned user called ${username}!`);
+        msg.channel.send(`Could not find a banned user called \`${username}\`!`);
     }
 }
 
