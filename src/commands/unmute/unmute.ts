@@ -2,7 +2,7 @@ import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
 
 class Unmute implements Command {
-    public usage = 'unmute @user - Unmutes specified user';
+    public usage = 'unmute @user - unmutes specified user';
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}

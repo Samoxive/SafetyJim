@@ -3,7 +3,7 @@ import * as Discord from 'discord.js';
 import * as time from 'time-parser';
 
 class Mute implements Command {
-    public usage = 'mute @user [reason] | [time] - Mutes the user with specific args. Both arguments can be omitted.';
+    public usage = 'mute @user [reason] | [time] - mutes the user with specific args. Both arguments can be omitted.';
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}

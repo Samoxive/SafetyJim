@@ -3,7 +3,7 @@ import * as Discord from 'discord.js';
 import * as time from 'time-parser';
 
 class Ban implements Command {
-    public usage = 'ban @user [reason] | [time] - Bans the user with specific args. Both arguments can be omitted.';
+    public usage = 'ban @user [reason] | [time] - bans the user with specific args. Both arguments can be omitted.';
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}

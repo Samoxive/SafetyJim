@@ -3,7 +3,7 @@ import { GuildConfig } from '../../database/database';
 import * as Discord from 'discord.js';
 
 class Kick implements Command {
-    public usage = 'kick @user [reason] - Kicks the user with the specified reason';
+    public usage = 'kick @user [reason] - kicks the user with the specified reason';
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}

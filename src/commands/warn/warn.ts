@@ -3,7 +3,7 @@ import { GuildConfig } from '../../database/database';
 import * as Discord from 'discord.js';
 
 class Warn implements Command {
-    public usage = 'warn @user [reason] - Warn the user with the specified reason';
+    public usage = 'warn @user [reason] - warn the user with the specified reason';
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
