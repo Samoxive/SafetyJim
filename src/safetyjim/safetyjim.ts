@@ -169,7 +169,7 @@ export class SafetyJim {
 
             if (msg.isMentioned(this.client.user)) {
                 if (msg.content.includes('help') ||
-                    msg.content.includes('commands')) {
+                    msg.content.includes('command')) {
                     this.database.getGuildPrefix(msg.guild)
                         .then((prefix) => {
                             this.successReact(msg);
