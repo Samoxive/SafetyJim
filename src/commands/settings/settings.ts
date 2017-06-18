@@ -124,7 +124,7 @@ class Settings implements Command {
     private getSettingsString(msg: Discord.Message, config: GuildConfig, prefix: string): string {
         let output = '';
         output += `Prefix: ${prefix}\n`;
-        output += `Embed color: ${config.EmbedColor}\n`;
+        output += `Embed color: #${config.EmbedColor}\n`;
 
         if (config.ModLogActive === 0) {
             output += 'Mod Log: Disabled\n';
