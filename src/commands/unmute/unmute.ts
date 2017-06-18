@@ -34,7 +34,6 @@ class Unmute implements Command {
               .then(() => {
                   bot.database.updateMuteRecordWithID(member.user.id, msg.guild.id);
                   bot.successReact(msg);
-                  msg.channel.send(`Unmuted user ${member}.`);
               })
               .catch(() => {
                   bot.failReact(msg);
