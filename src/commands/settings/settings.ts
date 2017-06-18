@@ -64,7 +64,6 @@ class Settings implements Command {
                     let channel = msg.mentions.channels.first();
 
                     bot.successReact(msg);
-                    msg.channel.send('Updated guild settings.');
                     bot.log.info(`Updated channel for mod log in guild "${msg.guild}" with id: "${msg.guild.id}".`);
                     bot.database.updateGuildConfig(msg.guild, { modLogChannelID: channel.id });
                     break;
@@ -101,7 +100,6 @@ class Settings implements Command {
             bot.successReact(msg);
             bot.createRegexForGuild(msg.guild.id, newPrefix);
             bot.database.updateGuildPrefix(msg.guild, newPrefix);
-            msg.channel.send('Updated guild prefix.');
             bot.log.info(`Updated prefix for guild "${msg.guild}" with id: "${msg.guild.id} with "${newPrefix}"`);
         } else if (splitArgs[0] === 'embedColor') {
             if (splitArgs[1] !== 'set' || splitArgs.length < 3) {
@@ -170,7 +168,6 @@ class Settings implements Command {
                 msg.channel.send('Mod log is already disabled silly.');
             } else {
                 bot.successReact(msg);
-                msg.channel.send('Disabled mod log.');
                 bot.log.info(`Disabled mod log for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
                 bot.database.updateGuildConfig(msg.guild, { modLog: false });
                 return;
@@ -183,7 +180,6 @@ class Settings implements Command {
                 bot.successReact(msg);
                 bot.database.updateGuildConfig(msg.guild, { modLog: true });
                 bot.log.info(`Enabled mod log for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
-                msg.channel.send('Enabled mod log.');
             }
         }
     }
@@ -197,7 +193,6 @@ class Settings implements Command {
                 msg.channel.send('Holding room is already disabled silly.');
             } else {
                 bot.successReact(msg);
-                msg.channel.send('Disabled holding room.');
                 bot.log.info(`Disabled holding room for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
                 bot.database.updateGuildConfig(msg.guild, { holdingRoom: false });
                 return;
@@ -224,7 +219,6 @@ class Settings implements Command {
             bot.successReact(msg);
             bot.database.updateGuildConfig(msg.guild, { holdingRoom: true });
             bot.log.info(`Enabled holding room for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
-            msg.channel.send('Enabled holding room.');
         }
     }
 
@@ -282,7 +276,6 @@ class Settings implements Command {
         }
 
         bot.successReact(msg);
-        msg.channel.send('Updated guild configuration.');
     }
 }
 
