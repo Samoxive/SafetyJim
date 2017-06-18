@@ -14,6 +14,8 @@ class Settings implements Command {
         // tslint:disable-next-line:max-line-length
         'settings holdingRoom set minutes <minutes> - sets how much minutes a new user has to wait before being allowed',
         'settings holdingRoom set channel <#channelName> - sets what channel welcome messages are posted to',
+        // tslint:disable-next-line:max-line-length
+        'settings holdingRoom set message <message> - sets the message new members get mentioned with in the holdingroom (variables: $user, $guild and $minutes)',
     ];
 
     // tslint:disable-next-line:no-empty
@@ -70,7 +72,7 @@ class Settings implements Command {
 
             return;
         } else if (splitArgs[0] === 'holdingRoom') {
-            if (!splitArgs[1] || !['enable', 'disable', 'set'].includes(splitArgs[1])) {
+            if (!splitArgs[1] || !['enable', 'disable', 'set', 'message'].includes(splitArgs[1])) {
                 return true;
             }
 
@@ -80,7 +82,7 @@ class Settings implements Command {
                     this.handleHoldingRoomSwitch(bot, msg, splitArgs[1] === 'enable');
                     break;
                 case 'set':
-                    if (splitArgs.length < 3 || !['role', 'minutes', 'channel', 'prefix'].includes(splitArgs[2])) {
+                    if (splitArgs.length < 3 || !['role', 'minutes', 'channel', 'message'].includes(splitArgs[2])) {
                         return true;
                     }
 
@@ -216,7 +218,7 @@ class Settings implements Command {
             let output = '';
             // TODO(sam): make this prettier
             output += 'Couldn\'t enable holding room because role is missing in your config!\n';
-            output += `Try ${prefix + ' ' + 'settings holdingRoom set role <roleName>'}`;
+            output += `Try ${prefix} settings holdingRoom set role <roleName>`;
             msg.channel.send(output);
         } else {
             bot.successReact(msg);
@@ -230,12 +232,12 @@ class Settings implements Command {
         switch (args[0]) {
             case 'role':
                 let roleName = args.slice(1).join(' ');
-                let id = msg.guild.roles.filter((r) => r.name === roleName).array()[0].id;
-                if (!roleName) {
+                if (!msg.guild.roles.find('name', roleName)) {
                     bot.failReact(msg);
-                    msg.channel.send('Invalid role name, no changes were made!');
+                    msg.channel.send(`No role called \`${roleName}\` found. Remember, role names are case sensitive!`);
                     return;
                 } else {
+                    let id = msg.guild.roles.find('name', roleName).id;
                     bot.successReact(msg);
                     bot.log.info(`Updated role for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
                     bot.database.updateGuildConfig(msg.guild, { holdingRoomRoleID: id });
@@ -252,7 +254,7 @@ class Settings implements Command {
                     bot.successReact(msg);
                     // tslint:disable-next-line:max-line-length
                     bot.log.info(`Updated minutes for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
-                    bot.database.updateGuildConfig(msg.guild, {minutes: minute});
+                    bot.database.updateGuildConfig(msg.guild, { minutes: minute });
                 }
                 break;
             case 'channel':
@@ -267,6 +269,15 @@ class Settings implements Command {
                 bot.successReact(msg);
                 bot.log.info(`Updated channel for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
                 bot.database.updateGuildConfig(msg.guild, { holdingRoomID: channel.id });
+                break;
+            case 'message':
+                let message = args.slice(1).join(' ');
+                if (!message) {
+                    bot.failReact(msg);
+                    msg.channel.send('No message argument entered, no changes were made!');
+                }
+                bot.successReact(msg);
+                bot.database.updateWelcomeMessage(msg.guild, message);
                 break;
         }
 
