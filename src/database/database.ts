@@ -91,13 +91,13 @@ export class BotDatabase {
                                     Unmuted           BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create MuteList table!'); });
 
-        await this.database.run(`CREATE TABLE WelcomeMessages (
+        await this.database.run(`CREATE TABLE IF NOT EXISTS WelcomeMessages (
                                     GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
                                     Message TEXT);`)
                                     .catch((err) => { this.log.error('Could not create WelcomeMessages table!'); });
 
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed)')
-                           .catch((err) => { this.log.error('Could not create index for JoinLis table!'); });
+                           .catch((err) => { this.log.error('Could not create index for JoinList table!'); });
 
         // seriously, fix this.
         return Promise.resolve(this);
@@ -232,8 +232,8 @@ export class BotDatabase {
     }
 
     public updateWelcomeMessage(guild: Guild, newMessage: string): void {
-        this.database.run('UPDATE WelcomeMessage SET Message = ? WHERE GuildID = ?;', newMessage, guild.id)
-            .catch((err) => { this.log.error('Could not update welcome message!'); });
+        this.database.run('UPDATE WelcomeMessages SET Message = ? WHERE GuildID = ?;', newMessage, guild.id)
+            .catch((err) => { this.log.error('Could not update welcome message!' + err); });
     }
 
     public updateGuildPrefix(guild: Guild, newPrefix: string): void {
