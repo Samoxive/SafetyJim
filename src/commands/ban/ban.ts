@@ -89,7 +89,7 @@ class Ban implements Command {
             });
         })
             .catch(() => {
-                msg.react('322352183226007554');
+                bot.successReact(msg);
                 member.ban(reason);
         });
 
