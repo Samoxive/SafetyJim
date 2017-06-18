@@ -120,15 +120,15 @@ export class SafetyJim {
                 .post(`https://bots.discord.pw/api/bots/${this.client.user.id}/stats`)
                 .set('Authorization', this.config.discordbotspwToken)
                 .send({ server_count: this.client.guilds.size })
-                .end((err) => { this.log.error(`Could not update pw with error ${err.stack}`); });
+                .catch((err) => { this.log.error(`Could not update pw with error ${err.stack}`); });
         }
 
         if (this.config.discordbotsToken) {
             snekfetch
-                .post(`https://bots.discord.pw/api/bots/${this.client.user.id}/stats`)
+                .post(`https://discordbots.org/api/bots/${this.client.user.id}/stats`)
                 .set('Authorization', this.config.discordbotsToken)
                 .send({ server_count: this.client.guilds.size })
-                .end((err) => { this.log.error(`Could not update discordbots with error ${err.stack}`); });
+                .catch((err) => { this.log.error(`Could not update discordbots with error ${err.stack}`); });
         }
     }
 
