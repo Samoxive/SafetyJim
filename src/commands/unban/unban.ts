@@ -2,7 +2,7 @@ import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
 
 class Unban implements Command {
-    public usage = 'unban <username> - unbans user with specified username';
+    public usage = 'unban <tag> - unbans user with specified user tag (example#1998)';
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
