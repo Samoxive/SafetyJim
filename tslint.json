@@ -15,6 +15,7 @@
         ],
         "object-literal-sort-keys": false,
         "interface-over-type-literal": false,
-        "radix": false
+        "radix": false,
+        "switch-default": false
     }
 }
