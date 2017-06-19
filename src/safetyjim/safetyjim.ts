@@ -6,7 +6,7 @@ import * as snekfetch from 'snekfetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import { BotDatabase } from '../database/database';
-
+const Package = require('../../package.json');
 // tslint:disable-next-line:max-line-length
 const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
 const DiscordBotsGuildID = '110373943822540800';
@@ -151,6 +151,7 @@ export class SafetyJim {
             this.populatePrefixDatabase();
             this.populateWelcomeMessageDatabase();
             this.updateDiscordBotLists();
+            this.client.user.setGame(`-mod help | ${Package.version}`);
 
             this.allowUsersCronJob = new cron.CronJob({ cronTime: '*/10 * * * * *',
                                                     onTick: this.allowUsers.bind(this), start: true, context: this });
