@@ -203,34 +203,7 @@ export class SafetyJim {
                 return;
             }
 
-            let command = cmdMatch[1];
-            let args = cmdMatch[2].trim();
-            let showUsage;
-
-            try {
-                showUsage = this.commands[command].run(this, msg, args);
-            } catch (e) {
-                this.failReact(msg);
-                msg.channel.send('There was an error running the command:\n' +
-                                '```\n' + e.toString() + '\n```');
-                this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}"`);
-            }
-
-            if (showUsage === true) {
-                let usage = this.commands[command].usage;
-                this.database.getGuildPrefix(msg.guild)
-                             .then((prefix) => {
-                                    this.failReact(msg);
-                                    msg.channel.send('', { embed: {
-                                    author: {
-                                        name: `Safety Jim - "${command}" Syntax`,
-                                        icon_url: this.client.user.avatarURL,
-                                    },
-                                    description: this.getUsageString(prefix, usage),
-                                    color: 0x4286f4,
-                                }});
-                             });
-            }
+            this.executeCommand(msg, cmdMatch);
         }).bind(this);
     }
 
@@ -299,6 +272,36 @@ export class SafetyJim {
         return ((event: any) => {
             this.log.warn(`Client triggered disconnect event: ${JSON.stringify(event)}`);
         });
+    }
+
+    private async executeCommand(msg: Discord.Message, cmdMatch: RegExpMatchArray): Promise<void> {
+        let command = cmdMatch[1];
+        let args = cmdMatch[2].trim();
+        let showUsage;
+
+        try {
+            showUsage = this.commands[command].run(this, msg, args);
+        } catch (e) {
+            await this.failReact(msg);
+            msg.channel.send('There was an error running the command:\n' +
+                            '```\n' + e.toString() + '\n```');
+            this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${e.toString()}`);
+        }
+
+        if (showUsage === true) {
+            let usage = this.commands[command].usage;
+            let prefix = await this.database.getGuildPrefix(msg.guild);
+
+            await this.failReact(msg);
+            msg.channel.send('', { embed: {
+                author: {
+                    name: `Safety Jim - "${command}" Syntax`,
+                    icon_url: this.client.user.avatarURL,
+                },
+                description: this.getUsageString(prefix, usage),
+                color: 0x4286f4,
+                } });
+        }
     }
 
     private loadCommands(): void {
