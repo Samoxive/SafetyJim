@@ -60,10 +60,10 @@ export class SafetyJim {
         });
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
-        this.client.on('guildCreate', this.guildCreate());
-        this.client.on('guildDelete', this.guildDelete());
-        this.client.on('guildMemberAdd', this.guildMemberAdd());
-        this.client.on('guildMemberRemove', this.guildMemberRemove());
+        this.client.on('guildCreate', this.onGuildCreate());
+        this.client.on('guildDelete', this.onGuildDelete());
+        this.client.on('guildMemberAdd', this.onGuildMemberAdd());
+        this.client.on('guildMemberRemove', this.onGuildMemberRemove());
 
         this.client.login(config.discordToken);
     }
@@ -234,7 +234,7 @@ export class SafetyJim {
         }).bind(this);
     }
 
-    private guildCreate(): (guild: Discord.Guild) => void {
+    private onGuildCreate(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
             if (this.isBotFarm(guild)) {
                 guild.leave();
@@ -253,7 +253,7 @@ export class SafetyJim {
         });
     }
 
-    private guildMemberAdd(): (member: Discord.GuildMember) => void {
+    private onGuildMemberAdd(): (member: Discord.GuildMember) => void {
         return (async (member: Discord.GuildMember) => {
             this.log.info(`${member.user.tag} joined guild ${member.guild.name}.`);
             let guildConfig = await this.database.getGuildConfiguration(member.guild);
@@ -279,19 +279,25 @@ export class SafetyJim {
         });
     }
 
-    private guildMemberRemove(): (member: Discord.GuildMember) => void {
+    private onGuildMemberRemove(): (member: Discord.GuildMember) => void {
         return ((member: Discord.GuildMember) => {
             this.database.delJoinEntry(member.user.id, member.guild.id);
         });
     }
 
-    private guildDelete(): (guild: Discord.Guild) => void {
+    private onGuildDelete(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
             this.database.delGuildSettings(guild);
             this.database.delGuildPrefix(guild);
             delete this.commandRegex[guild.id];
             delete this.prefixTestRegex[guild.id];
             this.updateDiscordBotLists();
+        });
+    }
+
+    private onDisconnect(): (event: any) => void {
+        return ((event: any) => {
+            this.log.warn(`Client triggered disconnect event: ${JSON.stringify(event)}`);
         });
     }
 
