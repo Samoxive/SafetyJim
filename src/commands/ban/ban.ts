@@ -22,7 +22,7 @@ class Ban implements Command {
             return;
         }
 
-        let member = msg.guild.members.get(msg.mentions.users.first().id);
+        let member = msg.mentions.members.first();
 
         if (member.id === msg.author.id) {
             bot.failReact(msg);
