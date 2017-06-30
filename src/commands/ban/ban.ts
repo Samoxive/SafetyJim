@@ -26,11 +26,11 @@ class Ban implements Command {
 
         bot.log.info(member.id);
         bot.log.info(msg.author.id);
-        if (member.id === msg.author.id) {
-            bot.failReact(msg);
-            msg.channel.send('You can\'t ban yourself, dummy!');
-            return false;
-        }
+        //if (member.id === msg.author.id) {
+        //    bot.failReact(msg);
+        //    msg.channel.send('You can\'t ban yourself, dummy!');
+        //    return false;
+        // }
 
         if (!member.bannable) {
             bot.failReact(msg);
