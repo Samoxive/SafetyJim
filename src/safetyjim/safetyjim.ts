@@ -284,8 +284,9 @@ export class SafetyJim {
         } catch (e) {
             await this.failReact(msg);
             msg.channel.send('There was an error running the command:\n' +
-                            '```\n' + e.toString() + '\n```');
-            this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${e.toString()}`);
+                            '```\n' + JSON.stringify(e) + '\n```');
+            // tslint:disable-next-line:max-line-length
+            this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${JSON.stringify(e)}`);
         }
 
         if (showUsage === true) {
@@ -369,10 +370,20 @@ export class SafetyJim {
 
         for (let user of usersToBeUnmuted) {
             let guild = this.client.guilds.get(user.GuildID);
-            if (!guild.roles.find('name', 'Muted')) {
+
+            if (!guild || !guild.roles.find('name', 'Muted')) {
+                this.database.updateMuteRecord(user);
                 return;
             }
-            guild.members.get(user.MutedUserID).removeRole(guild.roles.find('name', 'Muted'))
+
+            let member = guild.members.get(user.MutedUserID);
+
+            if (!member) {
+                this.database.updateMuteRecord(user);
+                return;
+            }
+
+            member.removeRole(guild.roles.find('name', 'Muted'))
                 .then(() => {
                     this.database.updateMuteRecord(user);
                 })
