@@ -284,9 +284,9 @@ export class SafetyJim {
         } catch (e) {
             await this.failReact(msg);
             msg.channel.send('There was an error running the command:\n' +
-                            '```\n' + JSON.stringify(e) + '\n```');
+                            '```\n' + e.stack + e.lineNumber + e.message + '\n```');
             // tslint:disable-next-line:max-line-length
-            this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${JSON.stringify(e)}`);
+            this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${e.stack + e.lineNumber + e.message}`);
         }
 
         if (showUsage === true) {
