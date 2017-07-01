@@ -388,7 +388,8 @@ export class SafetyJim {
                 return;
             }
 
-            let member = guild.members.get(user.MutedUserID);
+            await this.client.fetchUser(user.MutedUserID);
+            let member = await guild.fetchMember(user.MutedUserID);
 
             if (!member) {
                 this.database.updateMuteRecord(user);
