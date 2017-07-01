@@ -354,14 +354,26 @@ export class SafetyJim {
     private async unbanUsers(): Promise<void> {
         let usersToBeUnbanned = await this.database.getExpiredBans();
 
+        if (usersToBeUnbanned == null) {
+            return;
+        }
+
         for (let user of usersToBeUnbanned) {
             let g = this.client.guilds.get(user.GuildID);
-            g.unban(user.BannedUserID)
-             .then(() => {
-                 this.database.updateBanRecord(user);
-                 this.log.info(`Unbanned "${user.BannedUserName}" in guild "${g.name}".`);
-             })
-             .catch(() => { this.log.warn('Could not unban a user.'); });
+
+            if (g == null) {
+                this.database.updateBanRecord(user);
+            } else {
+                try {
+                    await g.unban(user.BannedUserID);
+                    await this.database.updateBanRecord(user);
+                    this.log.info(`Unbanned "${user.BannedUserName}" in guild "${g.name}".`);
+                } catch (e) {
+                    await this.database.updateBanRecord(user);
+                    // tslint:disable-next-line:max-line-length
+                    this.log.warn(`Could not unban user ${user.BannedUserName} (${user.BannedUserID}) in guild ${this.client.guilds.get(user.GuildID).id} : ${JSON.stringify(e)}`);
+                }
+            }
         }
     }
 
