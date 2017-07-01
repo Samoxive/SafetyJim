@@ -15,10 +15,10 @@ class Clean implements Command {
         if (!parseInt(newArgs[0])) {
             deleteAmount = 2;
         } else {
-            deleteAmount = parseInt(newArgs[0]);
+            deleteAmount = parseInt(newArgs[0]) + 1;
         }
 
-        if (deleteAmount && deleteAmount > 99) {
+        if (deleteAmount > 100) {
             msg.channel.send('You can\'t delete more than 100 messages.');
             bot.failReact(msg);
             return;
