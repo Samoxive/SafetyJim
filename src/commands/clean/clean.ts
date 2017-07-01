@@ -2,8 +2,10 @@ import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
 class Clean implements Command {
     public usage = 'ping - pong';
+
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
+
     public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
         let newArgs = args.split(' ');
         let deleteAmount;
@@ -14,8 +16,8 @@ class Clean implements Command {
         }
 
         if (deleteAmount && deleteAmount > 99) {
-            msg.channel.send('You can\'t delete more than 100 messages.')
-            bot.failReact(msg)
+            msg.channel.send('You can\'t delete more than 100 messages.');
+            bot.failReact(msg);
         }
         if (!newArgs[1]) {
             msg.channel.bulkDelete(deleteAmount + 1);
