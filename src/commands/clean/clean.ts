@@ -1,7 +1,10 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
 class Clean implements Command {
-    public usage = 'ping - pong';
+    public usage = [
+        'clean - deletes one message',
+        'clean <number> @user - deletes number of messages from specified user',
+        'clean <number> bot - deletes number of messages sent from bots'];
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
@@ -18,12 +21,21 @@ class Clean implements Command {
         if (deleteAmount && deleteAmount > 99) {
             msg.channel.send('You can\'t delete more than 100 messages.');
             bot.failReact(msg);
-        }
-        if (!newArgs[1]) {
-            msg.channel.bulkDelete(deleteAmount + 1);
-            bot.failReact(msg);
             return;
         }
+
+        if (!newArgs[1]) {
+            bot.successReact(msg);
+            msg.channel.bulkDelete(deleteAmount);
+            return;
+        }
+
+        if (!newArgs[1].match(Discord.MessageMentions.USERS_PATTERN) ||
+            newArgs[1].toLowerCase() !== 'bot') {
+                bot.failReact(msg);
+                return true;
+        }
+
         if (newArgs[1].match(Discord.MessageMentions.USERS_PATTERN)) {
             msg.channel.fetchMessages({ limit: 100 }).then((messages) => {
                 const newMessages = messages.filterArray((m) => m.author.id === msg.mentions.users.first().id)
@@ -31,6 +43,7 @@ class Clean implements Command {
                 msg.channel.bulkDelete(newMessages);
             });
         }
+
         if (newArgs[1].toLowerCase() === 'bot') {
             msg.channel.fetchMessages({ limit: 100 }).then((messages) => {
                 const newMessages = messages.filterArray((m) => m.author.bot)
