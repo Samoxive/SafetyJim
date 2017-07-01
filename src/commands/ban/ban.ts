@@ -22,6 +22,7 @@ class Ban implements Command {
             return;
         }
 
+        await bot.client.fetchUser(msg.mentions.users.first().id);
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
