@@ -8,7 +8,7 @@ class Ban implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
         let splitArgs = args.split(' ');
 
         if (msg.mentions.users.size === 0 ||
@@ -22,7 +22,8 @@ class Ban implements Command {
             return;
         }
 
-        let member = msg.guild.member(msg.mentions.users.first());
+        await bot.client.fetchUser(msg.mentions.users.first().id);
+        let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
             bot.failReact(msg);

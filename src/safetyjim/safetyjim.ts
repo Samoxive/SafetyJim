@@ -60,10 +60,10 @@ export class SafetyJim {
         });
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
-        this.client.on('guildCreate', this.guildCreate());
-        this.client.on('guildDelete', this.guildDelete());
-        this.client.on('guildMemberAdd', this.guildMemberAdd());
-        this.client.on('guildMemberRemove', this.guildMemberRemove());
+        this.client.on('guildCreate', this.onGuildCreate());
+        this.client.on('guildDelete', this.onGuildDelete());
+        this.client.on('guildMemberAdd', this.onGuildMemberAdd());
+        this.client.on('guildMemberRemove', this.onGuildMemberRemove());
 
         this.client.login(config.discordToken);
     }
@@ -203,38 +203,11 @@ export class SafetyJim {
                 return;
             }
 
-            let command = cmdMatch[1];
-            let args = cmdMatch[2].trim();
-            let showUsage;
-
-            try {
-                showUsage = this.commands[command].run(this, msg, args);
-            } catch (e) {
-                this.failReact(msg);
-                msg.channel.send('There was an error running the command:\n' +
-                                '```\n' + e.toString() + '\n```');
-                this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}"`);
-            }
-
-            if (showUsage === true) {
-                let usage = this.commands[command].usage;
-                this.database.getGuildPrefix(msg.guild)
-                             .then((prefix) => {
-                                    this.failReact(msg);
-                                    msg.channel.send('', { embed: {
-                                    author: {
-                                        name: `Safety Jim - "${command}" Syntax`,
-                                        icon_url: this.client.user.avatarURL,
-                                    },
-                                    description: this.getUsageString(prefix, usage),
-                                    color: 0x4286f4,
-                                }});
-                             });
-            }
+            this.executeCommand(msg, cmdMatch);
         }).bind(this);
     }
 
-    private guildCreate(): (guild: Discord.Guild) => void {
+    private onGuildCreate(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
             if (this.isBotFarm(guild)) {
                 guild.leave();
@@ -253,7 +226,7 @@ export class SafetyJim {
         });
     }
 
-    private guildMemberAdd(): (member: Discord.GuildMember) => void {
+    private onGuildMemberAdd(): (member: Discord.GuildMember) => void {
         return (async (member: Discord.GuildMember) => {
             this.log.info(`${member.user.tag} joined guild ${member.guild.name}.`);
             let guildConfig = await this.database.getGuildConfiguration(member.guild);
@@ -279,13 +252,13 @@ export class SafetyJim {
         });
     }
 
-    private guildMemberRemove(): (member: Discord.GuildMember) => void {
+    private onGuildMemberRemove(): (member: Discord.GuildMember) => void {
         return ((member: Discord.GuildMember) => {
             this.database.delJoinEntry(member.user.id, member.guild.id);
         });
     }
 
-    private guildDelete(): (guild: Discord.Guild) => void {
+    private onGuildDelete(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
             this.database.delGuildSettings(guild);
             this.database.delGuildPrefix(guild);
@@ -293,6 +266,43 @@ export class SafetyJim {
             delete this.prefixTestRegex[guild.id];
             this.updateDiscordBotLists();
         });
+    }
+
+    private onDisconnect(): (event: any) => void {
+        return ((event: any) => {
+            this.log.warn(`Client triggered disconnect event: ${JSON.stringify(event)}`);
+        });
+    }
+
+    private async executeCommand(msg: Discord.Message, cmdMatch: RegExpMatchArray): Promise<void> {
+        let command = cmdMatch[1];
+        let args = cmdMatch[2].trim();
+        let showUsage;
+
+        try {
+            showUsage = this.commands[command].run(this, msg, args);
+        } catch (e) {
+            await this.failReact(msg);
+            msg.channel.send('There was an error running the command:\n' +
+                            '```\n' + e.stack + e.lineNumber + e.message + '\n```');
+            // tslint:disable-next-line:max-line-length
+            this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${e.stack + e.lineNumber + e.message}`);
+        }
+
+        if (showUsage === true) {
+            let usage = this.commands[command].usage;
+            let prefix = await this.database.getGuildPrefix(msg.guild);
+
+            await this.failReact(msg);
+            msg.channel.send('', { embed: {
+                author: {
+                    name: `Safety Jim - "${command}" Syntax`,
+                    icon_url: this.client.user.avatarURL,
+                },
+                description: this.getUsageString(prefix, usage),
+                color: 0x4286f4,
+                } });
+        }
     }
 
     private loadCommands(): void {
@@ -344,14 +354,26 @@ export class SafetyJim {
     private async unbanUsers(): Promise<void> {
         let usersToBeUnbanned = await this.database.getExpiredBans();
 
+        if (usersToBeUnbanned == null) {
+            return;
+        }
+
         for (let user of usersToBeUnbanned) {
             let g = this.client.guilds.get(user.GuildID);
-            g.unban(user.BannedUserID)
-             .then(() => {
-                 this.database.updateBanRecord(user);
-                 this.log.info(`Unbanned "${user.BannedUserName}" in guild "${g.name}".`);
-             })
-             .catch(() => { this.log.warn('Could not unban a user.'); });
+
+            if (g == null) {
+                this.database.updateBanRecord(user);
+            } else {
+                try {
+                    await g.unban(user.BannedUserID);
+                    await this.database.updateBanRecord(user);
+                    this.log.info(`Unbanned "${user.BannedUserName}" in guild "${g.name}".`);
+                } catch (e) {
+                    await this.database.updateBanRecord(user);
+                    // tslint:disable-next-line:max-line-length
+                    this.log.warn(`Could not unban user ${user.BannedUserName} (${user.BannedUserID}) in guild ${this.client.guilds.get(user.GuildID).id} : ${JSON.stringify(e)}`);
+                }
+            }
         }
     }
 
@@ -360,10 +382,21 @@ export class SafetyJim {
 
         for (let user of usersToBeUnmuted) {
             let guild = this.client.guilds.get(user.GuildID);
-            if (!guild.roles.find('name', 'Muted')) {
+
+            if (!guild || !guild.roles.find('name', 'Muted')) {
+                this.database.updateMuteRecord(user);
                 return;
             }
-            guild.members.get(user.MutedUserID).removeRole(guild.roles.find('name', 'Muted'))
+
+            await this.client.fetchUser(user.MutedUserID);
+            let member = await guild.fetchMember(user.MutedUserID);
+
+            if (!member) {
+                this.database.updateMuteRecord(user);
+                return;
+            }
+
+            member.removeRole(guild.roles.find('name', 'Muted'))
                 .then(() => {
                     this.database.updateMuteRecord(user);
                 })
