@@ -18,12 +18,7 @@ class Info implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
-        this.asyncRun(bot, msg, args);
-        return;
-    }
-
-    private async asyncRun(bot: SafetyJim, msg: Discord.Message, args: string): Promise<void> {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let config = await bot.database.getGuildConfiguration(msg.guild);
         let uptimeString = this.timeElapsed(Date.now(), bot.bootTime.getTime());
         let embed = {
@@ -44,8 +39,9 @@ class Info implements Command {
             color: parseInt(config.EmbedColor, 16),
         };
 
-        bot.successReact(msg);
-        msg.channel.send({ embed });
+        await bot.successReact(msg);
+        await msg.channel.send({ embed });
+        return;
     }
 
     private timeElapsed(before: number, after: number) {

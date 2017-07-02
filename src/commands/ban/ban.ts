@@ -8,7 +8,7 @@ class Ban implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
 
         if (msg.mentions.users.size === 0 ||
@@ -17,7 +17,7 @@ class Ban implements Command {
         }
 
         if (!msg.guild.me.hasPermission('BAN_MEMBERS')) {
-            bot.failReact(msg);
+            await bot.failReact(msg);
             msg.channel.send('I don\'t have enough permissions to do that!');
             return;
         }
@@ -26,14 +26,14 @@ class Ban implements Command {
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            bot.failReact(msg);
-            msg.channel.send('You can\'t ban yourself, dummy!');
+            await bot.failReact(msg);
+            await msg.channel.send('You can\'t ban yourself, dummy!');
             return false;
         }
 
         if (!member.bannable) {
-            bot.failReact(msg);
-            msg.channel.send('I don\'t have enough permissions to do that!');
+            await bot.failReact(msg);
+            await msg.channel.send('I don\'t have enough permissions to do that!');
             return;
         }
 
@@ -53,8 +53,8 @@ class Ban implements Command {
             }
             parsedTime = time(timeArg);
             if (!parsedTime.relative) {
-                bot.failReact(msg);
-                msg.channel.send(`Invalid time argument \`${timeArg}\`. Try again.`);
+                await bot.failReact(msg);
+                await msg.channel.send(`Invalid time argument \`${timeArg}\`. Try again.`);
                 return;
             }
             if (parsedTime.relative < 0) {
@@ -70,7 +70,7 @@ class Ban implements Command {
             reason = 'No reason specified';
         }
 
-        bot.database.getGuildConfiguration(msg.guild).then((config) => {
+        let config = await bot.database.getGuildConfiguration(msg.guild);
         let embed = {
             title: `Banned from ${msg.guild.name}`,
             color: parseInt(config.EmbedColor, 16),
@@ -79,30 +79,30 @@ class Ban implements Command {
                 { name: 'Reason:', value: reason, inline: false },
                 { name: 'Banned until', value: parsedTime ? new Date(parsedTime.absolute).toString() : 'Indefinitely' },
             ],
-            footer: { text: `Banned by ${member.user.tag} (${member.id})` },
+            footer: { text: `Banned by ${msg.author.tag} (${msg.author.id})` },
             timestamp: new Date(),
         };
 
-        member.send({ embed })
-            .then(() => {
-                bot.successReact(msg);
-                member.ban(reason);
-            });
-        })
-            .catch(() => {
-                bot.successReact(msg);
-                member.ban(reason);
-        });
+        try {
+            await member.send({ embed });
+        } finally {
+            try {
+                await member.ban(reason);
+                await bot.successReact(msg);
+                await this.createModLogEntry(bot, msg, member,
+                                             reason, parsedTime ? parsedTime.absolute : null);
+                await bot.database.createUserBan(
+                    member.user,
+                    msg.author,
+                    msg.guild,
+                    reason,
+                    parsedTime ? Math.round(parsedTime.absolute / 1000) : null);
+            } catch (e) {
+                await bot.failReact(msg);
+                await msg.channel.send('Could not ban specified user. Do I have enough permissions?');
+            }
+        }
 
-        bot.database.createUserBan(
-            member.user,
-            msg.author,
-            msg.guild,
-            reason,
-            parsedTime ? Math.round(parsedTime.absolute / 1000) : null);
-
-        this.createModLogEntry(bot, msg, member,
-                               reason, parsedTime ? parsedTime.absolute : null);
         return;
     }
 
@@ -130,12 +130,13 @@ class Ban implements Command {
             { name: 'Action:', value: 'Ban' },
             { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
             { name: 'Reason:', value: reason, inline: false },
-            { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
+            { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
             { name: 'Banned until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },
         ],
         timestamp: new Date(),
     };
-    logChannel.send({ embed });
+
+    await logChannel.send({ embed });
     return;
     }
 }

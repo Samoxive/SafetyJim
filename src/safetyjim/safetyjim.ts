@@ -17,7 +17,7 @@ type Commands = { string: Command };
 
 export interface Command {
     usage: string | string[];
-    run: (bot: SafetyJim, msg: Discord.Message, args: string) => boolean;
+    run: (bot: SafetyJim, msg: Discord.Message, args: string) => Promise<boolean>;
 }
 
 export class SafetyJim {
@@ -91,18 +91,18 @@ export class SafetyJim {
               .join('\n');
     }
 
-    public failReact(msg: Discord.Message): void {
-        msg.react('322698553980092417')
+    public failReact(msg: Discord.Message): Promise<Discord.MessageReaction> {
+        return msg.react('322698553980092417')
             .catch(() => {
             this.log.warn(`Could not react with fail emoji in guild "${msg.guild.name}"`);
-        });
+            });
     }
 
-    public successReact(msg: Discord.Message): void {
-        msg.react('322698554294534144')
+    public successReact(msg: Discord.Message): Promise<Discord.MessageReaction> {
+        return msg.react('322698554294534144')
             .catch(() => {
                 this.log.warn(`Could not react with success emoji in guild "${msg.guild.name}"`);
-        });
+            });
     }
 
     public updateDiscordBotLists(): void {
@@ -285,11 +285,10 @@ export class SafetyJim {
         let showUsage;
 
         try {
-            showUsage = this.commands[command].run(this, msg, args);
+            showUsage = await this.commands[command].run(this, msg, args);
         } catch (e) {
             await this.failReact(msg);
-            msg.channel.send('There was an error running the command:\n' +
-                            '```\n' + e.stack + e.lineNumber + e.message + '\n```');
+            await msg.channel.send('There was an error running your command, this incident has been logged.');
             // tslint:disable-next-line:max-line-length
             this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${e.stack + e.lineNumber + e.message}`);
         }
@@ -299,7 +298,7 @@ export class SafetyJim {
             let prefix = await this.database.getGuildPrefix(msg.guild);
 
             await this.failReact(msg);
-            msg.channel.send('', { embed: {
+            await msg.channel.send('', { embed: {
                 author: {
                     name: `Safety Jim - "${command}" Syntax`,
                     icon_url: this.client.user.avatarURL,

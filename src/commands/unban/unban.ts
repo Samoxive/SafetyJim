@@ -7,7 +7,7 @@ class Unban implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         if (!args) {
             return true;
         }
@@ -15,27 +15,23 @@ class Unban implements Command {
         let unbanUsername = args;
 
         if (!msg.guild.me.hasPermission('BAN_MEMBERS')) {
-            bot.failReact(msg);
-            msg.channel.send('I do not have enough permissions to do that!');
+            await bot.failReact(msg);
+            await msg.channel.send('I do not have enough permissions to do that!');
             return;
         }
-        msg.guild.fetchBans()
-                 .then((bans) => bans.find('tag', unbanUsername))
-                 .then((bannee) => {
-                     if (!bannee) {
-                         this.userNotFound(bot, msg, args);
-                     } else {
-                         bot.successReact(msg);
-                         msg.guild.unban(bannee.id);
-                         bot.database.updateBanRecordWithID(bannee.id, msg.guild.id);
-                     }
-                 });
-        return;
-    }
 
-    public userNotFound(bot: SafetyJim, msg: Discord.Message, username: string): void {
-        bot.failReact(msg);
-        msg.channel.send(`Could not find a banned user called \`${username}\`!`);
+        let bannee = await msg.guild.fetchBans().then((bans) => bans.find('tag', unbanUsername));
+
+        if (!bannee) {
+            await bot.failReact(msg);
+            await msg.channel.send(`Could not find a banned user called \`${args}\`!`);
+        } else {
+            await bot.successReact(msg);
+            await msg.guild.unban(bannee.id);
+            await bot.database.updateBanRecordWithID(bannee.id, msg.guild.id);
+        }
+
+        return;
     }
 }
 

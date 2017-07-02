@@ -9,13 +9,18 @@ class Clean implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let newArgs = args.split(' ');
         let deleteAmount = parseInt(newArgs[0]);
 
+        if (!msg.guild.me.hasPermission('MANAGE_MESSAGES')) {
+            await bot.failReact(msg);
+            await msg.channel.send('I don\'t have enough permissions to do that!');
+            return;
+        }
+
         if (newArgs[0] === '' && newArgs.length === 1) {
-            bot.successReact(msg);
-            msg.channel.bulkDelete(2);
+            await msg.channel.bulkDelete(2);
             return;
         }
 
@@ -24,62 +29,62 @@ class Clean implements Command {
         }
 
         if (deleteAmount < 1) {
-            msg.channel.send('You can\'t delete zero or negative messages.');
-            bot.failReact(msg);
+            await bot.failReact(msg);
+            await msg.channel.send('You can\'t delete zero or negative messages.');
             return;
         }
 
         if (deleteAmount > 100) {
-            msg.channel.send('You can\'t delete more than 100 messages.');
-            bot.failReact(msg);
+            await bot.failReact(msg);
+            await msg.channel.send('You can\'t delete more than 100 messages.');
             return;
         }
 
         if (!newArgs[1]) {
-            bot.successReact(msg);
-            msg.channel.bulkDelete(deleteAmount + 1);
+            await msg.channel.bulkDelete(deleteAmount + 1);
             return;
         }
 
         if (!newArgs[1].match(Discord.MessageMentions.USERS_PATTERN) &&
             newArgs[1].toLowerCase() !== 'bot') {
-                bot.failReact(msg);
+                await bot.failReact(msg);
                 return true;
         }
 
         if (newArgs[1].match(Discord.MessageMentions.USERS_PATTERN)) {
-            bot.successReact(msg);
             let deleteUser = msg.mentions.users.first();
 
             if (deleteUser.id === msg.author.id) {
                 deleteAmount++;
             }
 
-            msg.channel.fetchMessages({ limit: 100 }).then((messages) => {
-                const newMessages = messages.filterArray((m) => m.author.id === msg.mentions.users.first().id)
-                    .slice(0, deleteAmount);
+            let messages = await msg.channel.fetchMessages({ limit: 100 });
+            const newMessages = messages.filterArray((m) => m.author.id === msg.mentions.users.first().id)
+                .slice(0, deleteAmount);
 
-                if (deleteAmount === 1) {
-                    newMessages[0].delete();
-                } else {
-                    msg.channel.bulkDelete(newMessages);
-                }
-            });
+            if (deleteAmount === 1) {
+                newMessages[0].delete();
+            } else {
+                await msg.channel.bulkDelete(newMessages);
+            }
+
+            await bot.successReact(msg);
+            return;
         }
 
         if (newArgs[1].toLowerCase() === 'bot') {
-            bot.successReact(msg);
+            let messages = await msg.channel.fetchMessages({ limit: 100 });
+            const newMessages = messages.filterArray((m) => m.author.bot)
+                .slice(0, deleteAmount);
 
-            msg.channel.fetchMessages({ limit: 100 }).then((messages) => {
-                const newMessages = messages.filterArray((m) => m.author.bot)
-                    .slice(0, deleteAmount);
+            if (deleteAmount === 1) {
+                newMessages[0].delete();
+            } else {
+                await msg.channel.bulkDelete(newMessages);
+            }
 
-                if (deleteAmount === 1) {
-                    newMessages[0].delete();
-                } else {
-                    msg.channel.bulkDelete(newMessages);
-                }
-            });
+            await bot.successReact(msg);
+            return;
         }
         return;
     }

@@ -7,7 +7,7 @@ class Unmute implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
 
         if (!args) {
@@ -22,23 +22,18 @@ class Unmute implements Command {
         let role = msg.guild.roles.find('name', 'Muted');
 
         if (!role) {
-            bot.failReact(msg);
+            await bot.failReact(msg);
             // tslint:disable-next-line:max-line-length
-            msg.channel.send('Could not find a Muted role, please create one yourself or mute a user to automatically setup one.');
+            await msg.channel.send('Could not find a Muted role, please create one yourself or mute a user to automatically setup one.');
             return;
         }
 
-        let member = msg.mentions.members.first();
+        await bot.client.fetchUser(msg.mentions.users.first().id);
+        let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
-        member.removeRole(role)
-              .then(() => {
-                  bot.database.updateMuteRecordWithID(member.user.id, msg.guild.id);
-                  bot.successReact(msg);
-              })
-              .catch(() => {
-                  bot.failReact(msg);
-                  msg.channel.send('Could not unmute specified user!');
-              });
+        await member.removeRole(role);
+        await bot.successReact(msg);
+        await bot.database.updateMuteRecordWithID(member.user.id, msg.guild.id);
     }
 }
 

@@ -7,9 +7,9 @@ class Ping implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
-        bot.successReact(msg);
-        msg.channel.send('', { embed: {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+        await bot.successReact(msg);
+        await msg.channel.send('', { embed: {
             author: {
                 name: `Safety Jim`,
                 icon_url: bot.client.user.avatarURL,

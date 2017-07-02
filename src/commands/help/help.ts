@@ -7,16 +7,15 @@ class Help implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
-        bot.database.getGuildPrefix(msg.guild)
-           .then((prefix) => {
-                bot.successReact(msg);
-                msg.channel.send('', { embed: {
-                    author: { name: 'Safety Jim - Commands', icon_url: bot.client.user.avatarURL },
-                    description: bot.getUsageStrings(prefix),
-                    color: 0x4286f4,
-                }});
-            });
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+        let prefix = await bot.database.getGuildPrefix(msg.guild);
+        await bot.successReact(msg);
+        await msg.channel.send({ embed: {
+            author: { name: 'Safety Jim - Commands', icon_url: bot.client.user.avatarURL },
+            description: bot.getUsageStrings(prefix),
+            color: 0x4286f4,
+        } });
+
         return;
     }
 }

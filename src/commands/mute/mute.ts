@@ -8,7 +8,7 @@ class Mute implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
 
         if (msg.mentions.users.size === 0 ||
@@ -17,33 +17,33 @@ class Mute implements Command {
         }
 
         if (!msg.guild.me.hasPermission('MANAGE_ROLES')) {
-            bot.failReact(msg);
-            msg.channel.send('I don\'t have enough permissions to do that!');
+            await bot.failReact(msg);
+            await msg.channel.send('I don\'t have enough permissions to do that!');
             return;
         }
 
         if (!msg.guild.roles.find('name', 'Muted')) {
-            msg.guild.createRole({
+            let mutedRole = await msg.guild.createRole({
                 name: 'Muted',
                 permissions: ['READ_MESSAGES', 'READ_MESSAGE_HISTORY', 'CONNECT'],
-            })
-                .then((mutedRole) => {
-                    msg.guild.channels.forEach((channel) => {
-                        channel.overwritePermissions(mutedRole, {
-                            SEND_MESSAGES: false,
-                            ADD_REACTIONS: false,
-                            SPEAK: false,
-                        });
-                    });
+            });
+
+            msg.guild.channels.forEach((channel) => {
+                channel.overwritePermissions(mutedRole, {
+                    SEND_MESSAGES: false,
+                    ADD_REACTIONS: false,
+                    SPEAK: false,
                 });
+            });
         }
 
-        let member = msg.guild.member(msg.mentions.users.first());
+        await bot.client.fetchUser(msg.mentions.users.first().id);
+        let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            bot.failReact(msg);
-            msg.channel.send('You can\'t mute yourself, dummy!');
-            return false;
+            await bot.failReact(msg);
+            await msg.channel.send('You can\'t mute yourself, dummy!');
+            return;
         }
 
         args = args.split(' ').slice(1).join(' ');
@@ -62,13 +62,13 @@ class Mute implements Command {
             }
             parsedTime = time(timeArg);
             if (!parsedTime.relative) {
-                bot.failReact(msg);
-                msg.channel.send(`Invalid time argument \`${timeArg}\`. Try again.`);
+                await bot.failReact(msg);
+                await msg.channel.send(`Invalid time argument \`${timeArg}\`. Try again.`);
                 return;
             }
             if (parsedTime.relative < 0) {
-                bot.failReact(msg);
-                msg.channel.send('Your time argument was set for the past. Try again.' +
+                await bot.failReact(msg);
+                await msg.channel.send('Your time argument was set for the past. Try again.' +
                 '\nIf you\'re specifying a date, e.g. `30 December`, make sure you pass the year.');
                 return;
             }
@@ -79,7 +79,7 @@ class Mute implements Command {
             reason = 'No reason specified';
         }
 
-        bot.database.getGuildConfiguration(msg.guild).then((config) => {
+        let config = await bot.database.getGuildConfiguration(msg.guild);
         let embed = {
             title: `Muted in ${msg.guild.name}`,
             color: parseInt(config.EmbedColor, 16),
@@ -88,29 +88,25 @@ class Mute implements Command {
                 { name: 'Reason:', value: reason, inline: false },
                 { name: 'Muted until', value: parsedTime ? new Date(parsedTime.absolute).toString() : 'Indefinitely' },
             ],
-            footer: { text: `Muted by ${member.user.tag} (${member.id})` },
+            footer: { text: `Muted by ${msg.author.tag} (${msg.author.id})` },
             timestamp: new Date(),
         };
 
-        member.send({ embed })
-            .then(() => {
-                bot.successReact(msg);
-                member.addRole(msg.guild.roles.find('name', 'Muted'));
-            });
-        })
-            .catch(() => {
-                bot.successReact(msg);
-                member.addRole(msg.guild.roles.find('name', 'Muted'));
-        });
+        try {
+            member.send({ embed });
+        } finally {
+            bot.successReact(msg);
+            member.addRole(msg.guild.roles.find('name', 'Muted'));
+        }
 
-        bot.database.createUserMute(
+        await bot.database.createUserMute(
             member.user,
             msg.author,
             msg.guild,
             reason,
             parsedTime ? Math.round(parsedTime.absolute / 1000) : null);
 
-        this.createModLogEntry(bot, msg, member,
+        await this.createModLogEntry(bot, msg, member,
                                reason, parsedTime ? parsedTime.absolute : null);
         return;
     }
@@ -127,7 +123,7 @@ class Mute implements Command {
     if (!bot.client.channels.has(db.ModLogChannelID) ||
         bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
         // tslint:disable-next-line:max-line-length
-        msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
+        await msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
         return;
     }
 
@@ -139,12 +135,13 @@ class Mute implements Command {
             { name: 'Action:', value: 'Mute' },
             { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
             { name: 'Reason:', value: reason, inline: false },
-            { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
+            { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
             { name: 'Muted until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },
         ],
         timestamp: new Date(),
     };
-    logChannel.send({ embed });
+
+    await logChannel.send({ embed });
     return;
     }
 }
