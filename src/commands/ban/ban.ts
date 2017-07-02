@@ -79,7 +79,7 @@ class Ban implements Command {
                 { name: 'Reason:', value: reason, inline: false },
                 { name: 'Banned until', value: parsedTime ? new Date(parsedTime.absolute).toString() : 'Indefinitely' },
             ],
-            footer: { text: `Banned by ${msg.author.tag}` },
+            footer: { text: `Banned by ${member.user.tag} (${member.id})` },
             timestamp: new Date(),
         };
 
@@ -128,7 +128,7 @@ class Ban implements Command {
         color: 0xFF2900, // red
         fields: [
             { name: 'Action:', value: 'Ban' },
-            { name: 'User:', value: member.user.tag, inline: false },
+            { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
             { name: 'Reason:', value: reason, inline: false },
             { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
             { name: 'Banned until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },

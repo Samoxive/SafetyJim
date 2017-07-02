@@ -88,7 +88,7 @@ class Mute implements Command {
                 { name: 'Reason:', value: reason, inline: false },
                 { name: 'Muted until', value: parsedTime ? new Date(parsedTime.absolute).toString() : 'Indefinitely' },
             ],
-            footer: { text: `Muted by ${msg.author.tag}` },
+            footer: { text: `Muted by ${member.user.tag} (${member.id})` },
             timestamp: new Date(),
         };
 
@@ -137,7 +137,7 @@ class Mute implements Command {
         color: 0xFFFFFF, // white
         fields: [
             { name: 'Action:', value: 'Mute' },
-            { name: 'User:', value: member.user.tag, inline: false },
+            { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
             { name: 'Reason:', value: reason, inline: false },
             { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
             { name: 'Muted until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },

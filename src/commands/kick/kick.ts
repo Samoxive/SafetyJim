@@ -60,7 +60,7 @@ class Kick implements Command {
             color: parseInt(config.EmbedColor, 16),
             fields: [{ name: 'Reason:', value: reason, inline: false }],
             description: `You were kicked from ${msg.guild.name}.`,
-            footer: { text: `Kicked by: ${msg.author.tag}`},
+            footer: { text: `Kicked by: ${member.user.tag} (${member.id})`},
             timestamp: new Date(),
         };
 
@@ -89,7 +89,7 @@ class Kick implements Command {
             color: 0xFF9900, // orange
             fields: [
                 { name: 'Action:', value: 'Kick', inline: false },
-                { name: 'User:', value: member.user.tag, inline: false },
+                { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
                 { name: 'Reason:', value: reason, inline: false },
                 { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
             ],

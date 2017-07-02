@@ -47,7 +47,7 @@ class Warn implements Command {
             color: parseInt(config.EmbedColor, 16),
             fields: [{ name: 'Reason:', value: reason, inline: false }],
             description: `You were warned in ${msg.guild.name}.`,
-            footer: { text: `Warned by: ${msg.author.tag}`},
+            footer: { text: `Warned by: ${member.user.tag} (${member.id})`},
             timestamp: new Date(),
         };
 
@@ -78,9 +78,9 @@ class Warn implements Command {
             color: 0xFFEB00, // yellow
             fields: [
                 { name: 'Action:', value: 'Warning', inline: false },
-                { name: 'User:', value: member.user.tag, inline: false },
+                { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
                 { name: 'Reason:', value: reason, inline: false },
-                { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
+                { name: 'Responsible Moderator:', value: `${member.user.tag} (${member.id})`, inline: false },
             ],
             timestamp: new Date(),
         };
