@@ -171,6 +171,7 @@ export class SafetyJim {
                                 color: 0x4286f4,
                             }});
                         });
+                    return;
                 } else if (msg.content.includes('prefix')) {
                     this.database.getGuildPrefix(msg.guild)
                         .then((prefix) => {
@@ -181,8 +182,8 @@ export class SafetyJim {
                                 color: 0x4286f4,
                             }});
                         });
+                    return;
                 }
-                return;
             }
 
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
