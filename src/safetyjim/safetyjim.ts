@@ -111,7 +111,11 @@ export class SafetyJim {
                 .post(`https://bots.discord.pw/api/bots/${this.client.user.id}/stats`)
                 .set('Authorization', this.config.discordbotspwToken)
                 .send({ server_count: this.client.guilds.size })
-                .catch((err) => { this.log.error(`Could not update pw with error ${err.stack}`); });
+                .catch((err) => {
+                    if (!err.stack.includes('504')) {
+                        this.log.error(`Could not update pw with error ${err.stack}`);
+                    }
+                });
         }
 
         if (this.config.discordbotsToken) {
