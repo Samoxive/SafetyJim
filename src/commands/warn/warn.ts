@@ -17,7 +17,8 @@ class Warn implements Command {
             return true;
         }
 
-        let member = msg.guild.member(msg.mentions.users.first());
+        await bot.client.fetchUser(msg.mentions.users.first().id);
+        let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
             await bot.failReact(msg);
