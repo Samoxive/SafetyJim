@@ -96,7 +96,7 @@ class Settings implements Command {
                 return true;
             }
 
-            let newPrefix = splitArgs[2].replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            let newPrefix = splitArgs[2];
 
             await bot.successReact(msg);
             await bot.createRegexForGuild(msg.guild.id, newPrefix);

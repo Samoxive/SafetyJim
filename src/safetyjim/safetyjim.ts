@@ -69,6 +69,7 @@ export class SafetyJim {
     }
 
     public createRegexForGuild(guildID: string, prefix: string) {
+        prefix = prefix.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
         this.commandRegex[guildID] = new RegExp(`^${prefix}\\s+([^\\s]+)\\s*([^]*)\\s*`, 'i');
         this.prefixTestRegex[guildID] = new RegExp(`^${prefix}[\\s]*( .*)?$`, 'i');
     }
