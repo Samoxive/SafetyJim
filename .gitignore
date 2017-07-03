@@ -75,3 +75,4 @@ src/**/*.js
 src/**/*.js.map
 config.json
 *.db
+*.log.gz
