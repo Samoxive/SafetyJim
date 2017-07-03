@@ -268,6 +268,7 @@ export class SafetyJim {
         return ((guild: Discord.Guild) => {
             this.database.delGuildSettings(guild);
             this.database.delGuildPrefix(guild);
+            this.database.delWelcomeMessage(guild);
             delete this.commandRegex[guild.id];
             delete this.prefixTestRegex[guild.id];
             this.updateDiscordBotLists();
