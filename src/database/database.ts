@@ -355,7 +355,7 @@ export class BotDatabase {
 
     public createWelcomeMessage(guild: Guild, message: string): void {
         this.database.run('INSERT INTO WelcomeMessages (GuildID, Message) VALUES (?, ?);', guild.id, message)
-            .catch((err) => { this.log.error('Could not create welcome message!'); });
+            .catch((err) => { this.log.error('Could not create welcome message! ' + err.stack); });
     }
 
     public createGuildPrefix(guild: Guild, prefix: string): void {
