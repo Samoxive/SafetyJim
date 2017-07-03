@@ -93,10 +93,12 @@ class Mute implements Command {
         };
 
         try {
-            member.send({ embed });
+            await member.send({ embed });
+        } catch (e) {
+            await msg.channel.send('Could not send private message to specified user, I am probably blocked.');
         } finally {
-            bot.successReact(msg);
-            member.addRole(msg.guild.roles.find('name', 'Muted'));
+            await bot.successReact(msg);
+            await member.addRole(msg.guild.roles.find('name', 'Muted'));
         }
 
         await bot.database.createUserMute(
@@ -113,36 +115,36 @@ class Mute implements Command {
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
                                     member: Discord.GuildMember, reason: string, parsedTime: number): Promise<void> {
-    let db = await bot.database.getGuildConfiguration(msg.guild);
-    let prefix = await bot.database.getGuildPrefix(msg.guild);
+        let db = await bot.database.getGuildConfiguration(msg.guild);
+        let prefix = await bot.database.getGuildPrefix(msg.guild);
 
-    if (!db || !db.ModLogActive) {
+        if (!db || !db.ModLogActive) {
+            return;
+        }
+
+        if (!bot.client.channels.has(db.ModLogChannelID) ||
+            bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
+            // tslint:disable-next-line:max-line-length
+            await msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
+            return;
+        }
+
+        let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
+
+        let embed = {
+            color: 0xFFFFFF, // white
+            fields: [
+                { name: 'Action:', value: 'Mute' },
+                { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
+                { name: 'Reason:', value: reason, inline: false },
+                { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
+                { name: 'Muted until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },
+            ],
+            timestamp: new Date(),
+        };
+
+        await logChannel.send({ embed });
         return;
-    }
-
-    if (!bot.client.channels.has(db.ModLogChannelID) ||
-        bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
-        // tslint:disable-next-line:max-line-length
-        await msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
-        return;
-    }
-
-    let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
-
-    let embed = {
-        color: 0xFFFFFF, // white
-        fields: [
-            { name: 'Action:', value: 'Mute' },
-            { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
-            { name: 'Reason:', value: reason, inline: false },
-            { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
-            { name: 'Muted until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },
-        ],
-        timestamp: new Date(),
-    };
-
-    await logChannel.send({ embed });
-    return;
     }
 }
 export = Mute;

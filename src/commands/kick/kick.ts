@@ -52,6 +52,8 @@ class Kick implements Command {
 
         try {
             await member.send({ embed });
+        } catch (e) {
+            await msg.channel.send('Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
                 await member.kick(reason);

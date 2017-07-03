@@ -85,6 +85,8 @@ class Ban implements Command {
 
         try {
             await member.send({ embed });
+        } catch (e) {
+            await msg.channel.send('Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
                 await member.ban(reason);
@@ -108,36 +110,36 @@ class Ban implements Command {
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
                                     member: Discord.GuildMember, reason: string, parsedTime: number): Promise<void> {
-    let db = await bot.database.getGuildConfiguration(msg.guild);
-    let prefix = await bot.database.getGuildPrefix(msg.guild);
+        let db = await bot.database.getGuildConfiguration(msg.guild);
+        let prefix = await bot.database.getGuildPrefix(msg.guild);
 
-    if (!db || !db.ModLogActive) {
+        if (!db || !db.ModLogActive) {
+            return;
+        }
+
+        if (!bot.client.channels.has(db.ModLogChannelID) ||
+            bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
+            // tslint:disable-next-line:max-line-length
+            msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
+            return;
+        }
+
+        let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
+
+        let embed = {
+            color: 0xFF2900, // red
+            fields: [
+                { name: 'Action:', value: 'Ban' },
+                { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
+                { name: 'Reason:', value: reason, inline: false },
+                { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
+                { name: 'Banned until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },
+            ],
+            timestamp: new Date(),
+        };
+
+        await logChannel.send({ embed });
         return;
-    }
-
-    if (!bot.client.channels.has(db.ModLogChannelID) ||
-        bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
-        // tslint:disable-next-line:max-line-length
-        msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
-        return;
-    }
-
-    let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
-
-    let embed = {
-        color: 0xFF2900, // red
-        fields: [
-            { name: 'Action:', value: 'Ban' },
-            { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
-            { name: 'Reason:', value: reason, inline: false },
-            { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
-            { name: 'Banned until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },
-        ],
-        timestamp: new Date(),
-    };
-
-    await logChannel.send({ embed });
-    return;
     }
 }
 export = Ban;
