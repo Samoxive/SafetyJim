@@ -349,10 +349,15 @@ export class SafetyJim {
 
             if (guildConfig.HoldingRoomActive === 1) {
                 let dGuild = this.client.guilds.get(user.GuildID);
-                let dUser = dGuild.members.get(user.UserID);
-                dUser.addRole(guildConfig.HoldingRoomRoleID);
-                this.database.updateJoinRecord(user);
-                this.log.info(`Allowed "${dUser.user.tag}" in guild "${dGuild.name}".`);
+                await this.client.fetchUser(user.UserID);
+                let dUser = await dGuild.fetchMember(user.UserID);
+
+                try {
+                    await dUser.addRole(guildConfig.HoldingRoomRoleID);
+                    this.log.info(`Allowed "${dUser.user.tag}" in guild "${dGuild.name}".`);
+                } finally {
+                    await this.database.updateJoinRecord(user);
+                }
             }
         }
     }
@@ -395,18 +400,23 @@ export class SafetyJim {
             }
 
             await this.client.fetchUser(user.MutedUserID);
-            let member = await guild.fetchMember(user.MutedUserID);
+            let member;
+
+            try {
+                member = await guild.fetchMember(user.MutedUserID);
+            } catch (e) {
+                this.database.updateMuteRecord(user);
+            }
 
             if (!member) {
                 this.database.updateMuteRecord(user);
                 return;
             }
-
-            member.removeRole(guild.roles.find('name', 'Muted'))
-                .then(() => {
-                    this.database.updateMuteRecord(user);
-                })
-                .catch(() => { this.log.warn('Could not unmute a user.'); });
+            try {
+                await member.removeRole(guild.roles.find('name', 'Muted'))
+            } catch (e) {
+                this.database.updateMuteRecord(user);
+            }
         }
     }
 
