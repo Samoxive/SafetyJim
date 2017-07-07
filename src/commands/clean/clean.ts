@@ -36,7 +36,7 @@ class Clean implements Command {
 
         if (deleteAmount > 100) {
             await bot.failReact(msg);
-            await msg.channel.send('You can\'t delete more than 99 messages.');
+            await msg.channel.send('You can\'t delete more than 100 messages.');
             return;
         }
 
