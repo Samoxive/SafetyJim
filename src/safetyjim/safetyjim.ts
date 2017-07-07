@@ -92,18 +92,24 @@ export class SafetyJim {
               .join('\n');
     }
 
-    public failReact(msg: Discord.Message): Promise<Discord.MessageReaction> {
-        return msg.react('322698553980092417')
-            .catch(() => {
+    public async failReact(msg: Discord.Message): Promise<void> {
+        try {
+            await msg.react('322698553980092417');
+        } catch (e) {
             this.log.warn(`Could not react with fail emoji in guild "${msg.guild.name}"`);
-            });
+        }
+
+        return;
     }
 
-    public successReact(msg: Discord.Message): Promise<Discord.MessageReaction> {
-        return msg.react('322698554294534144')
-            .catch(() => {
-                this.log.warn(`Could not react with success emoji in guild "${msg.guild.name}"`);
-            });
+    public async successReact(msg: Discord.Message): Promise<void> {
+        try {
+            await msg.react('322698554294534144')
+        } catch (e) {
+            this.log.warn(`Could not react with success emoji in guild "${msg.guild.name}"`);
+        }
+
+        return;
     }
 
     public updateDiscordBotLists(): void {
@@ -413,7 +419,7 @@ export class SafetyJim {
                 return;
             }
             try {
-                await member.removeRole(guild.roles.find('name', 'Muted'))
+                await member.removeRole(guild.roles.find('name', 'Muted'));
             } catch (e) {
                 this.database.updateMuteRecord(user);
             }
