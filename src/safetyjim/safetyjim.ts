@@ -104,7 +104,7 @@ export class SafetyJim {
 
     public async successReact(msg: Discord.Message): Promise<void> {
         try {
-            await msg.react('322698554294534144')
+            await msg.react('322698554294534144');
         } catch (e) {
             this.log.warn(`Could not react with success emoji in guild "${msg.guild.name}"`);
         }
