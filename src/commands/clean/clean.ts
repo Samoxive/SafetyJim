@@ -36,12 +36,13 @@ class Clean implements Command {
 
         if (deleteAmount > 100) {
             await bot.failReact(msg);
-            await msg.channel.send('You can\'t delete more than 100 messages.');
+            await msg.channel.send('You can\'t delete more than 99 messages.');
             return;
         }
 
         if (!newArgs[1]) {
-            await msg.channel.bulkDelete(deleteAmount + 1);
+            deleteAmount = (deleteAmount === 100) ? 100 : (deleteAmount + 1);
+            await msg.channel.bulkDelete(deleteAmount);
             return;
         }
 
@@ -55,7 +56,7 @@ class Clean implements Command {
             let deleteUser = msg.mentions.users.first();
 
             if (deleteUser.id === msg.author.id) {
-                deleteAmount++;
+                deleteAmount = (deleteAmount === 100) ? 100 : (deleteAmount + 1);
             }
 
             let messages = await msg.channel.fetchMessages({ limit: 100 });
