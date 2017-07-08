@@ -16,6 +16,7 @@
         "object-literal-sort-keys": false,
         "interface-over-type-literal": false,
         "radix": false,
-        "switch-default": false
+        "switch-default": false,
+        "no-unsafe-finally": false
     }
 }
