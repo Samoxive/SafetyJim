@@ -23,18 +23,31 @@ class Mute implements Command {
         }
 
         if (!msg.guild.roles.find('name', 'Muted')) {
-            let mutedRole = await msg.guild.createRole({
-                name: 'Muted',
-                permissions: ['READ_MESSAGES', 'READ_MESSAGE_HISTORY', 'CONNECT'],
-            });
+            let mutedRole;
 
-            msg.guild.channels.forEach((channel) => {
-                channel.overwritePermissions(mutedRole, {
-                    SEND_MESSAGES: false,
-                    ADD_REACTIONS: false,
-                    SPEAK: false,
+            try {
+                mutedRole = await msg.guild.createRole({
+                    name: 'Muted',
+                    permissions: ['READ_MESSAGES', 'READ_MESSAGE_HISTORY', 'CONNECT'],
                 });
-            });
+            } catch (e) {
+                await bot.failReact(msg);
+                await msg.channel.send('Could not create a Muted role!');
+                return;
+            }
+
+            for (let [id, channel] of msg.guild.channels) {
+                try {
+                    await channel.overwritePermissions(mutedRole, {
+                        SEND_MESSAGES: false,
+                        ADD_REACTIONS: false,
+                        SPEAK: false,
+                    });
+                } catch (e) {
+                    await bot.failReact(msg);
+                    await msg.channel.send('Could not setup the Muted role!');
+                }
+            }
         }
 
         await bot.client.fetchUser(msg.mentions.users.first().id);
@@ -97,8 +110,14 @@ class Mute implements Command {
         } catch (e) {
             await msg.channel.send('Could not send private message to specified user, I am probably blocked.');
         } finally {
+            try {
+                await member.addRole(msg.guild.roles.find('name', 'Muted'));
+            } catch (e) {
+                await bot.failReact(msg);
+                await msg.channel.send('I do not have permissions to do that!');
+                return;
+            }
             await bot.successReact(msg);
-            await member.addRole(msg.guild.roles.find('name', 'Muted'));
         }
 
         await bot.database.createUserMute(
@@ -108,8 +127,13 @@ class Mute implements Command {
             reason,
             parsedTime ? Math.round(parsedTime.absolute / 1000) : null);
 
-        await this.createModLogEntry(bot, msg, member,
-                               reason, parsedTime ? parsedTime.absolute : null);
+        try {
+            await this.createModLogEntry(bot, msg, member,
+                                         reason, parsedTime ? parsedTime.absolute : null);
+        } catch (e) {
+            //
+        }
+
         return;
     }
 
@@ -143,7 +167,12 @@ class Mute implements Command {
             timestamp: new Date(),
         };
 
-        await logChannel.send({ embed });
+        try {
+            await logChannel.send({ embed });
+        } catch (e) {
+            await msg.channel.send('Could not create a mod log entry!');
+        }
+
         return;
     }
 }
