@@ -92,10 +92,10 @@ class Mute implements Command {
             reason = 'No reason specified';
         }
 
-        let config = await bot.database.getGuildConfiguration(msg.guild);
+        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
         let embed = {
             title: `Muted in ${msg.guild.name}`,
-            color: parseInt(config.EmbedColor, 16),
+            color: parseInt(EmbedColor, 16),
             description: `You were muted in ${msg.guild.name}.`,
             fields: [
                 { name: 'Reason:', value: reason, inline: false },
@@ -139,21 +139,23 @@ class Mute implements Command {
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
                                     member: Discord.GuildMember, reason: string, parsedTime: number): Promise<void> {
-        let db = await bot.database.getGuildConfiguration(msg.guild);
-        let prefix = await bot.database.getGuildPrefix(msg.guild);
+        let ModLogActive = await bot.database.getSetting(msg.guild, 'ModLogActive');
+        let prefix = await bot.database.getSetting(msg.guild, 'Prefix');
 
-        if (!db || !db.ModLogActive) {
+        if (!ModLogActive || ModLogActive === 'false') {
             return;
         }
 
-        if (!bot.client.channels.has(db.ModLogChannelID) ||
-            bot.client.channels.get(db.ModLogChannelID).type !== 'text') {
+        let ModLogChannelID = await bot.database.getSetting(msg.guild, 'ModLogChannelID');
+
+        if (!bot.client.channels.has(ModLogChannelID) ||
+            bot.client.channels.get(ModLogChannelID).type !== 'text') {
             // tslint:disable-next-line:max-line-length
             await msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
             return;
         }
 
-        let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
+        let logChannel = bot.client.channels.get(ModLogChannelID) as Discord.TextChannel;
 
         let embed = {
             color: 0xFFFFFF, // white

@@ -39,11 +39,11 @@ class Kick implements Command {
 
         let reason = args || 'No reason specified';
 
-        let config = await bot.database.getGuildConfiguration(msg.guild);
+        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
 
         let embed = {
             title: `Kicked from ${msg.guild.name}`,
-            color: parseInt(config.EmbedColor, 16),
+            color: parseInt(EmbedColor, 16),
             fields: [{ name: 'Reason:', value: reason, inline: false }],
             description: `You were kicked from ${msg.guild.name}.`,
             footer: { text: `Kicked by: ${msg.author.tag} (${msg.author.id})`},
@@ -58,7 +58,7 @@ class Kick implements Command {
             try {
                 await member.kick(reason);
                 await bot.successReact(msg);
-                await this.createModLogEntry(bot, msg, member, reason, config);
+                await this.createModLogEntry(bot, msg, member, reason);
                 await bot.database.createUserKick(member.user, msg.author, msg.guild, reason);
             } catch (e) {
                 await bot.failReact(msg);
@@ -68,21 +68,24 @@ class Kick implements Command {
     }
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
-                                    member: Discord.GuildMember, reason: string, config: GuildConfig): Promise<void> {
-        let prefix = await bot.database.getGuildPrefix(msg.guild);
+                                    member: Discord.GuildMember, reason: string): Promise<void> {
+        let ModLogActive = await bot.database.getSetting(msg.guild, 'ModLogActive');
+        let prefix = await bot.database.getSetting(msg.guild, 'Prefix');
 
-        if (!config  || !config.ModLogActive) {
+        if (!ModLogActive || ModLogActive === 'false') {
             return;
         }
 
-        if (!bot.client.channels.has(config.ModLogChannelID) ||
-            bot.client.channels.get(config.ModLogChannelID).type !== 'text') {
+        let ModLogChannelID = await bot.database.getSetting(msg.guild, 'ModLogChannelID');
+
+        if (!bot.client.channels.has(ModLogChannelID) ||
+            bot.client.channels.get(ModLogChannelID).type !== 'text') {
             // tslint:disable-next-line:max-line-length
             msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
             return;
         }
 
-        let logChannel = bot.client.channels.get(config.ModLogChannelID) as Discord.TextChannel;
+        let logChannel = bot.client.channels.get(ModLogChannelID) as Discord.TextChannel;
 
         let embed = {
             color: 0xFF9900, // orange

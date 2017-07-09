@@ -7,6 +7,9 @@ import * as winston from 'winston';
 
 // tslint:disable-next-line:max-line-length
 const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
+type SettingKey = 'ModLogActive' | 'ModLogChannelID' | 'HoldingRoomRoleID' | 'HoldingRoomActive' |
+   'HoldingRoomMinutes' | 'HoldingRoomChannelID' | 'EmbedColor' | 'Prefix' | 'WelcomeMessage';
+type GuildID = string;
 
 export class BotDatabase {
     private database: sqlite.Database;
@@ -182,20 +185,20 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not retrieve users that can be allowed!'); });
     }
 
-    public getSetting(guild: Guild, key: string): Promise<string> {
+    public getSetting(guild: Guild, key: SettingKey): Promise<string> {
         return this.database.get('SELECT Value FROM Settings WHERE GuildID = ? AND Key = ?;', guild.id, key)
             .then((row) => row.Value)
             .catch((err) => { this.log.error('Could not retrieve value from Settings!'); });
     }
 
-    public getGuildSettings(guild: Guild): Promise<Map<string, string>> {
+    public getGuildSettings(guild: Guild): Promise<Map<SettingKey, string>> {
         return this.database.all('SELECT Key, Value FROM Settings WHERE GuildID = ?;', guild.id)
                             .then((rows) => rows.reduce((acc, row) => (
                                 acc.set(row.Key, row.Value)), new Map<string, string>()))
                             .catch((err) => { this.log.error('Could not retrieve guild settings!'); });
     }
 
-    public getValuesOfKey(key: string): Promise<Map<string, string>> {
+    public getValuesOfKey(key: SettingKey): Promise<Map<GuildID, string>> {
         return this.database.all('SELECT GuildID, Value FROM Settings WHERE Key = ?;', key)
                             .then((rows) => rows.reduce(
                                 (acc, row) => acc.set(row.GuildID, row.Value), new Map<string, string>()))
@@ -232,7 +235,7 @@ export class BotDatabase {
                           .catch((err) => { this.log.error('Could not update MuteRecord!'); });
     }
 
-    public updateSettings(guild: Guild, key: string, value: string): void {
+    public updateSettings(guild: Guild, key: SettingKey, value: string): void {
         this.database.run('UPDATE Settings SET Value = ? WHERE GuildID = ? AND Key = ?;', value, guild.id, key)
                           .catch((err) => { this.log.error('Could not update Settings!'); });
     }
@@ -355,7 +358,7 @@ export class BotDatabase {
                             .catch((err) => { this.log.error('Could not create mute record!'); });
     }
 
-    public async createSettingsKeyValue(guild: Guild, key: string, value: string | null): Promise<void> {
+    public async createSettingsKeyValue(guild: Guild, key: SettingKey, value: string | null): Promise<void> {
         return this.database.run('INSERT INTO Settings (GuildID, Key, Value) VALUES (?, ?, ?);', guild.id, key, value)
                      .then(() => undefined)
                      .catch((err) => { this.log.error('Could not create key-value pair in ' + err); });

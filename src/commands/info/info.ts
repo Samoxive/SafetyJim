@@ -19,7 +19,7 @@ class Info implements Command {
     constructor(bot: SafetyJim) {}
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
-        let config = await bot.database.getGuildConfiguration(msg.guild);
+        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
         let uptimeString = this.timeElapsed(Date.now(), bot.bootTime.getTime());
         let embed = {
             author: { name: `Safety Jim - v${bot.config.version}`,
@@ -36,7 +36,7 @@ class Info implements Command {
                 { name: 'Links', value: `[Support](https://discord.io/safetyjim) | [Github](https://github.com/samoxive/safetyjim) | [Invite](${this.inviteLink})`, inline: true },
             ],
             footer: { text: `Made by Safety Jim team.`},
-            color: parseInt(config.EmbedColor, 16),
+            color: parseInt(EmbedColor, 16),
         };
 
         await bot.successReact(msg);
