@@ -8,7 +8,6 @@ import * as path from 'path';
 import { BotDatabase } from '../database/database';
 const Package = require('../../package.json');
 // tslint:disable-next-line:max-line-length
-const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
 const DiscordBotsGuildID = '110373943822540800';
 const DiscordBotListGuildID = '264445053596991498';
 
@@ -36,10 +35,10 @@ export class SafetyJim {
         this.bootTime = new Date();
         this.loadCommands();
         log.info('Populating prefix regex dictionary.');
-        this.database.getGuildPrefixes().then((prefixList) => {
+        this.database.getValuesOfKey('Prefix').then((prefixList) => {
             if (prefixList != null) {
-                prefixList.map((record) => {
-                    this.createRegexForGuild(record.GuildID, record.Prefix);
+                prefixList.forEach((prefix, id) => {
+                    this.createRegexForGuild(id, prefix);
                 });
             }
         });
@@ -150,8 +149,6 @@ export class SafetyJim {
             this.client.guilds.filter((guild) => this.isBotFarm(guild)).map((guild) => guild.leave());
 
             this.populateGuildConfigDatabase();
-            this.populatePrefixDatabase();
-            this.populateWelcomeMessageDatabase();
             this.updateDiscordBotLists();
             this.client.user.setGame(`-mod help | ${Package.version}`);
 
@@ -173,7 +170,7 @@ export class SafetyJim {
             if (msg.isMentioned(this.client.user)) {
                 if (msg.content.includes('help') ||
                     msg.content.includes('command')) {
-                    this.database.getGuildPrefix(msg.guild)
+                    this.database.getSetting(msg.guild, 'Prefix')
                         .then((prefix) => {
                             this.successReact(msg);
                             msg.author.send({ embed: {
@@ -184,7 +181,7 @@ export class SafetyJim {
                         });
                     return;
                 } else if (msg.content.includes('prefix')) {
-                    this.database.getGuildPrefix(msg.guild)
+                    this.database.getSetting(msg.guild, 'Prefix')
                         .then((prefix) => {
                             this.successReact(msg);
                             msg.author.send({ embed: {
@@ -230,8 +227,6 @@ export class SafetyJim {
                                 // tslint:disable-next-line:max-line-length
                                 .catch(() => { guild.owner.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`); });
             this.database.createGuildSettings(guild);
-            this.database.createGuildPrefix(guild, this.config.defaultPrefix);
-            this.database.createWelcomeMessage(guild, defaultWelcomeMessage);
             this.createRegexForGuild(guild.id, this.config.defaultPrefix);
             this.updateDiscordBotLists();
             this.log.info(`Joined guild ${guild.name}`);
@@ -241,13 +236,17 @@ export class SafetyJim {
     private onGuildMemberAdd(): (member: Discord.GuildMember) => void {
         return (async (member: Discord.GuildMember) => {
             this.log.info(`${member.user.tag} joined guild ${member.guild.name}.`);
-            let guildConfig = await this.database.getGuildConfiguration(member.guild);
+            let HoldingRoomActive = await this.database.getSetting(member.guild, 'HoldingRoomActive');
 
-            if (guildConfig.HoldingRoomActive) {
-                if (this.client.channels.has(guildConfig.HoldingRoomChannelID)) {
-                    let channel = this.client.channels.get(guildConfig.HoldingRoomChannelID) as Discord.TextChannel;
-                    let message = await this.database.getWelcomeMessage(member.guild);
-                    let guildMinutes = guildConfig.HoldingRoomMinutes;
+            if (HoldingRoomActive) {
+                let HoldingRoomChannelID = await this.database.getSetting(member.guild, 'HoldingRoomChannelID');
+                // tslint:disable-next-line:max-line-length
+                let guildMinutes: string | number = await this.database.getSetting(member.guild, 'HoldingRoomMinutes');
+                guildMinutes = parseInt(guildMinutes);
+                if (this.client.channels.has(HoldingRoomChannelID)) {
+                    let channel = this.client.channels.get(HoldingRoomChannelID) as Discord.TextChannel;
+                    let message = await this.database.getSetting(member.guild, 'WelcomeMessage');
+
                     message = message.replace('$minute', guildMinutes + (guildMinutes === 1 ? ' minute' : ' minutes'))
                                      .replace('$user', member.user.toString())
                                      .replace('$guild', member.guild.name);
@@ -259,7 +258,7 @@ export class SafetyJim {
                     member.guild.defaultChannel.send('WARNING: Invalid channel is set as a holding room!');
                 }
 
-                this.database.createJoinRecord(member.user, member.guild, guildConfig.HoldingRoomMinutes);
+                this.database.createJoinRecord(member.user, member.guild, guildMinutes);
             }
         });
     }
@@ -273,8 +272,6 @@ export class SafetyJim {
     private onGuildDelete(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
             this.database.delGuildSettings(guild);
-            this.database.delGuildPrefix(guild);
-            this.database.delWelcomeMessage(guild);
             delete this.commandRegex[guild.id];
             delete this.prefixTestRegex[guild.id];
             this.updateDiscordBotLists();
@@ -303,10 +300,10 @@ export class SafetyJim {
 
         if (showUsage === true) {
             let usage = this.commands[command].usage;
-            let prefix = await this.database.getGuildPrefix(msg.guild);
+            let prefix = await this.database.getSetting(msg.guild, 'Prefix');
 
             await this.failReact(msg);
-            await msg.channel.send('', { embed: {
+            await msg.channel.send({ embed: {
                 author: {
                     name: `Safety Jim - "${command}" Syntax`,
                     icon_url: this.client.user.avatarURL,
@@ -351,15 +348,16 @@ export class SafetyJim {
         let usersToBeAllowed = await this.database.getUsersThatCanBeAllowed();
 
         for (let user of usersToBeAllowed) {
-            let guildConfig = await this.database.getGuildConfiguration(this.client.guilds.get(user.GuildID));
+            let dGuild = this.client.guilds.get(user.GuildID);
+            let enabled = await this.database.getSetting(dGuild, 'HoldingRoomActive');
 
-            if (guildConfig.HoldingRoomActive === 1) {
-                let dGuild = this.client.guilds.get(user.GuildID);
+            if (enabled === '1') {
                 await this.client.fetchUser(user.UserID);
                 let dUser = await dGuild.fetchMember(user.UserID);
+                let roleID = await this.database.getSetting(dGuild, 'HoldingRoomRoleID');
 
                 try {
-                    await dUser.addRole(guildConfig.HoldingRoomRoleID);
+                    await dUser.addRole(roleID);
                     this.log.info(`Allowed "${dUser.user.tag}" in guild "${dGuild.name}".`);
                 } finally {
                     await this.database.updateJoinRecord(user);
@@ -426,32 +424,11 @@ export class SafetyJim {
         }
     }
 
-    private populateWelcomeMessageDatabase(): void {
-        let guildsNotInDatabaseCount = 0;
-
-        this.database.getWelcomeMessages()
-                     .then((welcomeMessages) => welcomeMessages.map((m) => m.GuildID))
-                     .then((existingGuildIds) => {
-                         this.client.guilds.map((guild) => {
-                             if (!existingGuildIds.includes(guild.id)) {
-                                 this.database.createWelcomeMessage(guild, defaultWelcomeMessage);
-                                 guildsNotInDatabaseCount++;
-                             }
-                         });
-                     })
-                     .then(() => {
-                         if (guildsNotInDatabaseCount) {
-                             // tslint:disable-next-line:max-line-length
-                             this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default welcome message.`);
-                         }
-                     });
-    }
-
     private populateGuildConfigDatabase(): void {
         let guildsNotInDatabaseCount = 0;
 
-        this.database.getGuildConfigurations()
-                     .then((configs) => configs.map((config) => config.GuildID))
+        this.database.getValuesOfKey('Prefix')
+                     .then((configs) => Array.from(configs.keys()))
                      .then((existingGuildIds) => {
                         this.client.guilds.map((guild) => {
                             if (!existingGuildIds.includes(guild.id)) {
@@ -466,22 +443,5 @@ export class SafetyJim {
                              this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config.`);
                          }
                      });
-    }
-
-    private populatePrefixDatabase(): void {
-        let existingRegexList = Object.keys(this.commandRegex);
-        let guildsNotInDatabaseCount = 0;
-
-        this.client.guilds.map((guild) => {
-            if (!existingRegexList.includes(guild.id)) {
-                this.createRegexForGuild(guild.id, this.config.defaultPrefix);
-                this.database.createGuildPrefix(guild, this.config.defaultPrefix);
-                guildsNotInDatabaseCount++;
-            }
-        });
-
-        if (guildsNotInDatabaseCount) {
-            this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default prefix.`);
-        }
     }
 }
