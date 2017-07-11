@@ -7,6 +7,7 @@ import * as winston from 'winston';
 
 // tslint:disable-next-line:max-line-length
 const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
+
 type SettingKey = 'ModLogActive' | 'ModLogChannelID' | 'HoldingRoomRoleID' | 'HoldingRoomActive' |
    'HoldingRoomMinutes' | 'HoldingRoomChannelID' | 'EmbedColor' | 'Prefix' | 'WelcomeMessage';
 type GuildID = string;
@@ -376,6 +377,9 @@ export class BotDatabase {
         await this.createSettingsKeyValue(guild, 'WelcomeMessage', defaultWelcomeMessage);
     }
 }
+
+export let possibleKeys = ['ModLogActive', 'ModLogChannelID', 'HoldingRoomRoleID', 'HoldingRoomActive',
+    'HoldingRoomMinutes', 'HoldingRoomChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage'];
 
 export interface GuildConfig {
     GuildID: string;
