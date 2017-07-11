@@ -5,7 +5,7 @@ import * as cron from 'cron';
 import * as snekfetch from 'snekfetch';
 import * as fs from 'fs';
 import * as path from 'path';
-import { BotDatabase } from '../database/database';
+import { BotDatabase, possibleKeys } from '../database/database';
 const Package = require('../../package.json');
 // tslint:disable-next-line:max-line-length
 const DiscordBotsGuildID = '110373943822540800';
@@ -424,24 +424,38 @@ export class SafetyJim {
         }
     }
 
-    private populateGuildConfigDatabase(): void {
+    private async populateGuildConfigDatabase(): Promise<void> {
         let guildsNotInDatabaseCount = 0;
 
-        this.database.getValuesOfKey('Prefix')
-                     .then((configs) => Array.from(configs.keys()))
-                     .then((existingGuildIds) => {
-                        this.client.guilds.map((guild) => {
-                            if (!existingGuildIds.includes(guild.id)) {
-                                this.database.createGuildSettings(guild);
-                                guildsNotInDatabaseCount++;
-                            }
-                        });
-                     })
-                     .then((_) => {
-                         if (guildsNotInDatabaseCount) {
-                             // tslint:disable-next-line:max-line-length
-                             this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config.`);
-                         }
-                     });
+        let configs = await this.database.getValuesOfKey('Prefix');
+        let existingGuildIds = Array.from(configs.keys());
+
+        this.client.guilds.map((guild) => {
+            if (!existingGuildIds.includes(guild.id)) {
+                this.database.createGuildSettings(guild);
+                guildsNotInDatabaseCount++;
+            }
+        });
+
+        if (guildsNotInDatabaseCount) {
+            this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config.`);
+        }
+
+        let guildsWithMissingKeys = 0;
+
+        for (let [guildID, guild] of this.client.guilds) {
+            let settings = await this.database.getGuildSettings(guild);
+
+            if (settings.size !== possibleKeys.length) {
+                await this.database.delGuildSettings(guild);
+                await this.database.createGuildSettings(guild);
+                guildsWithMissingKeys++;
+            }
+        }
+
+        if (guildsWithMissingKeys) {
+            // tslint:disable-next-line:max-line-length
+            this.log.info(`Resetted ${guildsWithMissingKeys} guild(s) to database with default config because of missing or extra keys.`);
+        }
     }
 }
