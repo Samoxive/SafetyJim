@@ -238,7 +238,7 @@ export class SafetyJim {
             this.log.info(`${member.user.tag} joined guild ${member.guild.name}.`);
             let HoldingRoomActive = await this.database.getSetting(member.guild, 'HoldingRoomActive');
 
-            if (HoldingRoomActive) {
+            if (HoldingRoomActive === 'true') {
                 let HoldingRoomChannelID = await this.database.getSetting(member.guild, 'HoldingRoomChannelID');
                 // tslint:disable-next-line:max-line-length
                 let guildMinutes: string | number = await this.database.getSetting(member.guild, 'HoldingRoomMinutes');
@@ -351,7 +351,7 @@ export class SafetyJim {
             let dGuild = this.client.guilds.get(user.GuildID);
             let enabled = await this.database.getSetting(dGuild, 'HoldingRoomActive');
 
-            if (enabled === '1') {
+            if (enabled === 'true') {
                 await this.client.fetchUser(user.UserID);
                 let dUser = await dGuild.fetchMember(user.UserID);
                 let roleID = await this.database.getSetting(dGuild, 'HoldingRoomRoleID');
