@@ -5,9 +5,12 @@ import { Config } from '../config/config';
 import { User, Guild } from 'discord.js';
 import * as winston from 'winston';
 
-function getSqlStatementFromFile(sqlFileName: string): string {
-    return fs.readFileSync(path.join(__dirname, 'sql', sqlFileName)).toString();
-}
+// tslint:disable-next-line:max-line-length
+const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
+
+type SettingKey = 'ModLogActive' | 'ModLogChannelID' | 'HoldingRoomRoleID' | 'HoldingRoomActive' |
+   'HoldingRoomMinutes' | 'HoldingRoomChannelID' | 'EmbedColor' | 'Prefix' | 'WelcomeMessage';
+type GuildID = string;
 
 export class BotDatabase {
     private database: sqlite.Database;
@@ -18,6 +21,12 @@ export class BotDatabase {
     // try to fix this later.
     public async init(): Promise<BotDatabase> {
         this.database = await sqlite.open(this.config.dbFileName);
+
+        await this.database.run(`CREATE TABLE IF NOT EXISTS Settings (
+                                    GuildID TEXT NOT NULL,
+                                    Key     TEXT NOT NULL,
+                                    Value   TEXT);`)
+                                .catch(() => { this.log.error('Could not create Settings table!'); });
 
         await this.database.run(`CREATE TABLE IF NOT EXISTS BanList (
                                     BannedUserID      TEXT,
@@ -32,24 +41,11 @@ export class BotDatabase {
                                     Unbanned          BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create BanList table!'); });
 
-        await this.database.run(`CREATE TABLE IF NOT EXISTS GuildSettings (
-                                    GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
-                                    ModLogActive         BOOLEAN,
-                                    ModLogChannelID      TEXT,
-                                    HoldingRoomRoleID    TEXT,
-                                    HoldingRoomActive    BOOLEAN,
-                                    HoldingRoomMinutes   INTEGER,
-                                    HoldingRoomChannelID TEXT,
-                                    EmbedColor TEXT);`)
-                                .catch((err) => { this.log.error('Could not create GuildSettings table!'); });
-
         // TODO(sam): Index the BanList table
         /*
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON BanList (ModeratorID, GuildID, BannedUserID);')
                            .catch((err) => { this.log.error('Could not create index for Banlist table!'); });
         */
-        await this.database.run('CREATE TABLE IF NOT EXISTS PrefixList (GuildID TEXT, Prefix TEXT);')
-                           .catch((err) => { this.log.error('Could not create PrefixList table!'); });
 
         await this.database.run(`CREATE TABLE IF NOT EXISTS JoinList (
                                     UserID   TEXT,
@@ -90,11 +86,6 @@ export class BotDatabase {
                                     Expires           BOOLEAN,
                                     Unmuted           BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create MuteList table!'); });
-
-        await this.database.run(`CREATE TABLE IF NOT EXISTS WelcomeMessages (
-                                    GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
-                                    Message TEXT);`)
-                                    .catch((err) => { this.log.error('Could not create WelcomeMessages table!'); });
 
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed)')
                            .catch((err) => { this.log.error('Could not create index for JoinList table!'); });
@@ -189,98 +180,30 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not retrieve expired mute records!'); });
     }
 
-    public getGuildPrefix(guild: Guild): Promise<string> {
-        return this.database.get('SELECT Prefix from PrefixList WHERE GuildID = ?', guild.id)
-            .then((row) => row.Prefix)
-            .catch((err) => { this.log.error('Could not retrieve prefix record!'); });
-    }
-
-    public getGuildPrefixes(): Promise<PrefixRecord[]> {
-        return this.database.all('SELECT * from PrefixList;')
-            .then((rows) => rows as PrefixRecord[])
-            .catch((err) => { this.log.error('Could not retrieve prefix recods!'); });
-    }
-
-    public getGuildConfiguration(guild: Guild): Promise<GuildConfig> {
-        return this.database.get('SELECT * FROM GuildSettings WHERE GuildID = ?', guild.id)
-                            .then((row) => row as GuildConfig)
-                            .catch((err) => { this.log.error('Could not retrieve guild config!'); });
-    }
-
-    public getGuildConfigurations(): Promise<GuildConfig[]> {
-        return this.database.all('SELECT * FROM GuildSettings;')
-                            .then((rows) => rows as GuildConfig[])
-                            .catch((err) => { this.log.error('Could not retrieve guild configs!'); });
-    }
-
     public getUsersThatCanBeAllowed(): Promise<JoinRecord[]> {
         return this.database.all('SELECT * FROM JoinList WHERE AllowTime < (strftime(\'%s\',\'now\')) and Allowed = 0')
             .then((rows) => rows as JoinRecord[])
             .catch((err) => { this.log.error('Could not retrieve users that can be allowed!'); });
     }
 
-    public getWelcomeMessage(guild: Guild): Promise<string> {
-        return this.database.get('SELECT * FROM WelcomeMessages WHERE GuildID = ?;', guild.id)
-            .then((rows) => rows.Message as string)
-            .catch((err) => { this.log.error('Could not retrieve welcome message!'); });
+    public getSetting(guild: Guild, key: SettingKey): Promise<string> {
+        return this.database.get('SELECT Value FROM Settings WHERE GuildID = ? AND Key = ?;', guild.id, key)
+            .then((row) => row.Value)
+            .catch((err) => { this.log.error('Could not retrieve value from Settings!'); });
     }
 
-    public getWelcomeMessages(): Promise<WelcomeMessage[]> {
-        return this.database.all('SELECT * FROM WelcomeMessages;')
-            .then((rows) => rows as WelcomeMessage[])
-            .catch((err) => { this.log.error('Could not retrieve welcome messages!'); });
+    public getGuildSettings(guild: Guild): Promise<Map<SettingKey, string>> {
+        return this.database.all('SELECT Key, Value FROM Settings WHERE GuildID = ?;', guild.id)
+                            .then((rows) => rows.reduce((acc, row) => (
+                                acc.set(row.Key, row.Value)), new Map<string, string>()))
+                            .catch((err) => { this.log.error('Could not retrieve guild settings!'); });
     }
 
-    public updateWelcomeMessage(guild: Guild, newMessage: string): void {
-        this.database.run('UPDATE WelcomeMessages SET Message = ? WHERE GuildID = ?;', newMessage, guild.id)
-            .catch((err) => { this.log.error('Could not update welcome message!'); });
-    }
-
-    public updateGuildPrefix(guild: Guild, newPrefix: string): void {
-        this.database.run('UPDATE PrefixList SET Prefix = ? WHERE GuildID = ?', newPrefix, guild.id)
-            .catch((err) => { this.log.error('Could not update prefix record!'); });
-    }
-
-    // tslint:disable-next-line:variable-name
-    public async updateGuildConfig(guild: Guild,
-                                   options: {holdingRoomRoleID?: string, embedColor?: string,
-                                             modLog?: boolean, modLogChannelID?: string,
-                                             holdingRoom?: boolean, minutes?: number,
-                                             holdingRoomID?: string}): Promise<void> {
-        let origConfig = await this.getGuildConfiguration(guild);
-
-        let holdingRoomActive: boolean;
-        let modLogActive;
-
-        if (options.holdingRoom === true) {
-            holdingRoomActive = true;
-        } else if (options.holdingRoom === false) {
-            holdingRoomActive = false;
-        } else {
-            holdingRoomActive = origConfig.HoldingRoomActive === 1;
-        }
-
-        if (options.modLog === true) {
-            modLogActive = true;
-        } else if (options.modLog === false) {
-            modLogActive = false;
-        } else {
-            modLogActive = origConfig.ModLogActive === 1;
-        }
-
-        this.database.run(`UPDATE GuildSettings
-                            SET ModLogActive = ?, ModLogChannelID = ?,
-                            HoldingRoomRoleID = ?, HoldingRoomActive = ?, HoldingRoomMinutes = ?,
-                            HoldingRoomChannelID = ?, EmbedColor = ? WHERE GuildID = ?;`,
-                            modLogActive,
-                            options.modLogChannelID || origConfig.ModLogChannelID,
-                            options.holdingRoomRoleID || origConfig.HoldingRoomRoleID,
-                            holdingRoomActive,
-                            options.minutes || origConfig.HoldingRoomMinutes,
-                            options.holdingRoomID || origConfig.HoldingRoomChannelID,
-                            options.embedColor || origConfig.EmbedColor,
-                            guild.id)
-                            .catch((e) => { this.log.error('Could not update GuildSettings!'); });
+    public getValuesOfKey(key: SettingKey): Promise<Map<GuildID, string>> {
+        return this.database.all('SELECT GuildID, Value FROM Settings WHERE Key = ?;', key)
+                            .then((rows) => rows.reduce(
+                                (acc, row) => acc.set(row.GuildID, row.Value), new Map<string, string>()))
+                            .catch((err) => { this.log.error('Could not retrieve values by key!'); });
     }
 
     public updateJoinRecord(jRecord: JoinRecord) {
@@ -313,19 +236,9 @@ export class BotDatabase {
                           .catch((err) => { this.log.error('Could not update MuteRecord!'); });
     }
 
-    public delWelcomeMessage(guild: Guild): void {
-        this.database.run('DELETE FROM WelcomeMessages WHERE GuildID = ?;', guild.id)
-            .catch((err) => { this.log.error('Could not delete welcome message'); });
-    }
-
-    public delGuildPrefix(guild: Guild): void {
-        this.database.run('DELETE FROM PrefixList WHERE GuildID = ?', guild.id)
-            .catch((err) => { this.log.error('Could not delete prefix record!'); });
-    }
-
-    public delGuildSettings(guild: Guild): void {
-        this.database.run('DELETE FROM GuildSettings WHERE GuildID = ?', guild.id)
-                     .catch((err) => { this.log.error('Could not delete guild settings!'); });
+    public updateSettings(guild: Guild, key: SettingKey, value: string): void {
+        this.database.run('UPDATE Settings SET Value = ? WHERE GuildID = ? AND Key = ?;', value, guild.id, key)
+                          .catch((err) => { this.log.error('Could not update Settings!'); });
     }
 
     public delUserBan(userID: string, guildID: string): void {
@@ -353,14 +266,9 @@ export class BotDatabase {
                      .catch((err) => { this.log.error('Could not delete join record!'); });
     }
 
-    public createWelcomeMessage(guild: Guild, message: string): void {
-        this.database.run('INSERT INTO WelcomeMessages (GuildID, Message) VALUES (?, ?);', guild.id, message)
-            .catch((err) => { this.log.error('Could not create welcome message! ' + err.stack); });
-    }
-
-    public createGuildPrefix(guild: Guild, prefix: string): void {
-        this.database.run('INSERT INTO PrefixList (GuildID, Prefix) VALUES (?, ?);', guild.id, prefix)
-            .catch((err) => { this.log.error('Could not create prefix record!'); });
+    public delGuildSettings(guild: Guild): void {
+        this.database.run('DELETE FROM Settings WHERE GuildID = ?', guild.id)
+                     .catch((err) => { this.log.error('Could not delete guild settings!'); });
     }
 
     public createJoinRecord(user: User, guild: Guild, minutes: number): void {
@@ -370,14 +278,6 @@ export class BotDatabase {
                             VALUES (?, ?, ?, ?, ?)`,
                             user.id, guild.id, now, now + minutes * 60, false)
                         .catch((err) => { this.log.error('Could not create join record!'); });
-    }
-
-    public createGuildSettings(guild: Guild): void {
-        this.database.run(`INSERT INTO GuildSettings (GuildID, ModLogActive, ModLogChannelID,
-                            HoldingRoomRoleID, HoldingRoomActive, HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor)
-                            VALUES(?, ?, ?, ?, ?, ?, ?, ?);`, guild.id, false, guild.defaultChannel.id,
-                                                  null, false, 3, guild.defaultChannel.id, '4286f4')
-                          .catch((err) => { this.log.error('Could not create guild settings!'); });
     }
 
     public createUserWarn(warnedUser: User, modUser: User, guild: Guild, reason: string): void {
@@ -458,7 +358,28 @@ export class BotDatabase {
                             now, expireTime, reason, expires, false)
                             .catch((err) => { this.log.error('Could not create mute record!'); });
     }
+
+    public async createSettingsKeyValue(guild: Guild, key: SettingKey, value: string | null): Promise<void> {
+        return this.database.run('INSERT INTO Settings (GuildID, Key, Value) VALUES (?, ?, ?);', guild.id, key, value)
+                     .then(() => undefined)
+                     .catch((err) => { this.log.error('Could not create key-value pair in ' + err); });
+    }
+
+    public async createGuildSettings(guild: Guild): Promise<void> {
+        await this.createSettingsKeyValue(guild, 'ModLogActive', 'false');
+        await this.createSettingsKeyValue(guild, 'ModLogChannelID', guild.defaultChannel.id);
+        await this.createSettingsKeyValue(guild, 'HoldingRoomRoleID', null);
+        await this.createSettingsKeyValue(guild, 'HoldingRoomActive', 'false');
+        await this.createSettingsKeyValue(guild, 'HoldingRoomMinutes', '3');
+        await this.createSettingsKeyValue(guild, 'HoldingRoomChannelID', guild.defaultChannel.id);
+        await this.createSettingsKeyValue(guild, 'EmbedColor', '4286f4');
+        await this.createSettingsKeyValue(guild, 'Prefix', this.config.defaultPrefix);
+        await this.createSettingsKeyValue(guild, 'WelcomeMessage', defaultWelcomeMessage);
+    }
 }
+
+export let possibleKeys = ['ModLogActive', 'ModLogChannelID', 'HoldingRoomRoleID', 'HoldingRoomActive',
+    'HoldingRoomMinutes', 'HoldingRoomChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage'];
 
 export interface GuildConfig {
     GuildID: string;
