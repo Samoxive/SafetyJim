@@ -9,6 +9,7 @@ database = sqlite3.connect(sys.argv[1])
 database.row_factory = sqlite3.Row
 cursor = database.cursor()
 
+cursor.execute('DELETE FROM WelcomeMessages WHERE GuildID NOT IN (SELECT p.GuildID FROM PrefixList p);')
 cursor.execute('CREATE TABLE IF NOT EXISTS Settings (GuildID TEXT NOT NULL, Key TEXT NOT NULL, Value TEXT);')
 cursor.execute('SELECT * FROM GuildSettings;')
 results = cursor.fetchall()
