@@ -25,7 +25,8 @@ export class BotDatabase {
         await this.database.run(`CREATE TABLE IF NOT EXISTS Settings (
                                     GuildID TEXT NOT NULL,
                                     Key     TEXT NOT NULL,
-                                    Value   TEXT);`)
+                                    Value   TEXT,
+                                    PRIMARY KEY (GuildID, Key));`)
                                 .catch(() => { this.log.error('Could not create Settings table!'); });
 
         await this.database.run(`CREATE TABLE IF NOT EXISTS BanList (
