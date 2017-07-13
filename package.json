@@ -1,6 +1,6 @@
 {
   "name": "safetyjim",
-  "version": "1.2.0",
+  "version": "2.1.1",
   "description": "A moderation bot for discord.",
   "main": "src/main.js",
   "scripts": {
@@ -25,6 +25,7 @@
     "@types/winston": "^2.3.2",
     "cron": "^1.2.1",
     "discord.js": "hydrabolt/discord.js#11.1-dev",
+    "snekfetch": "^3.1.11",
     "sqlite": "^2.7.0",
     "time-parser": "^0.2.10",
     "winston": "^2.3.1",

@@ -1,5 +1,7 @@
 {
     "token": "your-token",
     "dbFileName": "sqlite-database-file-name",
-    "defaultPrefix": "default-prefix"
+    "defaultPrefix": "default-prefix",
+    "discordbotsToken": "discordbots.org-token",
+    "discordbotspwToken": "bots.discord.pw-token"
 }

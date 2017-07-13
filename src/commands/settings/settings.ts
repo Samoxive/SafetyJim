@@ -14,26 +14,28 @@ class Settings implements Command {
         // tslint:disable-next-line:max-line-length
         'settings holdingRoom set minutes <minutes> - sets how much minutes a new user has to wait before being allowed',
         'settings holdingRoom set channel <#channelName> - sets what channel welcome messages are posted to',
+        // tslint:disable-next-line:max-line-length
+        'settings holdingRoom set message <message> - sets the message new members get mentioned with in the holdingroom (variables: $user, $guild and $minutes)',
     ];
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
         if (!args || !['display', 'holdingRoom', 'prefix', 'modlog', 'embedColor'].includes(splitArgs[0])) {
             return true;
         }
 
         if (splitArgs[0] === 'display') {
-            bot.successReact(msg);
-            this.handleSettingsDisplay(bot, msg);
+            await bot.successReact(msg);
+            await this.handleSettingsDisplay(bot, msg);
             return;
         }
 
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
-            bot.failReact(msg);
-            msg.author.send('You don\'t have enough permissions to modify guild settings!');
+            await bot.failReact(msg);
+            await msg.author.send('You don\'t have enough permissions to modify guild settings!');
             return;
         }
 
@@ -45,7 +47,7 @@ class Settings implements Command {
             switch (splitArgs[1]) {
                 case 'enable':
                 case 'disable':
-                    this.handleModLogSwitch(bot, msg, splitArgs[1] === 'enable');
+                    await this.handleModLogSwitch(bot, msg, splitArgs[1] === 'enable');
                     break;
                 case 'set':
                     if (splitArgs.length < 3 || splitArgs[2] !== 'channel') {
@@ -54,17 +56,17 @@ class Settings implements Command {
 
                     if (msg.mentions.channels.size === 0 ||
                         !Discord.MessageMentions.CHANNELS_PATTERN.test(splitArgs[3])) {
-                        bot.failReact(msg);
-                        msg.channel.send('Invalid channel input, no changes were made!');
+                        await bot.failReact(msg);
+                        await msg.channel.send('Invalid channel input, no changes were made!');
                         return;
                     }
 
                     let channel = msg.mentions.channels.first();
 
-                    bot.successReact(msg);
-                    msg.channel.send('Updated guild settings.');
-                    bot.log.info(`Updated channel for mod log in guild "${msg.guild}" with id: "${msg.guild.id}".`);
-                    bot.database.updateGuildConfig(msg.guild, { modLogChannelID: channel.id });
+                    await bot.successReact(msg);
+                    // tslint:disable-next-line:max-line-length
+                    await bot.log.info(`Updated channel for mod log in guild "${msg.guild}" with id: "${msg.guild.id}".`);
+                    await bot.database.updateSettings(msg.guild, 'ModLogChannelID', channel.id);
                     break;
             }
 
@@ -77,14 +79,14 @@ class Settings implements Command {
             switch (splitArgs[1]) {
                 case 'enable':
                 case 'disable':
-                    this.handleHoldingRoomSwitch(bot, msg, splitArgs[1] === 'enable');
+                    await this.handleHoldingRoomSwitch(bot, msg, splitArgs[1] === 'enable');
                     break;
                 case 'set':
-                    if (splitArgs.length < 3 || !['role', 'minutes', 'channel', 'prefix'].includes(splitArgs[2])) {
+                    if (splitArgs.length < 3 || !['role', 'minutes', 'channel', 'message'].includes(splitArgs[2])) {
                         return true;
                     }
 
-                    this.handleHoldingRoomSet(bot, msg, splitArgs.slice(2));
+                    await this.handleHoldingRoomSet(bot, msg, splitArgs.slice(2));
                     break;
             }
 
@@ -96,10 +98,9 @@ class Settings implements Command {
 
             let newPrefix = splitArgs[2];
 
-            bot.successReact(msg);
-            bot.createRegexForGuild(msg.guild.id, newPrefix);
-            bot.database.updateGuildPrefix(msg.guild, newPrefix);
-            msg.channel.send('Updated guild prefix.');
+            await bot.successReact(msg);
+            await bot.createRegexForGuild(msg.guild.id, newPrefix);
+            await bot.database.updateSettings(msg.guild, 'Prefix', newPrefix);
             bot.log.info(`Updated prefix for guild "${msg.guild}" with id: "${msg.guild.id} with "${newPrefix}"`);
         } else if (splitArgs[0] === 'embedColor') {
             if (splitArgs[1] !== 'set' || splitArgs.length < 3) {
@@ -109,169 +110,166 @@ class Settings implements Command {
             let newColor = splitArgs[2];
             let newColorParsed = parseInt(newColor, 16);
             if (newColor.length !== 6 || isNaN(newColorParsed)) {
-                bot.failReact(msg);
-                msg.channel.send('Invalid color input, try a six digit hexadecimal number.');
+                await bot.failReact(msg);
+                await msg.channel.send('Invalid color input, try a six digit hexadecimal number.');
                 return;
             }
 
-            bot.successReact(msg);
-            msg.channel.send('Updated embed color.');
-            bot.database.updateGuildConfig(msg.guild, { embedColor: newColor.toUpperCase() });
+            await bot.successReact(msg);
+            await bot.database.updateSettings(msg.guild, 'EmbedColor', newColor.toUpperCase());
             bot.log.info(`Updated embed color for guild "${msg.guild}" with id: "${msg.guild.id} with "${newColor}"`);
         }
     }
 
-    private getSettingsString(msg: Discord.Message, config: GuildConfig, prefix: string): string {
+    private async getSettingsString(bot: SafetyJim, msg: Discord.Message): Promise<string> {
+        let config = await bot.database.getGuildSettings(msg.guild);
         let output = '';
-        output += `Prefix: ${prefix}\n`;
-        output += `Embed color: ${config.EmbedColor}\n`;
+        output += `Prefix: ${config.get('Prefix')}\n`;
+        output += `Embed color: #${config.get('EmbedColor')}\n`;
 
-        if (config.ModLogActive === 0) {
+        if (config.get('ModLogActive') === 'false') {
             output += 'Mod Log: Disabled\n';
         } else {
             output += 'Mod Log: Enabled\n';
-            output += `\tMod Log Channel: ${msg.guild.channels.get(config.ModLogChannelID).name}\n`;
+            output += `\tMod Log Channel: ${msg.guild.channels.get(config.get('ModLogChannelID')).name}\n`;
         }
 
-        if (config.HoldingRoomActive === 0) {
+        if (config.get('HoldingRoomActive') === 'false') {
             output += 'Holding Room: Disabled\n';
         } else {
             output += 'Holding Room: Enabled\n';
-            output += `\tHolding Room Channel: ${msg.guild.channels.get(config.HoldingRoomChannelID).name}\n`;
-            output += `\tHolding Room Role: ${msg.guild.roles.get(config.HoldingRoomRoleID).name}\n`;
-            output += `\tHolding Room Delay: ${config.HoldingRoomMinutes} minute(s)`;
+            output += `\tHolding Room Channel: ${msg.guild.channels.get(config.get('HoldingRoomChannelID')).name}\n`;
+            output += `\tHolding Room Role: ${msg.guild.roles.get(config.get('HoldingRoomRoleID')).name}\n`;
+            output += `\tHolding Room Delay: ${config.get('HoldingRoomMinutes')} minute(s)`;
         }
 
         return output;
     }
 
-    private handleSettingsDisplay(bot: SafetyJim, msg: Discord.Message): void {
-        Promise.all([bot.database.getGuildConfiguration(msg.guild), bot.database.getGuildPrefix(msg.guild)])
-            .then((c) => this.getSettingsString(msg, c[0], c[1]))
-            .then((s) => {
-                bot.successReact(msg);
-                msg.channel.send(s, {code: 'http'});
-            })
-            .catch((e) => {
-                bot.failReact(msg);
-                msg.channel.send('There was an error while trying to display settings, this incident has been logged.');
-                bot.log.error(`Could not display settings for guild: "${msg.guild.name}" with id: "${msg.guild.id}"`);
-            });
+    private async handleSettingsDisplay(bot: SafetyJim, msg: Discord.Message): Promise<void> {
+        let settingsString = await this.getSettingsString(bot, msg);
+
+        await bot.successReact(msg);
+        await msg.channel.send(settingsString, { code: 'http' });
     }
 
     private async handleModLogSwitch(bot: SafetyJim, msg: Discord.Message, enable: boolean): Promise<void> {
-        let config = await bot.database.getGuildConfiguration(msg.guild);
+        let ModLogActive = await bot.database.getSetting(msg.guild, 'ModLogActive');
 
         if (!enable) {
-            if (config.ModLogActive === 0) {
-                bot.failReact(msg);
-                msg.channel.send('Mod log is already disabled silly.');
+            if (ModLogActive === 'false') {
+                await bot.failReact(msg);
+                await msg.channel.send('Mod log is already disabled silly.');
             } else {
-                bot.successReact(msg);
-                msg.channel.send('Disabled mod log.');
+                await bot.successReact(msg);
                 bot.log.info(`Disabled mod log for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
-                bot.database.updateGuildConfig(msg.guild, { modLog: false });
+                await bot.database.updateSettings(msg.guild, 'ModLogActive', 'false');
                 return;
             }
         } else {
-            if (config.ModLogActive === 1) {
-                bot.failReact(msg);
-                msg.channel.send('Mod log is already enabled silly.');
+            if (ModLogActive === 'true') {
+                await bot.failReact(msg);
+                await msg.channel.send('Mod log is already enabled silly.');
             } else {
-                bot.successReact(msg);
-                bot.database.updateGuildConfig(msg.guild, { modLog: true });
+                await bot.successReact(msg);
+                await bot.database.updateSettings(msg.guild, 'ModLogActive', 'true');
                 bot.log.info(`Enabled mod log for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
-                msg.channel.send('Enabled mod log.');
             }
         }
     }
 
     private async handleHoldingRoomSwitch(bot: SafetyJim, msg: Discord.Message, enable: boolean): Promise<void> {
-        let config = await bot.database.getGuildConfiguration(msg.guild);
+        let HoldingRoomActive = await bot.database.getSetting(msg.guild, 'HoldingRoomActive');
+        let HoldingRoomRoleID = await bot.database.getSetting(msg.guild, 'HoldingRoomRoleID');
 
         if (!enable) {
-            if (config.HoldingRoomActive === 0) {
-                bot.failReact(msg);
-                msg.channel.send('Holding room is already disabled silly.');
+            if (HoldingRoomActive === 'false') {
+                await bot.failReact(msg);
+                await msg.channel.send('Holding room is already disabled silly.');
             } else {
-                bot.successReact(msg);
-                msg.channel.send('Disabled holding room.');
+                await bot.successReact(msg);
                 bot.log.info(`Disabled holding room for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
-                bot.database.updateGuildConfig(msg.guild, { holdingRoom: false });
+                await bot.database.updateSettings(msg.guild, 'HoldingRoomActive', 'false');
                 return;
             }
         }
 
-        if (config.HoldingRoomActive === 1) {
-            bot.failReact(msg);
-            msg.channel.send('Holding room is already enabled silly.');
+        if (HoldingRoomActive === 'true') {
+            await bot.failReact(msg);
+            await msg.channel.send('Holding room is already enabled silly.');
             return;
         }
 
         // We are only checking for role id because it is the only value that is null
         // at initialization of guild configs
-        if (!config.HoldingRoomRoleID) {
-            let prefix = await bot.database.getGuildPrefix(msg.guild);
-            bot.failReact(msg);
+        if (!HoldingRoomRoleID) {
+            let prefix = await bot.database.getSetting(msg.guild, 'Prefix');
+            await bot.failReact(msg);
             let output = '';
             // TODO(sam): make this prettier
             output += 'Couldn\'t enable holding room because role is missing in your config!\n';
-            output += `Try ${prefix + ' ' + 'settings holdingRoom set role <roleName>'}`;
-            msg.channel.send(output);
+            output += `Try ${prefix} settings holdingRoom set role <roleName>`;
+            await msg.channel.send(output);
         } else {
-            bot.successReact(msg);
-            bot.database.updateGuildConfig(msg.guild, { holdingRoom: true });
+            await bot.successReact(msg);
+            await bot.database.updateSettings(msg.guild, 'HoldingRoomActive', 'true');
             bot.log.info(`Enabled holding room for guild: "${msg.guild}" with id: "${msg.guild.id}".`);
-            msg.channel.send('Enabled holding room.');
         }
     }
 
-    private handleHoldingRoomSet(bot: SafetyJim, msg: Discord.Message, args: string[]): void {
+    private async handleHoldingRoomSet(bot: SafetyJim, msg: Discord.Message, args: string[]): Promise<void> {
         switch (args[0]) {
             case 'role':
                 let roleName = args.slice(1).join(' ');
-                let id = msg.guild.roles.filter((r) => r.name === roleName).array()[0].id;
-                if (!roleName) {
-                    bot.failReact(msg);
-                    msg.channel.send('Invalid role name, no changes were made!');
+                if (!msg.guild.roles.find('name', roleName)) {
+                    await bot.failReact(msg);
+                    // tslint:disable-next-line:max-line-length
+                    await msg.channel.send(`No role called \`${roleName}\` found. Remember, role names are case sensitive!`);
                     return;
                 } else {
-                    bot.successReact(msg);
+                    let id = msg.guild.roles.find('name', roleName).id;
+                    await bot.successReact(msg);
                     bot.log.info(`Updated role for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
-                    bot.database.updateGuildConfig(msg.guild, { holdingRoomRoleID: id });
+                    await bot.database.updateSettings(msg.guild, 'HoldingRoomRoleID', id);
                 }
                 break;
             case 'minutes':
                 let input = args[1];
                 let minute = parseInt(input);
                 if (!minute) {
-                    bot.failReact(msg);
-                    msg.channel.send('Invalid input in minutes field, no changes were made!');
+                    await bot.failReact(msg);
+                    await msg.channel.send('Invalid input in minutes field, no changes were made!');
                     return;
                 } else {
-                    bot.successReact(msg);
+                    await bot.successReact(msg);
                     // tslint:disable-next-line:max-line-length
                     bot.log.info(`Updated minutes for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
-                    bot.database.updateGuildConfig(msg.guild, {minutes: minute});
+                    await bot.database.updateSettings(msg.guild, 'HoldingRoomMinutes', '' + minute);
                 }
                 break;
             case 'channel':
                 if (msg.mentions.channels.size === 0 || !Discord.MessageMentions.CHANNELS_PATTERN.test(args[1])) {
-                    bot.failReact(msg);
-                    msg.channel.send('Invalid channel input, no changes were made!');
+                    await bot.failReact(msg);
+                    await msg.channel.send('Invalid channel input, no changes were made!');
                     return;
                 }
 
                 let channel = msg.mentions.channels.first();
 
-                bot.successReact(msg);
+                await bot.successReact(msg);
                 bot.log.info(`Updated channel for holding room in guild "${msg.guild}" with id: "${msg.guild.id}".`);
-                bot.database.updateGuildConfig(msg.guild, { holdingRoomID: channel.id });
+                await bot.database.updateSettings(msg.guild, 'HoldingRoomChannelID', channel.id);
+                break;
+            case 'message':
+                let message = args.slice(1).join(' ');
+                if (!message) {
+                    await bot.failReact(msg);
+                    await msg.channel.send('No message argument entered, no changes were made!');
+                }
+                await bot.successReact(msg);
+                await bot.database.updateSettings(msg.guild, 'WelcomeMessage', message);
                 break;
         }
-
-        bot.successReact(msg);
-        msg.channel.send('Updated guild configuration.');
     }
 }
 

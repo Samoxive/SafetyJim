@@ -1,17 +1,22 @@
-import {Config} from '../config/config';
+import { Config } from '../config/config';
 import * as winston from 'winston';
 import * as Discord from 'discord.js';
 import * as cron from 'cron';
+import * as snekfetch from 'snekfetch';
 import * as fs from 'fs';
 import * as path from 'path';
-import { BotDatabase } from '../database/database';
+import { BotDatabase, possibleKeys } from '../database/database';
+const Package = require('../../package.json');
+// tslint:disable-next-line:max-line-length
+const DiscordBotsGuildID = '110373943822540800';
+const DiscordBotListGuildID = '264445053596991498';
 
-type RegexRecords = {string: RegExp};
-type Commands = {string: Command};
+type RegexRecords = { string: RegExp };
+type Commands = { string: Command };
 
 export interface Command {
     usage: string | string[];
-    run: (bot: SafetyJim, msg: Discord.Message, args: string) => boolean;
+    run: (bot: SafetyJim, msg: Discord.Message, args: string) => Promise<boolean>;
 }
 
 export class SafetyJim {
@@ -22,6 +27,8 @@ export class SafetyJim {
     private commands = {} as Commands;
     private allowUsersCronJob;
     private unbanUserCronJob;
+    private unmuteUserCronJob;
+    private unprocessedMessages: Discord.Message[] = [];
 
     constructor(public config: Config,
                 public database: BotDatabase,
@@ -29,10 +36,10 @@ export class SafetyJim {
         this.bootTime = new Date();
         this.loadCommands();
         log.info('Populating prefix regex dictionary.');
-        this.database.getGuildPrefixes().then((prefixList) => {
+        this.database.getValuesOfKey('Prefix').then((prefixList) => {
             if (prefixList != null) {
-                prefixList.map((record) => {
-                    this.createRegexForGuild(record.GuildID, record.Prefix);
+                prefixList.forEach((prefix, id) => {
+                    this.createRegexForGuild(id, prefix);
                 });
             }
         });
@@ -41,20 +48,11 @@ export class SafetyJim {
             disableEveryone: true,
             disabledEvents: [
                 'TYPING_START',
-                'GUILD_ROLE_CREATE',
-                'GUILD_ROLE_DELETE',
-                'GUILD_ROLE_UPDATE',
-                'CHANNEL_CREATE',
-                'CHANNEL_DELETE',
-                'CHANNEL_UPDATE',
-                'CHANNEL_PINS_UPDATE',
                 'MESSAGE_UPDATE',
                 'MESSAGE_REACTION_ADD',
                 'MESSAGE_REACTION_REMOVE',
                 'MESSAGE_REACTION_REMOVE_ALL',
-                'USER_UPDATE',
                 'USER_NOTE_UPDATE',
-                'PRESENCE_UPDATE',
                 'VOICE_SERVER_UPDATE',
                 'RELATIONSHIP_ADD',
                 'RELATIONSHIP_REMOVE',
@@ -62,15 +60,16 @@ export class SafetyJim {
         });
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
-        this.client.on('guildCreate', this.guildCreate());
-        this.client.on('guildDelete', this.guildDelete());
-        this.client.on('guildMemberAdd', this.guildMemberAdd());
-        this.client.on('guildMemberRemove', this.guildMemberRemove());
+        this.client.on('guildCreate', this.onGuildCreate());
+        this.client.on('guildDelete', this.onGuildDelete());
+        this.client.on('guildMemberAdd', this.onGuildMemberAdd());
+        this.client.on('guildMemberRemove', this.onGuildMemberRemove());
 
         this.client.login(config.discordToken);
     }
 
     public createRegexForGuild(guildID: string, prefix: string) {
+        prefix = prefix.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
         this.commandRegex[guildID] = new RegExp(`^${prefix}\\s+([^\\s]+)\\s*([^]*)\\s*`, 'i');
         this.prefixTestRegex[guildID] = new RegExp(`^${prefix}[\\s]*( .*)?$`, 'i');
     }
@@ -93,24 +92,58 @@ export class SafetyJim {
               .join('\n');
     }
 
-    public failReact(msg: Discord.Message): void {
-        msg.react('322698553980092417')
-            .catch(() => {
+    public async failReact(msg: Discord.Message): Promise<void> {
+        try {
+            await msg.react('322698553980092417');
+        } catch (e) {
             this.log.warn(`Could not react with fail emoji in guild "${msg.guild.name}"`);
-        });
+        }
+
+        return;
     }
 
-    public successReact(msg: Discord.Message): void {
-        msg.react('322698554294534144')
-            .catch(() => {
-                this.log.warn(`Could not react with success emoji in guild "${msg.guild.name}"`);
-        });
+    public async successReact(msg: Discord.Message): Promise<void> {
+        try {
+            await msg.react('322698554294534144');
+        } catch (e) {
+            this.log.warn(`Could not react with success emoji in guild "${msg.guild.name}"`);
+        }
+
+        return;
+    }
+
+    public async updateDiscordBotLists(): Promise<void> {
+        if (this.config.discordbotspwToken) {
+            try {
+                await snekfetch
+                    .post(`https://bots.discord.pw/api/bots/${this.client.user.id}/stats`)
+                    .set('Authorization', this.config.discordbotspwToken)
+                    .send({ server_count: this.client.guilds.size })
+                    .then();
+            } catch (err) {
+                if (!err.stack.includes('504')) {
+                    this.log.error(`Could not update pw with error ${err.stack}`);
+                }
+            }
+        }
+
+        if (this.config.discordbotsToken) {
+            try {
+                await snekfetch
+                    .post(`https://discordbots.org/api/bots/${this.client.user.id}/stats`)
+                    .set('Authorization', this.config.discordbotsToken)
+                    .send({ server_count: this.client.guilds.size })
+                    .then();
+            } catch (err) {
+                this.log.error(`Could not update discordbots with error ${err.stack}`);
+            }
+        }
     }
 
     private onReady(): () => void {
-        return (() => {
+        return (async () => {
             this.log.info(`Client is ready, username: ${this.client.user.username}.`);
-            this.client.generateInvite([
+            let link = await this.client.generateInvite([
                 'KICK_MEMBERS',
                 'BAN_MEMBERS',
                 'ADD_REACTIONS',
@@ -118,143 +151,214 @@ export class SafetyJim {
                 'SEND_MESSAGES',
                 'MANAGE_MESSAGES',
                 'MANAGE_ROLES',
-            ]).then((link) => this.log.info(`Bot invite link: ${link}`));
+            ]);
 
-            this.populateGuildConfigDatabase();
-            this.populatePrefixDatabase();
+            this.log.info(`Bot invite link: ${link}`);
 
-            this.allowUsersCronJob = new cron.CronJob({cronTime: '*/10 * * * * *',
-                                                       onTick: this.allowUsers.bind(this), start: true, context: this});
-            this.unbanUserCronJob = new cron.CronJob({ cronTime: '*/60 * * * * *',
-                                                       onTick: this.unbanUsers.bind(this), start: true, context: this});
+            for (let [id, guild] of this.client.guilds) {
+                if (this.isBotFarm(guild)) {
+                    await guild.leave();
+                }
+            }
+
+            await this.populateGuildConfigDatabase();
+            await this.updateDiscordBotLists();
+            await this.client.user.setGame(`-mod help | ${Package.version}`);
+
+            for (let message of this.unprocessedMessages) {
+                await this.onMessage()(message);
+            }
+
+            this.unprocessedMessages = undefined;
+
+            this.allowUsersCronJob = new cron.CronJob({ cronTime: '*/10 * * * * *',
+                                                    onTick: this.allowUsers.bind(this), start: true, context: this });
+            this.unbanUserCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
+                                                    onTick: this.unbanUsers.bind(this), start: true, context: this });
+            this.unmuteUserCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
+                                                    onTick: this.unmuteUsers.bind(this), start: true, context: this });
+
+            this.log.info('onReady finished.');
         });
     }
 
     private onMessage(): (msg: Discord.Message) => void {
-        return ((msg: Discord.Message) => {
+        return (async (msg: Discord.Message) => {
             if (msg.author.bot || msg.channel.type === 'dm') {
-                return;
-            }
-
-            if (msg.isMentioned(this.client.user)) {
-                if (msg.content.includes('help') ||
-                    msg.content.includes('commands')) {
-                    this.database.getGuildPrefix(msg.guild)
-                        .then((prefix) => {
-                            this.successReact(msg);
-                            msg.author.send('', { embed: {
-                                author: { name: 'Safety Jim - Commands', icon_url: this.client.user.avatarURL },
-                                description: this.getUsageStrings(prefix),
-                                color: 0x4286f4,
-                            }});
-                        });
-                } else if (msg.content.includes('prefix')) {
-                    this.database.getGuildPrefix(msg.guild)
-                        .then((prefix) => {
-                            this.successReact(msg);
-                            msg.author.send('', { embed: {
-                                author: { name: 'Safety Jim - Prefix', icon_url: this.client.user.avatarURL },
-                                description: `"${msg.guild.name}"s prefix is: ${prefix}`,
-                                color: 0x4286f4,
-                            }});
-                        });
-                }
                 return;
             }
 
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
             let cmdRegex: RegExp = this.commandRegex[msg.guild.id];
 
+            if (!testRegex || !cmdRegex) {
+                this.log.info('Added an unprocessed message: ' + msg.content);
+                this.unprocessedMessages.push(msg);
+                return;
+            }
+
+            if (msg.isMentioned(this.client.user)) {
+                if (msg.content.includes('help') || msg.content.includes('command')) {
+                    let prefix = await this.database.getSetting(msg.guild, 'Prefix');
+                    await this.successReact(msg);
+
+                    let embed = {
+                        author: { name: 'Safety Jim - Commands', icon_url: this.client.user.avatarURL },
+                        description: this.getUsageStrings(prefix),
+                        color: 0x4286f4,
+                    };
+
+                    try {
+                        await msg.author.send({ embed });
+                    } catch (e) {
+                        try {
+                            await msg.channel.send({ embed });
+                        } catch (e) {
+                            // tslint:disable-next-line:max-line-length
+                            this.log.warn(`Could not send commands embed in guild: "${msg.guild}" requested by "${msg.author.tag}".`);
+                        }
+                    }
+                    return;
+                } else if (msg.content.includes('prefix')) {
+                    let prefix = await this.database.getSetting(msg.guild, 'Prefix');
+                    await this.successReact(msg);
+
+                    let embed = {
+                        author: { name: 'Safety Jim - Prefix', icon_url: this.client.user.avatarURL },
+                        description: `"${msg.guild.name}"s prefix is: ${prefix}`,
+                        color: 0x4286f4,
+                    };
+
+                    try {
+                        await msg.author.send({ embed });
+                    } catch (e) {
+                        try {
+                            await msg.channel.send({ embed });
+                        } catch (e) {
+                            // tslint:disable-next-line:max-line-length
+                            this.log.warn(`Could not send commands embed in guild: "${msg.guild}" requested by "${msg.author.tag}".`);
+                        }
+                    }
+                    return;
+                }
+            }
+
             let cmdMatch = msg.content.match(cmdRegex);
             // Check if user called bot without command or command was not found
             if (!cmdMatch || !Object.keys(this.commands).includes(cmdMatch[1])) {
                 if (msg.cleanContent.match(testRegex)) {
-                    this.failReact(msg);
+                    await this.failReact(msg);
                 }
                 return;
             }
 
             if (!msg.member.hasPermission('BAN_MEMBERS')) {
-                this.failReact(msg);
-                msg.channel.send('You need to have enough permissions to use this bot!');
+                await this.failReact(msg);
+                await msg.channel.send('You need to have enough permissions to use this bot!');
                 return;
             }
 
-            let command = cmdMatch[1];
-            let args = cmdMatch[2].trim();
-            let showUsage;
-
-            try {
-                showUsage = this.commands[command].run(this, msg, args);
-            } catch (e) {
-                this.failReact(msg);
-                msg.channel.send('There was an error running the command:\n' +
-                                '```\n' + e.toString() + '\n```');
-                this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}"`);
-            }
-
-            if (showUsage === true) {
-                let usage = this.commands[command].usage;
-                this.database.getGuildPrefix(msg.guild)
-                             .then((prefix) => {
-                                    this.failReact(msg);
-                                    msg.channel.send('', { embed: {
-                                    author: {
-                                        name: `Safety Jim - "${command}" Syntax`,
-                                        icon_url: this.client.user.avatarURL,
-                                    },
-                                    description: this.getUsageString(prefix, usage),
-                                    color: 0x4286f4,
-                                }});
-                             });
-            }
+            await this.executeCommand(msg, cmdMatch);
         }).bind(this);
     }
 
-    private guildCreate(): (guild: Discord.Guild) => void {
+    private onGuildCreate(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
+            if (this.isBotFarm(guild)) {
+                guild.leave();
+                return;
+            }
+
             guild.defaultChannel.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`)
                                 // tslint:disable-next-line:max-line-length
                                 .catch(() => { guild.owner.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`); });
             this.database.createGuildSettings(guild);
-            this.database.createGuildPrefix(guild, this.config.defaultPrefix);
             this.createRegexForGuild(guild.id, this.config.defaultPrefix);
+            this.updateDiscordBotLists();
             this.log.info(`Joined guild ${guild.name}`);
         });
     }
 
-    private guildMemberAdd(): (member: Discord.GuildMember) => void {
+    private onGuildMemberAdd(): (member: Discord.GuildMember) => void {
         return (async (member: Discord.GuildMember) => {
             this.log.info(`${member.user.tag} joined guild ${member.guild.name}.`);
-            let guildConfig = await this.database.getGuildConfiguration(member.guild);
+            let HoldingRoomActive = await this.database.getSetting(member.guild, 'HoldingRoomActive');
 
-            if (guildConfig.HoldingRoomActive) {
-                if (this.client.channels.has(guildConfig.HoldingRoomChannelID)) {
-                    let channel = this.client.channels.get(guildConfig.HoldingRoomChannelID) as Discord.TextChannel;
+            if (HoldingRoomActive === 'true') {
+                let HoldingRoomChannelID = await this.database.getSetting(member.guild, 'HoldingRoomChannelID');
+                // tslint:disable-next-line:max-line-length
+                let guildMinutes: string | number = await this.database.getSetting(member.guild, 'HoldingRoomMinutes');
+                guildMinutes = parseInt(guildMinutes);
+                if (this.client.channels.has(HoldingRoomChannelID)) {
+                    let channel = this.client.channels.get(HoldingRoomChannelID) as Discord.TextChannel;
+                    let message = await this.database.getSetting(member.guild, 'WelcomeMessage');
+
+                    message = message.replace('$minute', guildMinutes + (guildMinutes === 1 ? ' minute' : ' minutes'))
+                                     .replace('$user', member.user.toString())
+                                     .replace('$guild', member.guild.name);
                     // tslint:disable-next-line:max-line-length
-                    channel.send(`Welcome to ${member.guild.name} ${member.toString()}. You are in our holding room for ${guildConfig.HoldingRoomMinutes} minutes, please take this time to review our rules.`)
+                    channel.send(message)
                            .catch((err) => { this.log.error(`There was an error when trying to send welcome message in ${member.guild.name}: ${err.toString()}`); });
                 } else {
                     this.log.warn(`Could not find holding room channel for ${member.guild.name} : ${member.guild.id}`);
                     member.guild.defaultChannel.send('WARNING: Invalid channel is set as a holding room!');
                 }
 
-                this.database.createJoinRecord(member.user, member.guild, guildConfig.HoldingRoomMinutes);
+                this.database.createJoinRecord(member.user, member.guild, guildMinutes);
             }
         });
     }
 
-    private guildMemberRemove(): (member: Discord.GuildMember) => void {
+    private onGuildMemberRemove(): (member: Discord.GuildMember) => void {
         return ((member: Discord.GuildMember) => {
             this.database.delJoinEntry(member.user.id, member.guild.id);
         });
     }
 
-    private guildDelete(): (guild: Discord.Guild) => void {
+    private onGuildDelete(): (guild: Discord.Guild) => void {
         return ((guild: Discord.Guild) => {
             this.database.delGuildSettings(guild);
-            this.database.delGuildPrefix(guild);
+            delete this.commandRegex[guild.id];
+            delete this.prefixTestRegex[guild.id];
+            this.updateDiscordBotLists();
         });
+    }
+
+    private onDisconnect(): (event: any) => void {
+        return ((event: any) => {
+            this.log.warn(`Client triggered disconnect event: ${JSON.stringify(event)}`);
+        });
+    }
+
+    private async executeCommand(msg: Discord.Message, cmdMatch: RegExpMatchArray): Promise<void> {
+        let command = cmdMatch[1];
+        let args = cmdMatch[2].trim();
+        let showUsage;
+
+        try {
+            showUsage = await this.commands[command].run(this, msg, args);
+        } catch (e) {
+            await this.failReact(msg);
+            await msg.channel.send('There was an error running your command, this incident has been logged.');
+            // tslint:disable-next-line:max-line-length
+            this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${e.stack + e.lineNumber + e.message}`);
+        }
+
+        if (showUsage === true) {
+            let usage = this.commands[command].usage;
+            let prefix = await this.database.getSetting(msg.guild, 'Prefix');
+            let embed = {
+                author: {
+                    name: `Safety Jim - "${command}" Syntax`,
+                    icon_url: this.client.user.avatarURL,
+                },
+                description: this.getUsageString(prefix, usage),
+                color: 0x4286f4,
+            };
+
+            await this.failReact(msg);
+            await msg.channel.send({ embed });
+        }
     }
 
     private loadCommands(): void {
@@ -281,18 +385,34 @@ export class SafetyJim {
         }
     }
 
+    private isBotFarm(guild: Discord.Guild) {
+        return (guild.id !== DiscordBotListGuildID) &&
+               (guild.id !== DiscordBotsGuildID) &&
+               (guild.members.filter((member) => member.user.bot).size > 20);
+    }
+
     private async allowUsers(): Promise<void> {
         let usersToBeAllowed = await this.database.getUsersThatCanBeAllowed();
 
         for (let user of usersToBeAllowed) {
-            let guildConfig = await this.database.getGuildConfiguration(this.client.guilds.get(user.GuildID));
+            let dGuild = this.client.guilds.get(user.GuildID);
+            let enabled = await this.database.getSetting(dGuild, 'HoldingRoomActive');
 
-            if (guildConfig.HoldingRoomActive === 1) {
-                let dGuild = this.client.guilds.get(user.GuildID);
-                let dUser = dGuild.members.get(user.UserID);
-                dUser.addRole(guildConfig.HoldingRoomRoleID);
-                this.database.updateJoinRecord(user);
-                this.log.info(`Allowed "${dUser.user.tag}" in guild "${dGuild.name}".`);
+            if (enabled === 'true') {
+                await this.client.fetchUser(user.UserID);
+                let dUser = await dGuild.fetchMember(user.UserID);
+                let roleID = await this.database.getSetting(dGuild, 'HoldingRoomRoleID');
+
+                try {
+                    await dUser.addRole(roleID);
+                    this.log.info(`Allowed "${dUser.user.tag}" in guild "${dGuild.name}".`);
+                } catch (e) {
+                    // tslint:disable-next-line:max-line-length
+                    this.log.warn(`Could not allow user ${dUser.user.tag} (${dUser.id}) in guild ${this.client.guilds.get(user.GuildID).id} : ${JSON.stringify(e)}`);
+                    await dGuild.defaultChannel.send('I could not allow a user into the server from the holding room. I probably don\'t have permissions!');
+                } finally {
+                    await this.database.updateJoinRecord(user);
+                }
             }
         }
     }
@@ -300,52 +420,108 @@ export class SafetyJim {
     private async unbanUsers(): Promise<void> {
         let usersToBeUnbanned = await this.database.getExpiredBans();
 
+        if (usersToBeUnbanned == null) {
+            return;
+        }
+
         for (let user of usersToBeUnbanned) {
             let g = this.client.guilds.get(user.GuildID);
-            g.unban(user.BannedUserID)
-             .then(() => {
-                 this.database.updateBanRecord(user);
-                 this.log.info(`Unbanned "${user.BannedUserName}" in guild "${g.name}".`);
-             })
-             .catch(() => { this.log.warn('Could not unban a user.'); });
+
+            if (g == null) {
+                this.database.updateBanRecord(user);
+            } else {
+                try {
+                    await g.unban(user.BannedUserID);
+                    this.log.info(`Unbanned "${user.BannedUserName}" in guild "${g.name}".`);
+                } catch (e) {
+                    // tslint:disable-next-line:max-line-length
+                    this.log.warn(`Could not unban user ${user.BannedUserName} (${user.BannedUserID}) in guild ${this.client.guilds.get(user.GuildID).id} : ${JSON.stringify(e)}`);
+                    await g.defaultChannel.send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
+                } finally {
+                    await this.database.updateBanRecord(user);
+                }
+            }
         }
     }
 
-    private populateGuildConfigDatabase(): void {
-        let guildsNotInDatabaseCount = 0;
+    private async unmuteUsers(): Promise<void> {
+        let usersToBeUnmuted = await this.database.getExpiredMutes();
 
-        this.database.getGuildConfigurations()
-                     .then((configs) => configs.map((config) => config.GuildID))
-                     .then((existingGuildIds) => {
-                        this.client.guilds.map((guild) => {
-                            if (!existingGuildIds.includes(guild.id)) {
-                                this.database.createGuildSettings(guild);
-                                guildsNotInDatabaseCount++;
-                            }
-                        });
-                     })
-                     .then((_) => {
-                         if (guildsNotInDatabaseCount) {
-                             // tslint:disable-next-line:max-line-length
-                             this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config.`);
-                         }
-                     });
+        for (let user of usersToBeUnmuted) {
+            let guild = this.client.guilds.get(user.GuildID);
+
+            if (!guild || !guild.roles.find('name', 'Muted')) {
+                await this.database.updateMuteRecord(user);
+                return;
+            }
+
+            await this.client.fetchUser(user.MutedUserID);
+            let member: Discord.GuildMember;
+
+            try {
+                await this.client.fetchUser(user.MutedUserID);
+                member = await guild.fetchMember(user.MutedUserID);
+            } catch (e) {
+                await this.database.updateMuteRecord(user);
+            }
+
+            if (!member) {
+                await this.database.updateMuteRecord(user);
+                return;
+            }
+            try {
+                await member.removeRole(guild.roles.find('name', 'Muted'));
+            } catch (e) {
+                // tslint:disable-next-line:max-line-length
+                this.log.warn(`Could not unmute user ${member.user.tag} (${member.id}) in guild ${this.client.guilds.get(user.GuildID).id} : ${JSON.stringify(e)}`);
+                await guild.defaultChannel.send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
+            } finally {
+                await this.database.updateMuteRecord(user);
+            }
+        }
     }
 
-    private populatePrefixDatabase(): void {
-        let existingRegexList = Object.keys(this.commandRegex);
+    private async populateGuildConfigDatabase(): Promise<void> {
         let guildsNotInDatabaseCount = 0;
 
-        this.client.guilds.map((guild) => {
-            if (!existingRegexList.includes(guild.id)) {
-                this.createRegexForGuild(guild.id, this.config.defaultPrefix);
-                this.database.createGuildPrefix(guild, this.config.defaultPrefix);
+        let configs = await this.database.getValuesOfKey('Prefix');
+        let existingGuildIds = Array.from(configs.keys());
+
+        for (let [id, guild] of this.client.guilds) {
+            if (!existingGuildIds.includes(guild.id)) {
+                await this.database.createGuildSettings(guild);
                 guildsNotInDatabaseCount++;
             }
-        });
+        }
 
         if (guildsNotInDatabaseCount) {
-            this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default prefix.`);
+            this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config.`);
+        }
+
+        let guildsWithMissingKeys = 0;
+
+        for (let [guildID, guild] of this.client.guilds) {
+            let settings = await this.database.getGuildSettings(guild);
+
+            if (settings.size !== possibleKeys.length) {
+                await this.database.delGuildSettings(guild);
+                await this.database.createGuildSettings(guild);
+                guildsWithMissingKeys++;
+            }
+        }
+
+        if (guildsWithMissingKeys) {
+            // tslint:disable-next-line:max-line-length
+            this.log.info(`Resetted ${guildsWithMissingKeys} guild(s) to database with default config because of missing or extra keys.`);
+        }
+
+        let prefixRecords = await this.database.getValuesOfKey('Prefix');
+        let existingCommandRegexes = Object.keys(this.commandRegex);
+        let existingTestRegexes = Object.keys(this.prefixTestRegex);
+        for (let [guildID, prefix] of prefixRecords) {
+            if (!existingCommandRegexes.includes(guildID) || !existingCommandRegexes.includes(guildID)) {
+                this.createRegexForGuild(guildID, prefix);
+            }
         }
     }
 }

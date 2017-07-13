@@ -10,6 +10,18 @@ CREATE TABLE BanList (
     Expires           BOOLEAN,
     Unbanned          BOOLEAN);
 
+CREATE TABLE MuteList (
+    MutedUserID       TEXT,
+    MutedUserName     TEXT,
+    ModeratorID       TEXT,
+    ModeratorUserName TEXT,
+    GuildID           TEXT,
+    MuteTime          INTEGER,
+    ExpireTime        INTEGER,
+    Reason            INTEGER,
+    Expires           BOOLEAN,
+    Unmuted           BOOLEAN);
+
 CREATE TABLE KickList (
     KickedUserID      TEXT,
     KickedUserName    TEXT,
@@ -35,23 +47,14 @@ CREATE TABLE JoinList (
     AllowTime INTEGER,
     Allowed   BOOLEAN);
 
-CREATE TABLE PrefixList (
-    GuildID TEXT PRIMARY KEY
-                 UNIQUE
-                 NOT NULL,
-    Prefix  TEXT NOT NULL
+CREATE TABLE Settings (
+    GuildID TEXT NOT NULL,
+    Key TEXT NOT NULL,
+    Value TEXT
 );
 
-CREATE TABLE GuildSettings (
-    GuildID TEXT PRIMARY KEY UNIQUE NOT NULL,
-    ModLogActive         BOOLEAN,
-    ModLogChannelID      TEXT,
-    HoldingRoomRoleID    TEXT,
-    HoldingRoomActive    BOOLEAN,
-    HoldingRoomMinutes   INTEGER,
-    HoldingRoomChannelID TEXT,
-    EmbedColor           TEXT
-);
+/* Possible Keys: ModLogActive, ModLogChannelID, HoldingRoomRoleID, HoldingRoomActive,
+   HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor, Prefix, WelcomeMessage */
 
 CREATE INDEX IF NOT EXISTS "" ON BanList (
     ModeratorID,

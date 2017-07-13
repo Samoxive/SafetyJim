@@ -7,14 +7,14 @@ class Ping implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
-        bot.successReact(msg);
-        msg.channel.send('', { embed: {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+        await bot.successReact(msg);
+        await msg.channel.send('', { embed: {
             author: {
                 name: `Safety Jim`,
                 icon_url: bot.client.user.avatarURL,
             },
-            description: `:ping_pong: Ping: ${bot.client.ping.toFixed(0)}ms`,
+            description: `:ping_pong: Ping: ${bot.client.pings[0].toFixed(0)}ms`,
             color: 0x4286f4,
         }});
 

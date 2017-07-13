@@ -3,12 +3,12 @@ import { GuildConfig } from '../../database/database';
 import * as Discord from 'discord.js';
 
 class Kick implements Command {
-    public usage = 'kick @user [reason] - Kicks the user with the specified reason';
+    public usage = 'kick @user [reason] - kicks the user with the specified reason';
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
         args = splitArgs.slice(1).join(' ');
 
@@ -18,85 +18,87 @@ class Kick implements Command {
         }
 
         if (!msg.guild.me.hasPermission('KICK_MEMBERS')) {
-            bot.failReact(msg);
-            msg.channel.send('I don\'t have enough permissions to do that!');
+            await bot.failReact(msg);
+            await msg.channel.send('I don\'t have enough permissions to do that!');
             return;
         }
 
         let member = msg.guild.member(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            bot.failReact(msg);
-            msg.channel.send('You can\'t kick yourself, dummy!');
+            await bot.failReact(msg);
+            await msg.channel.send('You can\'t kick yourself, dummy!');
             return;
         }
 
         if (!member || !member.kickable || msg.member.highestRole.comparePositionTo(member.highestRole) <= 0) {
-            bot.failReact(msg);
-            msg.channel.send('The specified member is not kickable.');
+            await bot.failReact(msg);
+            await msg.channel.send('The specified member is not kickable.');
             return;
         }
 
         let reason = args || 'No reason specified';
 
-        bot.log.info(`Kicked user "${member.user.tag}" in "${msg.guild.name}".`);
-        // Audit log compatibility :) (Known Caveat: sometimes reason won't appear, or add if reason has symbols.)
-        // tslint:disable-next-line:max-line-length
-        bot.database.getGuildConfiguration(msg.guild)
-                    .then((config) => {
-                        bot.successReact(msg);
-                        this.kickUser(msg, member, reason, config);
-                        this.createModLogEntry(bot, msg, member, reason, config);
-                    });
+        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
 
-        bot.database.createUserKick(member.user, msg.author, msg.guild, reason);
-        return;
-    }
-
-    private async kickUser(msg: Discord.Message, member: Discord.GuildMember,
-                           reason: string, config: GuildConfig): Promise<void> {
         let embed = {
             title: `Kicked from ${msg.guild.name}`,
-            color: parseInt(config.EmbedColor, 16),
+            color: parseInt(EmbedColor, 16),
             fields: [{ name: 'Reason:', value: reason, inline: false }],
             description: `You were kicked from ${msg.guild.name}.`,
-            footer: { text: `Kicked by: ${msg.author.tag}`},
+            footer: { text: `Kicked by: ${msg.author.tag} (${msg.author.id})`},
             timestamp: new Date(),
         };
 
-        member.send({ embed }).then(() => { member.kick(reason); })
-              .catch(() => { member.kick(reason); });
+        try {
+            await member.send({ embed });
+        } catch (e) {
+            await msg.channel.send('Could not send a private message to specified user, I am probably blocked.');
+        } finally {
+            try {
+                await member.kick(reason);
+                await bot.successReact(msg);
+                await this.createModLogEntry(bot, msg, member, reason);
+                await bot.database.createUserKick(member.user, msg.author, msg.guild, reason);
+            } catch (e) {
+                await bot.failReact(msg);
+                await msg.channel.send('Could not kick specified user. Do I have enough permissions?');
+            }
+        }
     }
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
-                                    member: Discord.GuildMember, reason: string, config: GuildConfig): Promise<void> {
-        let prefix = await bot.database.getGuildPrefix(msg.guild);
+                                    member: Discord.GuildMember, reason: string): Promise<void> {
+        let ModLogActive = await bot.database.getSetting(msg.guild, 'ModLogActive');
+        let prefix = await bot.database.getSetting(msg.guild, 'Prefix');
 
-        if (!config  || !config.ModLogActive) {
+        if (!ModLogActive || ModLogActive === 'false') {
             return;
         }
 
-        if (!bot.client.channels.has(config.ModLogChannelID) ||
-            bot.client.channels.get(config.ModLogChannelID).type !== 'text') {
+        let ModLogChannelID = await bot.database.getSetting(msg.guild, 'ModLogChannelID');
+
+        if (!bot.client.channels.has(ModLogChannelID) ||
+            bot.client.channels.get(ModLogChannelID).type !== 'text') {
             // tslint:disable-next-line:max-line-length
             msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
             return;
         }
 
-        let logChannel = bot.client.channels.get(config.ModLogChannelID) as Discord.TextChannel;
+        let logChannel = bot.client.channels.get(ModLogChannelID) as Discord.TextChannel;
 
         let embed = {
             color: 0xFF9900, // orange
             fields: [
                 { name: 'Action:', value: 'Kick', inline: false },
-                { name: 'User:', value: member.user.tag, inline: false },
+                { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
                 { name: 'Reason:', value: reason, inline: false },
-                { name: 'Responsible Moderator:', value: msg.author.tag, inline: false },
+                { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
             ],
             timestamp: new Date(),
         };
 
-        logChannel.send({ embed });
+        await logChannel.send({ embed });
 
         return;
     }
