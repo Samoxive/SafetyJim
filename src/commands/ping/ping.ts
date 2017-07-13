@@ -14,7 +14,7 @@ class Ping implements Command {
                 name: `Safety Jim`,
                 icon_url: bot.client.user.avatarURL,
             },
-            description: `:ping_pong: Ping: ${bot.client.ping.toFixed(0)}ms`,
+            description: `:ping_pong: Ping: ${bot.client.pings[0].toFixed(0)}ms`,
             color: 0x4286f4,
         }});
 

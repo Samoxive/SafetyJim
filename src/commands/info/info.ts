@@ -30,7 +30,7 @@ class Info implements Command {
                 { name: 'Server Count', value:  bot.client.guilds.size, inline: true },
                 { name: 'User Count', value: bot.client.users.size, inline: true },
                 { name: 'Channel Count', value: bot.client.channels.size, inline: true },
-                { name: 'Websocket Ping', value: `${bot.client.ping.toFixed(0)}ms`, inline: true},
+                { name: 'Websocket Ping', value: `${bot.client.pings[0].toFixed(0)}ms`, inline: true},
                 // tslint:disable-next-line:max-line-length
                 { name: 'RAM usage', value: `${(process.memoryUsage().rss / (1024 * 1024)).toFixed(0)}MB`, inline: true },
                 { name: 'Links', value: `[Support](https://discord.io/safetyjim) | [Github](https://github.com/samoxive/safetyjim) | [Invite](${this.inviteLink})`, inline: true },
