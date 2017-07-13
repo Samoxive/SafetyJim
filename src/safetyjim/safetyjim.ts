@@ -19,12 +19,17 @@ export interface Command {
     run: (bot: SafetyJim, msg: Discord.Message, args: string) => Promise<boolean>;
 }
 
+export interface MessageProcessor {
+    onMessage: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+}
+
 export class SafetyJim {
     public client: Discord.Client;
     public bootTime: Date;
     private commandRegex = {} as RegexRecords;
     private prefixTestRegex = {} as RegexRecords;
     private commands = {} as Commands;
+    private processors = [] as MessageProcessor[];
     private allowUsersCronJob;
     private unbanUserCronJob;
     private unmuteUserCronJob;
@@ -35,6 +40,7 @@ export class SafetyJim {
                 public log: winston.LoggerInstance) {
         this.bootTime = new Date();
         this.loadCommands();
+        this.loadProcessors();
         log.info('Populating prefix regex dictionary.');
         this.database.getValuesOfKey('Prefix').then((prefixList) => {
             if (prefixList != null) {
@@ -195,6 +201,10 @@ export class SafetyJim {
                 this.log.info('Added an unprocessed message: ' + msg.content);
                 this.unprocessedMessages.push(msg);
                 return;
+            }
+
+            for (let processor of this.processors) {
+                await processor.onMessage(this, msg);
             }
 
             if (msg.isMentioned(this.client.user)) {
@@ -358,6 +368,30 @@ export class SafetyJim {
 
             await this.failReact(msg);
             await msg.channel.send({ embed });
+        }
+    }
+
+    private loadProcessors(): void {
+        let processorsFolderPath = path.join(__dirname, '..', 'processors');
+        if (!fs.existsSync(processorsFolderPath) || !fs.statSync(processorsFolderPath).isDirectory()) {
+            this.log.error('Processors directory could not be found!');
+            process.exit(1);
+        }
+
+        let processorList = fs.readdirSync(processorsFolderPath);
+
+        for (let processor of processorList) {
+            if (!fs.statSync(path.join(processorsFolderPath, processor)).isDirectory()) {
+                this.log.warn(`Found file "${processor}", ignoring...`);
+            } else {
+                try {
+                    let proc: MessageProcessor = require(path.join(processorsFolderPath, processor, processor + '.js'));
+                    this.processors.push(new proc(this));
+                    this.log.info(`Loaded processor "${processor}"`);
+                } catch (e) {
+                    this.log.warn(`Could not load processor "${processor}"!`);
+                }
+            }
         }
     }
 
