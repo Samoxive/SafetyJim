@@ -74,7 +74,6 @@ class Settings implements Command {
 
         // TODO(sam): maybe make keys more user friendly?
         switch (setKey) {
-            case 'modlog':
             case 'holdingroom':
                 if (setArgument === 'enabled') {
                     setArgument = 'true';
@@ -84,9 +83,27 @@ class Settings implements Command {
                     return true;
                 }
 
-                setKey = setKey === 'modlog' ? 'ModLogActive' : 'HoldingRoomActive';
+                let roleID = await bot.database.getSetting(msg.guild, 'HoldingRoomRoleID');
+
+                if (roleID == null) {
+                    await bot.failReact(msg);
+                    await msg.channel.send('You can\'t enable holding room because you didn\'t set a role first!');
+                    return;
+                }
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, setKey, setArgument);
+                await bot.database.updateSettings(msg.guild, 'HoldingRoomActive', setArgument);
+                break;
+            case 'modlog':
+                if (setArgument === 'enabled') {
+                    setArgument = 'true';
+                } else if (setArgument === 'disabled') {
+                    setArgument = 'false';
+                } else {
+                    return true;
+                }
+
+                await bot.successReact(msg);
+                await bot.database.updateSettings(msg.guild, 'ModLogActive', setArgument);
                 break;
             case 'welcomemessage':
                 await bot.successReact(msg);
