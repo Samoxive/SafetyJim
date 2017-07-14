@@ -2,6 +2,9 @@ import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import { possibleKeys, defaultWelcomeMessage, SettingKey } from '../../database/database';
 import * as Discord from 'discord.js';
 
+const keys = ['modlog', 'modlogchannel', 'holdingroomrole', 'holdingroom',
+    'holdingroomminutes', 'holdingroomchannel', 'embedcolor', 'prefix', 'welcomemessage'];
+
 class Settings implements Command {
     public usage = [
         'settings display - shows current state of settings',
@@ -27,17 +30,22 @@ class Settings implements Command {
 
         // TODO(sam): Change this into embed
         if (splitArgs[0] === 'list') {
-            let output = 'EmbedColor <hexadecimal rgb> : 4286F4\n' +
-                         'HoldingRoomActive <true/false> : false\n' +
-                         `HoldingRoomChannelID <#channel> : #${msg.guild.defaultChannel.name}\n` +
-                         'HoldingRoomMinutes <number> : 3\n' +
-                         'HoldingRoomRoleID <text> : none\n' +
-                         'ModLogActive <true/false> : false\n' +
-                         `ModLogChannelID <#channel> : #${msg.guild.defaultChannel.name}\n` +
-                         'Prefix <text> : -mod\n' +
-                         `WelcomeMessage <text>: ${defaultWelcomeMessage}`;
-            await msg.channel.send(output, { code: 'yaml' });
+            let output = '`EmbedColor <hexadecimal rgb>` - Default: 4286F4\n' +
+                         '`HoldingRoom <enabled/disabled>` - Default: disabled\n' +
+                         `\`HoldingRoomChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
+                         '`HoldingRoomMinutes <number>` - Default: 3\n' +
+                         '`HoldingRoomRole <text>` - Default: None\n' +
+                         '`ModLog <enabled/disabled>` - Default: disabled\n' +
+                         `\`ModLogChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
+                         '`Prefix <text>` - Default: -mod\n' +
+                         `\`WelcomeMessage <text>\` - Default: ${defaultWelcomeMessage}`;
+            let embed = {
+                author: { name: 'Safety Jim - Settings List', icon_url: bot.client.user.avatarURL },
+                description: output,
+                color: 0x4286f4,
+            };
             await bot.successReact(msg);
+            await msg.channel.send({ embed });
             return;
         }
 
@@ -55,19 +63,19 @@ class Settings implements Command {
             return;
         }
 
-        let setKey: SettingKey | string = splitArgs[1];
+        let setKey = splitArgs[1].toLowerCase();
         let setArguments = splitArgs.slice(2);
         let setArgument = setArguments.join(' ');
 
-        if (!possibleKeys.includes(setKey) || !setArgument) {
+        if (!keys.includes(setKey) || !setArgument) {
             await bot.failReact(msg);
             return true;
         }
 
         // TODO(sam): maybe make keys more user friendly?
         switch (setKey) {
-            case 'ModLogActive':
-            case 'HoldingRoomActive':
+            case 'modlog':
+            case 'holdingroom':
                 if (setArgument === 'enabled') {
                     setArgument = 'true';
                 } else if (setArgument === 'disabled') {
@@ -76,19 +84,20 @@ class Settings implements Command {
                     return true;
                 }
 
+                setKey = setKey === 'modlog' ? 'ModLogActive' : 'HoldingRoomActive';
                 await bot.successReact(msg);
                 await bot.database.updateSettings(msg.guild, setKey, setArgument);
                 break;
-            case 'WelcomeMessage':
+            case 'welcomemessage':
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, setKey, setArgument);
+                await bot.database.updateSettings(msg.guild, 'WelcomeMessage', setArgument);
                 break;
-            case 'Prefix':
+            case 'prefix':
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, setKey, setArgument);
+                await bot.database.updateSettings(msg.guild, 'Prefix', setArgument);
                 bot.createRegexForGuild(msg.guild.id, setArgument);
                 break;
-            case 'HoldingRoomMinutes':
+            case 'holdingroomminutes':
                 let minutes = parseInt(setArguments[0]);
 
                 if (isNaN(minutes)) {
@@ -96,9 +105,9 @@ class Settings implements Command {
                 }
 
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, setKey, minutes.toString());
+                await bot.database.updateSettings(msg.guild, 'HoldingRoomMinutes', minutes.toString());
                 break;
-            case 'EmbedColor':
+            case 'embedcolor':
                 if (setArguments[0].length !== 6) {
                     return true;
                 }
@@ -107,19 +116,21 @@ class Settings implements Command {
                     return true;
                 }
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, setKey, color.toString());
+                await bot.database.updateSettings(msg.guild, 'EmbedColor', color.toString());
                 break;
-            case 'HoldingRoomChannelID':
-            case 'ModLogChannelID':
+            case 'holdingroomchannel':
+            case 'modlogchannel':
                 if (setArguments.length === 1 &&
                     !setArgument.match(Discord.MessageMentions.CHANNELS_PATTERN)) {
                     return true;
                 }
 
+                setKey = setKey === 'modlogchannel' ? 'ModLogChannelID' : 'HoldingRoomChannelID';
+
                 await bot.successReact(msg);
                 await bot.database.updateSettings(msg.guild, setKey, msg.mentions.channels.first().id);
                 break;
-            case 'HoldingRoomRoleID':
+            case 'holdingroomrole':
                 let role = msg.guild.roles.find('name', setArgument);
 
                 if (!role) {
@@ -127,11 +138,11 @@ class Settings implements Command {
                 }
 
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, setKey, role.id);
+                await bot.database.updateSettings(msg.guild, 'HoldingRoomRoleID', role.id);
                 break;
             default:
                 await bot.failReact(msg);
-                break;
+                return true;
         }
 
         return;
