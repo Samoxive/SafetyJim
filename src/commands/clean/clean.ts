@@ -1,5 +1,11 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
+
+interface SeperatedMessages {
+    oldMessages: Discord.Message[];
+    newMessages: Discord.Message[];
+}
+
 class Clean implements Command {
     public usage = [
         'clean - deletes one message',
@@ -48,7 +54,8 @@ class Clean implements Command {
 
         if (!newArgs[1]) {
             deleteAmount = (deleteAmount === 100) ? 100 : (deleteAmount + 1);
-            await msg.channel.bulkDelete(deleteAmount);
+            let messages = await msg.channel.fetchMessages({ limit: deleteAmount });
+            await this.deleteBulk(this.seperateMessages(messages), msg);
             return;
         }
 
@@ -69,13 +76,10 @@ class Clean implements Command {
             const newMessages = messages.filterArray((m) => m.author.id === msg.mentions.users.first().id)
                 .slice(0, deleteAmount);
 
-            if (deleteAmount === 1) {
-                newMessages[0].delete();
-            } else {
-                await msg.channel.bulkDelete(newMessages);
+            await this.deleteBulk(this.seperateMessages(newMessages), msg);
+            if (deleteUser.id === msg.author.id) {
+                await bot.successReact(msg);
             }
-
-            await bot.successReact(msg);
             return;
         }
 
@@ -84,16 +88,39 @@ class Clean implements Command {
             const newMessages = messages.filterArray((m) => m.author.bot)
                 .slice(0, deleteAmount);
 
-            if (deleteAmount === 1) {
-                newMessages[0].delete();
-            } else {
-                await msg.channel.bulkDelete(newMessages);
-            }
-
+            await this.deleteBulk(this.seperateMessages(newMessages), msg);
             await bot.successReact(msg);
             return;
         }
         return;
+    }
+
+    // tslint:disable-next-line:max-line-length
+    private seperateMessages(messages: Discord.Collection<string, Discord.Message> | Discord.Message[]): SeperatedMessages {
+        let result = { oldMessages: [], newMessages: [] } as SeperatedMessages;
+        let newMessages = (messages instanceof Array) ? messages : Array.from(messages.values());
+
+        for (let message of newMessages) {
+            if ((Date.now() - message.createdAt.getTime()) >= 1000 * 60 * 60 * 24 * 15) {
+                result.oldMessages.push(message);
+            } else {
+                result.newMessages.push(message);
+            }
+        }
+
+        return result;
+    }
+
+    private async deleteBulk(messages: SeperatedMessages, msg: Discord.Message): Promise<void> {
+        if (messages.newMessages.length >= 2 && messages.newMessages.length <= 100) {
+            await msg.channel.bulkDelete(messages.newMessages);
+        } else {
+            for (let message of messages.newMessages) {
+                await message.delete();
+            }
+        }
+
+        await Promise.all(messages.oldMessages.map((m) => m.delete()));
     }
 }
 export = Clean;
