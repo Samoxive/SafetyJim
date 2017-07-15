@@ -56,6 +56,18 @@ CREATE TABLE Settings (
 /* Possible Keys: ModLogActive, ModLogChannelID, HoldingRoomRoleID, HoldingRoomActive,
    HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor, Prefix, WelcomeMessage */
 
+CREATE TABLE CommandLogs (
+    ID INTEGER NOT NULL PRIMARY KEY,
+    Command TEXT NOT NULL,
+    Arguments TEXT,
+    "Time" TEXT NOT NULL,
+    "Timestamp" INTEGER NOT NULL,
+    "User" TEXT NOT NULL,
+    UserID TEXT NOT NULL,
+    Guild TEXT NOT NULL,
+    GuildID TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS "" ON BanList (
     ModeratorID,
     GuildID,

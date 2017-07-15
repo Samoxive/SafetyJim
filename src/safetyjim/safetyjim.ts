@@ -329,6 +329,7 @@ export class SafetyJim {
         let args = cmdMatch[2].trim();
         let showUsage;
 
+        this.database.createCommandLog(msg, command, args);
         try {
             showUsage = await this.commands[command].run(this, msg, args);
         } catch (e) {
