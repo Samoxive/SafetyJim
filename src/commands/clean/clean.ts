@@ -13,6 +13,12 @@ class Clean implements Command {
         let newArgs = args.split(' ');
         let deleteAmount = parseInt(newArgs[0]);
 
+        if (!msg.member.hasPermission('BAN_MEMBERS')) {
+            await bot.failReact(msg);
+            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            return;
+        }
+
         if (!msg.guild.me.hasPermission('MANAGE_MESSAGES')) {
             await bot.failReact(msg);
             await msg.channel.send('I don\'t have enough permissions to do that!');

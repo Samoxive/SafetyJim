@@ -252,12 +252,6 @@ export class SafetyJim {
                 return;
             }
 
-            if (!msg.member.hasPermission('BAN_MEMBERS')) {
-                await this.failReact(msg);
-                await msg.channel.send('You need to have enough permissions to use this bot!');
-                return;
-            }
-
             await this.executeCommand(msg, cmdMatch);
         }).bind(this);
     }

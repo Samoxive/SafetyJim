@@ -12,6 +12,12 @@ class Kick implements Command {
         let splitArgs = args.split(' ');
         args = splitArgs.slice(1).join(' ');
 
+        if (!msg.member.hasPermission('BAN_MEMBERS')) {
+            await bot.failReact(msg);
+            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            return;
+        }
+
         if (msg.mentions.users.size === 0 ||
             !splitArgs[0].match(Discord.MessageMentions.USERS_PATTERN)) {
             return true;
