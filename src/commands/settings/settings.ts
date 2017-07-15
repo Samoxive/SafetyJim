@@ -72,7 +72,6 @@ class Settings implements Command {
             return true;
         }
 
-        // TODO(sam): maybe make keys more user friendly?
         switch (setKey) {
             case 'holdingroom':
                 if (setArgument === 'enabled') {
@@ -133,7 +132,7 @@ class Settings implements Command {
                     return true;
                 }
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, 'EmbedColor', color.toString());
+                await bot.database.updateSettings(msg.guild, 'EmbedColor', setArguments[0]);
                 break;
             case 'holdingroomchannel':
             case 'modlogchannel':
@@ -165,7 +164,7 @@ class Settings implements Command {
         return;
     }
 
-    private async getSettingsString(bot: SafetyJim, msg: Discord.Message): Promise<string> {
+    private async getSettingsString(bot: SafetyJim, msg: Discord.Message): Promise<{ color: number, output: string}> {
         let config = await bot.database.getGuildSettings(msg.guild);
         let output = '';
         output += `Prefix: ${config.get('Prefix')}\n`;
@@ -175,26 +174,31 @@ class Settings implements Command {
             output += 'Mod Log: Disabled\n';
         } else {
             output += 'Mod Log: Enabled\n';
-            output += `\tMod Log Channel: ${msg.guild.channels.get(config.get('ModLogChannelID')).name}\n`;
+            output += `\tMod Log Channel: ${msg.guild.channels.get(config.get('ModLogChannelID'))}\n`;
         }
 
         if (config.get('HoldingRoomActive') === 'false') {
             output += 'Holding Room: Disabled\n';
         } else {
             output += 'Holding Room: Enabled\n';
-            output += `\tHolding Room Channel: ${msg.guild.channels.get(config.get('HoldingRoomChannelID')).name}\n`;
+            output += `\tHolding Room Channel: ${msg.guild.channels.get(config.get('HoldingRoomChannelID'))}\n`;
             output += `\tHolding Room Role: ${msg.guild.roles.get(config.get('HoldingRoomRoleID')).name}\n`;
             output += `\tHolding Room Delay: ${config.get('HoldingRoomMinutes')} minute(s)`;
         }
 
-        return output;
+        return { output, color: parseInt(config.get('EmbedColor'), 16) };
     }
 
     private async handleSettingsDisplay(bot: SafetyJim, msg: Discord.Message): Promise<void> {
-        let settingsString = await this.getSettingsString(bot, msg);
+        let output = await this.getSettingsString(bot, msg);
 
+        let embed = {
+            author: { name: 'Safety Jim - Guild Settings', icon_url: bot.client.user.avatarURL },
+            description: output.output,
+            color: output.color,
+        };
         await bot.successReact(msg);
-        await msg.channel.send(settingsString, { code: 'http' });
+        await msg.channel.send({ embed });
     }
 }
 
