@@ -101,10 +101,10 @@ class Clean implements Command {
         let newMessages = (messages instanceof Array) ? messages : Array.from(messages.values());
 
         for (let message of newMessages) {
-            if ((Date.now() - message.createdAt.getTime()) >= 1000 * 60 * 60 * 24 * 15) {
-                result.oldMessages.push(message);
-            } else {
+            if ((Date.now() - message.createdAt.getTime()) <= 1000 * 60 * 60 * 24 * 13) {
                 result.newMessages.push(message);
+            } else {
+                result.oldMessages.push(message);
             }
         }
 
