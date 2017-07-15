@@ -373,7 +373,7 @@ export class SafetyJim {
                     this.commands[command] = new cmd(this);
                     this.log.info(`Loaded command "${command}"`);
                 } catch (e) {
-                    this.log.warn(`Could not load command "${command}"!`);
+                    this.log.warn(`Could not load command "${command}"! ${e.stack}`);
                 }
             }
         }
