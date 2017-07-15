@@ -12,7 +12,7 @@ class Kick implements Command {
         let splitArgs = args.split(' ');
         args = splitArgs.slice(1).join(' ');
 
-        if (!msg.member.hasPermission('BAN_MEMBERS')) {
+        if (!msg.member.hasPermission('KICK_MEMBERS')) {
             await bot.failReact(msg);
             await msg.channel.send('You don\'t have enough permissions to execute this command!');
             return;
