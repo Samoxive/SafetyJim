@@ -28,7 +28,6 @@ class Settings implements Command {
             return;
         }
 
-        // TODO(sam): Change this into embed
         if (splitArgs[0] === 'list') {
             let output = '`EmbedColor <hexadecimal rgb>` - Default: 4286F4\n' +
                          '`HoldingRoom <enabled/disabled>` - Default: disabled\n' +
@@ -40,8 +39,8 @@ class Settings implements Command {
                          '`Prefix <text>` - Default: -mod\n' +
                          `\`WelcomeMessage <text>\` - Default: ${defaultWelcomeMessage}`;
             let embed = {
-                author: { name: 'Safety Jim - Settings List', icon_url: bot.client.user.avatarURL },
-                description: output,
+                author: { name: 'Safety Jim', icon_url: bot.client.user.avatarURL },
+                fields: [{ name: 'List of settings', value: output }],
                 color: 0x4286f4,
             };
             await bot.successReact(msg);
@@ -167,23 +166,23 @@ class Settings implements Command {
     private async getSettingsString(bot: SafetyJim, msg: Discord.Message): Promise<{ color: number, output: string}> {
         let config = await bot.database.getGuildSettings(msg.guild);
         let output = '';
-        output += `Prefix: ${config.get('Prefix')}\n`;
-        output += `Embed color: #${config.get('EmbedColor')}\n`;
+        output += `**Prefix:** ${config.get('Prefix')}\n`;
+        output += `**Embed color:** #${config.get('EmbedColor')}\n`;
 
         if (config.get('ModLogActive') === 'false') {
-            output += 'Mod Log: Disabled\n';
+            output += '**Mod Log:** Disabled\n';
         } else {
-            output += 'Mod Log: Enabled\n';
-            output += `\tMod Log Channel: ${msg.guild.channels.get(config.get('ModLogChannelID'))}\n`;
+            output += '**Mod Log:** Enabled\n';
+            output += `\t**Mod Log Channel:** ${msg.guild.channels.get(config.get('ModLogChannelID'))}\n`;
         }
 
         if (config.get('HoldingRoomActive') === 'false') {
-            output += 'Holding Room: Disabled\n';
+            output += '**Holding Room:** Disabled\n';
         } else {
-            output += 'Holding Room: Enabled\n';
-            output += `\tHolding Room Channel: ${msg.guild.channels.get(config.get('HoldingRoomChannelID'))}\n`;
-            output += `\tHolding Room Role: ${msg.guild.roles.get(config.get('HoldingRoomRoleID')).name}\n`;
-            output += `\tHolding Room Delay: ${config.get('HoldingRoomMinutes')} minute(s)`;
+            output += '**Holding Room: Enabled\n';
+            output += `\t**Holding Room Channel:** ${msg.guild.channels.get(config.get('HoldingRoomChannelID'))}\n`;
+            output += `\t**Holding Room Role:** ${msg.guild.roles.get(config.get('HoldingRoomRoleID')).name}\n`;
+            output += `\t**Holding Room Delay:** ${config.get('HoldingRoomMinutes')} minute(s)`;
         }
 
         return { output, color: parseInt(config.get('EmbedColor'), 16) };
@@ -193,8 +192,8 @@ class Settings implements Command {
         let output = await this.getSettingsString(bot, msg);
 
         let embed = {
-            author: { name: 'Safety Jim - Guild Settings', icon_url: bot.client.user.avatarURL },
-            description: output.output,
+            author: { name: 'Safety Jim', icon_url: bot.client.user.avatarURL },
+            fields: [{ name: 'Guild Settings', value: output.output }],
             color: output.color,
         };
         await bot.successReact(msg);
