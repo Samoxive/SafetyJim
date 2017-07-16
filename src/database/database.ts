@@ -6,7 +6,7 @@ import { User, Guild, Message } from 'discord.js';
 import * as winston from 'winston';
 
 // tslint:disable-next-line:max-line-length
-export const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
+export const defaultWelcomeMessage = 'Welcome to $guild $user!';
 
 export type SettingKey = 'ModLogActive' | 'ModLogChannelID' | 'HoldingRoomRoleID' | 'HoldingRoomActive' |
 'HoldingRoomMinutes' | 'WelcomeMessageChannelID' | 'EmbedColor' | 'Prefix' | 'WelcomeMessage' | 'WelcomeMessageActive';
@@ -403,7 +403,7 @@ export class BotDatabase {
 }
 
 export let possibleKeys = ['ModLogActive', 'ModLogChannelID', 'HoldingRoomRoleID', 'HoldingRoomActive',
-    'HoldingRoomMinutes', 'WelcomeMessageChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage', 'Message'];
+    'HoldingRoomMinutes', 'WelcomeMessageChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage', 'WelcomeMessageActive'];
 
 export interface BanRecord {
     BannedUserID: string;
@@ -448,16 +448,6 @@ export interface MuteRecord {
     Reason: string;
     Expires: number;
     Unmuted: number;
-}
-
-export interface PrefixRecord {
-    GuildID: string;
-    Prefix: string;
-}
-
-export interface WelcomeMessage {
-    GuildID: string;
-    Message: string;
 }
 
 export interface JoinRecord {
