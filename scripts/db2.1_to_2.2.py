@@ -65,5 +65,9 @@ for row in results:
     values = (guildID, 'WelcomeMessage', message,)
     cursor.execute('INSERT INTO Settings (GuildID, Key, Value) VALUES (?, ?, ?);', values)
 
+cursor.execute('DROP TABLE WelcomeMessages;')
+cursor.execute('DROP TABLE PrefixList;')
+cursor.execute('DROP TABLE GuildSettings;')
+
 database.commit()
 database.close()
