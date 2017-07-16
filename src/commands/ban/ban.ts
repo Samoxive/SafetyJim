@@ -132,7 +132,7 @@ class Ban implements Command {
             return;
         }
 
-        let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
+        let logChannel = bot.client.channels.get(ModLogChannelID) as Discord.TextChannel;
 
         let embed = {
             color: 0xFF2900, // red
