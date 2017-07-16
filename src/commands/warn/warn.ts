@@ -1,5 +1,4 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
-import { GuildConfig } from '../../database/database';
 import * as Discord from 'discord.js';
 
 class Warn implements Command {
