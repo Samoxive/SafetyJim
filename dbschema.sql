@@ -54,7 +54,7 @@ CREATE TABLE Settings (
 );
 
 /* Possible Keys: ModLogActive, ModLogChannelID, HoldingRoomRoleID, HoldingRoomActive,
-   HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor, Prefix, WelcomeMessage */
+   HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor, Prefix, WelcomeMessageActive, WelcomeMessage */
 
 CREATE TABLE CommandLogs (
     ID INTEGER NOT NULL PRIMARY KEY,

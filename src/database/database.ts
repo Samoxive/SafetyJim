@@ -9,7 +9,7 @@ import * as winston from 'winston';
 export const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
 
 export type SettingKey = 'ModLogActive' | 'ModLogChannelID' | 'HoldingRoomRoleID' | 'HoldingRoomActive' |
-   'HoldingRoomMinutes' | 'HoldingRoomChannelID' | 'EmbedColor' | 'Prefix' | 'WelcomeMessage';
+'HoldingRoomMinutes' | 'WelcomeMessageChannelID' | 'EmbedColor' | 'Prefix' | 'WelcomeMessage' | 'WelcomeMessageActive';
 type GuildID = string;
 
 export class BotDatabase {
@@ -384,10 +384,11 @@ export class BotDatabase {
         await this.createSettingsKeyValue(guild, 'HoldingRoomRoleID', null);
         await this.createSettingsKeyValue(guild, 'HoldingRoomActive', 'false');
         await this.createSettingsKeyValue(guild, 'HoldingRoomMinutes', '3');
-        await this.createSettingsKeyValue(guild, 'HoldingRoomChannelID', guild.defaultChannel.id);
         await this.createSettingsKeyValue(guild, 'EmbedColor', '4286f4');
         await this.createSettingsKeyValue(guild, 'Prefix', this.config.defaultPrefix);
+        await this.createSettingsKeyValue(guild, 'WelcomeMessageActive', 'false');
         await this.createSettingsKeyValue(guild, 'WelcomeMessage', defaultWelcomeMessage);
+        await this.createSettingsKeyValue(guild, 'WelcomeMessageChannelID', guild.defaultChannel.id);
     }
 
     public createCommandLog(msg: Message, command: string, args: string): void {
@@ -402,18 +403,7 @@ export class BotDatabase {
 }
 
 export let possibleKeys = ['ModLogActive', 'ModLogChannelID', 'HoldingRoomRoleID', 'HoldingRoomActive',
-    'HoldingRoomMinutes', 'HoldingRoomChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage'];
-
-export interface GuildConfig {
-    GuildID: string;
-    ModLogActive: number;
-    ModLogChannelID: string;
-    HoldingRoomRoleID: string;
-    HoldingRoomActive: number;
-    HoldingRoomMinutes: number;
-    HoldingRoomChannelID: string;
-    EmbedColor: string;
-}
+    'HoldingRoomMinutes', 'WelcomeMessageChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage', 'Message'];
 
 export interface BanRecord {
     BannedUserID: string;

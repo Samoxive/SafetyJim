@@ -3,7 +3,7 @@ import { possibleKeys, defaultWelcomeMessage, SettingKey } from '../../database/
 import * as Discord from 'discord.js';
 
 const keys = ['modlog', 'modlogchannel', 'holdingroomrole', 'holdingroom',
-    'holdingroomminutes', 'holdingroomchannel', 'embedcolor', 'prefix', 'welcomemessage'];
+    'holdingroomminutes', 'embedcolor', 'prefix', 'welcomemessage', 'message', 'welcomemessagechannel'];
 
 class Settings implements Command {
     public usage = [
@@ -31,13 +31,14 @@ class Settings implements Command {
         if (splitArgs[0] === 'list') {
             let output = '`EmbedColor <hexadecimal rgb>` - Default: 4286F4\n' +
                          '`HoldingRoom <enabled/disabled>` - Default: disabled\n' +
-                         `\`HoldingRoomChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
                          '`HoldingRoomMinutes <number>` - Default: 3\n' +
                          '`HoldingRoomRole <text>` - Default: None\n' +
                          '`ModLog <enabled/disabled>` - Default: disabled\n' +
                          `\`ModLogChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
                          '`Prefix <text>` - Default: -mod\n' +
-                         `\`WelcomeMessage <text>\` - Default: ${defaultWelcomeMessage}`;
+                         '\`WelcomeMessage <enabled/disabled>\` - Default: disabled\n' +
+                         `\`WelcomeMessageChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
+                         `\`Message <text>\` - Default: ${defaultWelcomeMessage}`;
             let embed = {
                 author: { name: 'Safety Jim', icon_url: bot.client.user.avatarURL },
                 fields: [{ name: 'List of settings', value: output }],
@@ -104,6 +105,18 @@ class Settings implements Command {
                 await bot.database.updateSettings(msg.guild, 'ModLogActive', setArgument);
                 break;
             case 'welcomemessage':
+                if (setArgument === 'enabled') {
+                    setArgument = 'true';
+                } else if (setArgument === 'disabled') {
+                    setArgument = 'false';
+                } else {
+                    return true;
+                }
+
+                await bot.successReact(msg);
+                await bot.database.updateSettings(msg.guild, 'WelcomeMessageActive', setArgument);
+                break;
+            case 'message':
                 await bot.successReact(msg);
                 await bot.database.updateSettings(msg.guild, 'WelcomeMessage', setArgument);
                 break;
@@ -133,14 +146,14 @@ class Settings implements Command {
                 await bot.successReact(msg);
                 await bot.database.updateSettings(msg.guild, 'EmbedColor', setArguments[0]);
                 break;
-            case 'holdingroomchannel':
+            case 'welcomemessagechannel':
             case 'modlogchannel':
                 if (setArguments.length === 1 &&
                     !setArgument.match(Discord.MessageMentions.CHANNELS_PATTERN)) {
                     return true;
                 }
 
-                setKey = setKey === 'modlogchannel' ? 'ModLogChannelID' : 'HoldingRoomChannelID';
+                setKey = setKey === 'modlogchannel' ? 'ModLogChannelID' : 'WelcomeMessageChannelID';
 
                 await bot.successReact(msg);
                 await bot.database.updateSettings(msg.guild, setKey, msg.mentions.channels.first().id);
@@ -176,11 +189,18 @@ class Settings implements Command {
             output += `\t**Mod Log Channel:** ${msg.guild.channels.get(config.get('ModLogChannelID'))}\n`;
         }
 
+        if (config.get('WelcomeMessageActive') === 'false') {
+            output += '**Welcome Messages:** Disabled\n';
+        } else {
+            output += '**Welcome Messages:** Enabled\n';
+            // tslint:disable-next-line:max-line-length
+            output += `\t**Welcome Message Channel:** ${msg.guild.channels.get(config.get('WelcomeMessageChannelID'))}\n`;
+        }
+
         if (config.get('HoldingRoomActive') === 'false') {
             output += '**Holding Room:** Disabled\n';
         } else {
-            output += '**Holding Room: Enabled\n';
-            output += `\t**Holding Room Channel:** ${msg.guild.channels.get(config.get('HoldingRoomChannelID'))}\n`;
+            output += '**Holding Room:** Enabled\n';
             output += `\t**Holding Room Role:** ${msg.guild.roles.get(config.get('HoldingRoomRoleID')).name}\n`;
             output += `\t**Holding Room Delay:** ${config.get('HoldingRoomMinutes')} minute(s)`;
         }
