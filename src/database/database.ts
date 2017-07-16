@@ -113,6 +113,12 @@ export class BotDatabase {
             .catch((err) => { this.log.error('Could not retrieve moderator ban records!'); });
     }
 
+    public getLastBan(guild: Guild): Promise<BanRecord> {
+        return this.database.get('SELECT * FROM BanList WHERE GuildID = ? ORDER BY BanTime DESC;', guild.id)
+            .then((row) => row as BanRecord)
+            .catch((err) => { this.log.error('Could not retrieve last ban!'); });
+    }
+
     public getGuildBans(guildID: string): Promise<BanRecord[]> {
         return this.database.all('SELECT * FROM BanList WHERE GuildID = ?;', guildID)
             .then((rows) => rows as BanRecord[])
