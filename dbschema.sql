@@ -47,14 +47,14 @@ CREATE TABLE JoinList (
     AllowTime INTEGER,
     Allowed   BOOLEAN);
 
-CREATE TABLE Settings (
+CREATE TABLE IF NOT EXISTS Settings (
     GuildID TEXT NOT NULL,
-    Key TEXT NOT NULL,
-    Value TEXT
-);
+    Key     TEXT NOT NULL,
+    Value   TEXT,
+    PRIMARY KEY (GuildID, Key));
 
 /* Possible Keys: ModLogActive, ModLogChannelID, HoldingRoomRoleID, HoldingRoomActive,
-   HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor, Prefix, WelcomeMessageActive, WelcomeMessage */
+   HoldingRoomMinutes, EmbedColor, Prefix, WelcomeMessageActive, WelcomeMessage, WelcomeMessageChannelID */
 
 CREATE TABLE CommandLogs (
     ID INTEGER NOT NULL PRIMARY KEY,
