@@ -165,8 +165,10 @@ export class SafetyJim {
             await this.updateDiscordBotLists();
             await this.client.user.setGame(`-mod help | ${Package.version}`);
 
-            for (let message of this.unprocessedMessages) {
-                await this.onMessage()(message);
+            if (this.unprocessedMessages != null) {
+                for (let message of this.unprocessedMessages) {
+                    await this.onMessage()(message);
+                }
             }
 
             this.unprocessedMessages = undefined;
