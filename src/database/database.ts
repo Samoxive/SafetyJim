@@ -88,7 +88,7 @@ export class BotDatabase {
                                     Unmuted           BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create MuteList table!'); });
 
-        await this.database.run(`CREATE TABLE CommandLogs (
+        await this.database.run(`CREATE TABLE IF NOT EXISTS CommandLogs (
                                     ID INTEGER NOT NULL PRIMARY KEY,
                                     Command TEXT NOT NULL,
                                     Arguments TEXT,
