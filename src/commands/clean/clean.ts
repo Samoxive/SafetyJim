@@ -116,7 +116,11 @@ class Clean implements Command {
             await msg.channel.bulkDelete(messages.newMessages);
         } else {
             for (let message of messages.newMessages) {
-                await message.delete();
+                try {
+                    await message.delete();
+                } catch (e) {
+                    //
+                }
             }
         }
 
