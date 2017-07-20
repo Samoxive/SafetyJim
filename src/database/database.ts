@@ -2,14 +2,14 @@ import * as sqlite from 'sqlite';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Config } from '../config/config';
-import { User, Guild } from 'discord.js';
+import { User, Guild, Message } from 'discord.js';
 import * as winston from 'winston';
 
 // tslint:disable-next-line:max-line-length
-const defaultWelcomeMessage = 'Welcome to $guild $user. You are in our holding room for $minute, please take this time to review our rules.';
+export const defaultWelcomeMessage = 'Welcome to $guild $user!';
 
-type SettingKey = 'ModLogActive' | 'ModLogChannelID' | 'HoldingRoomRoleID' | 'HoldingRoomActive' |
-   'HoldingRoomMinutes' | 'HoldingRoomChannelID' | 'EmbedColor' | 'Prefix' | 'WelcomeMessage';
+export type SettingKey = 'ModLogActive' | 'ModLogChannelID' | 'HoldingRoomRoleID' | 'HoldingRoomActive' |
+'HoldingRoomMinutes' | 'WelcomeMessageChannelID' | 'EmbedColor' | 'Prefix' | 'WelcomeMessage' | 'WelcomeMessageActive';
 type GuildID = string;
 
 export class BotDatabase {
@@ -25,7 +25,8 @@ export class BotDatabase {
         await this.database.run(`CREATE TABLE IF NOT EXISTS Settings (
                                     GuildID TEXT NOT NULL,
                                     Key     TEXT NOT NULL,
-                                    Value   TEXT);`)
+                                    Value   TEXT,
+                                    PRIMARY KEY (GuildID, Key));`)
                                 .catch(() => { this.log.error('Could not create Settings table!'); });
 
         await this.database.run(`CREATE TABLE IF NOT EXISTS BanList (
@@ -87,6 +88,18 @@ export class BotDatabase {
                                     Unmuted           BOOLEAN);`)
                                     .catch((err) => { this.log.error('Could not create MuteList table!'); });
 
+        await this.database.run(`CREATE TABLE IF NOT EXISTS CommandLogs (
+                                    ID INTEGER NOT NULL PRIMARY KEY,
+                                    Command TEXT NOT NULL,
+                                    Arguments TEXT,
+                                    "Time" TEXT NOT NULL,
+                                    "Timestamp" INTEGER NOT NULL,
+                                    "User" TEXT NOT NULL,
+                                    UserID TEXT NOT NULL,
+                                    Guild TEXT NOT NULL,
+                                    GuildID TEXT NOT NULL);`)
+                                    .catch((err) => { this.log.error('Could not create CommandLogs table!'); });
+
         await this.database.run('CREATE INDEX IF NOT EXISTS "" ON JoinList (Allowed)')
                            .catch((err) => { this.log.error('Could not create index for JoinList table!'); });
 
@@ -98,6 +111,12 @@ export class BotDatabase {
         return this.database.all('SELECT * FROM BanList WHERE ModeratorID = ? AND GuildID = ?;', modID, guildID)
             .then((rows) => rows as BanRecord[])
             .catch((err) => { this.log.error('Could not retrieve moderator ban records!'); });
+    }
+
+    public getLastBan(guild: Guild): Promise<BanRecord> {
+        return this.database.get('SELECT * FROM BanList WHERE GuildID = ? ORDER BY BanTime DESC;', guild.id)
+            .then((row) => row as BanRecord)
+            .catch((err) => { this.log.error('Could not retrieve last ban!'); });
     }
 
     public getGuildBans(guildID: string): Promise<BanRecord[]> {
@@ -371,26 +390,26 @@ export class BotDatabase {
         await this.createSettingsKeyValue(guild, 'HoldingRoomRoleID', null);
         await this.createSettingsKeyValue(guild, 'HoldingRoomActive', 'false');
         await this.createSettingsKeyValue(guild, 'HoldingRoomMinutes', '3');
-        await this.createSettingsKeyValue(guild, 'HoldingRoomChannelID', guild.defaultChannel.id);
         await this.createSettingsKeyValue(guild, 'EmbedColor', '4286f4');
         await this.createSettingsKeyValue(guild, 'Prefix', this.config.defaultPrefix);
+        await this.createSettingsKeyValue(guild, 'WelcomeMessageActive', 'false');
         await this.createSettingsKeyValue(guild, 'WelcomeMessage', defaultWelcomeMessage);
+        await this.createSettingsKeyValue(guild, 'WelcomeMessageChannelID', guild.defaultChannel.id);
+    }
+
+    public createCommandLog(msg: Message, command: string, args: string): void {
+        let now = new Date();
+        let timestamp = Math.round(now.getTime() / 1000);
+        this.database.run(`INSERT INTO CommandLogs
+                            (Command, Arguments, "Time", "Timestamp", "User", UserID, Guild, GuildID)
+                            VALUES(?, ?, ?, ?, ?, ?, ?, ?);`, command, args, now.toString(), timestamp,
+                            msg.author.tag, msg.author.id, msg.guild.name, msg.guild.id)
+                         .catch((err) => { this.log.error('Could not insert a message log!'); });
     }
 }
 
 export let possibleKeys = ['ModLogActive', 'ModLogChannelID', 'HoldingRoomRoleID', 'HoldingRoomActive',
-    'HoldingRoomMinutes', 'HoldingRoomChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage'];
-
-export interface GuildConfig {
-    GuildID: string;
-    ModLogActive: number;
-    ModLogChannelID: string;
-    HoldingRoomRoleID: string;
-    HoldingRoomActive: number;
-    HoldingRoomMinutes: number;
-    HoldingRoomChannelID: string;
-    EmbedColor: string;
-}
+    'HoldingRoomMinutes', 'WelcomeMessageChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage', 'WelcomeMessageActive'];
 
 export interface BanRecord {
     BannedUserID: string;
@@ -435,16 +454,6 @@ export interface MuteRecord {
     Reason: string;
     Expires: number;
     Unmuted: number;
-}
-
-export interface PrefixRecord {
-    GuildID: string;
-    Prefix: string;
-}
-
-export interface WelcomeMessage {
-    GuildID: string;
-    Message: string;
 }
 
 export interface JoinRecord {

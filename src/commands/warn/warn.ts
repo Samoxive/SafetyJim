@@ -1,5 +1,4 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
-import { GuildConfig } from '../../database/database';
 import * as Discord from 'discord.js';
 
 class Warn implements Command {
@@ -11,6 +10,12 @@ class Warn implements Command {
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
         args = splitArgs.slice(1).join(' ');
+
+        if (!msg.member.hasPermission('KICK_MEMBERS')) {
+            await bot.failReact(msg);
+            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            return;
+        }
 
         if (msg.mentions.users.size === 0 ||
             !splitArgs[0].match(Discord.MessageMentions.USERS_PATTERN)) {

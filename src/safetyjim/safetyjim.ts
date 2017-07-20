@@ -171,8 +171,10 @@ export class SafetyJim {
             await this.updateDiscordBotLists();
             await this.client.user.setGame(`-mod help | ${Package.version}`);
 
-            for (let message of this.unprocessedMessages) {
-                await this.onMessage()(message);
+            if (this.unprocessedMessages != null) {
+                for (let message of this.unprocessedMessages) {
+                    await this.onMessage()(message);
+                }
             }
 
             this.unprocessedMessages = undefined;
@@ -262,12 +264,6 @@ export class SafetyJim {
                 return;
             }
 
-            if (!msg.member.hasPermission('BAN_MEMBERS')) {
-                await this.failReact(msg);
-                await msg.channel.send('You need to have enough permissions to use this bot!');
-                return;
-            }
-
             await this.executeCommand(msg, cmdMatch);
         }).bind(this);
     }
@@ -291,30 +287,36 @@ export class SafetyJim {
 
     private onGuildMemberAdd(): (member: Discord.GuildMember) => void {
         return (async (member: Discord.GuildMember) => {
-            this.log.info(`${member.user.tag} joined guild ${member.guild.name}.`);
-            let HoldingRoomActive = await this.database.getSetting(member.guild, 'HoldingRoomActive');
+            let settings = await this.database.getGuildSettings(member.guild);
 
-            if (HoldingRoomActive === 'true') {
-                let HoldingRoomChannelID = await this.database.getSetting(member.guild, 'HoldingRoomChannelID');
-                // tslint:disable-next-line:max-line-length
-                let guildMinutes: string | number = await this.database.getSetting(member.guild, 'HoldingRoomMinutes');
-                guildMinutes = parseInt(guildMinutes);
-                if (this.client.channels.has(HoldingRoomChannelID)) {
-                    let channel = this.client.channels.get(HoldingRoomChannelID) as Discord.TextChannel;
-                    let message = await this.database.getSetting(member.guild, 'WelcomeMessage');
+            if (settings.get('WelcomeMessageActive') === 'true') {
+                if (this.client.channels.has(settings.get('WelcomeMessageChannelID'))) {
+                    // tslint:disable-next-line:max-line-length
+                    let channel = this.client.channels.get(settings.get('WelcomeMessageChannelID')) as Discord.TextChannel;
+                    let message = settings.get('WelcomeMessage');
 
-                    message = message.replace('$minute', guildMinutes + (guildMinutes === 1 ? ' minute' : ' minutes'))
-                                     .replace('$user', member.user.toString())
+                    message = message.replace('$user', member.user.toString())
                                      .replace('$guild', member.guild.name);
+
+                    if (settings.get('HoldingRoomActive') === 'true') {
+                        let m = parseInt(settings.get('HoldingRoomMinutes')) === 1 ? ' minute' : ' minutes';
+                        message = message.replace('$minute', settings.get('HoldingRoomMinutes') + m);
+                    }
                     // tslint:disable-next-line:max-line-length
                     channel.send(message)
                            .catch((err) => { this.log.error(`There was an error when trying to send welcome message in ${member.guild.name}: ${err.toString()}`); });
                 } else {
-                    this.log.warn(`Could not find holding room channel for ${member.guild.name} : ${member.guild.id}`);
-                    member.guild.defaultChannel.send('WARNING: Invalid channel is set as a holding room!');
+                    // tslint:disable-next-line:max-line-length
+                    this.log.warn(`Could not find welcome message channel for ${member.guild.name} : ${member.guild.id}`);
+                    member.guild.defaultChannel.send('WARNING: Invalid channel is set for welcome messages!');
                 }
+            }
 
-                this.database.createJoinRecord(member.user, member.guild, guildMinutes);
+            if (settings.get('HoldingRoomActive') === 'true') {
+                let guildMinutes: string | number = settings.get('HoldingRoomMinutes');
+                guildMinutes = parseInt(guildMinutes);
+
+                await this.database.createJoinRecord(member.user, member.guild, guildMinutes);
             }
         });
     }
@@ -345,6 +347,7 @@ export class SafetyJim {
         let args = cmdMatch[2].trim();
         let showUsage;
 
+        this.database.createCommandLog(msg, command, args);
         try {
             showUsage = await this.commands[command].run(this, msg, args);
         } catch (e) {
@@ -413,7 +416,7 @@ export class SafetyJim {
                     this.commands[command] = new cmd(this);
                     this.log.info(`Loaded command "${command}"`);
                 } catch (e) {
-                    this.log.warn(`Could not load command "${command}"!`);
+                    this.log.warn(`Could not load command "${command}"! ${e.stack}`);
                 }
             }
         }

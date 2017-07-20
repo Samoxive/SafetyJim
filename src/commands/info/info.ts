@@ -20,6 +20,12 @@ class Info implements Command {
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
+        let lastBan = await bot.database.getLastBan(msg.guild);
+        let daysSince = '∞';
+
+        if (lastBan != null) {
+            daysSince = this.daysSinceBan(lastBan.BanTime).toString();
+        }
         let uptimeString = this.timeElapsed(Date.now(), bot.bootTime.getTime());
         let embed = {
             author: { name: `Safety Jim - v${bot.config.version}`,
@@ -35,13 +41,20 @@ class Info implements Command {
                 { name: 'RAM usage', value: `${(process.memoryUsage().rss / (1024 * 1024)).toFixed(0)}MB`, inline: true },
                 { name: 'Links', value: `[Support](https://discord.io/safetyjim) | [Github](https://github.com/samoxive/safetyjim) | [Invite](${this.inviteLink})`, inline: true },
             ],
-            footer: { text: `Made by Safety Jim team.`},
+            footer: { text: `Made by Safety Jim team. | Days since last incident: ${daysSince}`},
             color: parseInt(EmbedColor, 16),
         };
 
         await bot.successReact(msg);
         await msg.channel.send({ embed });
         return;
+    }
+
+    private daysSinceBan(timestamp: number): number {
+        let now = Date.now() / 1000 | 0;
+        let delta = now - timestamp;
+
+        return (delta / (60 * 60 * 24)) | 0;
     }
 
     private timeElapsed(before: number, after: number) {

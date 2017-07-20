@@ -8,6 +8,12 @@ class Unban implements Command {
     constructor(bot: SafetyJim) {}
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+        if (!msg.member.hasPermission('BAN_MEMBERS')) {
+            await bot.failReact(msg);
+            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            return;
+        }
+
         if (!args) {
             return true;
         }
