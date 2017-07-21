@@ -13,7 +13,7 @@ class Tag implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public run(bot: SafetyJim, msg: Discord.Message, args: string): boolean {
+    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
         if (!args || !['say', 'list', 'add', 'edit', 'remove'].includes(splitArgs[0])) {
             return true;
@@ -25,26 +25,26 @@ class Tag implements Command {
                 bot.failReact(msg);
                 return;
             }
-            bot.database.getTagResponse(splitArgs[1], guild).then((response) => {
-                if (response === undefined) {
-                    msg.channel.send(`No tag with name "${splitArgs[1]}"!`);
-                    bot.failReact(msg);
-                    return;
-                }
+
+            bot.database.getTagResponse(splitArgs[1], guild)
+            .then((response) => {
                 msg.channel.send(response);
                 bot.successReact(msg);
                 return;
-            });
+            })
+            .catch((error) => {
+                    msg.channel.send(`No tag with name "${splitArgs[1]}"!`);
+                    bot.failReact(msg);
+                    return;
+                });
         }
 
         if (splitArgs[0] === 'list') {
-            bot.successReact(msg);
             this.displayTags(bot, msg);
             return;
         }
 
         if (splitArgs[0] === 'add') {
-            // Check if adding the tag passed or failed
             this.addTag(bot, msg, splitArgs[1], splitArgs.slice(2).join(' '));
             return;
         }
@@ -62,11 +62,11 @@ class Tag implements Command {
      }
 
     private displayTags(bot: SafetyJim, msg: Discord.Message) {
-        bot.log.info(`Sending ${msg.author.username} list of tags`);
-
-        bot.database.getAllTags(msg.guild).then((tags) => {
-            if (tags === undefined) {
-                msg.author.send('No tags have been added yet!');
+        bot.database.getAllTags(msg.guild)
+        .then((tags) => {
+            if (tags.length == 0) {
+                msg.author.send(`No tags have been added yet!`);
+                bot.successReact(msg);
                 return;
             }
 
@@ -74,10 +74,11 @@ class Tag implements Command {
                 embed: {
                     title: 'SafetyJim - Tags',
                     description: tags
-                        .map((tag) => `\` ${tag.TagName}\` - ${tag.TagResponse}`)
+                        .map((tag) => `"${tag.TagName}" - ${tag.TagResponse}`)
                         .join('\n'),
                 },
             });
+            bot.successReact(msg);
             return;
         });
     }
@@ -89,6 +90,7 @@ class Tag implements Command {
             return;
         }
 
+        // If the tag doesn't exist, we shouldn't be able to find it in the DB
         bot.database.getTagResponse(name, msg.guild)
         .then((_) => {
             msg.channel.send(`Tag ${name} already exists!`);
@@ -96,6 +98,7 @@ class Tag implements Command {
         })
         .catch((err) => {
             bot.database.createTag(name, response, msg.guild);
+            msg.channel.send(`Created tag with name "${name}"`);
             bot.successReact(msg);
         });
 
@@ -105,35 +108,38 @@ class Tag implements Command {
         if (response === undefined || response === '') {
             msg.channel.send('Empty responses are not allowed!');
             bot.failReact(msg);
+            return;
         }
 
-        bot.database.getTagResponse(name, msg.guild).then((dbResponse) => {
-            if (dbResponse === undefined) {
-                msg.channel.send(`Tag ${name} does not exist!`);
-                bot.failReact(msg);
-            } else {
-                bot.database.updateTagResponse(name, response, msg.guild);
-                bot.successReact(msg);
-            }
+        bot.database.getTagResponse(name, msg.guild)
+        .then((dbResponse) => {
+            bot.database.updateTagResponse(name, response, msg.guild);
+            msg.channel.send(`Edited tag ${name}!`);
+            bot.successReact(msg);
+        })
+        .catch((error) => {
+            msg.channel.send(`Tag ${name} does not exist!`);
+            bot.failReact(msg);
         });
     }
 
     private deleteTag(bot: SafetyJim, msg: Discord.Message, name: string) {
         if (name === undefined) {
-            msg.channel.send('Remove commands requires argument!');
+            msg.channel.send('Remove command requires argument!');
             bot.failReact(msg);
             return;
         }
 
-        bot.database.getTagResponse(name, msg.guild).then((dbResponse) => {
-            if (dbResponse === undefined) {
-                msg.channel.send(`Tag ${name} does not exist!`);
-                bot.failReact(msg);
-            } else {
-                bot.database.delTagResponse(name, msg.guild);
-                bot.successReact(msg);
-            }
-        });
+        bot.database.getTagResponse(name, msg.guild)
+        .then((dbResponse) => {
+            bot.database.delTagResponse(name, msg.guild);
+            msg.channel.send(`Deleted tag ${name}!`);
+            bot.successReact(msg);
+        })
+        .catch((error) => {
+            msg.channel.send(`Tag ${name} does not exist!`);
+            bot.failReact(msg);
+        })
     }
 }
 
