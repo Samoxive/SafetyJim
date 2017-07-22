@@ -20,7 +20,8 @@ export interface Command {
 }
 
 export interface MessageProcessor {
-    onMessage: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+    onMessage?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+    onMessageDelete?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
 }
 
 export class SafetyJim {
@@ -66,6 +67,7 @@ export class SafetyJim {
         });
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
+        this.client.on('messageDelete', this.onMessageDelete());
         this.client.on('guildCreate', this.onGuildCreate());
         this.client.on('guildDelete', this.onGuildDelete());
         this.client.on('guildMemberAdd', this.onGuildMemberAdd());
@@ -206,7 +208,9 @@ export class SafetyJim {
             }
 
             for (let processor of this.processors) {
-                await processor.onMessage(this, msg);
+                if (processor.onMessage) {
+                    await processor.onMessage(this, msg);
+                }
             }
 
             if (msg.isMentioned(this.client.user)) {
@@ -265,6 +269,16 @@ export class SafetyJim {
             }
 
             await this.executeCommand(msg, cmdMatch);
+        }).bind(this);
+    }
+
+    private onMessageDelete(): (msg: Discord.Message) => void {
+        return (async (msg: Discord.Message) => {
+            for (let processor of this.processors) {
+                if (processor.onMessageDelete) {
+                    await processor.onMessageDelete(this, msg);
+                }
+            }
         }).bind(this);
     }
 

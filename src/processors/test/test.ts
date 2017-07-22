@@ -6,7 +6,12 @@ class Test implements MessageProcessor {
     constructor() { }
 
     public async onMessage(bot: SafetyJim, msg: Message): Promise<void> {
-        bot.log.info(msg.content);
+        bot.log.info(`Message said: ${msg.content}`);
+        return;
+    }
+
+    public async onMessageDelete(bot: SafetyJim, msg: Message): Promise<void> {
+        bot.log.info(`Message deleted: ${msg.content}`);
         return;
     }
 }
