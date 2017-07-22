@@ -19,12 +19,19 @@ export interface Command {
     run: (bot: SafetyJim, msg: Discord.Message, args: string) => Promise<boolean>;
 }
 
+// TODO: Better name?
+export interface Logger {
+    isUsed: boolean; // Some Loggers may be memory intensive, so an easy way to toggle them off is needed
+    onMessage: (bot: SafetyJim, msg: Discord.Message) => void;
+}
+
 export class SafetyJim {
     public client: Discord.Client;
     public bootTime: Date;
     private commandRegex = {} as RegexRecords;
     private prefixTestRegex = {} as RegexRecords;
     private commands = {} as Commands;
+    private loggers: Logger[] = [];
     private allowUsersCronJob;
     private unbanUserCronJob;
     private unmuteUserCronJob;
@@ -35,6 +42,7 @@ export class SafetyJim {
                 public log: winston.LoggerInstance) {
         this.bootTime = new Date();
         this.loadCommands();
+        this.loadLoggers();
         log.info('Populating prefix regex dictionary.');
         this.database.getValuesOfKey('Prefix').then((prefixList) => {
             if (prefixList != null) {
@@ -188,6 +196,10 @@ export class SafetyJim {
         return (async (msg: Discord.Message) => {
             if (msg.author.bot || msg.channel.type === 'dm') {
                 return;
+            }
+            
+            for (let logger of this.loggers) {
+                logger.onMessage(this, msg);
             }
 
             let testRegex: RegExp = this.prefixTestRegex[msg.guild.id];
@@ -383,6 +395,34 @@ export class SafetyJim {
                     this.log.info(`Loaded command "${command}"`);
                 } catch (e) {
                     this.log.warn(`Could not load command "${command}"! ${e.stack}`);
+                }
+            }
+        }
+    }
+
+    private loadLoggers(): void {
+        let loggersFolderPath = path.join(__dirname, '..', 'loggers');
+        if (!fs.existsSync(loggersFolderPath) || !fs.statSync(loggersFolderPath).isDirectory()) {
+            this.log.error('Loggers directory could not be found!');
+            process.exit(1);
+        }
+
+        let loggersList = fs.readdirSync(loggersFolderPath);
+        for (let logger of loggersList) {
+            if (!fs.statSync(path.join(loggersFolderPath, logger)).isDirectory()) {
+                this.log.warn(`Found file "${logger}", ignoring...`);
+            } else {
+                try {
+                    let loggerModule = require(path.join(loggersFolderPath, logger, logger + '.js')) as Command;
+                    let loggerObj = new loggerModule(this);
+                    if(loggerObj.isUsed) {
+                        this.loggers.push(loggerObj);
+                        this.log.info(`Loaded logger ${logger}`);
+                    } else {
+                        this.log.info(`Logger ${logger} is turned off`);
+                    }
+                } catch (e) {
+                    this.log.warn(`Could not load command "${logger}"! ${e.stack}`);
                 }
             }
         }
