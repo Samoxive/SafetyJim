@@ -19,6 +19,11 @@ class Test implements MessageProcessor {
         bot.log.info(`User: ${user.username} added reaction to: ${reaction.message.content}`);
         return;
     }
+
+     public async onReactionDelete(bot: SafetyJim, reaction: MessageReaction, user: User): Promise<void> {
+        bot.log.info(`User: ${user.username} deleted reaction from: ${reaction.message.content}`);
+        return;
+    }
 }
 
 export = Test;

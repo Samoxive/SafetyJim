@@ -23,6 +23,7 @@ export interface MessageProcessor {
     onMessage?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
     onMessageDelete?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
     onReaction?: (bot: SafetyJim, reaction: Discord.MessageReaction, user: Discord.User) => Promise<void>;
+    onReactionDelete?: (bot: SafetyJim, reaction: Discord.MessageReaction, user: Discord.User) => Promise<void>;
 }
 
 export class SafetyJim {
@@ -57,7 +58,6 @@ export class SafetyJim {
             disabledEvents: [
                 'TYPING_START',
                 'MESSAGE_UPDATE',
-                'MESSAGE_REACTION_REMOVE',
                 'MESSAGE_REACTION_REMOVE_ALL',
                 'USER_NOTE_UPDATE',
                 'VOICE_SERVER_UPDATE',
@@ -72,7 +72,8 @@ export class SafetyJim {
         this.client.on('guildDelete', this.onGuildDelete());
         this.client.on('guildMemberAdd', this.onGuildMemberAdd());
         this.client.on('guildMemberRemove', this.onGuildMemberRemove());
-        this.client.on('messageReactionAdd', this.onMessageReaction());
+        this.client.on('messageReactionAdd', this.onReaction());
+        this.client.on('messageReactionRemove', this.onReactionDelete());
 
         this.client.login(config.discordToken);
     }
@@ -287,7 +288,7 @@ export class SafetyJim {
         }).bind(this);
     }
 
-    private onMessageReaction(): (reaction: Discord.MessageReaction, user: Discord.User) => void {
+    private onReaction(): (reaction: Discord.MessageReaction, user: Discord.User) => void {
         return (async (reaction: Discord.MessageReaction, user: Discord.User) => {
             if (reaction.me || reaction.message.channel.type === 'dm') {
                 return;
@@ -296,6 +297,20 @@ export class SafetyJim {
             for (let processor of this.processors) {
                 if (processor.onReaction) {
                     await processor.onReaction(this, reaction, user);
+                }
+            }
+        }).bind(this);
+    }
+
+     private onReactionDelete(): (reaction: Discord.MessageReaction, user: Discord.User) => void {
+        return (async (reaction: Discord.MessageReaction, user: Discord.User) => {
+            if (reaction.me || reaction.message.channel.type === 'dm') {
+                return;
+            }
+
+            for (let processor of this.processors) {
+                if (processor.onReactionDelete) {
+                    await processor.onReactionDelete(this, reaction, user);
                 }
             }
         }).bind(this);
