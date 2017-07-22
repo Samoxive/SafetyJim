@@ -22,6 +22,7 @@ export interface Command {
 export interface MessageProcessor {
     onMessage?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
     onMessageDelete?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+    onReaction?: (bot: SafetyJim, reaction: Discord.MessageReaction, user: Discord.User) => Promise<void>;
 }
 
 export class SafetyJim {
@@ -56,7 +57,6 @@ export class SafetyJim {
             disabledEvents: [
                 'TYPING_START',
                 'MESSAGE_UPDATE',
-                'MESSAGE_REACTION_ADD',
                 'MESSAGE_REACTION_REMOVE',
                 'MESSAGE_REACTION_REMOVE_ALL',
                 'USER_NOTE_UPDATE',
@@ -72,6 +72,7 @@ export class SafetyJim {
         this.client.on('guildDelete', this.onGuildDelete());
         this.client.on('guildMemberAdd', this.onGuildMemberAdd());
         this.client.on('guildMemberRemove', this.onGuildMemberRemove());
+        this.client.on('messageReactionAdd', this.onMessageReaction());
 
         this.client.login(config.discordToken);
     }
@@ -274,9 +275,27 @@ export class SafetyJim {
 
     private onMessageDelete(): (msg: Discord.Message) => void {
         return (async (msg: Discord.Message) => {
+            if (msg.author.bot || msg.channel.type === 'dm') {
+                return;
+            }
+
             for (let processor of this.processors) {
                 if (processor.onMessageDelete) {
                     await processor.onMessageDelete(this, msg);
+                }
+            }
+        }).bind(this);
+    }
+
+    private onMessageReaction(): (reaction: Discord.MessageReaction, user: Discord.User) => void {
+        return (async (reaction: Discord.MessageReaction, user: Discord.User) => {
+            if (reaction.me || reaction.message.channel.type === 'dm') {
+                return;
+            }
+
+            for (let processor of this.processors) {
+                if (processor.onReaction) {
+                    await processor.onReaction(this, reaction, user);
                 }
             }
         }).bind(this);

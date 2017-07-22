@@ -1,5 +1,5 @@
 import { SafetyJim, MessageProcessor } from '../../safetyjim/safetyjim';
-import { Message } from 'discord.js';
+import { Message, MessageReaction, User } from 'discord.js';
 
 class Test implements MessageProcessor {
     // tslint:disable-next-line:no-empty
@@ -12,6 +12,11 @@ class Test implements MessageProcessor {
 
     public async onMessageDelete(bot: SafetyJim, msg: Message): Promise<void> {
         bot.log.info(`Message deleted: ${msg.content}`);
+        return;
+    }
+
+    public async onReaction(bot: SafetyJim, reaction: MessageReaction, user: User): Promise<void> {
+        bot.log.info(`User: ${user.username} added reaction to: ${reaction.message.content}`);
         return;
     }
 }
