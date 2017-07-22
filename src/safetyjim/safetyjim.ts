@@ -197,7 +197,7 @@ export class SafetyJim {
             if (msg.author.bot || msg.channel.type === 'dm') {
                 return;
             }
-            
+
             for (let logger of this.loggers) {
                 logger.onMessage(this, msg);
             }
@@ -415,7 +415,7 @@ export class SafetyJim {
                 try {
                     let loggerModule = require(path.join(loggersFolderPath, logger, logger + '.js')) as Command;
                     let loggerObj = new loggerModule(this);
-                    if(loggerObj.isUsed) {
+                    if (loggerObj.isUsed) {
                         this.loggers.push(loggerObj);
                         this.log.info(`Loaded logger ${logger}`);
                     } else {
