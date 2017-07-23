@@ -26,51 +26,27 @@
     }
 
     @-webkit-keyframes background {
-        0% {
-            background-position: 0% 51%
-        }
-        50% {
-            background-position: 100% 50%
-        }
-        100% {
-            background-position: 0% 51%
-        }
+        0% { background-position: 0% 51% }
+        50% { background-position: 100% 50% }
+        100% { background-position: 0% 51% }
     }
 
     @-moz-keyframes background {
-        0% {
-            background-position: 0% 51%
-        }
-        50% {
-            background-position: 100% 50%
-        }
-        100% {
-            background-position: 0% 51%
-        }
+        0% { background-position: 0% 51% }
+        50% { background-position: 100% 50% }
+        100% { background-position: 0% 51% }
     }
 
     @-o-keyframes background {
-        0% {
-            background-position: 0% 51%
-        }
-        50% {
-            background-position: 100% 50%
-        }
-        100% {
-            background-position: 0% 51%
-        }
+        0% { background-position: 0% 51% }
+        50% { background-position: 100% 50% }
+        100% { background-position: 0% 51% }
     }
 
     @keyframes background {
-        0% {
-            background-position: 0% 51%
-        }
-        50% {
-            background-position: 100% 50%
-        }
-        100% {
-            background-position: 0% 51%
-        }
+        0% { background-position: 0% 51% }
+        50% { background-position: 100% 50% }
+        100% { background-position: 0% 51% }
     }
 
     @media (max-width: 880px) {
@@ -137,8 +113,14 @@
     }
 
     #blue {
-        color: #1b48ff;
-        background-color: rgba(0, 0, 0, .075);
+        color: #0044ff;
+        background-color: rgba(0, 0, 255, .085);
+    }
+
+    #casedeclaration {
+        font-style: italic;
+        margin:0;
+        font-size: 16px;
     }
 </style>
 
@@ -160,6 +142,8 @@
 <h4 class="ui horizontal divider header">
     Commands
 </h4>
+
+<p id="casedeclaration">*All commands are case insensitive.</p>
 
 <div class="card card-1">
     <table border="1" frame="void" rules="rows">
@@ -228,7 +212,7 @@
                 <td class="short">unban</td>
                 <td>Unbans the specified user.</td>
                 <td>-mod unban username#discriminator</td>
-                <td>-mod unban Jim#1337</td>
+                <td><code>-mod unban Jim#1337<code></td>
             </tr>
 
             <tr>
@@ -262,7 +246,7 @@
             <tr>
                 <td class="short">settings/Prefix</td>
                 <td>Sets a new prefix.</td>
-                <td>-mod settings settings set Prefix &lt;text&gt;</td>
+                <td>-mod settings set Prefix &lt;text&gt;</td>
                 <td><code>-mod settings set Prefix !mod</code></td>
             </tr>
 
