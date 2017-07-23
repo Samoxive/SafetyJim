@@ -20,7 +20,10 @@ export interface Command {
 }
 
 export interface MessageProcessor {
-    onMessage: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+    onMessage?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+    onMessageDelete?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+    onReaction?: (bot: SafetyJim, reaction: Discord.MessageReaction, user: Discord.User) => Promise<void>;
+    onReactionDelete?: (bot: SafetyJim, reaction: Discord.MessageReaction, user: Discord.User) => Promise<void>;
 }
 
 export class SafetyJim {
@@ -55,8 +58,6 @@ export class SafetyJim {
             disabledEvents: [
                 'TYPING_START',
                 'MESSAGE_UPDATE',
-                'MESSAGE_REACTION_ADD',
-                'MESSAGE_REACTION_REMOVE',
                 'MESSAGE_REACTION_REMOVE_ALL',
                 'USER_NOTE_UPDATE',
                 'VOICE_SERVER_UPDATE',
@@ -66,10 +67,13 @@ export class SafetyJim {
         });
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
+        this.client.on('messageDelete', this.onMessageDelete());
         this.client.on('guildCreate', this.onGuildCreate());
         this.client.on('guildDelete', this.onGuildDelete());
         this.client.on('guildMemberAdd', this.onGuildMemberAdd());
         this.client.on('guildMemberRemove', this.onGuildMemberRemove());
+        this.client.on('messageReactionAdd', this.onReaction());
+        this.client.on('messageReactionRemove', this.onReactionDelete());
 
         this.client.login(config.discordToken);
     }
@@ -206,7 +210,9 @@ export class SafetyJim {
             }
 
             for (let processor of this.processors) {
-                await processor.onMessage(this, msg);
+                if (processor.onMessage) {
+                    await processor.onMessage(this, msg);
+                }
             }
 
             if (msg.isMentioned(this.client.user)) {
@@ -265,6 +271,48 @@ export class SafetyJim {
             }
 
             await this.executeCommand(msg, cmdMatch);
+        }).bind(this);
+    }
+
+    private onMessageDelete(): (msg: Discord.Message) => void {
+        return (async (msg: Discord.Message) => {
+            if (msg.author.bot || msg.channel.type === 'dm') {
+                return;
+            }
+
+            for (let processor of this.processors) {
+                if (processor.onMessageDelete) {
+                    await processor.onMessageDelete(this, msg);
+                }
+            }
+        }).bind(this);
+    }
+
+    private onReaction(): (reaction: Discord.MessageReaction, user: Discord.User) => void {
+        return (async (reaction: Discord.MessageReaction, user: Discord.User) => {
+            if (reaction.me || reaction.message.channel.type === 'dm') {
+                return;
+            }
+
+            for (let processor of this.processors) {
+                if (processor.onReaction) {
+                    await processor.onReaction(this, reaction, user);
+                }
+            }
+        }).bind(this);
+    }
+
+     private onReactionDelete(): (reaction: Discord.MessageReaction, user: Discord.User) => void {
+        return (async (reaction: Discord.MessageReaction, user: Discord.User) => {
+            if (reaction.me || reaction.message.channel.type === 'dm') {
+                return;
+            }
+
+            for (let processor of this.processors) {
+                if (processor.onReactionDelete) {
+                    await processor.onReactionDelete(this, reaction, user);
+                }
+            }
         }).bind(this);
     }
 
