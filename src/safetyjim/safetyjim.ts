@@ -401,6 +401,20 @@ export class SafetyJim {
             let dGuild = this.client.guilds.get(user.GuildID);
             let enabled = await this.database.getSetting(dGuild, 'HoldingRoomActive');
 
+            if (dGuild == null) {
+                this.log.warn(`Guild with ID ${user.GuildID} doesn't exist anymore, purging settings.`);
+                await this.database.delGuildSettingsWithID(user.GuildID);
+                await this.database.updateJoinRecord(user);
+                continue;
+            }
+
+            if (enabled == null) {
+                this.log.warn(`Guild ${dGuild.name} (${dGuild.id}) has broken settings, resetting.`);
+                await this.database.delGuildSettings(dGuild);
+                await this.database.createGuildSettings(dGuild);
+                enabled = await this.database.getSetting(dGuild, 'HoldingRoomActive');
+            }
+
             if (enabled === 'true') {
                 await this.client.fetchUser(user.UserID);
                 let dUser = await dGuild.fetchMember(user.UserID);

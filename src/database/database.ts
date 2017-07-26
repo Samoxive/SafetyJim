@@ -290,6 +290,11 @@ export class BotDatabase {
                      .catch((err) => { this.log.error('Could not delete guild settings!'); });
     }
 
+    public delGuildSettingsWithID(guildID: string): void {
+        this.database.run('DELETE FROM Settings WHERE GuildID = ?', guildID)
+                     .catch((err) => { this.log.error('Could not delete guild settings!'); });
+    }
+
     public createJoinRecord(user: User, guild: Guild, minutes: number): void {
         let now = Math.round((new Date()).getTime() / 1000);
 
