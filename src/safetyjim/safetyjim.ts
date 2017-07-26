@@ -399,7 +399,6 @@ export class SafetyJim {
 
         for (let user of usersToBeAllowed) {
             let dGuild = this.client.guilds.get(user.GuildID);
-            let enabled = await this.database.getSetting(dGuild, 'HoldingRoomActive');
 
             if (dGuild == null) {
                 this.log.warn(`Guild with ID ${user.GuildID} doesn't exist anymore, purging settings.`);
@@ -407,6 +406,8 @@ export class SafetyJim {
                 await this.database.updateJoinRecord(user);
                 continue;
             }
+
+            let enabled = await this.database.getSetting(dGuild, 'HoldingRoomActive');
 
             if (enabled == null) {
                 this.log.warn(`Guild ${dGuild.name} (${dGuild.id}) has broken settings, resetting.`);
