@@ -193,50 +193,23 @@ export class SafetyJim {
                 return;
             }
 
-            if (msg.isMentioned(this.client.user)) {
-                if (msg.content.includes('help') || msg.content.includes('command')) {
-                    let prefix = await this.database.getSetting(msg.guild, 'Prefix');
-                    await this.successReact(msg);
+            if (msg.isMentioned(this.client.user) && msg.content.includes('prefix')) {
+                let prefix = await this.database.getSetting(msg.guild, 'Prefix');
+                await this.successReact(msg);
 
-                    let embed = {
-                        author: { name: 'Safety Jim - Commands', icon_url: this.client.user.avatarURL },
-                        description: this.getUsageStrings(prefix),
-                        color: 0x4286f4,
-                    };
+                let embed = {
+                    author: { name: 'Safety Jim - Prefix', icon_url: this.client.user.avatarURL },
+                    description: `This guild's prefix is: ${prefix}`,
+                    color: 0x4286f4,
+                };
 
-                    try {
-                        await msg.author.send({ embed });
-                    } catch (e) {
-                        try {
-                            await msg.channel.send({ embed });
-                        } catch (e) {
-                            // tslint:disable-next-line:max-line-length
-                            this.log.warn(`Could not send commands embed in guild: "${msg.guild}" requested by "${msg.author.tag}".`);
-                        }
-                    }
-                    return;
-                } else if (msg.content.includes('prefix')) {
-                    let prefix = await this.database.getSetting(msg.guild, 'Prefix');
-                    await this.successReact(msg);
-
-                    let embed = {
-                        author: { name: 'Safety Jim - Prefix', icon_url: this.client.user.avatarURL },
-                        description: `"${msg.guild.name}"s prefix is: ${prefix}`,
-                        color: 0x4286f4,
-                    };
-
-                    try {
-                        await msg.author.send({ embed });
-                    } catch (e) {
-                        try {
-                            await msg.channel.send({ embed });
-                        } catch (e) {
-                            // tslint:disable-next-line:max-line-length
-                            this.log.warn(`Could not send commands embed in guild: "${msg.guild}" requested by "${msg.author.tag}".`);
-                        }
-                    }
-                    return;
+                try {
+                    await msg.channel.send({ embed });
+                } catch (e) {
+                    // tslint:disable-next-line:max-line-length
+                    this.log.warn(`Could not send commands embed in guild: "${msg.guild}" requested by "${msg.author.tag}".`);
                 }
+                return;
             }
 
             let cmdMatch = msg.content.match(cmdRegex);
