@@ -65,7 +65,7 @@ export class SafetyJim {
         this.client.on('guildMemberAdd', this.onGuildMemberAdd());
         this.client.on('guildMemberRemove', this.onGuildMemberRemove());
 
-        this.client.login(config.discordToken);
+        this.client.login(config.jim.token);
     }
 
     public createRegexForGuild(guildID: string, prefix: string) {
@@ -113,29 +113,23 @@ export class SafetyJim {
     }
 
     public async updateDiscordBotLists(): Promise<void> {
-        if (this.config.discordbotspwToken) {
-            try {
-                await snekfetch
-                    .post(`https://bots.discord.pw/api/bots/${this.client.user.id}/stats`)
-                    .set('Authorization', this.config.discordbotspwToken)
-                    .send({ server_count: this.client.guilds.size })
-                    .then();
-            } catch (err) {
-                if (!err.stack.includes('504')) {
-                    this.log.error(`Could not update pw with error ${err.stack}`);
-                }
-            }
+        if (!this.config.botlist.enabled) {
+            return;
         }
 
-        if (this.config.discordbotsToken) {
+        for (let list of this.config.botlist.list) {
             try {
+                // TODO(sam): replace snekfetch at some point, it is a less active
+                // undocumented library
                 await snekfetch
-                    .post(`https://discordbots.org/api/bots/${this.client.user.id}/stats`)
-                    .set('Authorization', this.config.discordbotsToken)
-                    .send({ server_count: this.client.guilds.size })
-                    .then();
+                        .post(list.url.replace('$id', this.client.user.id))
+                        .set('Authorization', list.token)
+                        .send({ server_count: this.client.guilds.size })
+                        .then();
             } catch (err) {
-                this.log.error(`Could not update discordbots with error ${err.stack}`);
+                if (!list.ignore_errors) {
+                    this.log.error(`Updating ${list.name} failed with error ${err}`);
+                }
             }
         }
     }
@@ -259,18 +253,31 @@ export class SafetyJim {
     }
 
     private onGuildCreate(): (guild: Discord.Guild) => void {
-        return ((guild: Discord.Guild) => {
+        return (async (guild: Discord.Guild) => {
             if (this.isBotFarm(guild)) {
-                guild.leave();
+                try {
+                    await guild.leave();
+                } catch (e) {
+                    this.log.error(`Could not leave guild ${guild.name} (${guild.id}) with error ${e}`);
+                }
                 return;
             }
+            let message = `Hello! I am Safety Jim, \`${this.config.jim.default_prefix}\` is my default prefix!`;
 
-            guild.defaultChannel.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`)
-                                // tslint:disable-next-line:max-line-length
-                                .catch(() => { guild.owner.send(`Hello! I am Safety Jim, \`${this.config.defaultPrefix}\` is my default prefix!`); });
-            this.database.createGuildSettings(guild);
-            this.createRegexForGuild(guild.id, this.config.defaultPrefix);
-            this.updateDiscordBotLists();
+            try {
+                guild.defaultChannel.send(message);
+            } catch (e) {
+                try {
+                    // Could not send to default channel because of permissions
+                    guild.owner.send(message);
+                } catch (e) {
+                    // Owner likely blocked messages from members, do nothing further
+                }
+            }
+
+            await this.database.createGuildSettings(guild);
+            this.createRegexForGuild(guild.id, this.config.jim.default_prefix);
+            await this.updateDiscordBotLists();
             this.log.info(`Joined guild ${guild.name}`);
         });
     }
