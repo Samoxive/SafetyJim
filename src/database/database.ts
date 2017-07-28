@@ -20,7 +20,7 @@ export class BotDatabase {
     // TODO (sam): This function doesn't need to return anything,
     // try to fix this later.
     public async init(): Promise<BotDatabase> {
-        this.database = await sqlite.open(this.config.dbFileName);
+        this.database = await sqlite.open(this.config.database.name);
 
         await this.database.run(`CREATE TABLE IF NOT EXISTS Settings (
                                     GuildID TEXT NOT NULL,
@@ -396,7 +396,7 @@ export class BotDatabase {
         await this.createSettingsKeyValue(guild, 'HoldingRoomActive', 'false');
         await this.createSettingsKeyValue(guild, 'HoldingRoomMinutes', '3');
         await this.createSettingsKeyValue(guild, 'EmbedColor', '4286f4');
-        await this.createSettingsKeyValue(guild, 'Prefix', this.config.defaultPrefix);
+        await this.createSettingsKeyValue(guild, 'Prefix', this.config.jim.default_prefix);
         await this.createSettingsKeyValue(guild, 'WelcomeMessageActive', 'false');
         await this.createSettingsKeyValue(guild, 'WelcomeMessage', defaultWelcomeMessage);
         await this.createSettingsKeyValue(guild, 'WelcomeMessageChannelID', guild.defaultChannel.id);

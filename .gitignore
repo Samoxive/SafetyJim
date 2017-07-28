@@ -73,6 +73,6 @@ typings/
 config_production.json
 src/**/*.js
 src/**/*.js.map
-config.json
+config.toml
 *.db
 *.log.gz

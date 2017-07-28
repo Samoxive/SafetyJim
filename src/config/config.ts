@@ -1,36 +1,74 @@
 import * as winston from 'winston';
+import * as toml from 'toml';
+import * as fs from 'fs';
+import { Validator, validate } from 'jsonschema';
 
-let defaultConfigDbName = 'database.db';
-let defaultConfigPrefix = '!';
-let defaultConfigVersion = '1.0.0';
-
-interface IConfigFile {
-    token: string;
-    dbFileName: string;
-    defaultPrefix: string;
-    discordbotsToken: string;
-    discordbotspwToken: string;
-}
+const configSchema = {
+    id: 'Config',
+    type: 'object',
+    properties: {
+        jim: {
+            type: 'object',
+            properties: {
+                token: { type: 'string' },
+                default_prefix: { type: 'string' },
+            },
+        },
+        database: {
+            type: 'object',
+            properties: {
+                name: { type: 'string' },
+            },
+        },
+        botlist: {
+            type: 'object',
+            properties: {
+                enabled: { type: 'boolean' },
+                list: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            name: { type: 'string' },
+                            url: { type: 'string' },
+                            token: { type: 'string' },
+                            ignore_errors: { type: 'boolean' },
+                        },
+                    },
+                },
+            },
+        },
+    },
+};
 
 export class Config {
-    public discordToken: string;
-    public dbFileName: string;
-    public defaultPrefix: string;
-    public discordbotsToken: string;
-    public discordbotspwToken: string;
+    public jim: Jim;
+    public database: Database;
+    public botlist: BotList;
     public version: string;
 
     constructor(private configPath: string, private log: winston.LoggerInstance) {
-
-        let configData = null;
+        let tomlString;
         try {
-            configData = require(this.configPath) as IConfigFile;
+            tomlString = fs.readFileSync('config.toml', 'utf8');
         } catch (e) {
-            log.error(`Loading config file failed with error: \`${e.message}\``);
-            process.exit(e.code);
+            log.error(`Loading config file failed with error: ${e}`);
+            process.exit(-1);
         }
 
-        let packageData = null;
+        let tomlConfig = toml.parse(tomlString) as TomlConfig;
+        tomlConfig.botlist.list = tomlConfig.botlist.list || [];
+
+        let validator = new Validator();
+        try {
+            // Typescript error for options can be ignored, project maintainer
+            // isn't active, typing file isn't fixed
+            validator.validate(tomlConfig, configSchema, { throwError: true });
+        } catch (e) {
+            this.log.error(`Invalid configuration file! ${e}`);
+        }
+
+        let packageData;
         try {
             packageData = require('../../package.json');
         } catch (e) {
@@ -38,40 +76,36 @@ export class Config {
             process.exit(e.code);
         }
 
-        this.discordToken = configData.token;
-        if (this.discordToken === undefined) {
-            log.error('Discord Token not provided!');
-            process.exit(1);
-        }
-
-        this.dbFileName = configData.dbFileName;
-        if (this.dbFileName === undefined) {
-            log.error(`Database file name not provided! Using \`${defaultConfigDbName}\` as default!`);
-            this.dbFileName = defaultConfigDbName;
-        }
-
-        this.defaultPrefix = configData.defaultPrefix;
-        if (this.defaultPrefix === undefined) {
-            log.error(`Default prefix not provided! Using \` ${defaultConfigPrefix} \` as default!`);
-            this.defaultPrefix = defaultConfigPrefix;
-        }
-
-        this.discordbotsToken = configData.discordbotsToken;
-        if (this.discordbotsToken === undefined) {
-            log.error(`Default discordbotsToken not provided! Using \` "" \` as default!`);
-            this.discordbotsToken = '';
-        }
-
-        this.discordbotspwToken = configData.discordbotspwToken;
-        if (this.discordbotspwToken === undefined) {
-            log.error(`Default discordbotspwToken not provided! Using \` "" \` as default!`);
-            this.discordbotspwToken = '';
-        }
-
-        this.version = packageData.version;
-        if (this.version === undefined) {
-            log.error(`Default prefix not provided! Using \` ${defaultConfigVersion} \` as default!`);
-            this.version = defaultConfigVersion;
-        }
+        this.version = packageData.version || 'Unspecified version';
+        this.jim = tomlConfig.jim;
+        this.database = tomlConfig.database;
+        this.botlist = tomlConfig.botlist;
     }
+}
+
+interface TomlConfig {
+    jim: Jim;
+    database: Database;
+    botlist: BotList;
+}
+
+interface Jim {
+    token: string;
+    default_prefix: string;
+}
+
+interface Database {
+    name: string;
+}
+
+interface BotList {
+    enabled: boolean;
+    list: BotListMetadata[];
+}
+
+interface BotListMetadata {
+    name: string;
+    url: string;
+    token: string;
+    ignore_errors: boolean;
 }
