@@ -58,7 +58,7 @@ class Settings implements Command {
         if (splitArgs[0] === 'reset') {
             await bot.database.delGuildSettings(msg.guild);
             await bot.database.createGuildSettings(msg.guild);
-            bot.createRegexForGuild(msg.guild.id, bot.config.defaultPrefix);
+            bot.createRegexForGuild(msg.guild.id, bot.config.jim.default_prefix);
             await bot.successReact(msg);
             return;
         }
