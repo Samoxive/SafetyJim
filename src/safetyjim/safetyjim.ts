@@ -6,8 +6,7 @@ import * as snekfetch from 'snekfetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import { BotDatabase, possibleKeys } from '../database/database';
-const Package = require('../../package.json');
-// tslint:disable-next-line:max-line-length
+
 const DiscordBotsGuildID = '110373943822540800';
 const DiscordBotListGuildID = '264445053596991498';
 
