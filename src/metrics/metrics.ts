@@ -1,7 +1,7 @@
 import { BufferedMetricsLogger } from 'datadog-metrics';
 import { Config } from '../config/config';
 
-class Metrics {
+export class Metrics {
     private metrics: BufferedMetricsLogger;
     constructor(private config: Config, private prefix: string) {
         if (this.config.metrics.enabled) {
