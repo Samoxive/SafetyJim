@@ -9,7 +9,6 @@ name = "jims_memory.db" # this will be the filename for sqlite database
 enabled = false
 api_key = ""
 app_key = ""
-prefix = ""
 host = ""
 flush_interval = 10 # seconds
 

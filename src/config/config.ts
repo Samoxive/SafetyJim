@@ -26,7 +26,6 @@ const configSchema = {
                 enabled: { type: 'boolean' },
                 api_key: { type: 'string' },
                 app_key: { type: 'string' },
-                prefix: { type: 'string' },
                 host: { type: 'string' },
                 flush_interval: { type: 'integer' },
             },
@@ -116,7 +115,6 @@ interface Metrics {
     enabled: boolean;
     api_key: string;
     app_key: string;
-    prefix: string;
     host: string;
     flush_interval: number;
 }
