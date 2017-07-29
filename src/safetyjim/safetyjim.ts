@@ -157,7 +157,7 @@ export class SafetyJim {
 
             await this.populateGuildConfigDatabase();
             await this.updateDiscordBotLists();
-            await this.client.user.setGame(`-mod help | ${Package.version}`);
+            await this.client.user.setGame(`-mod help | ${this.config.version}`);
 
             if (this.unprocessedMessages != null) {
                 for (let message of this.unprocessedMessages) {
