@@ -118,7 +118,7 @@ interface Metrics {
     app_key: string;
     prefix: string;
     host: string;
-    flush_interval: string;
+    flush_interval: number;
 }
 
 interface BotList {
