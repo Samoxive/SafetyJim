@@ -21,9 +21,11 @@
   },
   "homepage": "https://github.com/Samoxive/SafetyJim#readme",
   "dependencies": {
+    "@types/datadog-metrics": "^0.4.0",
     "@types/node": "^7.0.18",
     "@types/winston": "^2.3.2",
     "cron": "^1.2.1",
+    "datadog-metrics": "^0.4.0",
     "discord.js": "hydrabolt/discord.js#11.1-dev",
     "jsonschema": "^1.1.1",
     "snekfetch": "^3.1.11",
