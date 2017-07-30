@@ -20,6 +20,16 @@ const configSchema = {
                 name: { type: 'string' },
             },
         },
+        metrics: {
+            type: 'object',
+            properties: {
+                enabled: { type: 'boolean' },
+                api_key: { type: 'string' },
+                app_key: { type: 'string' },
+                host: { type: 'string' },
+                flush_interval: { type: 'integer' },
+            },
+        },
         botlist: {
             type: 'object',
             properties: {
@@ -44,6 +54,7 @@ const configSchema = {
 export class Config {
     public jim: Jim;
     public database: Database;
+    public metrics: Metrics;
     public botlist: BotList;
     public version: string;
 
@@ -79,6 +90,7 @@ export class Config {
         this.version = packageData.version || 'Unspecified version';
         this.jim = tomlConfig.jim;
         this.database = tomlConfig.database;
+        this.metrics = tomlConfig.metrics;
         this.botlist = tomlConfig.botlist;
     }
 }
@@ -86,6 +98,7 @@ export class Config {
 interface TomlConfig {
     jim: Jim;
     database: Database;
+    metrics: Metrics;
     botlist: BotList;
 }
 
@@ -96,6 +109,14 @@ interface Jim {
 
 interface Database {
     name: string;
+}
+
+interface Metrics {
+    enabled: boolean;
+    api_key: string;
+    app_key: string;
+    host: string;
+    flush_interval: number;
 }
 
 interface BotList {

@@ -6,6 +6,7 @@ import * as snekfetch from 'snekfetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import { BotDatabase, possibleKeys } from '../database/database';
+import { Metrics } from '../metrics/metrics';
 
 const DiscordBotsGuildID = '110373943822540800';
 const DiscordBotListGuildID = '264445053596991498';
@@ -27,7 +28,9 @@ export class SafetyJim {
     private allowUsersCronJob;
     private unbanUserCronJob;
     private unmuteUserCronJob;
+    private metricsCronJob;
     private unprocessedMessages: Discord.Message[] = [];
+    private metrics: Metrics;
 
     constructor(public config: Config,
                 public database: BotDatabase,
@@ -43,6 +46,7 @@ export class SafetyJim {
             }
         });
 
+        this.metrics = new Metrics(this.config, 'jim');
         this.client = new Discord.Client({
             disableEveryone: true,
             disabledEvents: [
@@ -154,6 +158,9 @@ export class SafetyJim {
                 }
             }
 
+            this.metrics.gauge('guild.count', this.client.guilds.size);
+            this.metrics.increment('client.ready');
+
             await this.populateGuildConfigDatabase();
             await this.updateDiscordBotLists();
             await this.client.user.setGame(`-mod help | ${this.config.version}`);
@@ -172,6 +179,8 @@ export class SafetyJim {
                                                     onTick: this.unbanUsers.bind(this), start: true, context: this });
             this.unmuteUserCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
                                                     onTick: this.unmuteUsers.bind(this), start: true, context: this });
+            this.metricsCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
+                                                onTick: this.updateMetrics.bind(this), start: true, context: this });
 
             this.log.info('onReady finished.');
         });
@@ -179,6 +188,7 @@ export class SafetyJim {
 
     private onMessage(): (msg: Discord.Message) => void {
         return (async (msg: Discord.Message) => {
+            this.metrics.increment('client.message');
             if (msg.author.bot || msg.channel.type === 'dm') {
                 return;
             }
@@ -234,6 +244,9 @@ export class SafetyJim {
                 }
                 return;
             }
+            this.metrics.increment('guild.join');
+            this.metrics.gauge('guild.count', this.client.guilds.size);
+
             let message = `Hello! I am Safety Jim, \`${this.config.jim.default_prefix}\` is my default prefix!`;
 
             try {
@@ -302,6 +315,8 @@ export class SafetyJim {
             delete this.commandRegex[guild.id];
             delete this.prefixTestRegex[guild.id];
             this.updateDiscordBotLists();
+            this.metrics.increment('guild.left');
+            this.metrics.gauge('guild.count', this.client.guilds.size);
         });
     }
 
@@ -315,15 +330,21 @@ export class SafetyJim {
         let command = cmdMatch[1];
         let args = cmdMatch[2].trim();
         let showUsage;
+        let commandTime;
 
         this.database.createCommandLog(msg, command, args);
+        this.metrics.increment('command.count');
         try {
+            commandTime = new Date();
             showUsage = await this.commands[command].run(this, msg, args);
         } catch (e) {
             await this.failReact(msg);
             await msg.channel.send('There was an error running your command, this incident has been logged.');
             // tslint:disable-next-line:max-line-length
             this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${e.stack + e.lineNumber + e.message}`);
+        } finally {
+            this.metrics.increment(`${command}.count`);
+            this.metrics.histogram(`${command}.time`, ((new Date()).getTime() - commandTime));
         }
 
         if (showUsage === true) {
@@ -476,6 +497,12 @@ export class SafetyJim {
                 await this.database.updateMuteRecord(user);
             }
         }
+    }
+
+    private updateMetrics(): void {
+        this.metrics.gauge('guild.count', this.client.guilds.size);
+        this.metrics.gauge('memoryUsage', process.memoryUsage().rss / (1024 * 1024));
+        this.metrics.gauge('uptime', Math.floor(process.uptime() / (60 * 60)));
     }
 
     private async populateGuildConfigDatabase(): Promise<void> {

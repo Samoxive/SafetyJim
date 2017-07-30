@@ -5,6 +5,13 @@ default_prefix = "-mod" # all guilds will use this prefix unless changed
 [database]
 name = "jims_memory.db" # this will be the filename for sqlite database
 
+[metrics] # keys can be gathered from datadog
+enabled = false
+api_key = ""
+app_key = ""
+host = ""
+flush_interval = 10 # seconds
+
 [botlist]
 enabled = false # be careful with enabling this, bot will fail everytime if you have missing tokens
 
