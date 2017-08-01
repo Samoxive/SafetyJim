@@ -17,7 +17,9 @@ const configSchema = {
         database: {
             type: 'object',
             properties: {
-                name: { type: 'string' },
+                user: { type: 'string' },
+                pass: { type: 'string' },
+                host: { type: 'string' },
             },
         },
         metrics: {
@@ -108,7 +110,9 @@ interface Jim {
 }
 
 interface Database {
-    name: string;
+    user: string;
+    pass: string;
+    host: string;
 }
 
 interface Metrics {
