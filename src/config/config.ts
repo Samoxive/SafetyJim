@@ -21,6 +21,7 @@ const configSchema = {
                 pass: { type: 'string' },
                 host: { type: 'string' },
                 port: { type: 'string' },
+                name: { type: 'string' },
             },
         },
         metrics: {
@@ -115,6 +116,7 @@ interface Database {
     pass: string;
     host: string;
     port: string;
+    name: string;
 }
 
 interface Metrics {
