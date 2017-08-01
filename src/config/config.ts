@@ -20,7 +20,7 @@ const configSchema = {
                 user: { type: 'string' },
                 pass: { type: 'string' },
                 host: { type: 'string' },
-                port: { type: 'string' },
+                port: { type: 'integer' },
                 name: { type: 'string' },
             },
         },
@@ -115,7 +115,7 @@ interface Database {
     user: string;
     pass: string;
     host: string;
-    port: string;
+    port: number;
     name: string;
 }
 

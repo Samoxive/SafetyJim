@@ -6,7 +6,7 @@ default_prefix = "-mod" # all guilds will use this prefix unless changed
 user = ""
 pass = ""
 host = ""
-port = "5432"
+port = 5432
 name = ""
 
 [metrics] # keys can be gathered from datadog
