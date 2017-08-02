@@ -23,7 +23,6 @@
   "dependencies": {
     "@types/datadog-metrics": "^0.4.0",
     "@types/node": "^7.0.18",
-    "@types/sequelize": "^4.0.67",
     "@types/winston": "^2.3.2",
     "cron": "^1.2.1",
     "datadog-metrics": "^0.4.0",
@@ -31,7 +30,9 @@
     "jsonschema": "^1.1.1",
     "pg": "^7.0.2",
     "pg-hstore": "^2.3.2",
+    "reflect-metadata": "^0.1.10",
     "sequelize": "^4.4.2",
+    "sequelize-typescript": "^0.3.5",
     "snekfetch": "^3.1.11",
     "time-parser": "^0.2.10",
     "toml": "^2.3.2",
