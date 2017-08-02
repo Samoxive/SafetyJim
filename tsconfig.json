@@ -6,6 +6,8 @@
         "sourceMap": true,
         "lib": [
             "es7"
-        ]
+        ],
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true
     }
 }
