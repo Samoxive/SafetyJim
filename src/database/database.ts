@@ -91,9 +91,10 @@ export class BotDatabase {
                            .catch((err) => { this.log.error('Could not create index for JoinList table!'); });
 
         await this.database.run(`CREATE TABLE IF NOT EXISTS TagList (
-                                    TagName         TEXT,
+                                    GuildID         TEXT NOT NULL,
+                                    TagName         TEXT NOT NULL,
                                     TagResponse     TEXT,
-                                    GuildID         TEXT);`)
+                                    PRIMARY KEY     (GuildID, TagName) );`)
                                     .catch((err) => { this.log.error('Could not create TagList table!'); });
 
         /* TODO: Index TagList?
@@ -296,7 +297,12 @@ export class BotDatabase {
 
     public delTagResponse(name: string, guild: Guild) {
         this.database.run('DELETE FROM TagList WHERE TagName = ? AND GuildID = ?', name, guild.id)
-                        .catch((err) => { this.log.error('Could not delete join record!'); });
+                        .catch((err) => { this.log.error('Could not delete Tag response!'); });
+    }
+
+    public delTagResponses(guild: Guild) {
+        this.database.run('DELETE FROM TagList Where GuildID = ?', guild.id)
+            .catch((err) => { this.log.error('Could not delete all Tag responses!'); });
     }
 
     public createJoinRecord(user: User, guild: Guild, minutes: number): void {
@@ -371,7 +377,8 @@ export class BotDatabase {
     public createTag(name: string, response: string, guild: Guild) {
         this.database.run(`INSERT INTO TagList (TagName, TagResponse, GuildID) VALUES (?, ?, ?);`,
             name, response, guild.id)
-            .catch((err) => { this.log.error('Could not create a Tag!'); });
+            .catch((err) => { this.log.error('Could not create Tag!'); });
+    }
 
     public createUserMute(mutedUser: User, modUser: User, guild: Guild, reason: string, expireTime?: number): void {
         let now = Math.round((new Date()).getTime() / 1000);

@@ -21,12 +21,12 @@ class Tag implements Command {
         let guild = msg.guild;
         if (splitArgs[0] === 'say') {
             if (splitArgs[1] === undefined) {
-                msg.channel.send('Command requires a tag to say!');
-                bot.failReact(msg);
+                await msg.channel.send('Command requires a tag to say!');
+                await bot.failReact(msg);
                 return;
             }
 
-            bot.database.getTagResponse(splitArgs[1], guild)
+            await bot.database.getTagResponse(splitArgs[1], guild)
             .then((response) => {
                 msg.channel.send(response);
                 bot.successReact(msg);
@@ -40,31 +40,31 @@ class Tag implements Command {
         }
 
         if (splitArgs[0] === 'list') {
-            this.displayTags(bot, msg);
+            await this.displayTags(bot, msg);
             return;
         }
 
         if (splitArgs[0] === 'add') {
-            this.addTag(bot, msg, splitArgs[1], splitArgs.slice(2).join(' '));
+            await this.addTag(bot, msg, splitArgs[1], splitArgs.slice(2).join(' '));
             return;
         }
 
         if (splitArgs[0] === 'edit') {
-            this.editTag(bot, msg, splitArgs[1], splitArgs.slice(2).join(' '));
+            await this.editTag(bot, msg, splitArgs[1], splitArgs.slice(2).join(' '));
             return;
         }
         if (splitArgs[0] === 'remove') {
-           this.deleteTag(bot, msg, splitArgs[1]);
+           await this.deleteTag(bot, msg, splitArgs[1]);
            return;
         }
 
         return;
      }
 
-    private displayTags(bot: SafetyJim, msg: Discord.Message) {
-        bot.database.getAllTags(msg.guild)
+    private async displayTags(bot: SafetyJim, msg: Discord.Message) {
+        await bot.database.getAllTags(msg.guild)
         .then((tags) => {
-            if (tags.length == 0) {
+            if (tags.length === 0) {
                 msg.author.send(`No tags have been added yet!`);
                 bot.successReact(msg);
                 return;
@@ -83,15 +83,15 @@ class Tag implements Command {
         });
     }
 
-    private addTag(bot: SafetyJim, msg: Discord.Message, name: string, response: string) {
+    private async addTag(bot: SafetyJim, msg: Discord.Message, name: string, response: string) {
         if (response === undefined || response === '') {
-            msg.channel.send('Empty responses aren\'t allowed!');
-            bot.failReact(msg);
+            await msg.channel.send('Empty responses aren\'t allowed!');
+            await bot.failReact(msg);
             return;
         }
 
         // If the tag doesn't exist, we shouldn't be able to find it in the DB
-        bot.database.getTagResponse(name, msg.guild)
+        await bot.database.getTagResponse(name, msg.guild)
         .then((_) => {
             msg.channel.send(`Tag ${name} already exists!`);
             bot.failReact(msg);
@@ -104,14 +104,14 @@ class Tag implements Command {
 
     }
 
-    private editTag(bot: SafetyJim, msg: Discord.Message, name: string, response: string) {
+    private async editTag(bot: SafetyJim, msg: Discord.Message, name: string, response: string) {
         if (response === undefined || response === '') {
-            msg.channel.send('Empty responses are not allowed!');
-            bot.failReact(msg);
+            await msg.channel.send('Empty responses are not allowed!');
+            await bot.failReact(msg);
             return;
         }
 
-        bot.database.getTagResponse(name, msg.guild)
+        await bot.database.getTagResponse(name, msg.guild)
         .then((dbResponse) => {
             bot.database.updateTagResponse(name, response, msg.guild);
             msg.channel.send(`Edited tag ${name}!`);
@@ -123,14 +123,14 @@ class Tag implements Command {
         });
     }
 
-    private deleteTag(bot: SafetyJim, msg: Discord.Message, name: string) {
+    private async deleteTag(bot: SafetyJim, msg: Discord.Message, name: string) {
         if (name === undefined) {
-            msg.channel.send('Remove command requires argument!');
-            bot.failReact(msg);
+            await msg.channel.send('Remove command requires argument!');
+            await bot.failReact(msg);
             return;
         }
 
-        bot.database.getTagResponse(name, msg.guild)
+        await bot.database.getTagResponse(name, msg.guild)
         .then((dbResponse) => {
             bot.database.delTagResponse(name, msg.guild);
             msg.channel.send(`Deleted tag ${name}!`);
@@ -139,7 +139,7 @@ class Tag implements Command {
         .catch((error) => {
             msg.channel.send(`Tag ${name} does not exist!`);
             bot.failReact(msg);
-        })
+        });
     }
 }
 
