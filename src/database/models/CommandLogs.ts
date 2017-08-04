@@ -15,11 +15,8 @@ export class CommandLogs extends Model<CommandLogs> {
     @Column(DataType.TEXT)
     public arguments: string;
 
-    @Column(DataType.TEXT)
-    public time: string;
-
-    @Column(DataType.BIGINT)
-    public timestamp: number;
+    @Column(DataType.DATE)
+    public time: Date;
 
     @Column(DataType.TEXT)
     public username: string;
