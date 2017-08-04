@@ -1,6 +1,8 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
 import * as time from 'time-parser';
+import { Bans } from '../../database/models/Bans';
+import { Settings } from '../../database/models/Settings';
 
 class Ban implements Command {
     public usage = 'ban @user [reason] | [time] - bans the user with specific args. Both arguments can be omitted.';
@@ -76,7 +78,13 @@ class Ban implements Command {
             reason = 'No reason specified';
         }
 
-        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
+        let EmbedColor = (await Settings.find<Settings>({
+            where: {
+                guildid: msg.guild.id,
+                key: 'embedcolor',
+            },
+        })).value;
+
         let embed = {
             title: `Banned from ${msg.guild.name}`,
             color: parseInt(EmbedColor, 16),
@@ -99,12 +107,20 @@ class Ban implements Command {
                 await bot.successReact(msg);
                 await this.createModLogEntry(bot, msg, member,
                                              reason, parsedTime ? parsedTime.absolute : null);
-                await bot.database.createUserBan(
-                    member.user,
-                    msg.author,
-                    msg.guild,
+
+                let now = Math.round((new Date()).getTime() / 1000);
+                let expires = parsedTime != null;
+
+                await Bans.create<Bans>({
+                    userid: member.user.id,
+                    moderatoruserid: msg.author.id,
+                    guildid: msg.guild.id,
+                    bantime: now,
+                    expiretime: expires ? Math.round(parsedTime.absolute / 1000) : 0,
                     reason,
-                    parsedTime ? Math.round(parsedTime.absolute / 1000) : null);
+                    expires,
+                    unbanned: false,
+                });
             } catch (e) {
                 await bot.failReact(msg);
                 await msg.channel.send('Could not ban specified user. Do I have enough permissions?');
@@ -116,14 +132,30 @@ class Ban implements Command {
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
                                     member: Discord.GuildMember, reason: string, parsedTime: number): Promise<void> {
-        let ModLogActive = await bot.database.getSetting(msg.guild, 'ModLogActive');
-        let prefix = await bot.database.getSetting(msg.guild, 'Prefix');
+        let ModLogActive = (await Settings.find<Settings>({
+            where: {
+                guildid: msg.guild.id,
+                key: 'modlogactive',
+            },
+        })).value;
+
+        let prefix = (await Settings.find<Settings>({
+            where: {
+                guildid: msg.guild.id,
+                key: 'prefix',
+            },
+        })).value;
 
         if (!ModLogActive || ModLogActive === 'false') {
             return;
         }
 
-        let ModLogChannelID = await bot.database.getSetting(msg.guild, 'ModLogChannelID');
+        let ModLogChannelID = (await Settings.find<Settings>({
+            where: {
+                guildid: msg.guild.id,
+                key: 'modlogchannelid',
+            },
+        })).value;
 
         if (!bot.client.channels.has(ModLogChannelID) ||
             bot.client.channels.get(ModLogChannelID).type !== 'text') {
