@@ -6,6 +6,11 @@ import * as snekfetch from 'snekfetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import { BotDatabase, possibleKeys } from '../database/database';
+import { Joins } from '../database/models/Joins';
+import { Bans } from '../database/models/Bans';
+import { Settings } from '../database/models/Settings';
+import { Mutes } from '../database/models/Mutes';
+import { CommandLogs } from '../database/models/CommandLogs';
 import { Metrics } from '../metrics/metrics';
 
 const DiscordBotsGuildID = '110373943822540800';
@@ -38,12 +43,14 @@ export class SafetyJim {
         this.bootTime = new Date();
         this.loadCommands();
         log.info('Populating prefix regex dictionary.');
-        this.database.getValuesOfKey('Prefix').then((prefixList) => {
-            if (prefixList != null) {
-                prefixList.forEach((prefix, id) => {
-                    this.createRegexForGuild(id, prefix);
-                });
-            }
+        Settings.findAll<Settings>({
+            where: {
+                key: 'prefix',
+            },
+        }).then((prefixList) => {
+            prefixList.forEach((setting) => {
+                this.createRegexForGuild(setting.guildid, setting.value);
+            });
         });
 
         this.metrics = new Metrics(this.config, 'jim');
@@ -203,7 +210,13 @@ export class SafetyJim {
             }
 
             if (msg.isMentioned(this.client.user) && msg.content.includes('prefix')) {
-                let prefix = await this.database.getSetting(msg.guild, 'Prefix');
+                let prefix = (await Settings.find<Settings>({
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'prefix',
+                    },
+                })).value;
+
                 await this.successReact(msg);
 
                 let embed = {
@@ -271,18 +284,18 @@ export class SafetyJim {
         return (async (member: Discord.GuildMember) => {
             let settings = await this.database.getGuildSettings(member.guild);
 
-            if (settings.get('WelcomeMessageActive') === 'true') {
-                if (this.client.channels.has(settings.get('WelcomeMessageChannelID'))) {
+            if (settings.get('welcomemessageactive') === 'true') {
+                if (this.client.channels.has(settings.get('welcomemessagechannelid'))) {
                     // tslint:disable-next-line:max-line-length
-                    let channel = this.client.channels.get(settings.get('WelcomeMessageChannelID')) as Discord.TextChannel;
-                    let message = settings.get('WelcomeMessage');
+                    let channel = this.client.channels.get(settings.get('welcomemessagechannelid')) as Discord.TextChannel;
+                    let message = settings.get('welcomemessage');
 
                     message = message.replace('$user', member.user.toString())
                                      .replace('$guild', member.guild.name);
 
-                    if (settings.get('HoldingRoomActive') === 'true') {
-                        let m = parseInt(settings.get('HoldingRoomMinutes')) === 1 ? ' minute' : ' minutes';
-                        message = message.replace('$minute', settings.get('HoldingRoomMinutes') + m);
+                    if (settings.get('holdingroomactive') === 'true') {
+                        let m = parseInt(settings.get('holdingroomminutes')) === 1 ? ' minute' : ' minutes';
+                        message = message.replace('$minute', settings.get('holdingroomminutes') + m);
                     }
                     // tslint:disable-next-line:max-line-length
                     channel.send(message)
@@ -294,27 +307,42 @@ export class SafetyJim {
                 }
             }
 
-            if (settings.get('HoldingRoomActive') === 'true') {
-                let guildMinutes: string | number = settings.get('HoldingRoomMinutes');
+            if (settings.get('holdingroomactive') === 'true') {
+                let guildMinutes: string | number = settings.get('holdingroomminutes');
                 guildMinutes = parseInt(guildMinutes);
 
-                await this.database.createJoinRecord(member.user, member.guild, guildMinutes);
+                let now = Math.round((new Date()).getTime() / 1000);
+                await Joins.create<Joins>({
+                    userid: member.user.id,
+                    guildid: member.guild.id,
+                    jointime: now,
+                    allowtime: now + guildMinutes * 60,
+                    allowed: false,
+                });
             }
         });
     }
 
     private onGuildMemberRemove(): (member: Discord.GuildMember) => void {
-        return ((member: Discord.GuildMember) => {
-            this.database.delJoinEntry(member.user.id, member.guild.id);
+        return (async (member: Discord.GuildMember) => {
+            await Joins.destroy({
+                where: {
+                    userid: member.user.id,
+                },
+            });
         });
     }
 
     private onGuildDelete(): (guild: Discord.Guild) => void {
-        return ((guild: Discord.Guild) => {
-            this.database.delGuildSettings(guild);
+        return (async (guild: Discord.Guild) => {
+            await Settings.destroy({
+                where: {
+                    guildid: guild.id,
+                },
+            });
             delete this.commandRegex[guild.id];
             delete this.prefixTestRegex[guild.id];
-            this.updateDiscordBotLists();
+            await this.updateDiscordBotLists();
             this.metrics.increment('guild.left');
             this.metrics.gauge('guild.count', this.client.guilds.size);
         });
@@ -332,7 +360,16 @@ export class SafetyJim {
         let showUsage;
         let commandTime;
 
-        this.database.createCommandLog(msg, command, args);
+        CommandLogs.create<CommandLogs>({
+            command,
+            arguments: args,
+            time: new Date(),
+            username: msg.author.tag,
+            userid: msg.author.id,
+            guildname: msg.guild.name,
+            guildid: msg.guild.id,
+        });
+
         this.metrics.increment('command.count');
         try {
             commandTime = new Date();
@@ -349,7 +386,13 @@ export class SafetyJim {
 
         if (showUsage === true) {
             let usage = this.commands[command].usage;
-            let prefix = await this.database.getSetting(msg.guild, 'Prefix');
+            let prefix = (await Settings.find<Settings>({
+                where: {
+                    guildid: msg.guild.id,
+                    key: 'prefix',
+                },
+            })).value;
+
             let embed = {
                 author: {
                     name: `Safety Jim - "${command}" Syntax`,
@@ -395,106 +438,177 @@ export class SafetyJim {
     }
 
     private async allowUsers(): Promise<void> {
-        let usersToBeAllowed = await this.database.getUsersThatCanBeAllowed();
+        let now = Math.round((new Date()).getTime() / 1000);
+
+        let usersToBeAllowed = await Joins.findAll<Joins>({
+            where: {
+                allowed: false,
+                allowtime: {
+                    $lt: now,
+                },
+            },
+        });
 
         for (let user of usersToBeAllowed) {
-            let dGuild = this.client.guilds.get(user.GuildID);
+            let dGuild = this.client.guilds.get(user.guildid);
 
             if (dGuild == null) {
-                this.log.warn(`Guild with ID ${user.GuildID} doesn't exist anymore, purging settings.`);
-                await this.database.delGuildSettingsWithID(user.GuildID);
-                await this.database.updateJoinRecord(user);
+                await Joins.update<Joins>({ allowed: true }, {
+                    where: {
+                        userid: user.userid,
+                        guildid: user.guildid,
+                    },
+                });
                 continue;
             }
 
-            let enabled = await this.database.getSetting(dGuild, 'HoldingRoomActive');
-
-            if (enabled == null) {
-                this.log.warn(`Guild ${dGuild.name} (${dGuild.id}) has broken settings, resetting.`);
-                await this.database.delGuildSettings(dGuild);
-                await this.database.createGuildSettings(dGuild);
-                enabled = await this.database.getSetting(dGuild, 'HoldingRoomActive');
-            }
+            let enabled = (await Settings.find<Settings>({
+                where: {
+                    guildid: user.guildid,
+                    key: 'holdingroomactive',
+                },
+            })).value;
 
             if (enabled === 'true') {
-                await this.client.fetchUser(user.UserID);
-                let dUser = await dGuild.fetchMember(user.UserID);
-                let roleID = await this.database.getSetting(dGuild, 'HoldingRoomRoleID');
+                await this.client.fetchUser(user.userid, true);
+                let dUser = await dGuild.fetchMember(user.userid);
+                let roleID = (await Settings.find<Settings>({
+                    where: {
+                        guildid: user.guildid,
+                        key: 'holdingroomroleid',
+                    },
+                })).value;
 
                 try {
                     await dUser.addRole(roleID);
                     this.log.info(`Allowed "${dUser.user.tag}" in guild "${dGuild.name}".`);
                 } catch (e) {
                     // tslint:disable-next-line:max-line-length
-                    this.log.warn(`Could not allow user ${dUser.user.tag} (${dUser.id}) in guild ${this.client.guilds.get(user.GuildID).id} : ${JSON.stringify(e)}`);
+                    this.log.warn(`Could not allow user ${dUser.user.tag} (${dUser.id}) in guild ${this.client.guilds.get(user.guildid).id} : ${JSON.stringify(e)}`);
                     await dGuild.defaultChannel.send('I could not allow a user into the server from the holding room. I probably don\'t have permissions!');
                 } finally {
-                    await this.database.updateJoinRecord(user);
+                    await Joins.update({ allowed: true }, {
+                        where: {
+                            userid: user.userid,
+                            guildid: user.guildid,
+                        },
+                    });
                 }
             }
         }
     }
 
     private async unbanUsers(): Promise<void> {
-        let usersToBeUnbanned = await this.database.getExpiredBans();
+        let now = Math.round((new Date()).getTime() / 1000);
+
+        let usersToBeUnbanned = await Bans.findAll<Bans>({
+            where: {
+                unbanned: false,
+                expires: true,
+                expiretime: {
+                    $lt: now,
+                },
+            },
+        });
 
         if (usersToBeUnbanned == null) {
             return;
         }
 
         for (let user of usersToBeUnbanned) {
-            let g = this.client.guilds.get(user.GuildID);
+            let g = this.client.guilds.get(user.guildid);
 
             if (g == null) {
-                this.database.updateBanRecord(user);
+                Bans.update<Bans>({ unbanned: true }, {
+                    where: {
+                        userid: user.userid,
+                        guildid: user.guildid,
+                    },
+                });
             } else {
+                let unbanUser = await this.client.fetchUser(user.userid);
                 try {
-                    await g.unban(user.BannedUserID);
-                    this.log.info(`Unbanned "${user.BannedUserName}" in guild "${g.name}".`);
+                    await g.unban(unbanUser);
+                    this.log.info(`Unbanned "${unbanUser.tag}" in guild "${g.name}".`);
                 } catch (e) {
                     // tslint:disable-next-line:max-line-length
-                    this.log.warn(`Could not unban user ${user.BannedUserName} (${user.BannedUserID}) in guild ${this.client.guilds.get(user.GuildID).id} : ${JSON.stringify(e)}`);
+                    this.log.warn(`Could not unban user ${unbanUser.tag} (${unbanUser.id}) in guild ${this.client.guilds.get(user.guildid).id} : ${JSON.stringify(e)}`);
                     await g.defaultChannel.send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
                 } finally {
-                    await this.database.updateBanRecord(user);
+                    Bans.update({ unbanned: true }, {
+                        where: {
+                            userid: user.userid,
+                            guildid: user.guildid,
+                        },
+                    });
                 }
             }
         }
     }
 
     private async unmuteUsers(): Promise<void> {
-        let usersToBeUnmuted = await this.database.getExpiredMutes();
+        let now = Math.round((new Date()).getTime() / 1000);
+
+        let usersToBeUnmuted = await Mutes.findAll<Mutes>({
+            where: {
+                unmuted: false,
+                expires: true,
+                expiretime: {
+                    $lt: now,
+                },
+            },
+        });
 
         for (let user of usersToBeUnmuted) {
-            let guild = this.client.guilds.get(user.GuildID);
+            let guild = this.client.guilds.get(user.guildid);
 
             if (!guild || !guild.roles.find('name', 'Muted')) {
-                await this.database.updateMuteRecord(user);
+                await Mutes.update({ unmuted: true }, {
+                    where: {
+                        userid: user.userid,
+                        guildid: user.guildid,
+                    },
+                });
                 return;
             }
 
-            await this.client.fetchUser(user.MutedUserID);
+            await this.client.fetchUser(user.userid, true);
             let member: Discord.GuildMember;
 
             try {
-                await this.client.fetchUser(user.MutedUserID);
-                member = await guild.fetchMember(user.MutedUserID);
+                await this.client.fetchUser(user.userid);
+                member = await guild.fetchMember(user.userid);
             } catch (e) {
-                await this.database.updateMuteRecord(user);
+                await Mutes.update({ unmuted: true }, {
+                    where: {
+                        userid: user.userid,
+                        guildid: user.guildid,
+                    },
+                });
             }
 
             if (!member) {
-                await this.database.updateMuteRecord(user);
+                await Mutes.update({ unmuted: true }, {
+                    where: {
+                        userid: user.userid,
+                        guildid: user.guildid,
+                    },
+                });
                 return;
             }
             try {
                 await member.removeRole(guild.roles.find('name', 'Muted'));
             } catch (e) {
                 // tslint:disable-next-line:max-line-length
-                this.log.warn(`Could not unmute user ${member.user.tag} (${member.id}) in guild ${this.client.guilds.get(user.GuildID).id} : ${JSON.stringify(e)}`);
+                this.log.warn(`Could not unmute user ${member.user.tag} (${member.id}) in guild ${this.client.guilds.get(user.userid).id} : ${JSON.stringify(e)}`);
                 await guild.defaultChannel.send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
             } finally {
-                await this.database.updateMuteRecord(user);
+                await Mutes.update({ unmuted: true }, {
+                    where: {
+                        userid: user.userid,
+                        guildid: user.guildid,
+                    },
+                });
             }
         }
     }
@@ -508,7 +622,7 @@ export class SafetyJim {
     private async populateGuildConfigDatabase(): Promise<void> {
         let guildsNotInDatabaseCount = 0;
 
-        let configs = await this.database.getValuesOfKey('Prefix');
+        let configs = await this.database.getValuesOfKey('prefix');
         let existingGuildIds = Array.from(configs.keys());
 
         for (let [id, guild] of this.client.guilds) {
@@ -528,7 +642,11 @@ export class SafetyJim {
             let settings = await this.database.getGuildSettings(guild);
 
             if (settings.size !== possibleKeys.length) {
-                await this.database.delGuildSettings(guild);
+                await Settings.destroy({
+                    where: {
+                        guildid: guildID,
+                    },
+                });
                 await this.database.createGuildSettings(guild);
                 guildsWithMissingKeys++;
             }
@@ -539,7 +657,7 @@ export class SafetyJim {
             this.log.info(`Resetted ${guildsWithMissingKeys} guild(s) to database with default config because of missing or extra keys.`);
         }
 
-        let prefixRecords = await this.database.getValuesOfKey('Prefix');
+        let prefixRecords = await this.database.getValuesOfKey('prefix');
         let existingCommandRegexes = Object.keys(this.commandRegex);
         let existingTestRegexes = Object.keys(this.prefixTestRegex);
         for (let [guildID, prefix] of prefixRecords) {
