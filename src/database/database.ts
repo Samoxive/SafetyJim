@@ -2,6 +2,13 @@ import { Sequelize } from 'sequelize-typescript';
 import { Config } from '../config/config';
 import * as path from 'path';
 import { LoggerInstance } from 'winston';
+import { Guild } from 'discord.js';
+import { Settings } from './models/Settings';
+
+export const defaultWelcomeMessage = 'Welcome to $guild $user!';
+
+export type SettingKey = 'modlogactive' | 'modlogchannelid' | 'holdingroomroleid' | 'holdingroomactive' |
+'holdingroomminutes' | 'welcomemessagechannelid' | 'embedcolor' | 'prefix' | 'welcomemessage' | 'welcomemessageactive';
 
 export class BotDatabase {
     public database: Sequelize;
@@ -31,4 +38,55 @@ export class BotDatabase {
 
         return this;
     }
+
+    public async getGuildSettings(guild: Guild): Promise<Map<SettingKey, string>> {
+        let settings = await Settings.findAll<Settings>({
+            where: {
+                guildid: guild.id,
+            },
+        });
+
+        let result = new Map<SettingKey, string>();
+
+        for (let setting of settings) {
+            result.set(setting.key as SettingKey, setting.value);
+        }
+
+        return result;
+    }
+
+    public async getValuesOfKey(key: SettingKey): Promise<Map<string, string>> {
+        let result = new Map<string, string>();
+        let rows = await Settings.findAll<Settings>({
+            where: {
+                key,
+            },
+        });
+
+        for (let row of rows) {
+            result.set(row.guildid, row.value);
+        }
+
+        return result;
+    }
+
+    public async createGuildSettings(guild: Guild): Promise<void> {
+        await this.createKeyValueSetting(guild, 'modlogactive', 'false');
+        await this.createKeyValueSetting(guild, 'modlogchannelid', guild.defaultChannel.id);
+        await this.createKeyValueSetting(guild, 'holdingroomroleid', null);
+        await this.createKeyValueSetting(guild, 'holdingroomactive', 'false');
+        await this.createKeyValueSetting(guild, 'holdingroomminutes', '3');
+        await this.createKeyValueSetting(guild, 'embedcolor', '4286F4');
+        await this.createKeyValueSetting(guild, 'prefix', this.config.jim.default_prefix);
+        await this.createKeyValueSetting(guild, 'welcomemessageactive', 'false');
+        await this.createKeyValueSetting(guild, 'welcomemessage', defaultWelcomeMessage);
+        await this.createKeyValueSetting(guild, 'welcomemessagechannelid', guild.defaultChannel.id);
+    }
+
+    private async createKeyValueSetting(guild: Guild, key: string, value: string): Promise<void> {
+        await Settings.create<Settings>({ guildid: guild.id, key, value });
+    }
 }
+
+export let possibleKeys = ['ModLogActive', 'ModLogChannelID', 'HoldingRoomRoleID', 'HoldingRoomActive',
+    'HoldingRoomMinutes', 'WelcomeMessageChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage', 'WelcomeMessageActive'];
