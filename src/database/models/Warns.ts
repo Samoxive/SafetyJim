@@ -10,7 +10,7 @@ export class Warns extends Model<Warns> {
     public id: number;
 
     @Column(DataType.TEXT)
-    public warneduserid: string;
+    public userid: string;
 
     @Column(DataType.TEXT)
     public moderatoruserid: string;

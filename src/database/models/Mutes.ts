@@ -10,7 +10,7 @@ export class Mutes extends Model<Mutes> {
     public id: number;
 
     @Column(DataType.TEXT)
-    public muteduserid: string;
+    public userid: string;
 
     @Column(DataType.TEXT)
     public moderatoruserid: string;

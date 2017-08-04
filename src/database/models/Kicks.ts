@@ -10,7 +10,7 @@ export class Kicks extends Model<Kicks> {
     public id: number;
 
     @Column(DataType.TEXT)
-    public kickeduserid: string;
+    public userid: string;
 
     @Column(DataType.TEXT)
     public moderatoruserid: string;

@@ -10,7 +10,7 @@ export class Bans extends Model<Bans> {
     public id: number;
 
     @Column(DataType.TEXT)
-    public banneduserid: string;
+    public userid: string;
 
     @Column(DataType.TEXT)
     public moderatoruserid: string;
