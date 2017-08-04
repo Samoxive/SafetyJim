@@ -1,5 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
+import { Mutes } from '../../database/models/Mutes';
 
 class Unmute implements Command {
     public usage = 'unmute @user - unmutes specified user';
@@ -39,7 +40,12 @@ class Unmute implements Command {
 
         await member.removeRole(role);
         await bot.successReact(msg);
-        await bot.database.updateMuteRecordWithID(member.user.id, msg.guild.id);
+        await Mutes.update<Mutes>({ unmuted: true }, {
+            where: {
+                userid: member.id,
+                guildid: msg.guild.id,
+            },
+        });
     }
 }
 

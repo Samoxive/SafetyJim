@@ -1,11 +1,12 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import { possibleKeys, defaultWelcomeMessage, SettingKey } from '../../database/database';
 import * as Discord from 'discord.js';
+import { Settings } from '../../database/models/Settings';
 
 const keys = ['modlog', 'modlogchannel', 'holdingroomrole', 'holdingroom',
     'holdingroomminutes', 'embedcolor', 'prefix', 'welcomemessage', 'message', 'welcomemessagechannel'];
 
-class Settings implements Command {
+class SettingsCommand implements Command {
     public usage = [
         'settings display - shows current state of settings',
         'settings list - lists the keys you can use to customize the bot',
@@ -56,7 +57,11 @@ class Settings implements Command {
         }
 
         if (splitArgs[0] === 'reset') {
-            await bot.database.delGuildSettings(msg.guild);
+            await Settings.destroy({
+                where: {
+                    guildid: msg.guild,
+                },
+            });
             await bot.database.createGuildSettings(msg.guild);
             bot.createRegexForGuild(msg.guild.id, bot.config.jim.default_prefix);
             await bot.successReact(msg);
@@ -82,7 +87,12 @@ class Settings implements Command {
                     return true;
                 }
 
-                let roleID = await bot.database.getSetting(msg.guild, 'HoldingRoomRoleID');
+                let roleID = (await Settings.find<Settings>({
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'holdingroomroleid',
+                    },
+                })).value;
 
                 if (roleID == null) {
                     await bot.failReact(msg);
@@ -90,7 +100,12 @@ class Settings implements Command {
                     return;
                 }
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, 'HoldingRoomActive', setArgument);
+                await Settings.update<Settings>({ value: setArgument }, {
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'holdingroomactive',
+                    },
+                });
                 break;
             case 'modlog':
                 if (setArgument === 'enabled') {
@@ -102,7 +117,12 @@ class Settings implements Command {
                 }
 
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, 'ModLogActive', setArgument);
+                await Settings.update<Settings>({ value: setArgument }, {
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'modlogactive',
+                    },
+                });
                 break;
             case 'welcomemessage':
                 if (setArgument === 'enabled') {
@@ -114,15 +134,30 @@ class Settings implements Command {
                 }
 
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, 'WelcomeMessageActive', setArgument);
+                await Settings.update<Settings>({ value: setArgument }, {
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'welcomemessageactive',
+                    },
+                });
                 break;
             case 'message':
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, 'WelcomeMessage', setArgument);
+                await Settings.update<Settings>({ value: setArgument }, {
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'welcomemessage',
+                    },
+                });
                 break;
             case 'prefix':
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, 'Prefix', setArgument);
+                await Settings.update<Settings>({ value: setArgument }, {
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'prefix',
+                    },
+                });
                 bot.createRegexForGuild(msg.guild.id, setArgument);
                 break;
             case 'holdingroomminutes':
@@ -133,7 +168,12 @@ class Settings implements Command {
                 }
 
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, 'HoldingRoomMinutes', minutes.toString());
+                await Settings.update<Settings>({ value: minutes.toString() }, {
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'holdingroomminutes',
+                    },
+                });
                 break;
             case 'embedcolor':
                 if (setArguments[0].length !== 6) {
@@ -144,7 +184,12 @@ class Settings implements Command {
                     return true;
                 }
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, 'EmbedColor', setArguments[0]);
+                await Settings.update<Settings>({ value: setArguments[0] }, {
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'embedcolor',
+                    },
+                });
                 break;
             case 'welcomemessagechannel':
             case 'modlogchannel':
@@ -153,10 +198,15 @@ class Settings implements Command {
                     return true;
                 }
 
-                setKey = setKey === 'modlogchannel' ? 'ModLogChannelID' : 'WelcomeMessageChannelID';
+                setKey = setKey === 'modlogchannel' ? 'modlogchannelid' : 'welcomemessagechannelid';
 
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, setKey, msg.mentions.channels.first().id);
+                await Settings.update<Settings>({ value: msg.mentions.channels.first().id }, {
+                    where: {
+                        guildid: msg.guild.id,
+                        key: setKey,
+                    },
+                });
                 break;
             case 'holdingroomrole':
                 let role = msg.guild.roles.find('name', setArgument);
@@ -166,7 +216,12 @@ class Settings implements Command {
                 }
 
                 await bot.successReact(msg);
-                await bot.database.updateSettings(msg.guild, 'HoldingRoomRoleID', role.id);
+                await Settings.update<Settings>({ value: role.id }, {
+                    where: {
+                        guildid: msg.guild.id,
+                        key: 'holdingroomroleid',
+                    },
+                });
                 break;
             default:
                 await bot.failReact(msg);
@@ -179,33 +234,33 @@ class Settings implements Command {
     private async getSettingsString(bot: SafetyJim, msg: Discord.Message): Promise<{ color: number, output: string}> {
         let config = await bot.database.getGuildSettings(msg.guild);
         let output = '';
-        output += `**Prefix:** ${config.get('Prefix')}\n`;
-        output += `**Embed color:** #${config.get('EmbedColor')}\n`;
+        output += `**Prefix:** ${config.get('prefix')}\n`;
+        output += `**Embed color:** #${config.get('embedcolor')}\n`;
 
-        if (config.get('ModLogActive') === 'false') {
+        if (config.get('modlogactive') === 'false') {
             output += '**Mod Log:** Disabled\n';
         } else {
             output += '**Mod Log:** Enabled\n';
-            output += `\t**Mod Log Channel:** ${msg.guild.channels.get(config.get('ModLogChannelID'))}\n`;
+            output += `\t**Mod Log Channel:** ${msg.guild.channels.get(config.get('modlogchannelid'))}\n`;
         }
 
-        if (config.get('WelcomeMessageActive') === 'false') {
+        if (config.get('welcomemessageactive') === 'false') {
             output += '**Welcome Messages:** Disabled\n';
         } else {
             output += '**Welcome Messages:** Enabled\n';
             // tslint:disable-next-line:max-line-length
-            output += `\t**Welcome Message Channel:** ${msg.guild.channels.get(config.get('WelcomeMessageChannelID'))}\n`;
+            output += `\t**Welcome Message Channel:** ${msg.guild.channels.get(config.get('welcomemessagechannelid'))}\n`;
         }
 
-        if (config.get('HoldingRoomActive') === 'false') {
+        if (config.get('holdingroomactive') === 'false') {
             output += '**Holding Room:** Disabled\n';
         } else {
             output += '**Holding Room:** Enabled\n';
-            output += `\t**Holding Room Role:** ${msg.guild.roles.get(config.get('HoldingRoomRoleID')).name}\n`;
-            output += `\t**Holding Room Delay:** ${config.get('HoldingRoomMinutes')} minute(s)`;
+            output += `\t**Holding Room Role:** ${msg.guild.roles.get(config.get('holdingroomroleid')).name}\n`;
+            output += `\t**Holding Room Delay:** ${config.get('holdingroomminutes')} minute(s)`;
         }
 
-        return { output, color: parseInt(config.get('EmbedColor'), 16) };
+        return { output, color: parseInt(config.get('embedcolor'), 16) };
     }
 
     private async handleSettingsDisplay(bot: SafetyJim, msg: Discord.Message): Promise<void> {
@@ -221,4 +276,4 @@ class Settings implements Command {
     }
 }
 
-export = Settings;
+export = SettingsCommand;
