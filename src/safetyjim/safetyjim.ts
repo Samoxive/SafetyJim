@@ -452,7 +452,7 @@ export class SafetyJim {
                 continue;
             }
 
-            let enabled = await this.database.getGuildSetting(dGuild, 'prefix');
+            let enabled = await this.database.getGuildSetting(dGuild, 'holdingroomactive');
 
             if (enabled === 'true') {
                 await this.client.fetchUser(user.userid, true);
