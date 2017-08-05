@@ -17,6 +17,10 @@ const configSchema = {
         database: {
             type: 'object',
             properties: {
+                user: { type: 'string' },
+                pass: { type: 'string' },
+                host: { type: 'string' },
+                port: { type: 'integer' },
                 name: { type: 'string' },
             },
         },
@@ -108,6 +112,10 @@ interface Jim {
 }
 
 interface Database {
+    user: string;
+    pass: string;
+    host: string;
+    port: number;
     name: string;
 }
 

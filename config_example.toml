@@ -2,8 +2,12 @@
 token = "" # put your discord token here
 default_prefix = "-mod" # all guilds will use this prefix unless changed
 
-[database]
-name = "jims_memory.db" # this will be the filename for sqlite database
+[database] # variables for postgresql database
+user = ""
+pass = ""
+host = ""
+port = 5432
+name = ""
 
 [metrics] # keys can be gathered from datadog
 enabled = false

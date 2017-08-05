@@ -1,5 +1,7 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
+import { Settings } from '../../database/models/Settings';
+import { Bans } from '../../database/models/Bans';
 
 class Info implements Command {
     public usage = 'info - displays some information about the bot';
@@ -19,12 +21,19 @@ class Info implements Command {
     constructor(bot: SafetyJim) {}
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
-        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
-        let lastBan = await bot.database.getLastBan(msg.guild);
+        let EmbedColor = await bot.database.getGuildSetting(msg.guild, 'embedcolor');
+        let lastBan = await Bans.find<Bans>({
+            where: {
+                guildid: msg.guild.id,
+            },
+            order: [
+                ['bantime', 'DESC'],
+            ],
+        });
         let daysSince = '∞';
 
         if (lastBan != null) {
-            daysSince = this.daysSinceBan(lastBan.BanTime).toString();
+            daysSince = this.daysSinceBan(lastBan.bantime).toString();
         }
         let uptimeString = this.timeElapsed(Date.now(), bot.bootTime.getTime());
         let embed = {

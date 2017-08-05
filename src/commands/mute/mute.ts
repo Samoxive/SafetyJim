@@ -1,6 +1,8 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
 import * as time from 'time-parser';
+import { Settings } from '../../database/models/Settings';
+import { Mutes } from '../../database/models/Mutes';
 
 class Mute implements Command {
     public usage = 'mute @user [reason] | [time] - mutes the user with specific args. Both arguments can be omitted.';
@@ -98,7 +100,7 @@ class Mute implements Command {
             reason = 'No reason specified';
         }
 
-        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
+        let EmbedColor = await bot.database.getGuildSetting(msg.guild, 'embedcolor');
         let embed = {
             title: `Muted in ${msg.guild.name}`,
             color: parseInt(EmbedColor, 16),
@@ -126,12 +128,18 @@ class Mute implements Command {
             await bot.successReact(msg);
         }
 
-        await bot.database.createUserMute(
-            member.user,
-            msg.author,
-            msg.guild,
+        let now = Math.round((new Date()).getTime() / 1000);
+        let expires = parsedTime != null;
+        await Mutes.create<Mutes>({
+            userid: member.id,
+            moderatoruserid: msg.author.id,
+            guildid: msg.guild.id,
+            mutetime: now,
+            expiretime: expires ? Math.round(parsedTime.absolute / 1000) : 0,
             reason,
-            parsedTime ? Math.round(parsedTime.absolute / 1000) : null);
+            expires,
+            unmuted: false,
+        });
 
         try {
             await this.createModLogEntry(bot, msg, member,
@@ -145,14 +153,13 @@ class Mute implements Command {
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
                                     member: Discord.GuildMember, reason: string, parsedTime: number): Promise<void> {
-        let ModLogActive = await bot.database.getSetting(msg.guild, 'ModLogActive');
-        let prefix = await bot.database.getSetting(msg.guild, 'Prefix');
-
+        let ModLogActive = await bot.database.getGuildSetting(msg.guild, 'modlogactive');
+        let prefix = await bot.database.getGuildSetting(msg.guild, 'prefix');
         if (!ModLogActive || ModLogActive === 'false') {
             return;
         }
 
-        let ModLogChannelID = await bot.database.getSetting(msg.guild, 'ModLogChannelID');
+        let ModLogChannelID = await bot.database.getGuildSetting(msg.guild, 'modlogchannelid');
 
         if (!bot.client.channels.has(ModLogChannelID) ||
             bot.client.channels.get(ModLogChannelID).type !== 'text') {

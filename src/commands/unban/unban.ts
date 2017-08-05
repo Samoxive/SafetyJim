@@ -1,5 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
+import { Bans } from '../../database/models/Bans';
 
 class Unban implements Command {
     public usage = 'unban <tag> - unbans user with specified user tag (example#1998)';
@@ -34,7 +35,12 @@ class Unban implements Command {
         } else {
             await bot.successReact(msg);
             await msg.guild.unban(bannee.id);
-            await bot.database.updateBanRecordWithID(bannee.id, msg.guild.id);
+            await Bans.update<Bans>({ unbanned: true }, {
+                where: {
+                    userid: bannee.id,
+                    guildid: msg.guild.id,
+                },
+            });
         }
 
         return;

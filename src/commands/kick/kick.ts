@@ -1,5 +1,7 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
+import { Settings } from '../../database/models/Settings';
+import { Kicks } from '../../database/models/Kicks';
 
 class Kick implements Command {
     public usage = 'kick @user [reason] - kicks the user with the specified reason';
@@ -44,7 +46,7 @@ class Kick implements Command {
 
         let reason = args || 'No reason specified';
 
-        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
+        let EmbedColor = await bot.database.getGuildSetting(msg.guild, 'embedcolor');
 
         let embed = {
             title: `Kicked from ${msg.guild.name}`,
@@ -64,7 +66,14 @@ class Kick implements Command {
                 await member.kick(reason);
                 await bot.successReact(msg);
                 await this.createModLogEntry(bot, msg, member, reason);
-                await bot.database.createUserKick(member.user, msg.author, msg.guild, reason);
+                let now = Math.round((new Date()).getTime() / 1000);
+                await Kicks.create<Kicks>({
+                    userid: member.id,
+                    moderatoruserid: msg.author.id,
+                    guildid: msg.guild.id,
+                    kicktime: now,
+                    reason,
+                });
             } catch (e) {
                 await bot.failReact(msg);
                 await msg.channel.send('Could not kick specified user. Do I have enough permissions?');
@@ -74,14 +83,14 @@ class Kick implements Command {
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
                                     member: Discord.GuildMember, reason: string): Promise<void> {
-        let ModLogActive = await bot.database.getSetting(msg.guild, 'ModLogActive');
-        let prefix = await bot.database.getSetting(msg.guild, 'Prefix');
+        let ModLogActive = await bot.database.getGuildSetting(msg.guild, 'modlogactive');
+        let prefix = await bot.database.getGuildSetting(msg.guild, 'prefix');
 
         if (!ModLogActive || ModLogActive === 'false') {
             return;
         }
 
-        let ModLogChannelID = await bot.database.getSetting(msg.guild, 'ModLogChannelID');
+        let ModLogChannelID = await bot.database.getGuildSetting(msg.guild, 'modlogchannelid');
 
         if (!bot.client.channels.has(ModLogChannelID) ||
             bot.client.channels.get(ModLogChannelID).type !== 'text') {
