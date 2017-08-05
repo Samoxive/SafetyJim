@@ -78,12 +78,7 @@ class Ban implements Command {
             reason = 'No reason specified';
         }
 
-        let EmbedColor = (await Settings.find<Settings>({
-            where: {
-                guildid: msg.guild.id,
-                key: 'embedcolor',
-            },
-        })).value;
+        let EmbedColor = await bot.database.getGuildSetting(msg.guild, 'embedcolor');
 
         let embed = {
             title: `Banned from ${msg.guild.name}`,
@@ -132,30 +127,14 @@ class Ban implements Command {
 
     private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
                                     member: Discord.GuildMember, reason: string, parsedTime: number): Promise<void> {
-        let ModLogActive = (await Settings.find<Settings>({
-            where: {
-                guildid: msg.guild.id,
-                key: 'modlogactive',
-            },
-        })).value;
-
-        let prefix = (await Settings.find<Settings>({
-            where: {
-                guildid: msg.guild.id,
-                key: 'prefix',
-            },
-        })).value;
+        let ModLogActive = await bot.database.getGuildSetting(msg.guild, 'modlogactive');
+        let prefix = await bot.database.getGuildSetting(msg.guild, 'prefix');
 
         if (!ModLogActive || ModLogActive === 'false') {
             return;
         }
 
-        let ModLogChannelID = (await Settings.find<Settings>({
-            where: {
-                guildid: msg.guild.id,
-                key: 'modlogchannelid',
-            },
-        })).value;
+        let ModLogChannelID = await bot.database.getGuildSetting(msg.guild, 'modlogchannelid');
 
         if (!bot.client.channels.has(ModLogChannelID) ||
             bot.client.channels.get(ModLogChannelID).type !== 'text') {
