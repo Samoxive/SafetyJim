@@ -24,12 +24,20 @@ export interface Command {
     run: (bot: SafetyJim, msg: Discord.Message, args: string) => Promise<boolean>;
 }
 
+export interface MessageProcessor {
+    onMessage?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+    onMessageDelete?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+    onReaction?: (bot: SafetyJim, reaction: Discord.MessageReaction, user: Discord.User) => Promise<void>;
+    onReactionDelete?: (bot: SafetyJim, reaction: Discord.MessageReaction, user: Discord.User) => Promise<void>;
+}
+
 export class SafetyJim {
     public client: Discord.Client;
     public bootTime: Date;
     private commandRegex = {} as RegexRecords;
     private prefixTestRegex = {} as RegexRecords;
     private commands = {} as Commands;
+    private processors = [] as MessageProcessor[];
     private allowUsersCronJob;
     private unbanUserCronJob;
     private unmuteUserCronJob;
@@ -42,6 +50,7 @@ export class SafetyJim {
                 public log: winston.LoggerInstance) {
         this.bootTime = new Date();
         this.loadCommands();
+        this.loadProcessors();
         log.info('Populating prefix regex dictionary.');
         Settings.findAll<Settings>({
             where: {
@@ -59,9 +68,6 @@ export class SafetyJim {
             disabledEvents: [
                 'TYPING_START',
                 'MESSAGE_UPDATE',
-                'MESSAGE_REACTION_ADD',
-                'MESSAGE_REACTION_REMOVE',
-                'MESSAGE_REACTION_REMOVE_ALL',
                 'USER_NOTE_UPDATE',
                 'VOICE_SERVER_UPDATE',
                 'RELATIONSHIP_ADD',
@@ -70,10 +76,13 @@ export class SafetyJim {
         });
         this.client.on('ready', this.onReady());
         this.client.on('message', this.onMessage());
+        this.client.on('messageDelete', this.onMessageDelete());
         this.client.on('guildCreate', this.onGuildCreate());
         this.client.on('guildDelete', this.onGuildDelete());
         this.client.on('guildMemberAdd', this.onGuildMemberAdd());
         this.client.on('guildMemberRemove', this.onGuildMemberRemove());
+        this.client.on('messageReactionAdd', this.onReaction());
+        this.client.on('messageReactionRemove', this.onReactionDelete());
 
         this.client.login(config.jim.token);
     }
@@ -242,6 +251,48 @@ export class SafetyJim {
         }).bind(this);
     }
 
+    private onMessageDelete(): (msg: Discord.Message) => void {
+        return (async (msg: Discord.Message) => {
+            if (msg.author.bot || msg.channel.type === 'dm') {
+                return;
+            }
+
+            for (let processor of this.processors) {
+                if (processor.onMessageDelete) {
+                    await processor.onMessageDelete(this, msg);
+                }
+            }
+        }).bind(this);
+    }
+
+    private onReaction(): (reaction: Discord.MessageReaction, user: Discord.User) => void {
+        return (async (reaction: Discord.MessageReaction, user: Discord.User) => {
+            if (reaction.me || reaction.message.channel.type === 'dm') {
+                return;
+            }
+
+            for (let processor of this.processors) {
+                if (processor.onReaction) {
+                    await processor.onReaction(this, reaction, user);
+                }
+            }
+        }).bind(this);
+    }
+
+     private onReactionDelete(): (reaction: Discord.MessageReaction, user: Discord.User) => void {
+        return (async (reaction: Discord.MessageReaction, user: Discord.User) => {
+            if (reaction.me || reaction.message.channel.type === 'dm') {
+                return;
+            }
+
+            for (let processor of this.processors) {
+                if (processor.onReactionDelete) {
+                    await processor.onReactionDelete(this, reaction, user);
+                }
+            }
+        }).bind(this);
+    }
+
     private onGuildCreate(): (guild: Discord.Guild) => void {
         return (async (guild: Discord.Guild) => {
             if (this.isBotFarm(guild)) {
@@ -394,6 +445,30 @@ export class SafetyJim {
 
             await this.failReact(msg);
             await msg.channel.send({ embed });
+        }
+    }
+
+    private loadProcessors(): void {
+        let processorsFolderPath = path.join(__dirname, '..', 'processors');
+        if (!fs.existsSync(processorsFolderPath) || !fs.statSync(processorsFolderPath).isDirectory()) {
+            this.log.error('Processors directory could not be found!');
+            process.exit(1);
+        }
+
+        let processorList = fs.readdirSync(processorsFolderPath);
+
+        for (let processor of processorList) {
+            if (!fs.statSync(path.join(processorsFolderPath, processor)).isDirectory()) {
+                this.log.warn(`Found file "${processor}", ignoring...`);
+            } else {
+                try {
+                    let proc: MessageProcessor = require(path.join(processorsFolderPath, processor, processor + '.js'));
+                    this.processors.push(new proc(this));
+                    this.log.info(`Loaded processor "${processor}"`);
+                } catch (e) {
+                    this.log.warn(`Could not load processor "${processor}"!`);
+                }
+            }
         }
     }
 
