@@ -58,7 +58,6 @@ export class SafetyJim {
             disabledEvents: [
                 'TYPING_START',
                 'MESSAGE_UPDATE',
-                'MESSAGE_REACTION_REMOVE_ALL',
                 'USER_NOTE_UPDATE',
                 'VOICE_SERVER_UPDATE',
                 'RELATIONSHIP_ADD',
