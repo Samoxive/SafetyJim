@@ -95,12 +95,7 @@ class SettingsCommand implements Command {
                     return;
                 }
                 await bot.successReact(msg);
-                await Settings.update<Settings>({ value: setArgument }, {
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'holdingroomactive',
-                    },
-                });
+                await bot.database.updateSetting(msg.guild, 'holdingroomactive', setArgument);
                 break;
             case 'modlog':
                 if (setArgument === 'enabled') {
@@ -112,12 +107,7 @@ class SettingsCommand implements Command {
                 }
 
                 await bot.successReact(msg);
-                await Settings.update<Settings>({ value: setArgument }, {
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'modlogactive',
-                    },
-                });
+                await bot.database.updateSetting(msg.guild, 'modlogactive', setArgument);
                 break;
             case 'welcomemessage':
                 if (setArgument === 'enabled') {
@@ -129,30 +119,15 @@ class SettingsCommand implements Command {
                 }
 
                 await bot.successReact(msg);
-                await Settings.update<Settings>({ value: setArgument }, {
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'welcomemessageactive',
-                    },
-                });
+                await bot.database.updateSetting(msg.guild, 'welcomemessageactive', setArgument);
                 break;
             case 'message':
                 await bot.successReact(msg);
-                await Settings.update<Settings>({ value: setArgument }, {
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'welcomemessage',
-                    },
-                });
+                await bot.database.updateSetting(msg.guild, 'welcomemessage', setArgument);
                 break;
             case 'prefix':
                 await bot.successReact(msg);
-                await Settings.update<Settings>({ value: setArgument }, {
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'prefix',
-                    },
-                });
+                await bot.database.updateSetting(msg.guild, 'prefix', setArgument);
                 bot.createRegexForGuild(msg.guild.id, setArgument);
                 break;
             case 'holdingroomminutes':
@@ -163,12 +138,7 @@ class SettingsCommand implements Command {
                 }
 
                 await bot.successReact(msg);
-                await Settings.update<Settings>({ value: minutes.toString() }, {
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'holdingroomminutes',
-                    },
-                });
+                await bot.database.updateSetting(msg.guild, 'holdingroomminutes', minutes.toString());
                 break;
             case 'embedcolor':
                 if (setArguments[0].length !== 6) {
@@ -179,12 +149,7 @@ class SettingsCommand implements Command {
                     return true;
                 }
                 await bot.successReact(msg);
-                await Settings.update<Settings>({ value: setArguments[0] }, {
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'embedcolor',
-                    },
-                });
+                await bot.database.updateSetting(msg.guild, 'embedcolor', setArguments[0]);
                 break;
             case 'welcomemessagechannel':
             case 'modlogchannel':
@@ -193,15 +158,10 @@ class SettingsCommand implements Command {
                     return true;
                 }
 
-                setKey = setKey === 'modlogchannel' ? 'modlogchannelid' : 'welcomemessagechannelid';
+                let key: SettingKey = (setKey === 'modlogchannel' ? 'modlogchannelid' : 'welcomemessagechannelid');
 
                 await bot.successReact(msg);
-                await Settings.update<Settings>({ value: msg.mentions.channels.first().id }, {
-                    where: {
-                        guildid: msg.guild.id,
-                        key: setKey,
-                    },
-                });
+                await bot.database.updateSetting(msg.guild, key, msg.mentions.channels.first().id);
                 break;
             case 'holdingroomrole':
                 let role = msg.guild.roles.find('name', setArgument);
@@ -211,12 +171,7 @@ class SettingsCommand implements Command {
                 }
 
                 await bot.successReact(msg);
-                await Settings.update<Settings>({ value: role.id }, {
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'holdingroomroleid',
-                    },
-                });
+                await bot.database.updateSetting(msg.guild, 'holdingroomroleid', role.id);
                 break;
             default:
                 await bot.failReact(msg);

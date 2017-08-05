@@ -79,6 +79,15 @@ export class BotDatabase {
         return result;
     }
 
+    public async updateSetting(guild: Guild, key: SettingKey, value: string): Promise<void> {
+        await Settings.update<Settings>({ value }, {
+            where: {
+                guildid: guild.id,
+                key,
+            },
+        });
+    }
+
     public async createGuildSettings(guild: Guild): Promise<void> {
         await this.createKeyValueSetting(guild, 'modlogactive', 'false');
         await this.createKeyValueSetting(guild, 'modlogchannelid', guild.defaultChannel.id);
