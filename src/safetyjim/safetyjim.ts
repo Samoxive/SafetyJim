@@ -210,12 +210,7 @@ export class SafetyJim {
             }
 
             if (msg.isMentioned(this.client.user) && msg.content.includes('prefix')) {
-                let prefix = (await Settings.find<Settings>({
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'prefix',
-                    },
-                })).value;
+                let prefix = await this.database.getGuildSetting(msg.guild, 'prefix');
 
                 await this.successReact(msg);
 
@@ -386,12 +381,7 @@ export class SafetyJim {
 
         if (showUsage === true) {
             let usage = this.commands[command].usage;
-            let prefix = (await Settings.find<Settings>({
-                where: {
-                    guildid: msg.guild.id,
-                    key: 'prefix',
-                },
-            })).value;
+            let prefix = await this.database.getGuildSetting(msg.guild, 'prefix');
 
             let embed = {
                 author: {
@@ -462,23 +452,12 @@ export class SafetyJim {
                 continue;
             }
 
-            let enabled = (await Settings.find<Settings>({
-                where: {
-                    guildid: user.guildid,
-                    key: 'holdingroomactive',
-                },
-            })).value;
+            let enabled = await this.database.getGuildSetting(dGuild, 'prefix');
 
             if (enabled === 'true') {
                 await this.client.fetchUser(user.userid, true);
                 let dUser = await dGuild.fetchMember(user.userid);
-                let roleID = (await Settings.find<Settings>({
-                    where: {
-                        guildid: user.guildid,
-                        key: 'holdingroomroleid',
-                    },
-                })).value;
-
+                let roleID = await this.database.getGuildSetting(dGuild, 'holdingroomroleid');
                 try {
                     await dUser.addRole(roleID);
                     this.log.info(`Allowed "${dUser.user.tag}" in guild "${dGuild.name}".`);

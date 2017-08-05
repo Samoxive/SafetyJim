@@ -87,12 +87,7 @@ class SettingsCommand implements Command {
                     return true;
                 }
 
-                let roleID = (await Settings.find<Settings>({
-                    where: {
-                        guildid: msg.guild.id,
-                        key: 'holdingroomroleid',
-                    },
-                })).value;
+                let roleID = await bot.database.getGuildSetting(msg.guild, 'holdingroomroleid');
 
                 if (roleID == null) {
                     await bot.failReact(msg);

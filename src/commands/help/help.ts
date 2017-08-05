@@ -9,12 +9,7 @@ class Help implements Command {
     constructor(bot: SafetyJim) {}
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
-        let prefix = (await Settings.find<Settings>({
-            where: {
-                guildid: msg.guild.id,
-                key: 'prefix',
-            },
-        })).value;
+        let prefix = await bot.database.getGuildSetting(msg.guild, 'prefix');
         await bot.successReact(msg);
         await msg.channel.send({ embed: {
             author: { name: 'Safety Jim - Commands', icon_url: bot.client.user.avatarURL },

@@ -21,12 +21,7 @@ class Info implements Command {
     constructor(bot: SafetyJim) {}
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
-        let EmbedColor = (await Settings.find<Settings>({
-            where: {
-                guildid: msg.guild.id,
-                key: 'embedcolor',
-            },
-        })).value;
+        let EmbedColor = await bot.database.getGuildSetting(msg.guild, 'embedcolor');
         let lastBan = await Bans.find<Bans>({
             where: {
                 guildid: msg.guild.id,

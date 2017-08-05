@@ -39,6 +39,15 @@ export class BotDatabase {
         return this;
     }
 
+    public async getGuildSetting(guild: Guild, key: SettingKey): Promise<string> {
+        return (await Settings.find<Settings>({
+            where: {
+                guildid: guild.id,
+                key,
+            },
+        })).value;
+    }
+
     public async getGuildSettings(guild: Guild): Promise<Map<SettingKey, string>> {
         let settings = await Settings.findAll<Settings>({
             where: {
