@@ -61,7 +61,8 @@ class Kick implements Command {
             await msg.channel.send('Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
-                await member.kick(`Kicked by ${msg.author.tag} (${msg.author.id}) - ${reason}`);
+                let auditLogReason = `Kicked by ${msg.author.tag} (${msg.author.id}) - ${reason}`;
+                await member.kick(auditLogReason);
                 await bot.successReact(msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
