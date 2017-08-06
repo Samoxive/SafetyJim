@@ -34,12 +34,12 @@ class InviteLink implements MessageProcessor {
             return;
         }
 
-        let words = msg.content.split(' ');
-        let filtered = words.filter((word) => word.length >= this.shortestHostLength);
-        let parsed = filtered.map((word) => (parseUri(word)).host as string);
-        let links = parsed.filter((host) => this.isBlackListed(host));
+        let result = msg.content.split(' ')
+                               .filter((word) => word.length >= this.shortestHostLength)
+                               .map((word) => (parseUri(word)).host as string)
+                               .filter((host) => this.isBlackListed(host));
 
-        if (links.length === 0) {
+        if (result.length === 0) {
             return;
         }
 
