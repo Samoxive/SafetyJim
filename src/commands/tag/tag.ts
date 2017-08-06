@@ -82,7 +82,7 @@ class Tag implements Command {
         await msg.channel.send({ embed });
         return;
     }
-    
+
     private async addTag(bot: SafetyJim, msg: Discord.Message, name: string, response: string) {
         if (this.subcommands.includes(name)) {
             await bot.failReact(msg);
