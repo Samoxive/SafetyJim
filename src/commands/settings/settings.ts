@@ -229,7 +229,7 @@ class SettingsCommand implements Command {
         } else {
             output += '**Holding Room:** Enabled\n';
             output += `\t**Holding Room Role:** ${msg.guild.roles.get(config.get('holdingroomroleid')).name}\n`;
-            output += `\t**Holding Room Delay:** ${config.get('holdingroomminutes')} minute(s)`;
+            output += `\t**Holding Room Delay:** ${config.get('holdingroomminutes')} minute(s)\n`;
         }
 
         if (config.get('invitelinkremover') === 'true') {
