@@ -4,23 +4,33 @@ import { Tags } from '../../database/models/Tags';
 
 class Tag implements Command {
     public usage = [
-        'tag list - DMs all tags and responses to user',
-        'tag say <name> - Responds with reponse of the given tag',
+        'tag list - Shows all tags and responses to user',
+        'tag <name> - Responds with reponse of the given tag',
         'tag add <name> <response> - Adds a tag with the given name and response',
         'tag edit <name> <response> - Changes response of tag with given name',
         'tag remove <name> - Deletes tag with the given name',
     ];
 
+    private arguments = ['list', 'add', 'edit', 'remove'];
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
-        if (!args || !['say', 'list', 'add', 'edit', 'remove'].includes(splitArgs[0])) {
-            return true;
-        }
 
-        if (splitArgs[0] === 'say') {
+        if (splitArgs[0] === 'list') {
+            await this.displayTags(bot, msg);
+            return;
+        } else if (splitArgs[0] === 'add') {
+            await this.addTag(bot, msg, splitArgs[1], splitArgs.slice(2).join(' '));
+            return;
+        } else if (splitArgs[0] === 'edit') {
+            await this.editTag(bot, msg, splitArgs[1], splitArgs.slice(2).join(' '));
+            return;
+        } else if (splitArgs[0] === 'remove') {
+           await this.deleteTag(bot, msg, splitArgs[1]);
+           return;
+        } else {
             if (splitArgs[1] === undefined) {
                 await bot.failReact(msg);
                 await msg.channel.send('Command requires a tag to say!');
@@ -45,26 +55,6 @@ class Tag implements Command {
             return;
         }
 
-        if (splitArgs[0] === 'list') {
-            await this.displayTags(bot, msg);
-            return;
-        }
-
-        if (splitArgs[0] === 'add') {
-            await this.addTag(bot, msg, splitArgs[1], splitArgs.slice(2).join(' '));
-            return;
-        }
-
-        if (splitArgs[0] === 'edit') {
-            await this.editTag(bot, msg, splitArgs[1], splitArgs.slice(2).join(' '));
-            return;
-        }
-        if (splitArgs[0] === 'remove') {
-           await this.deleteTag(bot, msg, splitArgs[1]);
-           return;
-        }
-
-        return;
      }
 
     private async displayTags(bot: SafetyJim, msg: Discord.Message) {
@@ -94,6 +84,11 @@ class Tag implements Command {
     }
 
     private async addTag(bot: SafetyJim, msg: Discord.Message, name: string, response: string) {
+        if (this.subcommands.includes(name)) {
+            await bot.failReact(msg);
+            await msg.channel.send(`Can't create a tag with the same name as an argument!`);
+            return;
+        }
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
             await bot.failReact(msg);
             await msg.channel.send('You don\'t have enough permissions to use this command!');
