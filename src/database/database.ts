@@ -7,8 +7,17 @@ import { Settings } from './models/Settings';
 
 export const defaultWelcomeMessage = 'Welcome to $guild $user!';
 
-export type SettingKey = 'modlogactive' | 'modlogchannelid' | 'holdingroomroleid' | 'holdingroomactive' |
-'holdingroomminutes' | 'welcomemessagechannelid' | 'embedcolor' | 'prefix' | 'welcomemessage' | 'welcomemessageactive';
+export type SettingKey = 'modlogactive' |
+                         'modlogchannelid' |
+                         'holdingroomroleid' |
+                         'holdingroomactive' |
+                         'invitelinkremover' |
+                         'holdingroomminutes' |
+                         'welcomemessagechannelid' |
+                         'embedcolor' |
+                         'prefix' |
+                         'welcomemessage' |
+                         'welcomemessageactive';
 
 export class BotDatabase {
     public database: Sequelize;
@@ -89,6 +98,7 @@ export class BotDatabase {
     }
 
     public async createGuildSettings(guild: Guild): Promise<void> {
+        await this.createKeyValueSetting(guild, 'invitelinkremover', 'false');
         await this.createKeyValueSetting(guild, 'modlogactive', 'false');
         await this.createKeyValueSetting(guild, 'modlogchannelid', guild.defaultChannel.id);
         await this.createKeyValueSetting(guild, 'holdingroomroleid', null);
@@ -101,10 +111,19 @@ export class BotDatabase {
         await this.createKeyValueSetting(guild, 'welcomemessagechannelid', guild.defaultChannel.id);
     }
 
-    private async createKeyValueSetting(guild: Guild, key: string, value: string): Promise<void> {
+    private async createKeyValueSetting(guild: Guild, key: SettingKey, value: string): Promise<void> {
         await Settings.create<Settings>({ guildid: guild.id, key, value });
     }
 }
 
-export let possibleKeys = ['ModLogActive', 'ModLogChannelID', 'HoldingRoomRoleID', 'HoldingRoomActive',
-    'HoldingRoomMinutes', 'WelcomeMessageChannelID', 'EmbedColor', 'Prefix', 'WelcomeMessage', 'WelcomeMessageActive'];
+export let possibleKeys = ['modlogactive',
+                           'modlogchannelid',
+                           'holdingroomroleid',
+                           'holdingroomactive',
+                           'invitelinkremover',
+                           'holdingroomminutes',
+                           'welcomemessagechannelid',
+                           'embedcolor',
+                           'prefix',
+                           'welcomemessage',
+                           'welcomemessageactive'];
