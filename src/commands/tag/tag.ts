@@ -11,7 +11,7 @@ class Tag implements Command {
         'tag remove <name> - Deletes tag with the given name',
     ];
 
-    private arguments = ['list', 'add', 'edit', 'remove'];
+    private subcommands = ['list', 'add', 'edit', 'remove'];
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
@@ -31,16 +31,15 @@ class Tag implements Command {
            await this.deleteTag(bot, msg, splitArgs[1]);
            return;
         } else {
-            if (splitArgs[1] === undefined) {
+            if (!splitArgs[0]) {
                 await bot.failReact(msg);
-                await msg.channel.send('Command requires a tag to say!');
-                return;
+                return true;
             }
 
             let response = await Tags.find<Tags>({
                 where: {
                     guildid: msg.guild.id,
-                    name: splitArgs[1],
+                    name: splitArgs[0],
                 },
             });
 
@@ -86,7 +85,7 @@ class Tag implements Command {
     private async addTag(bot: SafetyJim, msg: Discord.Message, name: string, response: string) {
         if (this.subcommands.includes(name)) {
             await bot.failReact(msg);
-            await msg.channel.send(`Can't create a tag with the same name as an argument!`);
+            await msg.channel.send(`You can't create a tag with the same name as a subcommand!`);
             return;
         }
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
@@ -172,8 +171,8 @@ class Tag implements Command {
         }
 
         if (name === undefined) {
-            await msg.channel.send('Remove command requires an argument!');
             await bot.failReact(msg);
+            await msg.channel.send('Remove command requires an argument!');
             return;
         }
 
