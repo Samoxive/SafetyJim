@@ -5,7 +5,7 @@ class Test implements MessageProcessor {
     // tslint:disable-next-line:no-empty
     constructor() { }
 
-    public async onMessage(bot: SafetyJim, msg: Message): Promise<void> {
+    public async onMessage(bot: SafetyJim, msg: Message): Promise<boolean> {
         bot.log.info(`Message said: ${msg.content}`);
         return;
     }

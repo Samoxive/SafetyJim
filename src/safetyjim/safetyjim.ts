@@ -25,7 +25,7 @@ export interface Command {
 }
 
 export interface MessageProcessor {
-    onMessage?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
+    onMessage?: (bot: SafetyJim, msg: Discord.Message) => Promise<boolean>;
     onMessageDelete?: (bot: SafetyJim, msg: Discord.Message) => Promise<void>;
     onReaction?: (bot: SafetyJim, reaction: Discord.MessageReaction, user: Discord.User) => Promise<void>;
     onReactionDelete?: (bot: SafetyJim, reaction: Discord.MessageReaction, user: Discord.User) => Promise<void>;
@@ -236,6 +236,15 @@ export class SafetyJim {
                     this.log.warn(`Could not send commands embed in guild: "${msg.guild}" requested by "${msg.author.tag}".`);
                 }
                 return;
+            }
+
+            for (let processor of this.processors) {
+                let actionTaken = await processor.onMessage(this, msg);
+
+                if (actionTaken === true) {
+                    // The processor took a moderative action, halt further processing
+                    return;
+                }
             }
 
             let cmdMatch = msg.content.match(cmdRegex);
