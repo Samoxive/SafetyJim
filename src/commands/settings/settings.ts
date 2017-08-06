@@ -8,7 +8,6 @@ const keys = ['modlog',
               'holdingroomrole',
               'holdingroom',
               'holdingroomminutes',
-              'embedcolor',
               'prefix',
               'welcomemessage',
               'message',
@@ -39,8 +38,7 @@ class SettingsCommand implements Command {
         }
 
         if (splitArgs[0] === 'list') {
-            let output = '`EmbedColor <hexadecimal rgb>` - Default: 4286F4\n' +
-                         '`HoldingRoom <enabled/disabled>` - Default: disabled\n' +
+            let output = '`HoldingRoom <enabled/disabled>` - Default: disabled\n' +
                          '`HoldingRoomMinutes <number>` - Default: 3\n' +
                          '`HoldingRoomRole <text>` - Default: None\n' +
                          '`ModLog <enabled/disabled>` - Default: disabled\n' +
@@ -162,17 +160,6 @@ class SettingsCommand implements Command {
                 await bot.successReact(msg);
                 await bot.database.updateSetting(msg.guild, 'holdingroomminutes', minutes.toString());
                 break;
-            case 'embedcolor':
-                if (setArguments[0].length !== 6) {
-                    return true;
-                }
-                let color = parseInt(setArguments[0], 16);
-                if (isNaN(color)) {
-                    return true;
-                }
-                await bot.successReact(msg);
-                await bot.database.updateSetting(msg.guild, 'embedcolor', setArguments[0]);
-                break;
             case 'welcomemessagechannel':
             case 'modlogchannel':
                 if (setArguments.length === 1 &&
@@ -203,11 +190,10 @@ class SettingsCommand implements Command {
         return;
     }
 
-    private async getSettingsString(bot: SafetyJim, msg: Discord.Message): Promise<{ color: number, output: string}> {
+    private async getSettingsString(bot: SafetyJim, msg: Discord.Message): Promise<string> {
         let config = await bot.database.getGuildSettings(msg.guild);
         let output = '';
         output += `**Prefix:** ${config.get('prefix')}\n`;
-        output += `**Embed color:** #${config.get('embedcolor')}\n`;
 
         if (config.get('modlogactive') === 'false') {
             output += '**Mod Log:** Disabled\n';
@@ -238,7 +224,7 @@ class SettingsCommand implements Command {
             output += '**Invite Link Remover:** Disabled\n';
         }
 
-        return { output, color: parseInt(config.get('embedcolor'), 16) };
+        return output;
     }
 
     private async handleSettingsDisplay(bot: SafetyJim, msg: Discord.Message): Promise<void> {
@@ -246,8 +232,8 @@ class SettingsCommand implements Command {
 
         let embed = {
             author: { name: 'Safety Jim', icon_url: bot.client.user.avatarURL },
-            fields: [{ name: 'Guild Settings', value: output.output }],
-            color: output.color,
+            fields: [{ name: 'Guild Settings', value: output }],
+            color: 0x4286f4,
         };
         await bot.successReact(msg);
         await msg.channel.send({ embed });

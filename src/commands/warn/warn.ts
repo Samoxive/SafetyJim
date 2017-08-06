@@ -37,11 +37,9 @@ class Warn implements Command {
 
         bot.log.info(`Warned user "${member.user.tag}" in "${msg.guild.name}".`);
 
-        let EmbedColor = await bot.database.getGuildSetting(msg.guild, 'embedcolor');
-
         let embed = {
             title: `Warned in ${msg.guild.name}`,
-            color: parseInt(EmbedColor, 16),
+            color: 0x4286f4,
             fields: [{ name: 'Reason:', value: reason, inline: false }],
             description: `You were warned in ${msg.guild.name}.`,
             footer: { text: `Warned by: ${msg.author.tag} (${msg.author.id})`},

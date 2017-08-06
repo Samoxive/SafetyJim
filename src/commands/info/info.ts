@@ -21,7 +21,6 @@ class Info implements Command {
     constructor(bot: SafetyJim) {}
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
-        let EmbedColor = await bot.database.getGuildSetting(msg.guild, 'embedcolor');
         let lastBan = await Bans.find<Bans>({
             where: {
                 guildid: msg.guild.id,
@@ -51,7 +50,7 @@ class Info implements Command {
                 { name: 'Links', value: `[Support](https://discord.io/safetyjim) | [Github](https://github.com/samoxive/safetyjim) | [Invite](${this.inviteLink})`, inline: true },
             ],
             footer: { text: `Made by Safety Jim team. | Days since last incident: ${daysSince}`},
-            color: parseInt(EmbedColor, 16),
+            color: 0x4286f4,
         };
 
         await bot.successReact(msg);

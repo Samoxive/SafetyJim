@@ -14,7 +14,6 @@ export type SettingKey = 'modlogactive' |
                          'invitelinkremover' |
                          'holdingroomminutes' |
                          'welcomemessagechannelid' |
-                         'embedcolor' |
                          'prefix' |
                          'welcomemessage' |
                          'welcomemessageactive';
@@ -104,7 +103,6 @@ export class BotDatabase {
         await this.createKeyValueSetting(guild, 'holdingroomroleid', null);
         await this.createKeyValueSetting(guild, 'holdingroomactive', 'false');
         await this.createKeyValueSetting(guild, 'holdingroomminutes', '3');
-        await this.createKeyValueSetting(guild, 'embedcolor', '4286F4');
         await this.createKeyValueSetting(guild, 'prefix', this.config.jim.default_prefix);
         await this.createKeyValueSetting(guild, 'welcomemessageactive', 'false');
         await this.createKeyValueSetting(guild, 'welcomemessage', defaultWelcomeMessage);
@@ -123,7 +121,6 @@ export let possibleKeys = ['modlogactive',
                            'invitelinkremover',
                            'holdingroomminutes',
                            'welcomemessagechannelid',
-                           'embedcolor',
                            'prefix',
                            'welcomemessage',
                            'welcomemessageactive'];

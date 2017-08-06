@@ -100,10 +100,9 @@ class Mute implements Command {
             reason = 'No reason specified';
         }
 
-        let EmbedColor = await bot.database.getGuildSetting(msg.guild, 'embedcolor');
         let embed = {
             title: `Muted in ${msg.guild.name}`,
-            color: parseInt(EmbedColor, 16),
+            color: 0x4286f4,
             description: `You were muted in ${msg.guild.name}.`,
             fields: [
                 { name: 'Reason:', value: reason, inline: false },
