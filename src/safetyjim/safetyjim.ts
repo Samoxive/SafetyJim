@@ -153,6 +153,81 @@ export class SafetyJim {
         }
     }
 
+    public async createModLogEntry(msg: Discord.Message, member: Discord.GuildMember,
+                                   reason: string, action: string, id: number, parsedTime?: number): Promise<void> {
+        let colors = {
+            ban: 0xFF2900,
+            kick: 0xFF9900,
+            warn: 0xFFEB00,
+            mute: 0xFFFFFF,
+        };
+
+        let actionText = {
+            ban: 'Ban',
+            kick: 'Kick',
+            warn: 'Warn',
+            mute: 'Mute',
+        };
+
+        let ModLogActive = await this.database.getGuildSetting(msg.guild, 'modlogactive');
+        let prefix = await this.database.getGuildSetting(msg.guild, 'prefix');
+
+        if (!ModLogActive || ModLogActive === 'false') {
+            return;
+        }
+
+        let ModLogChannelID = await this.database.getGuildSetting(msg.guild, 'modlogchannelid');
+
+        if (!this.client.channels.has(ModLogChannelID) ||
+            this.client.channels.get(ModLogChannelID).type !== 'text') {
+            // tslint:disable-next-line:max-line-length
+            msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
+            return;
+        }
+
+        let logChannel = this.client.channels.get(ModLogChannelID) as Discord.TextChannel;
+
+        let expires = parsedTime != null;
+
+        let embed = {
+            color: colors[action],
+            fields: [
+                { name: 'Action:', value: `${actionText[action]} - #${id}`, inline: false },
+                { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
+                { name: 'Reason:', value: reason, inline: false },
+                { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
+                { name: 'Channel', value: msg.channel.toString(), inline: false },
+            ],
+            timestamp: new Date(),
+        };
+
+        if (expires) {
+            let value = parsedTime ? new Date(parsedTime).toString() : 'Indefinitely';
+            let untilText: string;
+
+            switch (action) {
+                case 'ban':
+                    untilText = 'Banned until';
+                    break;
+                case 'mute':
+                    untilText = 'Muted until';
+                    break;
+                default:
+                    break;
+            }
+
+            embed.fields.push({ name: untilText, value, inline: false });
+        }
+
+        try {
+            await logChannel.send({ embed });
+        } catch (e) {
+            await msg.channel.send('Could not create a mod log entry!');
+        }
+
+        return;
+    }
+
     private onReady(): () => void {
         return (async () => {
             this.log.info(`Client is ready, username: ${this.client.user.username}.`);

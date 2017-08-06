@@ -63,57 +63,22 @@ class Kick implements Command {
             try {
                 await member.kick(reason);
                 await bot.successReact(msg);
-                await this.createModLogEntry(bot, msg, member, reason);
+
                 let now = Math.round((new Date()).getTime() / 1000);
-                await Kicks.create<Kicks>({
+                let kickRecord = await Kicks.create<Kicks>({
                     userid: member.id,
                     moderatoruserid: msg.author.id,
                     guildid: msg.guild.id,
                     kicktime: now,
                     reason,
                 });
+
+                await bot.createModLogEntry(msg, member, reason, 'kick', kickRecord.id);
             } catch (e) {
                 await bot.failReact(msg);
                 await msg.channel.send('Could not kick specified user. Do I have enough permissions?');
             }
         }
     }
-
-    private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
-                                    member: Discord.GuildMember, reason: string): Promise<void> {
-        let ModLogActive = await bot.database.getGuildSetting(msg.guild, 'modlogactive');
-        let prefix = await bot.database.getGuildSetting(msg.guild, 'prefix');
-
-        if (!ModLogActive || ModLogActive === 'false') {
-            return;
-        }
-
-        let ModLogChannelID = await bot.database.getGuildSetting(msg.guild, 'modlogchannelid');
-
-        if (!bot.client.channels.has(ModLogChannelID) ||
-            bot.client.channels.get(ModLogChannelID).type !== 'text') {
-            // tslint:disable-next-line:max-line-length
-            msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
-            return;
-        }
-
-        let logChannel = bot.client.channels.get(ModLogChannelID) as Discord.TextChannel;
-
-        let embed = {
-            color: 0xFF9900, // orange
-            fields: [
-                { name: 'Action:', value: 'Kick', inline: false },
-                { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
-                { name: 'Reason:', value: reason, inline: false },
-                { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
-            ],
-            timestamp: new Date(),
-        };
-
-        await logChannel.send({ embed });
-
-        return;
-    }
-
 }
 module.exports = Kick;
