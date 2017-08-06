@@ -10,7 +10,7 @@ class InviteLink implements MessageProcessor {
     private whitelistedRoles: PermissionString[];
 
     constructor() {
-        this.blacklistedHosts = [ 'discord.io' ];
+        this.blacklistedHosts = [ 'discord.gg' ];
         this.shortestHostLength = 10;
         this.whitelistedRoles = [
             'ADMINISTRATOR',
@@ -34,12 +34,12 @@ class InviteLink implements MessageProcessor {
             return;
         }
 
-        let inviteLinkWords = msg.content.split(' ')
-                                         .map((word) => word.length < this.shortestHostLength)
-                                         .map((word) => (parseUri(word)).host as string)
-                                         .map((host) => this.isBlackListed(host));
+        let words = msg.content.split(' ');
+        let filtered = words.filter((word) => word.length >= this.shortestHostLength);
+        let parsed = filtered.map((word) => (parseUri(word)).host as string);
+        let links = parsed.filter((host) => this.isBlackListed(host));
 
-        if (inviteLinkWords.length === 0) {
+        if (links.length === 0) {
             return;
         }
 
