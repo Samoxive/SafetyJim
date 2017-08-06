@@ -131,6 +131,20 @@ export class SafetyJim {
         return;
     }
 
+    public async deleteCommandMessage(msg: Discord.Message): Promise<void> {
+        let silentcommands = await this.database.getGuildSetting(msg.guild, 'silentcommands');
+
+        if (silentcommands === 'false') {
+            return;
+        }
+
+        try {
+            await msg.delete();
+        } catch (e) {
+            //
+        }
+    }
+
     public async updateDiscordBotLists(): Promise<void> {
         if (!this.config.botlist.enabled) {
             return;

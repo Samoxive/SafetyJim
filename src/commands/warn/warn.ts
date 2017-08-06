@@ -64,6 +64,7 @@ class Warn implements Command {
         });
 
         await bot.createModLogEntry(msg, member, reason, 'warn', warnRecord.id);
+        await bot.deleteCommandMessage(msg);
         return;
     }
 }

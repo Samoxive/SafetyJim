@@ -12,7 +12,8 @@ const keys = ['modlog',
               'welcomemessage',
               'message',
               'welcomemessagechannel',
-              'invitelinkremover'];
+              'invitelinkremover',
+              'silentcommands'];
 
 class SettingsCommand implements Command {
     public usage = [
@@ -47,7 +48,8 @@ class SettingsCommand implements Command {
                          '\`WelcomeMessage <enabled/disabled>\` - Default: disabled\n' +
                          `\`WelcomeMessageChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
                          `\`Message <text>\` - Default: ${defaultWelcomeMessage}\n` +
-                         '`InviteLinkRemover <enabled/disabled>` - Default: disabled';
+                         '`InviteLinkRemover <enabled/disabled>` - Default: disabled' +
+                         'SilentCommands <enabled/disabled> - Default: disabled';
             let embed = {
                 author: { name: 'Safety Jim', icon_url: bot.client.user.avatarURL },
                 fields: [{ name: 'List of settings', value: output }],
@@ -86,6 +88,18 @@ class SettingsCommand implements Command {
         }
 
         switch (setKey) {
+            case 'silentcommands':
+                if (setArgument === 'enabled') {
+                    setArgument = 'true';
+                } else if (setArgument === 'disabled') {
+                    setArgument = 'false';
+                } else {
+                    return true;
+                }
+
+                await bot.successReact(msg);
+                await bot.database.updateSetting(msg.guild, 'invitelinkremover', setArgument);
+                break;
             case 'invitelinkremover':
                 if (setArgument === 'enabled') {
                     setArgument = 'true';
@@ -222,6 +236,12 @@ class SettingsCommand implements Command {
             output += '**Invite Link Remover:** Enabled\n';
         } else {
             output += '**Invite Link Remover:** Disabled\n';
+        }
+
+        if (config.get('silentcommands') === 'true') {
+            output += '**Silent Commands:** Enabled\n';
+        } else {
+            output += '**Silent Commands:** Disabled\n';
         }
 
         return output;

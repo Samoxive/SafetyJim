@@ -142,6 +142,8 @@ class Mute implements Command {
 
         await bot.createModLogEntry(msg, member, reason, 'mute',
                                     muteRecord.id, parsedTime ? parsedTime.absolute : null);
+
+        await bot.deleteCommandMessage(msg);
         return;
     }
 }

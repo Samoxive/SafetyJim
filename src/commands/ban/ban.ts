@@ -122,6 +122,7 @@ class Ban implements Command {
             }
         }
 
+        await bot.deleteCommandMessage(msg);
         return;
     }
 }

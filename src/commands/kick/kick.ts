@@ -61,8 +61,7 @@ class Kick implements Command {
             await msg.channel.send('Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
-                let auditLogReason = `Kicked by ${msg.author.tag} (${msg.author.id}) - ${reason}`;
-                await member.kick(auditLogReason);
+                await member.kick(reason);
                 await bot.successReact(msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
@@ -80,6 +79,9 @@ class Kick implements Command {
                 await msg.channel.send('Could not kick specified user. Do I have enough permissions?');
             }
         }
+
+        await bot.deleteCommandMessage(msg);
+        return;
     }
 }
 module.exports = Kick;

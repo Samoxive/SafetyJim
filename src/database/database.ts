@@ -16,7 +16,8 @@ export type SettingKey = 'modlogactive' |
                          'welcomemessagechannelid' |
                          'prefix' |
                          'welcomemessage' |
-                         'welcomemessageactive';
+                         'welcomemessageactive' |
+                         'silentcommands';
 
 export class BotDatabase {
     public database: Sequelize;
@@ -97,6 +98,7 @@ export class BotDatabase {
     }
 
     public async createGuildSettings(guild: Guild): Promise<void> {
+        await this.createKeyValueSetting(guild, 'silentcommands', 'false');
         await this.createKeyValueSetting(guild, 'invitelinkremover', 'false');
         await this.createKeyValueSetting(guild, 'modlogactive', 'false');
         await this.createKeyValueSetting(guild, 'modlogchannelid', guild.defaultChannel.id);
@@ -123,4 +125,5 @@ export let possibleKeys = ['modlogactive',
                            'welcomemessagechannelid',
                            'prefix',
                            'welcomemessage',
-                           'welcomemessageactive'];
+                           'welcomemessageactive',
+                           'silentcommands'];
