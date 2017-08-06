@@ -81,6 +81,7 @@ export class BotDatabase {
             },
         });
 
+
         for (let row of rows) {
             result.set(row.guildid, row.value);
         }
