@@ -15,9 +15,6 @@ gulp.task('clean', () => {
     
     gulp.src('src/**/*.js.map', {read: false})
         .pipe(clean());
-
-    gulp.src('*.db', {read: false})
-        .pipe(clean());
 });
 
 gulp.task('clean-build', ['clean', 'default'], () => {});
