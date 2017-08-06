@@ -98,7 +98,7 @@ class SettingsCommand implements Command {
                 }
 
                 await bot.successReact(msg);
-                await bot.database.updateSetting(msg.guild, 'invitelinkremover', setArgument);
+                await bot.database.updateSetting(msg.guild, 'silentcommands', setArgument);
                 break;
             case 'invitelinkremover':
                 if (setArgument === 'enabled') {
