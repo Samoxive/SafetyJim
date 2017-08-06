@@ -3,8 +3,17 @@ import { possibleKeys, defaultWelcomeMessage, SettingKey } from '../../database/
 import * as Discord from 'discord.js';
 import { Settings } from '../../database/models/Settings';
 
-const keys = ['modlog', 'modlogchannel', 'holdingroomrole', 'holdingroom',
-    'holdingroomminutes', 'embedcolor', 'prefix', 'welcomemessage', 'message', 'welcomemessagechannel'];
+const keys = ['modlog',
+              'modlogchannel',
+              'holdingroomrole',
+              'holdingroom',
+              'holdingroomminutes',
+              'embedcolor',
+              'prefix',
+              'welcomemessage',
+              'message',
+              'welcomemessagechannel',
+              'invitelinkremover'];
 
 class SettingsCommand implements Command {
     public usage = [
@@ -39,7 +48,8 @@ class SettingsCommand implements Command {
                          '`Prefix <text>` - Default: -mod\n' +
                          '\`WelcomeMessage <enabled/disabled>\` - Default: disabled\n' +
                          `\`WelcomeMessageChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
-                         `\`Message <text>\` - Default: ${defaultWelcomeMessage}`;
+                         `\`Message <text>\` - Default: ${defaultWelcomeMessage}\n` +
+                         '`InviteLinkRemover <enabled/disabled>` - Default: disabled';
             let embed = {
                 author: { name: 'Safety Jim', icon_url: bot.client.user.avatarURL },
                 fields: [{ name: 'List of settings', value: output }],
@@ -59,7 +69,7 @@ class SettingsCommand implements Command {
         if (splitArgs[0] === 'reset') {
             await Settings.destroy({
                 where: {
-                    guildid: msg.guild,
+                    guildid: msg.guild.id,
                 },
             });
             await bot.database.createGuildSettings(msg.guild);
@@ -78,6 +88,18 @@ class SettingsCommand implements Command {
         }
 
         switch (setKey) {
+            case 'invitelinkremover':
+                if (setArgument === 'enabled') {
+                    setArgument = 'true';
+                } else if (setArgument === 'disabled') {
+                    setArgument = 'false';
+                } else {
+                    return true;
+                }
+
+                await bot.successReact(msg);
+                await bot.database.updateSetting(msg.guild, 'invitelinkremover', setArgument);
+                break;
             case 'holdingroom':
                 if (setArgument === 'enabled') {
                     setArgument = 'true';
@@ -208,6 +230,12 @@ class SettingsCommand implements Command {
             output += '**Holding Room:** Enabled\n';
             output += `\t**Holding Room Role:** ${msg.guild.roles.get(config.get('holdingroomroleid')).name}\n`;
             output += `\t**Holding Room Delay:** ${config.get('holdingroomminutes')} minute(s)`;
+        }
+
+        if (config.get('invitelinkremover') === 'true') {
+            output += '**Invite Link Remover:** Enabled\n';
+        } else {
+            output += '**Invite Link Remover:** Disabled\n';
         }
 
         return { output, color: parseInt(config.get('embedcolor'), 16) };
