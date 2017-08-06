@@ -1,5 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
+import { Mutes } from '../../database/models/Mutes';
 
 class Unmute implements Command {
     public usage = 'unmute @user - unmutes specified user';
@@ -9,6 +10,12 @@ class Unmute implements Command {
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
+
+        if (!msg.member.hasPermission('MANAGE_ROLES')) {
+            await bot.failReact(msg);
+            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            return;
+        }
 
         if (!args) {
             return true;
@@ -33,7 +40,12 @@ class Unmute implements Command {
 
         await member.removeRole(role);
         await bot.successReact(msg);
-        await bot.database.updateMuteRecordWithID(member.user.id, msg.guild.id);
+        await Mutes.update<Mutes>({ unmuted: true }, {
+            where: {
+                userid: member.id,
+                guildid: msg.guild.id,
+            },
+        });
     }
 }
 

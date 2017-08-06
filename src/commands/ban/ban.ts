@@ -1,6 +1,8 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
 import * as time from 'time-parser';
+import { Bans } from '../../database/models/Bans';
+import { Settings } from '../../database/models/Settings';
 
 class Ban implements Command {
     public usage = 'ban @user [reason] | [time] - bans the user with specific args. Both arguments can be omitted.';
@@ -10,6 +12,12 @@ class Ban implements Command {
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
+
+        if (!msg.member.hasPermission('BAN_MEMBERS')) {
+            await bot.failReact(msg);
+            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            return;
+        }
 
         if (msg.mentions.users.size === 0 ||
             !splitArgs[0].match(Discord.MessageMentions.USERS_PATTERN)) {
@@ -70,10 +78,9 @@ class Ban implements Command {
             reason = 'No reason specified';
         }
 
-        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
         let embed = {
             title: `Banned from ${msg.guild.name}`,
-            color: parseInt(EmbedColor, 16),
+            color: 0x4286f4,
             description: `You were banned from ${msg.guild.name}.`,
             fields: [
                 { name: 'Reason:', value: reason, inline: false },
@@ -89,58 +96,33 @@ class Ban implements Command {
             await msg.channel.send('Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
-                await member.ban(reason);
+                let auditLogReason = `Banned by ${msg.author.tag} (${msg.author.id}) - ${reason}`;
+                await member.ban({ days: 0, reason: auditLogReason });
                 await bot.successReact(msg);
-                await this.createModLogEntry(bot, msg, member,
-                                             reason, parsedTime ? parsedTime.absolute : null);
-                await bot.database.createUserBan(
-                    member.user,
-                    msg.author,
-                    msg.guild,
+
+                let now = Math.round((new Date()).getTime() / 1000);
+                let expires = parsedTime != null;
+
+                let banRecord = await Bans.create<Bans>({
+                    userid: member.user.id,
+                    moderatoruserid: msg.author.id,
+                    guildid: msg.guild.id,
+                    bantime: now,
+                    expiretime: expires ? Math.round(parsedTime.absolute / 1000) : 0,
                     reason,
-                    parsedTime ? Math.round(parsedTime.absolute / 1000) : null);
+                    expires,
+                    unbanned: false,
+                });
+
+                await bot.createModLogEntry(msg, member, reason, 'ban',
+                                            banRecord.id, parsedTime ? parsedTime.absolute : null);
             } catch (e) {
                 await bot.failReact(msg);
                 await msg.channel.send('Could not ban specified user. Do I have enough permissions?');
             }
         }
 
-        return;
-    }
-
-    private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
-                                    member: Discord.GuildMember, reason: string, parsedTime: number): Promise<void> {
-        let ModLogActive = await bot.database.getSetting(msg.guild, 'ModLogActive');
-        let prefix = await bot.database.getSetting(msg.guild, 'Prefix');
-
-        if (!ModLogActive || ModLogActive === 'false') {
-            return;
-        }
-
-        let ModLogChannelID = await bot.database.getSetting(msg.guild, 'ModLogChannelID');
-
-        if (!bot.client.channels.has(ModLogChannelID) ||
-            bot.client.channels.get(ModLogChannelID).type !== 'text') {
-            // tslint:disable-next-line:max-line-length
-            msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
-            return;
-        }
-
-        let logChannel = bot.client.channels.get(db.ModLogChannelID) as Discord.TextChannel;
-
-        let embed = {
-            color: 0xFF2900, // red
-            fields: [
-                { name: 'Action:', value: 'Ban' },
-                { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
-                { name: 'Reason:', value: reason, inline: false },
-                { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
-                { name: 'Banned until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },
-            ],
-            timestamp: new Date(),
-        };
-
-        await logChannel.send({ embed });
+        await bot.deleteCommandMessage(msg);
         return;
     }
 }

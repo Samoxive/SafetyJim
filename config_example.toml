@@ -1,0 +1,34 @@
+[jim]
+token = "" # put your discord token here
+default_prefix = "-mod" # all guilds will use this prefix unless changed
+
+[database] # variables for postgresql database
+user = ""
+pass = ""
+host = ""
+port = 5432
+name = ""
+
+[metrics] # keys can be gathered from datadog
+enabled = false
+api_key = ""
+app_key = ""
+host = ""
+flush_interval = 10 # seconds
+
+[botlist]
+enabled = false # be careful with enabling this, bot will fail everytime if you have missing tokens
+
+# $id is placeholder for bot's user id
+[[botlist.list]]
+name = "Discord Bots (pw)"
+url = "https://bots.discord.pw/api/bots/$id/stats"
+token = ""
+ignore_errors = true # their server keeps shitting itself, shame 🔔
+
+
+[[botlist.list]]
+name = "Discord Bot List"
+url = "https://discordbots.org/api/bots/$id/stats"
+token = ""
+ignore_errors = false

@@ -38,11 +38,5 @@ process.addListener('uncaughtException', (err) => {
 });
 
 process.addListener('unhandledRejection', (err) => {
-    let isErr = (err.stack == null) || (err.message == null);
-
-    if (isErr) {
-        log.error(`Uncaught Rejection: ${err.message} : ${err.stack}`);
-    } else {
-        log.error(`Uncaught Rejection: ${JSON.stringify(err)}`);
-    }
+    log.error(`Uncaught Exception: ${err.message} : ${err.stack}`);
 });

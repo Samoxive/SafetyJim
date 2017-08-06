@@ -1,5 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
+import { Bans } from '../../database/models/Bans';
 
 class Unban implements Command {
     public usage = 'unban <tag> - unbans user with specified user tag (example#1998)';
@@ -8,6 +9,12 @@ class Unban implements Command {
     constructor(bot: SafetyJim) {}
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+        if (!msg.member.hasPermission('BAN_MEMBERS')) {
+            await bot.failReact(msg);
+            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            return;
+        }
+
         if (!args) {
             return true;
         }
@@ -28,7 +35,12 @@ class Unban implements Command {
         } else {
             await bot.successReact(msg);
             await msg.guild.unban(bannee.id);
-            await bot.database.updateBanRecordWithID(bannee.id, msg.guild.id);
+            await Bans.update<Bans>({ unbanned: true }, {
+                where: {
+                    userid: bannee.id,
+                    guildid: msg.guild.id,
+                },
+            });
         }
 
         return;

@@ -1,6 +1,8 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
 import * as time from 'time-parser';
+import { Settings } from '../../database/models/Settings';
+import { Mutes } from '../../database/models/Mutes';
 
 class Mute implements Command {
     public usage = 'mute @user [reason] | [time] - mutes the user with specific args. Both arguments can be omitted.';
@@ -10,6 +12,12 @@ class Mute implements Command {
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
+
+        if (!msg.member.hasPermission('MANAGE_ROLES')) {
+            await bot.failReact(msg);
+            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            return;
+        }
 
         if (msg.mentions.users.size === 0 ||
             !splitArgs[0].match(Discord.MessageMentions.USERS_PATTERN)) {
@@ -92,10 +100,9 @@ class Mute implements Command {
             reason = 'No reason specified';
         }
 
-        let EmbedColor = await bot.database.getSetting(msg.guild, 'EmbedColor');
         let embed = {
             title: `Muted in ${msg.guild.name}`,
-            color: parseInt(EmbedColor, 16),
+            color: 0x4286f4,
             description: `You were muted in ${msg.guild.name}.`,
             fields: [
                 { name: 'Reason:', value: reason, inline: false },
@@ -120,61 +127,23 @@ class Mute implements Command {
             await bot.successReact(msg);
         }
 
-        await bot.database.createUserMute(
-            member.user,
-            msg.author,
-            msg.guild,
+        let now = Math.round((new Date()).getTime() / 1000);
+        let expires = parsedTime != null;
+        let muteRecord = await Mutes.create<Mutes>({
+            userid: member.id,
+            moderatoruserid: msg.author.id,
+            guildid: msg.guild.id,
+            mutetime: now,
+            expiretime: expires ? Math.round(parsedTime.absolute / 1000) : 0,
             reason,
-            parsedTime ? Math.round(parsedTime.absolute / 1000) : null);
+            expires,
+            unmuted: false,
+        });
 
-        try {
-            await this.createModLogEntry(bot, msg, member,
-                                         reason, parsedTime ? parsedTime.absolute : null);
-        } catch (e) {
-            //
-        }
+        await bot.createModLogEntry(msg, member, reason, 'mute',
+                                    muteRecord.id, parsedTime ? parsedTime.absolute : null);
 
-        return;
-    }
-
-    private async createModLogEntry(bot: SafetyJim, msg: Discord.Message,
-                                    member: Discord.GuildMember, reason: string, parsedTime: number): Promise<void> {
-        let ModLogActive = await bot.database.getSetting(msg.guild, 'ModLogActive');
-        let prefix = await bot.database.getSetting(msg.guild, 'Prefix');
-
-        if (!ModLogActive || ModLogActive === 'false') {
-            return;
-        }
-
-        let ModLogChannelID = await bot.database.getSetting(msg.guild, 'ModLogChannelID');
-
-        if (!bot.client.channels.has(ModLogChannelID) ||
-            bot.client.channels.get(ModLogChannelID).type !== 'text') {
-            // tslint:disable-next-line:max-line-length
-            await msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
-            return;
-        }
-
-        let logChannel = bot.client.channels.get(ModLogChannelID) as Discord.TextChannel;
-
-        let embed = {
-            color: 0xFFFFFF, // white
-            fields: [
-                { name: 'Action:', value: 'Mute' },
-                { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
-                { name: 'Reason:', value: reason, inline: false },
-                { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
-                { name: 'Muted until', value: parsedTime ? new Date(parsedTime).toString() : 'Indefinitely' },
-            ],
-            timestamp: new Date(),
-        };
-
-        try {
-            await logChannel.send({ embed });
-        } catch (e) {
-            await msg.channel.send('Could not create a mod log entry!');
-        }
-
+        await bot.deleteCommandMessage(msg);
         return;
     }
 }

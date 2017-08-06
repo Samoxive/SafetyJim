@@ -47,14 +47,26 @@ CREATE TABLE JoinList (
     AllowTime INTEGER,
     Allowed   BOOLEAN);
 
-CREATE TABLE Settings (
+CREATE TABLE IF NOT EXISTS Settings (
     GuildID TEXT NOT NULL,
-    Key TEXT NOT NULL,
-    Value TEXT
-);
+    Key     TEXT NOT NULL,
+    Value   TEXT,
+    PRIMARY KEY (GuildID, Key));
 
 /* Possible Keys: ModLogActive, ModLogChannelID, HoldingRoomRoleID, HoldingRoomActive,
-   HoldingRoomMinutes, HoldingRoomChannelID, EmbedColor, Prefix, WelcomeMessage */
+   HoldingRoomMinutes, EmbedColor, Prefix, WelcomeMessageActive, WelcomeMessage, WelcomeMessageChannelID */
+
+CREATE TABLE CommandLogs (
+    ID INTEGER NOT NULL PRIMARY KEY,
+    Command TEXT NOT NULL,
+    Arguments TEXT,
+    "Time" TEXT NOT NULL,
+    "Timestamp" INTEGER NOT NULL,
+    "User" TEXT NOT NULL,
+    UserID TEXT NOT NULL,
+    Guild TEXT NOT NULL,
+    GuildID TEXT NOT NULL
+);
 
 CREATE INDEX IF NOT EXISTS "" ON BanList (
     ModeratorID,
