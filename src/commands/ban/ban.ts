@@ -96,7 +96,7 @@ class Ban implements Command {
             await msg.channel.send('Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
-                await member.ban(reason);
+                await member.ban(`Banned by ${msg.author.tag} (${msg.author.id}) - ${reason}`);
                 await bot.successReact(msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
