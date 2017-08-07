@@ -22,12 +22,11 @@ class InviteLink implements MessageProcessor {
     }
 
     public async onMessage(bot: SafetyJim, msg: Message): Promise<boolean> {
-        if (msg.member == null) {
-            return;
-        }
+        let user = await bot.client.fetchUser(msg.author.id, true);
+        let member = await msg.guild.fetchMember(msg.author.id);
 
         for (let role of this.whitelistedRoles) {
-            if (msg.member.hasPermission(role)) {
+            if (member.hasPermission(role)) {
                 return;
             }
         }

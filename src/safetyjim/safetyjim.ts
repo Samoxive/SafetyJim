@@ -328,7 +328,13 @@ export class SafetyJim {
             }
 
             for (let processor of this.processors) {
-                let actionTaken = await processor.onMessage(this, msg);
+                let actionTaken;
+
+                try {
+                    actionTaken = await processor.onMessage(this, msg);
+                } catch (e) {
+                    //
+                }
 
                 if (actionTaken === true) {
                     // The processor took a moderative action, halt further processing
