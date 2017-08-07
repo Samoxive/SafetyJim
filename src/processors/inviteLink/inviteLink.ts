@@ -22,6 +22,10 @@ class InviteLink implements MessageProcessor {
     }
 
     public async onMessage(bot: SafetyJim, msg: Message): Promise<boolean> {
+        if (msg.member == null) {
+            return;
+        }
+
         for (let role of this.whitelistedRoles) {
             if (msg.member.hasPermission(role)) {
                 return;
