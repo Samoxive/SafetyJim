@@ -111,6 +111,16 @@ export class SafetyJim {
               .join('\n');
     }
 
+    public getDefaultChannel(guild: Discord.Guild): Discord.TextChannel {
+        for (let [id, channel] of guild.channels) {
+            if (channel.permissionsFor(guild.me).has('SEND_MESSAGES') && channel.type === 'text') {
+                return channel as Discord.TextChannel;
+            }
+        }
+
+        return guild.channels.first() as Discord.TextChannel;
+    }
+
     public async failReact(msg: Discord.Message): Promise<void> {
         try {
             await msg.react('322698553980092417');
@@ -245,6 +255,7 @@ export class SafetyJim {
     private onReady(): () => void {
         return (async () => {
             this.log.info(`Client is ready, username: ${this.client.user.username}.`);
+
             let link = await this.client.generateInvite([
                 'KICK_MEMBERS',
                 'BAN_MEMBERS',
@@ -263,21 +274,6 @@ export class SafetyJim {
                 }
             }
 
-            this.metrics.gauge('guild.count', this.client.guilds.size);
-            this.metrics.increment('client.ready');
-
-            await this.populateGuildConfigDatabase();
-            await this.updateDiscordBotLists();
-            await this.client.user.setGame(`-mod help | ${this.config.version}`);
-
-            if (this.unprocessedMessages != null) {
-                for (let message of this.unprocessedMessages) {
-                    await this.onMessage()(message);
-                }
-            }
-
-            this.unprocessedMessages = undefined;
-
             this.allowUsersCronJob = new cron.CronJob({ cronTime: '*/10 * * * * *',
                                                     onTick: this.allowUsers.bind(this), start: true, context: this });
             this.unbanUserCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
@@ -286,6 +282,21 @@ export class SafetyJim {
                                                     onTick: this.unmuteUsers.bind(this), start: true, context: this });
             this.metricsCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
                                                 onTick: this.updateMetrics.bind(this), start: true, context: this });
+
+            this.metrics.gauge('guild.count', this.client.guilds.size);
+            this.metrics.increment('client.ready');
+
+            try {
+                await this.populateGuildConfigDatabase();
+            } catch (e) {
+                this.log.error('something happened');
+            }
+            await this.updateDiscordBotLists();
+            await this.client.user.setGame(`-mod help | ${this.config.version}`);
+
+            for (let message of this.unprocessedMessages) {
+                await this.onMessage()(message);
+            }
 
             this.log.info('onReady finished.');
         });
@@ -304,6 +315,7 @@ export class SafetyJim {
             if (!testRegex || !cmdRegex) {
                 this.log.info('Added an unprocessed message: ' + msg.content);
                 this.unprocessedMessages.push(msg);
+                this.createRegexForGuild(msg.guild.id, this.config.jim.default_prefix);
                 return;
             }
 
@@ -413,7 +425,7 @@ export class SafetyJim {
             let message = `Hello! I am Safety Jim, \`${this.config.jim.default_prefix}\` is my default prefix!`;
 
             try {
-                guild.defaultChannel.send(message);
+                this.getDefaultChannel(guild).send(message);
             } catch (e) {
                 try {
                     // Could not send to default channel because of permissions
@@ -423,7 +435,7 @@ export class SafetyJim {
                 }
             }
 
-            await this.database.createGuildSettings(guild);
+            await this.database.createGuildSettings(this, guild);
             this.createRegexForGuild(guild.id, this.config.jim.default_prefix);
             await this.updateDiscordBotLists();
             this.log.info(`Joined guild ${guild.name}`);
@@ -453,7 +465,7 @@ export class SafetyJim {
                 } else {
                     // tslint:disable-next-line:max-line-length
                     this.log.warn(`Could not find welcome message channel for ${member.guild.name} : ${member.guild.id}`);
-                    member.guild.defaultChannel.send('WARNING: Invalid channel is set for welcome messages!');
+                    this.getDefaultChannel(member.guild).send('WARNING: Invalid channel is set for welcome messages!');
                 }
             }
 
@@ -607,6 +619,7 @@ export class SafetyJim {
     }
 
     private async allowUsers(): Promise<void> {
+        this.log.info('allowusers');
         let now = Math.round((new Date()).getTime() / 1000);
 
         let usersToBeAllowed = await Joins.findAll<Joins>({
@@ -643,7 +656,7 @@ export class SafetyJim {
                 } catch (e) {
                     // tslint:disable-next-line:max-line-length
                     this.log.warn(`Could not allow user ${dUser.user.tag} (${dUser.id}) in guild ${this.client.guilds.get(user.guildid).id} : ${JSON.stringify(e)}`);
-                    await dGuild.defaultChannel.send('I could not allow a user into the server from the holding room. I probably don\'t have permissions!');
+                    await this.getDefaultChannel(dGuild).send('I could not allow a user into the server from the holding room. I probably don\'t have permissions!');
                 } finally {
                     await Joins.update({ allowed: true }, {
                         where: {
@@ -657,6 +670,7 @@ export class SafetyJim {
     }
 
     private async unbanUsers(): Promise<void> {
+        this.log.info('unban users');
         let now = Math.round((new Date()).getTime() / 1000);
 
         let usersToBeUnbanned = await Bans.findAll<Bans>({
@@ -691,7 +705,7 @@ export class SafetyJim {
                 } catch (e) {
                     // tslint:disable-next-line:max-line-length
                     this.log.warn(`Could not unban user ${unbanUser.tag} (${unbanUser.id}) in guild ${this.client.guilds.get(user.guildid).id} : ${JSON.stringify(e)}`);
-                    await g.defaultChannel.send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
+                    await this.getDefaultChannel(g).send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
                 } finally {
                     Bans.update({ unbanned: true }, {
                         where: {
@@ -705,6 +719,7 @@ export class SafetyJim {
     }
 
     private async unmuteUsers(): Promise<void> {
+        this.log.info('unmute users');
         let now = Math.round((new Date()).getTime() / 1000);
 
         let usersToBeUnmuted = await Mutes.findAll<Mutes>({
@@ -759,7 +774,7 @@ export class SafetyJim {
             } catch (e) {
                 // tslint:disable-next-line:max-line-length
                 this.log.warn(`Could not unmute user ${member.user.tag} (${member.id}) in guild ${this.client.guilds.get(user.userid).id} : ${JSON.stringify(e)}`);
-                await guild.defaultChannel.send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
+                await this.getDefaultChannel(guild).send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
             } finally {
                 await Mutes.update({ unmuted: true }, {
                     where: {
@@ -778,22 +793,6 @@ export class SafetyJim {
     }
 
     private async populateGuildConfigDatabase(): Promise<void> {
-        let guildsNotInDatabaseCount = 0;
-
-        let configs = await this.database.getValuesOfKey('prefix');
-        let existingGuildIds = Array.from(configs.keys());
-
-        for (let [id, guild] of this.client.guilds) {
-            if (!existingGuildIds.includes(guild.id)) {
-                await this.database.createGuildSettings(guild);
-                guildsNotInDatabaseCount++;
-            }
-        }
-
-        if (guildsNotInDatabaseCount) {
-            this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config.`);
-        }
-
         let guildsWithMissingKeys = 0;
 
         for (let [guildID, guild] of this.client.guilds) {
@@ -805,7 +804,7 @@ export class SafetyJim {
                         guildid: guildID,
                     },
                 });
-                await this.database.createGuildSettings(guild);
+                await this.database.createGuildSettings(this, guild);
                 guildsWithMissingKeys++;
             }
         }
@@ -814,6 +813,24 @@ export class SafetyJim {
             // tslint:disable-next-line:max-line-length
             this.log.info(`Resetted ${guildsWithMissingKeys} guild(s) to database with default config because of missing or extra keys.`);
         }
+
+        let guildsNotInDatabaseCount = 0;
+
+        let configs = await this.database.getValuesOfKey('prefix');
+        let existingGuildIds = Array.from(configs.keys());
+
+        for (let [id, guild] of this.client.guilds) {
+            if (!existingGuildIds.includes(guild.id)) {
+                await this.database.createGuildSettings(this, guild);
+                guildsNotInDatabaseCount++;
+            }
+        }
+
+        if (guildsNotInDatabaseCount) {
+            this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config.`);
+        }
+
+        
 
         let prefixRecords = await this.database.getValuesOfKey('prefix');
         let existingCommandRegexes = Object.keys(this.commandRegex);

@@ -43,10 +43,10 @@ class SettingsCommand implements Command {
                          '`HoldingRoomMinutes <number>` - Default: 3\n' +
                          '`HoldingRoomRole <text>` - Default: None\n' +
                          '`ModLog <enabled/disabled>` - Default: disabled\n' +
-                         `\`ModLogChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
+                         `\`ModLogChannel <#channel>\` - Default: ${bot.getDefaultChannel(msg.guild)}\n` +
                          '`Prefix <text>` - Default: -mod\n' +
                          '\`WelcomeMessage <enabled/disabled>\` - Default: disabled\n' +
-                         `\`WelcomeMessageChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
+                         `\`WelcomeMessageChannel <#channel>\` - Default: ${bot.getDefaultChannel(msg.guild)}\n` +
                          `\`Message <text>\` - Default: ${defaultWelcomeMessage}\n` +
                          '`InviteLinkRemover <enabled/disabled>` - Default: disabled\n' +
                          '`SilentCommands <enabled/disabled>` - Default: disabled';
@@ -72,7 +72,7 @@ class SettingsCommand implements Command {
                     guildid: msg.guild.id,
                 },
             });
-            await bot.database.createGuildSettings(msg.guild);
+            await bot.database.createGuildSettings(bot, msg.guild);
             bot.createRegexForGuild(msg.guild.id, bot.config.jim.default_prefix);
             await bot.successReact(msg);
             return;
