@@ -619,7 +619,6 @@ export class SafetyJim {
     }
 
     private async allowUsers(): Promise<void> {
-        this.log.info('allowusers');
         let now = Math.round((new Date()).getTime() / 1000);
 
         let usersToBeAllowed = await Joins.findAll<Joins>({
@@ -670,7 +669,6 @@ export class SafetyJim {
     }
 
     private async unbanUsers(): Promise<void> {
-        this.log.info('unban users');
         let now = Math.round((new Date()).getTime() / 1000);
 
         let usersToBeUnbanned = await Bans.findAll<Bans>({
@@ -719,7 +717,6 @@ export class SafetyJim {
     }
 
     private async unmuteUsers(): Promise<void> {
-        this.log.info('unmute users');
         let now = Math.round((new Date()).getTime() / 1000);
 
         let usersToBeUnmuted = await Mutes.findAll<Mutes>({
@@ -829,8 +826,6 @@ export class SafetyJim {
         if (guildsNotInDatabaseCount) {
             this.log.info(`Added ${guildsNotInDatabaseCount} guild(s) to database with default config.`);
         }
-
-        
 
         let prefixRecords = await this.database.getValuesOfKey('prefix');
         let existingCommandRegexes = Object.keys(this.commandRegex);
