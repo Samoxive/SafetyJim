@@ -178,6 +178,7 @@ export class SafetyJim {
 
         let actionText = {
             ban: 'Ban',
+            softban: 'Softban',
             kick: 'Kick',
             warn: 'Warn',
             mute: 'Mute',
