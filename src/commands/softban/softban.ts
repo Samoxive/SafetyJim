@@ -1,5 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
 import * as Discord from 'discord.js';
+import { Softbans } from '../../database/models/Softbans';
 
 class Softban implements Command {
     public usage = 'softban @user [reason] | [messages to delete (days)] - Softbans the user with the specified args.';
@@ -47,14 +48,14 @@ class Softban implements Command {
             }
             daysArgument = args.split('|')[1].trim();
             if (!parseInt(daysArgument)) {
-                bot.failReact(msg);
+                await bot.failReact(msg);
                 return true;
             }
             daysArgument = parseInt(daysArgument);
 
             if (daysArgument < 1 || daysArgument > 7) {
-                bot.failReact(msg);
-                msg.channel.send('The amount of days must be between 1 and 7.');
+                await bot.failReact(msg);
+                await msg.channel.send('The amount of days must be between 1 and 7.');
                 return;
             }
         } else if (args.length > 0) {
@@ -85,14 +86,16 @@ class Softban implements Command {
                 await member.ban({ reason, days: daysArgument});
                 await msg.guild.unban(member.id); // Maybe put the unban in a seperate trycatch
                 await bot.successReact(msg);                // or handle errors on it differently
-                /*await bot.database.createUserBan(
-                    member.user,
-                    msg.author,                     // This needs to be updated with a softban DB endpoint.
-                    msg.guild,
+
+                let now = Math.round((new Date()).getTime() / 1000);
+                await Softbans.create<Softbans>({
+                    userid: member.id,
+                    moderatoruserid: msg.author.id,
+                    guildid: msg.guild.id,
+                    softbantime: now,
+                    deletedays: daysArgument,
                     reason,
-                    parsedTime ? Math.round(parsedTime.absolute / 1000) : null);*/
-                    // await bot.createModLogEntry(msg, member, reason, 'ban',
-                // banRecord.id)
+                });
             } catch (e) {
                 await bot.failReact(msg);
                 await msg.channel.send('Could not softban / unban specified user. Do I have enough permissions?');
