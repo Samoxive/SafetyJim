@@ -56,13 +56,13 @@ class SettingsCommand implements Command {
                 color: 0x4286f4,
             };
             await bot.successReact(msg);
-            await msg.channel.send({ embed });
+            await bot.sendMessage(msg.channel, { embed });
             return;
         }
 
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
             await bot.failReact(msg);
-            await msg.author.send('You don\'t have enough permissions to modify guild settings!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to modify guild settings!');
             return;
         }
 
@@ -125,7 +125,8 @@ class SettingsCommand implements Command {
 
                 if (roleID == null) {
                     await bot.failReact(msg);
-                    await msg.channel.send('You can\'t enable holding room because you didn\'t set a role first!');
+                    // tslint:disable-next-line:max-line-length
+                    await bot.sendMessage(msg.channel, 'You can\'t enable holding room because you didn\'t set a role first!');
                     return;
                 }
                 await bot.successReact(msg);
@@ -256,7 +257,7 @@ class SettingsCommand implements Command {
             color: 0x4286f4,
         };
         await bot.successReact(msg);
-        await msg.channel.send({ embed });
+        await bot.sendMessage(msg.channel, { embed });
     }
 }
 

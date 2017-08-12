@@ -15,7 +15,7 @@ class Mute implements Command {
 
         if (!msg.member.hasPermission('MANAGE_ROLES')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -26,7 +26,7 @@ class Mute implements Command {
 
         if (!msg.guild.me.hasPermission('MANAGE_ROLES')) {
             await bot.failReact(msg);
-            await msg.channel.send('I don\'t have enough permissions to do that!');
+            await bot.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
 
@@ -40,7 +40,7 @@ class Mute implements Command {
                 });
             } catch (e) {
                 await bot.failReact(msg);
-                await msg.channel.send('Could not create a Muted role!');
+                await bot.sendMessage(msg.channel, 'Could not create a Muted role!');
                 return;
             }
 
@@ -53,7 +53,7 @@ class Mute implements Command {
                     });
                 } catch (e) {
                     await bot.failReact(msg);
-                    await msg.channel.send('Could not setup the Muted role!');
+                    await bot.sendMessage(msg.channel, 'Could not setup the Muted role!');
                 }
             }
         }
@@ -63,7 +63,7 @@ class Mute implements Command {
 
         if (member.id === msg.author.id) {
             await bot.failReact(msg);
-            await msg.channel.send('You can\'t mute yourself, dummy!');
+            await bot.sendMessage(msg.channel, 'You can\'t mute yourself, dummy!');
             return;
         }
 
@@ -84,12 +84,12 @@ class Mute implements Command {
             parsedTime = time(timeArg);
             if (!parsedTime.relative) {
                 await bot.failReact(msg);
-                await msg.channel.send(`Invalid time argument \`${timeArg}\`. Try again.`);
+                await bot.sendMessage(msg.channel, `Invalid time argument \`${timeArg}\`. Try again.`);
                 return;
             }
             if (parsedTime.relative < 0) {
                 await bot.failReact(msg);
-                await msg.channel.send('Your time argument was set for the past. Try again.' +
+                await bot.sendMessage(msg.channel, 'Your time argument was set for the past. Try again.' +
                 '\nIf you\'re specifying a date, e.g. `30 December`, make sure you pass the year.');
                 return;
             }
@@ -115,13 +115,14 @@ class Mute implements Command {
         try {
             await member.send({ embed });
         } catch (e) {
-            await msg.channel.send('Could not send private message to specified user, I am probably blocked.');
+            // tslint:disable-next-line:max-line-length
+            await bot.sendMessage(msg.channel, 'Could not send private message to specified user, I am probably blocked.');
         } finally {
             try {
                 await member.addRole(msg.guild.roles.find('name', 'Muted'));
             } catch (e) {
                 await bot.failReact(msg);
-                await msg.channel.send('I do not have permissions to do that!');
+                await bot.sendMessage(msg.channel, 'I do not have permissions to do that!');
                 return;
             }
             await bot.successReact(msg);

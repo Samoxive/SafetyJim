@@ -121,6 +121,15 @@ export class SafetyJim {
         return guild.channels.first() as Discord.TextChannel;
     }
 
+    public async sendMessage(channel: Discord.Channel, message: string | Discord.MessageOptions): Promise<void> {
+        let textChannel = channel as Discord.TextChannel;
+        try {
+            await textChannel.send(message);
+        } catch (e) {
+            this.log.warn(`Could not send a message in guild "${textChannel.guild.name}"`);
+        }
+    }
+
     public async failReact(msg: Discord.Message): Promise<void> {
         try {
             await msg.react('322698553980092417');
@@ -205,7 +214,7 @@ export class SafetyJim {
         if (!this.client.channels.has(ModLogChannelID) ||
             this.client.channels.get(ModLogChannelID).type !== 'text') {
             // tslint:disable-next-line:max-line-length
-            msg.channel.send(`Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
+            await this.sendMessage(msg.channel, `Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
             return;
         }
 
@@ -244,9 +253,9 @@ export class SafetyJim {
         }
 
         try {
-            await logChannel.send({ embed });
+            await this.sendMessage(logChannel, { embed });
         } catch (e) {
-            await msg.channel.send('Could not create a mod log entry!');
+            await this.sendMessage(msg.channel, 'Could not create a mod log entry!');
         }
 
         return;
@@ -331,7 +340,7 @@ export class SafetyJim {
                 };
 
                 try {
-                    await msg.channel.send({ embed });
+                    await this.sendMessage(msg.channel, { embed });
                 } catch (e) {
                     // tslint:disable-next-line:max-line-length
                     this.log.warn(`Could not send commands embed in guild: "${msg.guild}" requested by "${msg.author.tag}".`);
@@ -425,7 +434,7 @@ export class SafetyJim {
             let message = `Hello! I am Safety Jim, \`${this.config.jim.default_prefix}\` is my default prefix!`;
 
             try {
-                this.getDefaultChannel(guild).send(message);
+                this.sendMessage(this.getDefaultChannel(guild), message);
             } catch (e) {
                 try {
                     // Could not send to default channel because of permissions
@@ -460,12 +469,11 @@ export class SafetyJim {
                         message = message.replace('$minute', settings.get('holdingroomminutes') + m);
                     }
                     // tslint:disable-next-line:max-line-length
-                    channel.send(message)
-                           .catch((err) => { this.log.error(`There was an error when trying to send welcome message in ${member.guild.name}: ${err.toString()}`); });
+                    this.sendMessage(channel, message);
                 } else {
                     // tslint:disable-next-line:max-line-length
                     this.log.warn(`Could not find welcome message channel for ${member.guild.name} : ${member.guild.id}`);
-                    this.getDefaultChannel(member.guild).send('WARNING: Invalid channel is set for welcome messages!');
+                    this.sendMessage(this.getDefaultChannel(member.guild), 'WARNING: Invalid channel is set for welcome messages!');
                 }
             }
 
@@ -538,7 +546,8 @@ export class SafetyJim {
             showUsage = await this.commands[command].run(this, msg, args);
         } catch (e) {
             await this.failReact(msg);
-            await msg.channel.send('There was an error running your command, this incident has been logged.');
+            // tslint:disable-next-line:max-line-length
+            await this.sendMessage(msg.channel, 'There was an error running your command, this incident has been logged.');
             // tslint:disable-next-line:max-line-length
             this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${e.stack + e.lineNumber + e.message}`);
         } finally {
@@ -560,7 +569,7 @@ export class SafetyJim {
             };
 
             await this.failReact(msg);
-            await msg.channel.send({ embed });
+            await this.sendMessage(msg.channel, { embed });
         }
     }
 
@@ -655,7 +664,7 @@ export class SafetyJim {
                 } catch (e) {
                     // tslint:disable-next-line:max-line-length
                     this.log.warn(`Could not allow user ${dUser.user.tag} (${dUser.id}) in guild ${this.client.guilds.get(user.guildid).id} : ${JSON.stringify(e)}`);
-                    await this.getDefaultChannel(dGuild).send('I could not allow a user into the server from the holding room. I probably don\'t have permissions!');
+                    await this.sendMessage(this.getDefaultChannel(dGuild), 'I could not allow a user into the server from the holding room. I probably don\'t have permissions!');
                 } finally {
                     await Joins.update({ allowed: true }, {
                         where: {
@@ -703,7 +712,7 @@ export class SafetyJim {
                 } catch (e) {
                     // tslint:disable-next-line:max-line-length
                     this.log.warn(`Could not unban user ${unbanUser.tag} (${unbanUser.id}) in guild ${this.client.guilds.get(user.guildid).id} : ${JSON.stringify(e)}`);
-                    await this.getDefaultChannel(g).send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
+                    await this.sendMessage(this.getDefaultChannel(g), 'I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
                 } finally {
                     Bans.update({ unbanned: true }, {
                         where: {
@@ -771,7 +780,7 @@ export class SafetyJim {
             } catch (e) {
                 // tslint:disable-next-line:max-line-length
                 this.log.warn(`Could not unmute user ${member.user.tag} (${member.id}) in guild ${this.client.guilds.get(user.userid).id} : ${JSON.stringify(e)}`);
-                await this.getDefaultChannel(guild).send('I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
+                await this.sendMessage(this.getDefaultChannel(guild), 'I could not unban a user that was previously temporarily banned. I probably don\'t have permissions!');
             } finally {
                 await Mutes.update({ unmuted: true }, {
                     where: {

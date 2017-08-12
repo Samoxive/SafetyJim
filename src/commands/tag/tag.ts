@@ -45,12 +45,12 @@ class Tag implements Command {
 
             if (!response) {
                 await bot.failReact(msg);
-                await msg.channel.send('Could not find a tag with that name!');
+                await bot.sendMessage(msg.channel, 'Could not find a tag with that name!');
                 return;
             }
 
             await bot.successReact(msg);
-            await msg.channel.send(response.response);
+            await bot.sendMessage(msg.channel, response.response);
             return;
         }
 
@@ -65,7 +65,7 @@ class Tag implements Command {
 
         if (tags.length === 0) {
             await bot.successReact(msg);
-            await msg.channel.send(`No tags have been added yet!`);
+            await bot.sendMessage(msg.channel, `No tags have been added yet!`);
             return;
         }
 
@@ -78,31 +78,31 @@ class Tag implements Command {
         };
 
         await bot.successReact(msg);
-        await msg.channel.send({ embed });
+        await bot.sendMessage(msg.channel, { embed });
         return;
     }
 
     private async addTag(bot: SafetyJim, msg: Discord.Message, name: string, response: string) {
         if (this.subcommands.includes(name)) {
             await bot.failReact(msg);
-            await msg.channel.send(`You can't create a tag with the same name as a subcommand!`);
+            await bot.sendMessage(msg.channel, `You can't create a tag with the same name as a subcommand!`);
             return;
         }
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to use this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to use this command!');
             return;
         }
 
         if (name === undefined || name === '') {
             await bot.failReact(msg);
-            await msg.channel.send('Please give a tag and a response to add!');
+            await bot.sendMessage(msg.channel, 'Please give a tag and a response to add!');
             return;
         }
 
         if (response === undefined || response === '') {
             await bot.failReact(msg);
-            await msg.channel.send('Empty responses aren\'t allowed!');
+            await bot.sendMessage(msg.channel, 'Empty responses aren\'t allowed!');
             return;
         }
 
@@ -116,26 +116,26 @@ class Tag implements Command {
             await bot.successReact(msg);
         } catch (e) {
             await bot.failReact(msg);
-            await msg.channel.send(`Tag "${name}" already exists!`);
+            await bot.sendMessage(msg.channel, `Tag "${name}" already exists!`);
         }
     }
 
     private async editTag(bot: SafetyJim, msg: Discord.Message, name: string, response: string) {
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to use this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to use this command!');
             return;
         }
 
         if (name === undefined || name === '') {
             await bot.failReact(msg);
-            await msg.channel.send('Please give a tag and a response to edit!');
+            await bot.sendMessage(msg.channel, 'Please give a tag and a response to edit!');
             return;
         }
 
         if (response === undefined || response === '') {
             await bot.failReact(msg);
-            await msg.channel.send('Empty responses are not allowed!');
+            await bot.sendMessage(msg.channel, 'Empty responses are not allowed!');
             return;
         }
 
@@ -148,7 +148,7 @@ class Tag implements Command {
 
         if (!dbResponse) {
             await bot.failReact(msg);
-            await msg.channel.send(`Tag ${name} does not exist!`);
+            await bot.sendMessage(msg.channel, `Tag ${name} does not exist!`);
             return;
         }
 
@@ -166,13 +166,13 @@ class Tag implements Command {
     private async deleteTag(bot: SafetyJim, msg: Discord.Message, name: string) {
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to use this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to use this command!');
             return;
         }
 
         if (name === undefined) {
             await bot.failReact(msg);
-            await msg.channel.send('Remove command requires an argument!');
+            await bot.sendMessage(msg.channel, 'Remove command requires an argument!');
             return;
         }
 
@@ -185,7 +185,7 @@ class Tag implements Command {
 
         if (!dbResponse) {
             await bot.failReact(msg);
-            await msg.channel.send(`Tag ${name} does not exist!`);
+            await bot.sendMessage(msg.channel, `Tag ${name} does not exist!`);
             return;
         }
 

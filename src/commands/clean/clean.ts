@@ -21,13 +21,13 @@ class Clean implements Command {
 
         if (!msg.member.hasPermission('MANAGE_MESSAGES')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
         if (!msg.guild.me.hasPermission('MANAGE_MESSAGES')) {
             await bot.failReact(msg);
-            await msg.channel.send('I don\'t have enough permissions to do that!');
+            await bot.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
 
@@ -42,13 +42,13 @@ class Clean implements Command {
 
         if (deleteAmount < 1) {
             await bot.failReact(msg);
-            await msg.channel.send('You can\'t delete zero or negative messages.');
+            await bot.sendMessage(msg.channel, 'You can\'t delete zero or negative messages.');
             return;
         }
 
         if (deleteAmount > 100) {
             await bot.failReact(msg);
-            await msg.channel.send('You can\'t delete more than 100 messages.');
+            await bot.sendMessage(msg.channel, 'You can\'t delete more than 100 messages.');
             return;
         }
 

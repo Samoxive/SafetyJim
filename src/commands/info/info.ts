@@ -51,10 +51,10 @@ class Info implements Command {
             ],
             footer: { text: `Made by Safety Jim team. | Days since last incident: ${daysSince}`},
             color: 0x4286f4,
-        };
+        } as Discord.RichEmbedOptions;
 
         await bot.successReact(msg);
-        await msg.channel.send({ embed });
+        await bot.sendMessage(msg.channel, { embed });
         return;
     }
 
