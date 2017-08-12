@@ -3,7 +3,7 @@ import * as Discord from 'discord.js';
 import { Softbans } from '../../database/models/Softbans';
 
 class Softban implements Command {
-    public usage = 'softban @user [reason] | [messages to delete (days)] - Softbans the user with the specified args.';
+    public usage = 'softban @user [reason] | [messages to delete (days)] - softbans the user with the specified args.';
 
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
