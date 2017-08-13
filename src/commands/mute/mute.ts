@@ -58,7 +58,7 @@ class Mute implements Command {
             }
         }
 
-        await bot.client.fetchUser(msg.mentions.users.first().id);
+        await bot.client.fetchUser(msg.mentions.users.first().id, true);
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {

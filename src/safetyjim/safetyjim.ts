@@ -193,10 +193,12 @@ export class SafetyJim {
             kick: 0xFF9900,
             warn: 0xFFEB00,
             mute: 0xFFFFFF,
+            softban: 0xFF55DD,
         };
 
         let actionText = {
             ban: 'Ban',
+            softban: 'Softban',
             kick: 'Kick',
             warn: 'Warn',
             mute: 'Mute',
