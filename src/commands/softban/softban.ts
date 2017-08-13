@@ -84,12 +84,13 @@ class Softban implements Command {
             await bot.sendMessage(msg.channel, 'Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
-                await member.ban({ reason, days: daysArgument});
+                let auditLogReason = `Softbanned by ${msg.author.tag} (${msg.author.id}) - ${reason}`;
+                await member.ban({ reason: auditLogReason, days: daysArgument});
                 await msg.guild.unban(member.id); // Maybe put the unban in a seperate trycatch
                 await bot.successReact(msg);                // or handle errors on it differently
 
                 let now = Math.round((new Date()).getTime() / 1000);
-                await Softbans.create<Softbans>({
+                let softbanRecord = await Softbans.create<Softbans>({
                     userid: member.id,
                     moderatoruserid: msg.author.id,
                     guildid: msg.guild.id,
@@ -97,6 +98,8 @@ class Softban implements Command {
                     deletedays: daysArgument,
                     reason,
                 });
+
+                await bot.createModLogEntry(msg, member, reason, 'softban', softbanRecord.id);
             } catch (e) {
                 await bot.failReact(msg);
                 // tslint:disable-next-line:max-line-length
