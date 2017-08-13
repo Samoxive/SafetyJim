@@ -60,7 +60,6 @@ class Softban implements Command {
             }
         } else if (args.length > 0) {
             reason = args;
-            daysArgument = 1;
         }
         if (!reason) {
             reason = 'No reason specified';
@@ -85,9 +84,9 @@ class Softban implements Command {
         } finally {
             try {
                 let auditLogReason = `Softbanned by ${msg.author.tag} (${msg.author.id}) - ${reason}`;
-                await member.ban({ reason: auditLogReason, days: daysArgument});
-                await msg.guild.unban(member.id); // Maybe put the unban in a seperate trycatch
-                await bot.successReact(msg);                // or handle errors on it differently
+                await member.ban({ reason: auditLogReason, days: daysArgument || 1 });
+                await msg.guild.unban(member.id);
+                await bot.successReact(msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
                 let softbanRecord = await Softbans.create<Softbans>({
