@@ -216,6 +216,41 @@
             </tr>
 
             <tr>
+                <td class="short">tag</td>
+                <td>Sends the response saved with tag's name earlier.</td>
+                <td>-mod tag name</td>
+                <td><code>-mod tag rule2<code></td>
+            </tr>
+
+            <tr>
+                <td class="short">tag/list</td>
+                <td>Lists saved tags.</td>
+                <td>-mod tag list</td>
+                <td><code>-mod tag list<code></td>
+            </tr>
+
+            <tr>
+                <td class="short">tag/add</td>
+                <td>Adds a new tag.</td>
+                <td>-mod tag add name response</td>
+                <td><code>-mod tag add rule2 No advertising.<code></td>
+            </tr>
+
+            <tr>
+                <td class="short">tag/edit</td>
+                <td>Edits an existing tag.</td>
+                <td>-mod tag edit name response</td>
+                <td><code>-mod tag edit rule2 No advertising. And you have to like kittens.<code></td>
+            </tr>
+
+            <tr>
+                <td class="short">tag/remove</td>
+                <td>Removes an existing tag.</td>
+                <td>-mod tag remove name</td>
+                <td><code>-mod tag remove rule2<code></td>
+            </tr>
+
+            <tr>
                 <td class="short">settings/display</td>
                 <td>Shows current state of settings.</td>
                 <td>-mod settings display</td>
@@ -233,14 +268,7 @@
                 <td class="short">settings/set</td>
                 <td>The main point for changing settings - allows you to change a given keys value.</td>
                 <td>-mod settings set &lt;key&gt; &lt;value&gt;</td>
-                <td><code>-mod settings set EmbedColor FF0000</code></td>
-            </tr>
-
-            <tr>
-                <td class="short">settings/EmbedColor</td>
-                <td>Sets the embed color to a new color.</td>
-                <td>-mod settings embedColor set &lt;newColor&gt;</td>
-                <td><code>-mod settings set EmbedColor FF0000</code></td>
+                <td><code>-mod settings set ModLog enabled</code></td>
             </tr>
 
             <tr>
@@ -272,7 +300,7 @@
             </tr>
 
             <tr>
-                <td class="short">settings/holdingRoomRole</td> 
+                <td class="short">settings/HoldingRoomRole</td> 
                 <td>Sets the role assigned to the users when the holding time passes.</td>
                 <td>-mod settings set HoldingRoomRole &lt;roleName&gt;</td>
                 <td><code>-mod settings set HoldingRoomRole Member</code></td>
@@ -306,6 +334,19 @@
                 <td><code>-mod settings set Message Welcome to $guild, $user.</code></td>
             </tr>
 
+            <tr>
+                <td class="short">settings/InviteLinkRemover</td>
+                <td>Enables or disables the invite link remover feature.</td>
+                <td>-mod settings set InviteLinkRemover &lt;enabled/disable&gt;</td>
+                <td><code>-mod settings set InviteLinkRemover enabled</code></td>
+            </tr>
+
+            <tr>
+                <td class="short">settings/SilentCommands</td>
+                <td>Enables or disables silent command feature. If enabled, Jim will delete your command if it is a moderative one.</td>
+                <td>-mod settings set SilentCommands &lt;enabled/disable&gt;</td>
+                <td><code>-mod settings set SilentCommands enabled</code></td>
+            </tr>
     </table>
 </div>
 
