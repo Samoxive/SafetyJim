@@ -15,7 +15,7 @@ class Warn implements Command {
 
         if (!msg.member.hasPermission('KICK_MEMBERS')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -29,7 +29,7 @@ class Warn implements Command {
 
         if (member.id === msg.author.id) {
             await bot.failReact(msg);
-            await msg.channel.send('You can\'t warn yourself, dummy!');
+            await bot.sendMessage(msg.channel, 'You can\'t warn yourself, dummy!');
             return;
         }
 
@@ -49,7 +49,7 @@ class Warn implements Command {
         try {
             await member.send({ embed });
         } catch (e) {
-            await msg.channel.send('Could not send a warning to specified user via private message!');
+            await bot.sendMessage(msg.channel, 'Could not send a warning to specified user via private message!');
         } finally {
             bot.successReact(msg);
         }

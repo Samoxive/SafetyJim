@@ -27,7 +27,7 @@ class Invite implements Command {
         if (this.embed.author.icon_url == null) {
             this.embed.author.icon_url = bot.client.user.avatarURL;
         }
-        await msg.channel.send({ embed: this.embed });
+        await bot.sendMessage(msg.channel, { embed: this.embed });
         return;
     }
 }

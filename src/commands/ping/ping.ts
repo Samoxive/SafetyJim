@@ -9,7 +9,7 @@ class Ping implements Command {
 
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         await bot.successReact(msg);
-        await msg.channel.send('', { embed: {
+        await bot.sendMessage(msg.channel, { embed: {
             author: {
                 name: `Safety Jim`,
                 icon_url: bot.client.user.avatarURL,

@@ -11,7 +11,7 @@ class Unban implements Command {
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         if (!msg.member.hasPermission('BAN_MEMBERS')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -23,7 +23,7 @@ class Unban implements Command {
 
         if (!msg.guild.me.hasPermission('BAN_MEMBERS')) {
             await bot.failReact(msg);
-            await msg.channel.send('I do not have enough permissions to do that!');
+            await bot.sendMessage(msg.channel, 'I do not have enough permissions to do that!');
             return;
         }
 
@@ -31,7 +31,7 @@ class Unban implements Command {
 
         if (!bannee) {
             await bot.failReact(msg);
-            await msg.channel.send(`Could not find a banned user called \`${args}\`!`);
+            await bot.sendMessage(msg.channel, `Could not find a banned user called \`${args}\`!`);
         } else {
             await bot.successReact(msg);
             await msg.guild.unban(bannee.id);

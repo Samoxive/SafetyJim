@@ -11,7 +11,7 @@ class Help implements Command {
     public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let prefix = await bot.database.getGuildSetting(msg.guild, 'prefix');
         await bot.successReact(msg);
-        await msg.channel.send({ embed: {
+        await bot.sendMessage(msg.channel, { embed: {
             author: { name: 'Safety Jim - Commands', icon_url: bot.client.user.avatarURL },
             description: bot.getUsageStrings(prefix),
             color: 0x4286f4,

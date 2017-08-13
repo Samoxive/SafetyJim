@@ -48,7 +48,7 @@ class InviteLink implements MessageProcessor {
 
         try {
             await msg.delete();
-            await msg.channel.send(`I'm sorry ${msg.author}, you can't send invite links here.`);
+            await bot.sendMessage(msg.channel, `I'm sorry ${msg.author}, you can't send invite links here.`);
         } finally {
             return true;
         }

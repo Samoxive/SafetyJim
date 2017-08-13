@@ -4,6 +4,7 @@ import * as path from 'path';
 import { LoggerInstance } from 'winston';
 import { Guild } from 'discord.js';
 import { Settings } from './models/Settings';
+import { SafetyJim } from '../safetyjim/safetyjim';
 
 export const defaultWelcomeMessage = 'Welcome to $guild $user!';
 
@@ -43,7 +44,11 @@ export class BotDatabase {
             this.log.error(`Failed to connect to postgresql database, terminating... ${err.stack}`);
         }
 
-        await this.database.sync();
+        try {
+            await this.database.sync();
+        } catch (e) {
+            throw e;
+        }
 
         return this;
     }
@@ -97,18 +102,18 @@ export class BotDatabase {
         });
     }
 
-    public async createGuildSettings(guild: Guild): Promise<void> {
+    public async createGuildSettings(bot: SafetyJim, guild: Guild): Promise<void> {
         await this.createKeyValueSetting(guild, 'silentcommands', 'false');
         await this.createKeyValueSetting(guild, 'invitelinkremover', 'false');
         await this.createKeyValueSetting(guild, 'modlogactive', 'false');
-        await this.createKeyValueSetting(guild, 'modlogchannelid', guild.defaultChannel.id);
+        await this.createKeyValueSetting(guild, 'modlogchannelid', bot.getDefaultChannel(guild).id);
         await this.createKeyValueSetting(guild, 'holdingroomroleid', null);
         await this.createKeyValueSetting(guild, 'holdingroomactive', 'false');
         await this.createKeyValueSetting(guild, 'holdingroomminutes', '3');
         await this.createKeyValueSetting(guild, 'prefix', this.config.jim.default_prefix);
         await this.createKeyValueSetting(guild, 'welcomemessageactive', 'false');
         await this.createKeyValueSetting(guild, 'welcomemessage', defaultWelcomeMessage);
-        await this.createKeyValueSetting(guild, 'welcomemessagechannelid', guild.defaultChannel.id);
+        await this.createKeyValueSetting(guild, 'welcomemessagechannelid', bot.getDefaultChannel(guild).id);
     }
 
     private async createKeyValueSetting(guild: Guild, key: SettingKey, value: string): Promise<void> {

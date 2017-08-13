@@ -43,10 +43,10 @@ class SettingsCommand implements Command {
                          '`HoldingRoomMinutes <number>` - Default: 3\n' +
                          '`HoldingRoomRole <text>` - Default: None\n' +
                          '`ModLog <enabled/disabled>` - Default: disabled\n' +
-                         `\`ModLogChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
+                         `\`ModLogChannel <#channel>\` - Default: ${bot.getDefaultChannel(msg.guild)}\n` +
                          '`Prefix <text>` - Default: -mod\n' +
                          '\`WelcomeMessage <enabled/disabled>\` - Default: disabled\n' +
-                         `\`WelcomeMessageChannel <#channel>\` - Default: ${msg.guild.defaultChannel}\n` +
+                         `\`WelcomeMessageChannel <#channel>\` - Default: ${bot.getDefaultChannel(msg.guild)}\n` +
                          `\`Message <text>\` - Default: ${defaultWelcomeMessage}\n` +
                          '`InviteLinkRemover <enabled/disabled>` - Default: disabled\n' +
                          '`SilentCommands <enabled/disabled>` - Default: disabled';
@@ -56,13 +56,13 @@ class SettingsCommand implements Command {
                 color: 0x4286f4,
             };
             await bot.successReact(msg);
-            await msg.channel.send({ embed });
+            await bot.sendMessage(msg.channel, { embed });
             return;
         }
 
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
             await bot.failReact(msg);
-            await msg.author.send('You don\'t have enough permissions to modify guild settings!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to modify guild settings!');
             return;
         }
 
@@ -72,7 +72,7 @@ class SettingsCommand implements Command {
                     guildid: msg.guild.id,
                 },
             });
-            await bot.database.createGuildSettings(msg.guild);
+            await bot.database.createGuildSettings(bot, msg.guild);
             bot.createRegexForGuild(msg.guild.id, bot.config.jim.default_prefix);
             await bot.successReact(msg);
             return;
@@ -125,7 +125,8 @@ class SettingsCommand implements Command {
 
                 if (roleID == null) {
                     await bot.failReact(msg);
-                    await msg.channel.send('You can\'t enable holding room because you didn\'t set a role first!');
+                    // tslint:disable-next-line:max-line-length
+                    await bot.sendMessage(msg.channel, 'You can\'t enable holding room because you didn\'t set a role first!');
                     return;
                 }
                 await bot.successReact(msg);
@@ -256,7 +257,7 @@ class SettingsCommand implements Command {
             color: 0x4286f4,
         };
         await bot.successReact(msg);
-        await msg.channel.send({ embed });
+        await bot.sendMessage(msg.channel, { embed });
     }
 }
 

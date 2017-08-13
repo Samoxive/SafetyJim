@@ -15,7 +15,7 @@ class Kick implements Command {
 
         if (!msg.member.hasPermission('KICK_MEMBERS')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -26,7 +26,7 @@ class Kick implements Command {
 
         if (!msg.guild.me.hasPermission('KICK_MEMBERS')) {
             await bot.failReact(msg);
-            await msg.channel.send('I don\'t have enough permissions to do that!');
+            await bot.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
 
@@ -34,13 +34,13 @@ class Kick implements Command {
 
         if (member.id === msg.author.id) {
             await bot.failReact(msg);
-            await msg.channel.send('You can\'t kick yourself, dummy!');
+            await bot.sendMessage(msg.channel, 'You can\'t kick yourself, dummy!');
             return;
         }
 
         if (!member || !member.kickable || msg.member.highestRole.comparePositionTo(member.highestRole) <= 0) {
             await bot.failReact(msg);
-            await msg.channel.send('The specified member is not kickable.');
+            await bot.sendMessage(msg.channel, 'The specified member is not kickable.');
             return;
         }
 
@@ -58,7 +58,8 @@ class Kick implements Command {
         try {
             await member.send({ embed });
         } catch (e) {
-            await msg.channel.send('Could not send a private message to specified user, I am probably blocked.');
+            // tslint:disable-next-line:max-line-length
+            await bot.sendMessage(msg.channel, 'Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
                 await member.kick(reason);
@@ -76,7 +77,7 @@ class Kick implements Command {
                 await bot.createModLogEntry(msg, member, reason, 'kick', kickRecord.id);
             } catch (e) {
                 await bot.failReact(msg);
-                await msg.channel.send('Could not kick specified user. Do I have enough permissions?');
+                await bot.sendMessage(msg.channel, 'Could not kick specified user. Do I have enough permissions?');
             }
         }
 

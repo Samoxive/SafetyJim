@@ -13,7 +13,7 @@ class Unmute implements Command {
 
         if (!msg.member.hasPermission('MANAGE_ROLES')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -31,7 +31,7 @@ class Unmute implements Command {
         if (!role) {
             await bot.failReact(msg);
             // tslint:disable-next-line:max-line-length
-            await msg.channel.send('Could not find a Muted role, please create one yourself or mute a user to automatically setup one.');
+            await bot.sendMessage(msg.channel, 'Could not find a Muted role, please create one yourself or mute a user to automatically setup one.');
             return;
         }
 
