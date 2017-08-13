@@ -13,7 +13,7 @@ class Softban implements Command {
 
         if (!msg.member.hasPermission('BAN_MEMBERS')) {
             await bot.failReact(msg);
-            await msg.channel.send('You don\'t have enough permissions to execute this command!');
+            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -27,13 +27,13 @@ class Softban implements Command {
 
         if (member.id === msg.author.id) {
             await bot.failReact(msg);
-            await msg.channel.send('You can\'t softban yourself, dummy!');
+            await bot.sendMessage(msg.channel, 'You can\'t softban yourself, dummy!');
             return false;
         }
 
         if (!member.bannable || !msg.guild.me.hasPermission('BAN_MEMBERS')) {
             await bot.failReact(msg);
-            await msg.channel.send('I don\'t have enough permissions to do that!');
+            await bot.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
 
@@ -55,7 +55,7 @@ class Softban implements Command {
 
             if (daysArgument < 1 || daysArgument > 7) {
                 await bot.failReact(msg);
-                await msg.channel.send('The amount of days must be between 1 and 7.');
+                await bot.sendMessage(msg.channel, 'The amount of days must be between 1 and 7.');
                 return;
             }
         } else if (args.length > 0) {
@@ -80,7 +80,8 @@ class Softban implements Command {
         try {
             await member.send({ embed });
         } catch (e) {
-            await msg.channel.send('Could not send a private message to specified user, I am probably blocked.');
+            // tslint:disable-next-line:max-line-length
+            await bot.sendMessage(msg.channel, 'Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
                 await member.ban({ reason, days: daysArgument});
@@ -98,7 +99,8 @@ class Softban implements Command {
                 });
             } catch (e) {
                 await bot.failReact(msg);
-                await msg.channel.send('Could not softban / unban specified user. Do I have enough permissions?');
+                // tslint:disable-next-line:max-line-length
+                await bot.sendMessage(msg.channel, 'Could not softban / unban specified user. Do I have enough permissions?');
             }
         }
 
