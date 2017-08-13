@@ -60,7 +60,6 @@ class Softban implements Command {
             }
         } else if (args.length > 0) {
             reason = args;
-            daysArgument = 1;
         }
         if (!reason) {
             reason = 'No reason specified';
@@ -84,9 +83,9 @@ class Softban implements Command {
             await bot.sendMessage(msg.channel, 'Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
-                await member.ban({ reason, days: daysArgument});
-                await msg.guild.unban(member.id); // Maybe put the unban in a seperate trycatch
-                await bot.successReact(msg);                // or handle errors on it differently
+                await member.ban({ reason, days: daysArgument || 1 });
+                await msg.guild.unban(member.id);
+                await bot.successReact(msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
                 await Softbans.create<Softbans>({
