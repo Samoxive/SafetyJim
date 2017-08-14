@@ -72,7 +72,7 @@ class Tag implements Command {
         let embed = {
             author: { name: 'Safety Jim', icon_url: bot.client.user.avatarURL },
             fields: [{ name: 'List of tags', value: tags
-                .map((tag) => `\`${tag.name}\` - ${tag.response}`)
+                .map((tag) => `• \`${tag.name}\``)
                 .join('\n').trim() }],
             color: 0x4286f4,
         };
