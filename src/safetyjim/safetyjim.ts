@@ -42,6 +42,7 @@ export class SafetyJim {
     private allowUsersCronJob;
     private unbanUserCronJob;
     private unmuteUserCronJob;
+    private remindRemindersCronJob;
     private metricsCronJob;
     private unprocessedMessages: Discord.Message[] = [];
     private metrics: Metrics;
@@ -294,6 +295,8 @@ export class SafetyJim {
                                                     onTick: this.unmuteUsers.bind(this), start: true, context: this });
             this.metricsCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
                                                 onTick: this.updateMetrics.bind(this), start: true, context: this });
+            this.remindRemindersCronJob = new cron.CronJob({ cronTime: '*/15 * * * * *',
+                                                onTick: this.remindReminders.bind(this), start: true, context: this });
 
             this.metrics.gauge('guild.count', this.client.guilds.size);
             this.metrics.increment('client.ready');
@@ -801,7 +804,6 @@ export class SafetyJim {
         let reminders = await Reminders.findAll<Reminders>({
             where: {
                 reminded: false,
-                expires: true,
                 remindtime: {
                     $lt: now,
                 },
@@ -811,13 +813,53 @@ export class SafetyJim {
         for (let reminder of reminders) {
             let user = await this.client.fetchUser(reminder.userid, true);
             let guild = this.client.guilds.get(reminder.guildid);
-            let channel = guild.channels.get(reminder.channelid);
+
+            if (guild == null) {
+                await Reminders.update({ reminded: true }, {
+                    where: {
+                        id: reminder.id,
+                    },
+                });
+                continue;
+            }
+
+            let channel = guild.channels.get(reminder.channelid) as Discord.TextChannel;
+            let member = await guild.fetchMember(user);
+
+            if (member == null) {
+                await Reminders.update({ reminded: true }, {
+                    where: {
+                        id: reminder.id,
+                    },
+                });
+                continue;
+            }
+
+            let embed: Discord.RichEmbedOptions = {
+                title: 'Reminder',
+                description: reminder.message,
+                author: {
+                    name: 'Safety Jim',
+                    icon_url: this.client.user.avatarURL,
+                },
+                footer: { text: 'Reminder set on' },
+                timestamp: (new Date(reminder.createtime * 1000)),
+                color: 0x4286f4,
+            };
 
             try {
-                await user.send(`You wanted me to remind you this: ${reminder.message}`);
+                await user.send({ embed });
             } catch (e) {
                 if (channel != null) {
-                    await this.sendMessage(channel, `${user}, you wanted me to remind you this: ${reminder.message}`);
+                    try {
+                        await channel.send(user, { embed });
+                    } catch (e) {
+                        try {
+                            await this.getDefaultChannel(guild).send(user, { embed });
+                        } catch (e) {
+                            //
+                        }
+                    }
                 }
             } finally {
                 await Reminders.update({ reminded: true }, {
