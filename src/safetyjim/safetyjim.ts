@@ -836,7 +836,7 @@ export class SafetyJim {
             }
 
             let embed: Discord.RichEmbedOptions = {
-                title: 'Reminder',
+                title: `Reminder - #${reminder.id}`,
                 description: reminder.message,
                 author: {
                     name: 'Safety Jim',
