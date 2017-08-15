@@ -30,9 +30,9 @@ class Mute implements Command {
             return;
         }
 
-        if (!msg.guild.roles.find('name', 'Muted')) {
-            let mutedRole;
+        let mutedRole: Discord.Role;
 
+        if (!msg.guild.roles.find('name', 'Muted')) {
             try {
                 mutedRole = await msg.guild.createRole({
                     name: 'Muted',
@@ -54,6 +54,29 @@ class Mute implements Command {
                 } catch (e) {
                     await bot.failReact(msg);
                     await bot.sendMessage(msg.channel, 'Could not setup the Muted role!');
+                    return;
+                }
+            }
+        }
+
+        if (mutedRole == null) {
+            mutedRole = msg.guild.roles.find('name', 'Muted');
+        }
+
+        for (let [id, channel] of msg.guild.channels) {
+            let override = channel.permissionOverwrites.find('id', mutedRole.id);
+
+            if (override == null) {
+                try {
+                    await channel.overwritePermissions(mutedRole, {
+                        SEND_MESSAGES: false,
+                        ADD_REACTIONS: false,
+                        SPEAK: false,
+                    });
+                } catch (e) {
+                    await bot.failReact(msg);
+                    await bot.sendMessage(msg.channel, 'Could not setup the Muted role!');
+                    return;
                 }
             }
         }
