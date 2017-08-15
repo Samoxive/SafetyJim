@@ -50,6 +50,7 @@ class Remind implements Command {
             createtime: now,
             remindtime,
             message: splitArgs[0],
+            reminded: false,
         });
 
         await bot.successReact(msg);

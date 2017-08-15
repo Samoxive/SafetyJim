@@ -24,6 +24,9 @@ export class Reminders extends Model<Reminders> {
     @Column(DataType.BIGINT)
     public remindtime: number;
 
+    @Column(DataType.BOOLEAN)
+    public reminded: boolean;
+
     @Column(DataType.TEXT)
     public message: string;
 }
