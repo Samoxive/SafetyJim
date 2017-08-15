@@ -11,6 +11,7 @@ import { Bans } from '../database/models/Bans';
 import { Settings } from '../database/models/Settings';
 import { Mutes } from '../database/models/Mutes';
 import { CommandLogs } from '../database/models/CommandLogs';
+import { Reminders } from '../database/models/Reminders';
 import { Metrics } from '../metrics/metrics';
 
 const DiscordBotsGuildID = '110373943822540800';
@@ -41,6 +42,7 @@ export class SafetyJim {
     private allowUsersCronJob;
     private unbanUserCronJob;
     private unmuteUserCronJob;
+    private remindRemindersCronJob;
     private metricsCronJob;
     private unprocessedMessages: Discord.Message[] = [];
     private metrics: Metrics;
@@ -293,6 +295,8 @@ export class SafetyJim {
                                                     onTick: this.unmuteUsers.bind(this), start: true, context: this });
             this.metricsCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
                                                 onTick: this.updateMetrics.bind(this), start: true, context: this });
+            this.remindRemindersCronJob = new cron.CronJob({ cronTime: '*/15 * * * * *',
+                                                onTick: this.remindReminders.bind(this), start: true, context: this });
 
             this.metrics.gauge('guild.count', this.client.guilds.size);
             this.metrics.increment('client.ready');
@@ -788,6 +792,79 @@ export class SafetyJim {
                     where: {
                         userid: user.userid,
                         guildid: user.guildid,
+                    },
+                });
+            }
+        }
+    }
+
+    private async remindReminders(): Promise<void> {
+        let now = Math.round((new Date()).getTime() / 1000);
+
+        let reminders = await Reminders.findAll<Reminders>({
+            where: {
+                reminded: false,
+                remindtime: {
+                    $lt: now,
+                },
+            },
+        });
+
+        for (let reminder of reminders) {
+            let user = await this.client.fetchUser(reminder.userid, true);
+            let guild = this.client.guilds.get(reminder.guildid);
+
+            if (guild == null) {
+                await Reminders.update({ reminded: true }, {
+                    where: {
+                        id: reminder.id,
+                    },
+                });
+                continue;
+            }
+
+            let channel = guild.channels.get(reminder.channelid) as Discord.TextChannel;
+            let member = await guild.fetchMember(user);
+
+            if (member == null) {
+                await Reminders.update({ reminded: true }, {
+                    where: {
+                        id: reminder.id,
+                    },
+                });
+                continue;
+            }
+
+            let embed: Discord.RichEmbedOptions = {
+                title: 'Reminder',
+                description: reminder.message,
+                author: {
+                    name: 'Safety Jim',
+                    icon_url: this.client.user.avatarURL,
+                },
+                footer: { text: 'Reminder set on' },
+                timestamp: (new Date(reminder.createtime * 1000)),
+                color: 0x4286f4,
+            };
+
+            try {
+                await user.send({ embed });
+            } catch (e) {
+                if (channel != null) {
+                    try {
+                        await channel.send(user, { embed });
+                    } catch (e) {
+                        try {
+                            await this.getDefaultChannel(guild).send(user, { embed });
+                        } catch (e) {
+                            //
+                        }
+                    }
+                }
+            } finally {
+                await Reminders.update({ reminded: true }, {
+                    where: {
+                        id: reminder.id,
                     },
                 });
             }
