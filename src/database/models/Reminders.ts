@@ -1,9 +1,9 @@
 import { Table, Column, Model, PrimaryKey, AutoIncrement, DataType } from 'sequelize-typescript';
 
 @Table({
-    tableName: 'remindlist',
+    tableName: 'reminderlist',
 })
-export class Reminds extends Model<Reminds> {
+export class Reminders extends Model<Reminders> {
     @PrimaryKey
     @AutoIncrement
     @Column(DataType.INTEGER)
