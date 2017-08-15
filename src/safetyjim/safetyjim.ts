@@ -11,6 +11,7 @@ import { Bans } from '../database/models/Bans';
 import { Settings } from '../database/models/Settings';
 import { Mutes } from '../database/models/Mutes';
 import { CommandLogs } from '../database/models/CommandLogs';
+import { Reminders } from '../database/models/Reminders';
 import { Metrics } from '../metrics/metrics';
 
 const DiscordBotsGuildID = '110373943822540800';
@@ -788,6 +789,40 @@ export class SafetyJim {
                     where: {
                         userid: user.userid,
                         guildid: user.guildid,
+                    },
+                });
+            }
+        }
+    }
+
+    private async remindReminders(): Promise<void> {
+        let now = Math.round((new Date()).getTime() / 1000);
+
+        let reminders = await Reminders.findAll<Reminders>({
+            where: {
+                reminded: false,
+                expires: true,
+                remindtime: {
+                    $lt: now,
+                },
+            },
+        });
+
+        for (let reminder of reminders) {
+            let user = await this.client.fetchUser(reminder.userid, true);
+            let guild = this.client.guilds.get(reminder.guildid);
+            let channel = guild.channels.get(reminder.channelid);
+
+            try {
+                await user.send(`You wanted me to remind you this: ${reminder.message}`);
+            } catch (e) {
+                if (channel != null) {
+                    await this.sendMessage(channel, `${user}, you wanted me to remind you this: ${reminder.message}`);
+                }
+            } finally {
+                await Reminders.update({ reminded: true }, {
+                    where: {
+                        id: reminder.id,
                     },
                 });
             }
