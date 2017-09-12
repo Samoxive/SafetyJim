@@ -16,6 +16,7 @@ import { Metrics } from '../metrics/metrics';
 
 const DiscordBotsGuildID = '110373943822540800';
 const DiscordBotListGuildID = '264445053596991498';
+const NovoGuildID = '297462937646530562';
 
 type RegexRecords = { string: RegExp };
 type Commands = { string: Command };
@@ -630,6 +631,7 @@ export class SafetyJim {
     private isBotFarm(guild: Discord.Guild) {
         return (guild.id !== DiscordBotListGuildID) &&
                (guild.id !== DiscordBotsGuildID) &&
+               (guild.id !== NovoGuildID) &&
                (guild.members.filter((member) => member.user.bot).size > 20);
     }
 
