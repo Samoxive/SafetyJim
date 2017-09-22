@@ -38,7 +38,7 @@ export interface MessageProcessor {
 
 export class SafetyJim {
     public bootTime: Date;
-    private clients: Shard[];
+    private clients: Shard[] = [];
     private allowUsersCronJob;
     private unbanUserCronJob;
     private unmuteUserCronJob;
@@ -50,6 +50,7 @@ export class SafetyJim {
                 public database: BotDatabase,
                 public log: winston.LoggerInstance) {
         this.bootTime = new Date();
+        this.metrics = new Metrics(this.config, 'jim');
 
         Settings.findAll<Settings>({
             where: {
@@ -58,9 +59,16 @@ export class SafetyJim {
         }).then((prefixes) => prefixes.map((prefix) => ({ guildid: prefix.guildid, prefix: prefix.value })))
           .then((prefixes) => {
             for (let i = 0; i < this.config.jim.shard_count; i++) {
-                this.clients.push(new Shard(i, this, this.database, this.config, this.log, this.metrics, prefixes));
+                let shard = new Shard(i, this, this.database, this.config, this.log, this.metrics, prefixes);
+                this.clients.push(shard);
             }
+        })
+          .then(() => {
+            this.loadCommands();
+            this.loadProcessors();
         });
+
+        
     }
 
     public getGuildCount(): number {
