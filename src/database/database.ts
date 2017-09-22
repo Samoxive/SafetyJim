@@ -5,6 +5,7 @@ import { LoggerInstance } from 'winston';
 import { Guild } from 'discord.js';
 import { Settings } from './models/Settings';
 import { SafetyJim } from '../safetyjim/safetyjim';
+import { Shard } from '../safetyjim/shard';
 
 export const defaultWelcomeMessage = 'Welcome to $guild $user!';
 
@@ -102,7 +103,7 @@ export class BotDatabase {
         });
     }
 
-    public async createGuildSettings(bot: SafetyJim, guild: Guild): Promise<void> {
+    public async createGuildSettings(bot: Shard, guild: Guild): Promise<void> {
         await this.createKeyValueSetting(guild, 'silentcommands', 'false');
         await this.createKeyValueSetting(guild, 'invitelinkremover', 'false');
         await this.createKeyValueSetting(guild, 'modlogactive', 'false');
