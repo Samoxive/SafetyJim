@@ -1,6 +1,7 @@
 [jim]
 token = "" # put your discord token here
 default_prefix = "-mod" # all guilds will use this prefix unless changed
+shard_count = 1
 
 [database] # variables for postgresql database
 user = ""

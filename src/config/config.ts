@@ -12,6 +12,7 @@ const configSchema = {
             properties: {
                 token: { type: 'string' },
                 default_prefix: { type: 'string' },
+                shard_count: { type: 'integer' },
             },
         },
         database: {
@@ -109,6 +110,7 @@ interface TomlConfig {
 interface Jim {
     token: string;
     default_prefix: string;
+    shard_count: number;
 }
 
 interface Database {
