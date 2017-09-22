@@ -33,7 +33,7 @@ export class Shard {
     private processors = [] as MessageProcessor[];
     private unprocessedMessages: Discord.Message[] = [];
 
-    constructor(private shardId: number,
+    constructor(public shardId: number,
                 public jim: SafetyJim,
                 public database: BotDatabase,
                 public config: Config,
