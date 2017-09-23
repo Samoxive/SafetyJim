@@ -166,10 +166,10 @@ class Mute implements Command {
             unmuted: false,
         });
 
-        await Utils.createModLogEntry(msg, member, reason, 'mute',
+        await Utils.createModLogEntry(shard, msg, member, reason, 'mute',
                                     muteRecord.id, parsedTime ? parsedTime.absolute : null);
 
-        await Utils.deleteCommandMessage(msg);
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 }

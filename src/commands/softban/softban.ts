@@ -100,7 +100,7 @@ class Softban implements Command {
                     reason,
                 });
 
-                await Utils.createModLogEntry(msg, member, reason, 'softban', softbanRecord.id);
+                await Utils.createModLogEntry(shard, msg, member, reason, 'softban', softbanRecord.id);
             } catch (e) {
                 await Utils.failReact(msg);
                 // tslint:disable-next-line:max-line-length
@@ -108,6 +108,7 @@ class Softban implements Command {
             }
         }
 
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 }

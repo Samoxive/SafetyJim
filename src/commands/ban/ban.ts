@@ -117,7 +117,7 @@ class Ban implements Command {
                     unbanned: false,
                 });
 
-                await Utils.createModLogEntry(msg, member, reason, 'ban',
+                await Utils.createModLogEntry(shard, msg, member, reason, 'ban',
                                             banRecord.id, parsedTime ? parsedTime.absolute : null);
             } catch (e) {
                 await Utils.failReact(msg);
@@ -125,7 +125,7 @@ class Ban implements Command {
             }
         }
 
-        await Utils.deleteCommandMessage(msg);
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 }

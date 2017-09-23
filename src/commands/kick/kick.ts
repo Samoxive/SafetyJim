@@ -76,14 +76,14 @@ class Kick implements Command {
                     reason,
                 });
 
-                await Utils.createModLogEntry(msg, member, reason, 'kick', kickRecord.id);
+                await Utils.createModLogEntry(shard, msg, member, reason, 'kick', kickRecord.id);
             } catch (e) {
                 await Utils.failReact(msg);
                 await Utils.sendMessage(msg.channel, 'Could not kick specified user. Do I have enough permissions?');
             }
         }
 
-        await Utils.deleteCommandMessage(msg);
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 }

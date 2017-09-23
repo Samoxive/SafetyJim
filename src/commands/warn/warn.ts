@@ -65,8 +65,8 @@ class Warn implements Command {
             reason,
         });
 
-        await Utils.createModLogEntry(msg, member, reason, 'warn', warnRecord.id);
-        await Utils.deleteCommandMessage(msg);
+        await Utils.createModLogEntry(shard, msg, member, reason, 'warn', warnRecord.id);
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 }
