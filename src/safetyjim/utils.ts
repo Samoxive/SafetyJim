@@ -1,5 +1,6 @@
 import * as Discord from 'discord.js';
 import { Shard } from './shard';
+import { SafetyJim } from './safetyjim';
 
 export function findShardIdFromGuildId(guildId: string, shardCount: number): number {
     // (guild_id >> 22) % num_shards == shard_id
@@ -23,7 +24,7 @@ export async function sendMessage(channel: Discord.Channel, message: string | Di
     try {
         await textChannel.send(message);
     } catch (e) {
-        this.log.warn(`Could not send a message in guild "${textChannel.guild.name}"`);
+        //
     }
 }
 
@@ -47,7 +48,7 @@ export async function successReact(msg: Discord.Message): Promise<void> {
     return;
 }
 
-export async function createModLogEntry(msg: Discord.Message, member: Discord.GuildMember,
+export async function createModLogEntry(shard: Shard, msg: Discord.Message, member: Discord.GuildMember,
                                         reason: string, action: string, id: number,
                                         parsedTime?: number): Promise<void> {
     let colors = {
@@ -66,23 +67,23 @@ export async function createModLogEntry(msg: Discord.Message, member: Discord.Gu
         mute: 'Mute',
     };
 
-    let ModLogActive = await this.database.getGuildSetting(msg.guild, 'modlogactive');
-    let prefix = await this.database.getGuildSetting(msg.guild, 'prefix');
+    let ModLogActive = await shard.jim.database.getGuildSetting(msg.guild, 'modlogactive');
+    let prefix = await shard.jim.database.getGuildSetting(msg.guild, 'prefix');
 
     if (!ModLogActive || ModLogActive === 'false') {
         return;
     }
 
-    let ModLogChannelID = await this.database.getGuildSetting(msg.guild, 'modlogchannelid');
+    let ModLogChannelID = await shard.jim.database.getGuildSetting(msg.guild, 'modlogchannelid');
 
-    if (!this.client.channels.has(ModLogChannelID) ||
-        this.client.channels.get(ModLogChannelID).type !== 'text') {
+    if (!shard.client.channels.has(ModLogChannelID) ||
+        shard.client.channels.get(ModLogChannelID).type !== 'text') {
         // tslint:disable-next-line:max-line-length
-        await this.sendMessage(msg.channel, `Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
+        await sendMessage(msg.channel, `Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
         return;
     }
 
-    let logChannel = this.client.channels.get(ModLogChannelID) as Discord.TextChannel;
+    let logChannel = shard.client.channels.get(ModLogChannelID) as Discord.TextChannel;
 
     let expires = parsedTime != null;
 
@@ -117,16 +118,16 @@ export async function createModLogEntry(msg: Discord.Message, member: Discord.Gu
     }
 
     try {
-        await this.sendMessage(logChannel, { embed });
+        await sendMessage(logChannel, { embed });
     } catch (e) {
-        await this.sendMessage(msg.channel, 'Could not create a mod log entry!');
+        await sendMessage(msg.channel, 'Could not create a mod log entry!');
     }
 
     return;
 }
 
-export async function deleteCommandMessage(msg: Discord.Message): Promise<void> {
-    let silentcommands = await this.database.getGuildSetting(msg.guild, 'silentcommands');
+export async function deleteCommandMessage(jim: SafetyJim, msg: Discord.Message): Promise<void> {
+    let silentcommands = await jim.database.getGuildSetting(msg.guild, 'silentcommands');
 
     if (silentcommands === 'false') {
         return;
