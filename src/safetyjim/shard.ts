@@ -165,7 +165,7 @@ export class Shard {
             if (msg.isMentioned(this.client.user) && msg.content.includes('prefix')) {
                 let prefix = await this.database.getGuildSetting(msg.guild, 'prefix');
 
-                await Utils.successReact(jim, msg);
+                await Utils.successReact(this.jim, msg);
 
                 let embed = {
                     author: { name: 'Safety Jim - Prefix', icon_url: this.client.user.avatarURL },
@@ -201,7 +201,7 @@ export class Shard {
             // Check if user called bot without command or command was not found
             if (!cmdMatch || !Object.keys(this.commands).includes(cmdMatch[1])) {
                 if (msg.cleanContent.match(testRegex)) {
-                    await Utils.failReact(jim, msg);
+                    await Utils.failReact(this.jim, msg);
                 }
                 return;
             }
@@ -368,7 +368,7 @@ export class Shard {
             commandTime = new Date();
             showUsage = await this.commands[command].run(this, this.jim, msg, args);
         } catch (e) {
-            await Utils.failReact(jim, msg);
+            await Utils.failReact(this.jim, msg);
             // tslint:disable-next-line:max-line-length
             await Utils.sendMessage(msg.channel, 'There was an error running your command, this incident has been logged.');
             // tslint:disable-next-line:max-line-length
@@ -391,7 +391,7 @@ export class Shard {
                 color: 0x4286f4,
             };
 
-            await Utils.failReact(jim, msg);
+            await Utils.failReact(this.jim, msg);
             await Utils.sendMessage(msg.channel, { embed });
         }
     }

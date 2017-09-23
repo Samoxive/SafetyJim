@@ -258,7 +258,7 @@ class SettingsCommand implements Command {
             fields: [{ name: 'Guild Settings', value: output }],
             color: 0x4286f4,
         };
-        await Utils.successReact(jim, msg);
+        await Utils.successReact(shard.jim, msg);
         await Utils.sendMessage(msg.channel, { embed });
     }
 }
