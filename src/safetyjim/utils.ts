@@ -31,7 +31,7 @@ export async function failReact(msg: Discord.Message): Promise<void> {
     try {
         await msg.react('322698553980092417');
     } catch (e) {
-        this.log.warn(`Could not react with fail emoji in guild "${msg.guild.name}"`);
+        //
     }
 
     return;
@@ -41,7 +41,7 @@ export async function successReact(msg: Discord.Message): Promise<void> {
     try {
         await msg.react('322698554294534144');
     } catch (e) {
-        this.log.warn(`Could not react with success emoji in guild "${msg.guild.name}"`);
+        //
     }
 
     return;
@@ -123,6 +123,20 @@ export async function createModLogEntry(msg: Discord.Message, member: Discord.Gu
     }
 
     return;
+}
+
+export async function deleteCommandMessage(msg: Discord.Message): Promise<void> {
+    let silentcommands = await this.database.getGuildSetting(msg.guild, 'silentcommands');
+
+    if (silentcommands === 'false') {
+        return;
+    }
+
+    try {
+        await msg.delete();
+    } catch (e) {
+        //
+    }
 }
 
 export function getShardString(shard: Shard): string {
