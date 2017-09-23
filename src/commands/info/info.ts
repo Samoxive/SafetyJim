@@ -38,7 +38,7 @@ class Info implements Command {
         }
         let uptimeString = this.timeElapsed(Date.now(), jim.bootTime.getTime());
         let embed = {
-            author: { name: `Safety Jim - v${jim.config.version}`,
+            author: { name: `Safety Jim - v${jim.config.version} - Shard ${Utils.getShardString(shard)}`,
                       icon_url: shard.client.user.avatarURL,
                       url: 'https://discordbots.org/bot/313749262687141888' },
             description: `Lifting the :hammer: since ${uptimeString} ago.`,
