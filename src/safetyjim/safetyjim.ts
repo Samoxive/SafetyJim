@@ -15,6 +15,7 @@ import { Mutes } from '../database/models/Mutes';
 import { CommandLogs } from '../database/models/CommandLogs';
 import { Reminders } from '../database/models/Reminders';
 import { Metrics } from '../metrics/metrics';
+import { Observable, Subject } from 'rxjs';
 
 const DiscordBotsGuildID = '110373943822540800';
 const DiscordBotListGuildID = '264445053596991498';
@@ -52,25 +53,7 @@ export class SafetyJim {
         this.bootTime = new Date();
         this.metrics = new Metrics(this.config, 'jim');
 
-        Settings.findAll<Settings>({
-            where: {
-                key: 'prefix',
-            },
-        }).then((prefixes) => prefixes.map((prefix) => ({ guildid: prefix.guildid, prefix: prefix.value })))
-          .then((prefixes) => {
-            for (let i = 0; i < this.config.jim.shard_count; i++) {
-                let shard = new Shard(i, this, this.database, this.config, this.log, this.metrics, prefixes);
-                this.clients.push(shard);
-            }
-        })
-          .then(() => {
-            this.loadCommands();
-            this.loadProcessors();
-
-            for (let shard of this.clients) {
-                shard.init();
-            }
-        });
+        this.init();
     }
 
     public getGuildCount(): number {
@@ -99,6 +82,46 @@ export class SafetyJim {
                 }
             }
         }
+    }
+
+    private async init(): Promise<void> {
+        let prefixes = (await Settings.findAll<Settings>({ where: { key: 'prefix' }}))
+                        .map((prefix) => ({ guildid: prefix.guildid, prefix: prefix.value }));
+
+        for (let i = 0; i < this.config.jim.shard_count; i++) {
+            let shard = new Shard(i, this, this.database, this.config, this.log, this.metrics, prefixes);
+            this.clients.push(shard);
+        }
+
+        this.loadCommands();
+        this.loadProcessors();
+
+        let promises: Array<Promise<number>> = [];
+        for (let shard of this.clients) {
+            let observable = await shard.init();
+
+            promises.push(new Promise((res, rej) => {
+                observable.subscribe((shardId) => res(shardId));
+            }));
+        }
+
+        let results = await Promise.all(promises);
+
+        for (let result of results) {
+            this.log.info(`Shard ${result} ready (from jim).`);
+        }
+            // all clients are logged in
+        this.updateDiscordBotLists();
+        this.allowUsersCronJob = new cron.CronJob({ cronTime: '*/10 * * * * *',
+                                onTick: this.allowUsers.bind(this), start: true, context: this });
+        this.unbanUserCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
+                                onTick: this.unbanUsers.bind(this), start: true, context: this });
+        this.unmuteUserCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
+                                onTick: this.unmuteUsers.bind(this), start: true, context: this });
+        this.metricsCronJob = new cron.CronJob({ cronTime: '*/20 * * * * *',
+                            onTick: this.updateMetrics.bind(this), start: true, context: this });
+        this.remindRemindersCronJob = new cron.CronJob({ cronTime: '*/15 * * * * *',
+                            onTick: this.remindReminders.bind(this), start: true, context: this });
     }
 
     private loadProcessors(): void {
