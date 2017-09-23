@@ -97,112 +97,6 @@ export class Shard {
               .join('\n');
     }
 
-    public async sendMessage(channel: Discord.Channel, message: string | Discord.MessageOptions): Promise<void> {
-        let textChannel = channel as Discord.TextChannel;
-        try {
-            await textChannel.send(message);
-        } catch (e) {
-            this.log.warn(`Could not send a message in guild "${textChannel.guild.name}"`);
-        }
-    }
-
-    public async createModLogEntry(msg: Discord.Message, member: Discord.GuildMember,
-                                   reason: string, action: string, id: number, parsedTime?: number): Promise<void> {
-        let colors = {
-            ban: 0xFF2900,
-            kick: 0xFF9900,
-            warn: 0xFFEB00,
-            mute: 0xFFFFFF,
-            softban: 0xFF55DD,
-        };
-
-        let actionText = {
-            ban: 'Ban',
-            softban: 'Softban',
-            kick: 'Kick',
-            warn: 'Warn',
-            mute: 'Mute',
-        };
-
-        let ModLogActive = await this.database.getGuildSetting(msg.guild, 'modlogactive');
-        let prefix = await this.database.getGuildSetting(msg.guild, 'prefix');
-
-        if (!ModLogActive || ModLogActive === 'false') {
-            return;
-        }
-
-        let ModLogChannelID = await this.database.getGuildSetting(msg.guild, 'modlogchannelid');
-
-        if (!this.client.channels.has(ModLogChannelID) ||
-        this.client.channels.get(ModLogChannelID).type !== 'text') {
-            // tslint:disable-next-line:max-line-length
-            await this.sendMessage(msg.channel, `Invalid mod log channel in guild configuration, set a proper one via \`${prefix} settings\` command.`);
-            return;
-        }
-
-        let logChannel = this.client.channels.get(ModLogChannelID) as Discord.TextChannel;
-
-        let expires = parsedTime != null;
-
-        let embed = {
-        color: colors[action],
-        fields: [
-            { name: 'Action:', value: `${actionText[action]} - #${id}`, inline: false },
-            { name: 'User:', value: `${member.user.tag} (${member.id})`, inline: false },
-            { name: 'Reason:', value: reason, inline: false },
-            { name: 'Responsible Moderator:', value: `${msg.author.tag} (${msg.author.id})`, inline: false },
-            { name: 'Channel', value: msg.channel.toString(), inline: false },
-            ],
-            timestamp: new Date(),
-        };
-
-        if (expires) {
-            let value = parsedTime ? new Date(parsedTime).toString() : 'Indefinitely';
-            let untilText: string;
-
-            switch (action) {
-            case 'ban':
-                untilText = 'Banned until';
-                break;
-            case 'mute':
-                untilText = 'Muted until';
-                break;
-            default:
-                break;
-            }
-
-            embed.fields.push({ name: untilText, value, inline: false });
-        }
-
-        try {
-            await this.sendMessage(logChannel, { embed });
-        } catch (e) {
-            await this.sendMessage(msg.channel, 'Could not create a mod log entry!');
-        }
-
-        return;
-    }
-
-    public async failReact(msg: Discord.Message): Promise<void> {
-        try {
-            await msg.react('322698553980092417');
-        } catch (e) {
-            this.log.warn(`Could not react with fail emoji in guild "${msg.guild.name}"`);
-        }
-
-        return;
-    }
-
-    public async successReact(msg: Discord.Message): Promise<void> {
-        try {
-            await msg.react('322698554294534144');
-        } catch (e) {
-            this.log.warn(`Could not react with success emoji in guild "${msg.guild.name}"`);
-        }
-
-        return;
-    }
-
     public async deleteCommandMessage(msg: Discord.Message): Promise<void> {
         let silentcommands = await this.database.getGuildSetting(msg.guild, 'silentcommands');
 
@@ -283,7 +177,7 @@ export class Shard {
             if (msg.isMentioned(this.client.user) && msg.content.includes('prefix')) {
                 let prefix = await this.database.getGuildSetting(msg.guild, 'prefix');
 
-                await this.successReact(msg);
+                await Utils.successReact(msg);
 
                 let embed = {
                     author: { name: 'Safety Jim - Prefix', icon_url: this.client.user.avatarURL },
@@ -292,7 +186,7 @@ export class Shard {
                 };
 
                 try {
-                    await this.sendMessage(msg.channel, { embed });
+                    await Utils.sendMessage(msg.channel, { embed });
                 } catch (e) {
                     // tslint:disable-next-line:max-line-length
                     this.log.warn(`Could not send commands embed in guild: "${msg.guild}" requested by "${msg.author.tag}".`);
@@ -319,7 +213,7 @@ export class Shard {
             // Check if user called bot without command or command was not found
             if (!cmdMatch || !Object.keys(this.commands).includes(cmdMatch[1])) {
                 if (msg.cleanContent.match(testRegex)) {
-                    await this.failReact(msg);
+                    await Utils.failReact(msg);
                 }
                 return;
             }
@@ -384,7 +278,7 @@ export class Shard {
 
             let message = `Hello! I am Safety Jim, \`${this.config.jim.default_prefix}\` is my default prefix!`;
 
-            await this.sendMessage(Utils.getDefaultChannel(guild), message);
+            await Utils.sendMessage(Utils.getDefaultChannel(guild), message);
 
             await this.database.createGuildSettings(this, guild);
             this.createRegexForGuild(guild.id, this.config.jim.default_prefix);
@@ -411,11 +305,11 @@ export class Shard {
                         message = message.replace('$minute', settings.get('holdingroomminutes') + m);
                     }
                     // tslint:disable-next-line:max-line-length
-                    await this.sendMessage(channel, message);
+                    await Utils.sendMessage(channel, message);
                 } else {
                     // tslint:disable-next-line:max-line-length
                     this.log.warn(`Could not find welcome message channel for ${member.guild.name} : ${member.guild.id}`);
-                    await this.sendMessage(Utils.getDefaultChannel(member.guild), 'WARNING: Invalid channel is set for welcome messages!');
+                    await Utils.sendMessage(Utils.getDefaultChannel(member.guild), 'WARNING: Invalid channel is set for welcome messages!');
                 }
             }
 
@@ -486,9 +380,9 @@ export class Shard {
             commandTime = new Date();
             showUsage = await this.commands[command].run(this, this.jim, msg, args);
         } catch (e) {
-            await this.failReact(msg);
+            await Utils.failReact(msg);
             // tslint:disable-next-line:max-line-length
-            await this.sendMessage(msg.channel, 'There was an error running your command, this incident has been logged.');
+            await Utils.sendMessage(msg.channel, 'There was an error running your command, this incident has been logged.');
             // tslint:disable-next-line:max-line-length
             this.log.error(`${command} failed with arguments: ${args} in guild "${msg.guild.name}" : ${e.stack + e.lineNumber + e.message}`);
         } finally {
@@ -509,8 +403,8 @@ export class Shard {
                 color: 0x4286f4,
             };
 
-            await this.failReact(msg);
-            await this.sendMessage(msg.channel, { embed });
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, { embed });
         }
     }
 
