@@ -69,8 +69,10 @@ export class Shard {
         this.client.on('guildMemberRemove', this.onGuildMemberRemove());
         this.client.on('messageReactionAdd', this.onReaction());
         this.client.on('messageReactionRemove', this.onReactionDelete());
+    }
 
-        this.client.login(config.jim.token);
+    public init(): void {
+        this.client.login(this.config.jim.token);
     }
 
     public createRegexForGuild(guildID: string, prefix: string) {
@@ -95,20 +97,6 @@ export class Shard {
         return Object.keys(this.commands)
               .map((u) => this.getUsageString(prefix, this.commands[u].usage))
               .join('\n');
-    }
-
-    public async deleteCommandMessage(msg: Discord.Message): Promise<void> {
-        let silentcommands = await this.database.getGuildSetting(msg.guild, 'silentcommands');
-
-        if (silentcommands === 'false') {
-            return;
-        }
-
-        try {
-            await msg.delete();
-        } catch (e) {
-            //
-        }
     }
 
     public loadCommand(cmd: Command, command: string): void {

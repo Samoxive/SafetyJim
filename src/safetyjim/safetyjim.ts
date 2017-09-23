@@ -66,9 +66,11 @@ export class SafetyJim {
           .then(() => {
             this.loadCommands();
             this.loadProcessors();
-        });
 
-        
+            for (let shard of this.clients) {
+                shard.init();
+            }
+        });
     }
 
     public getGuildCount(): number {
