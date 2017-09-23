@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 import { Bans } from '../../database/models/Bans';
 
@@ -8,10 +10,10 @@ class Unban implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         if (!msg.member.hasPermission('BAN_MEMBERS')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -22,18 +24,18 @@ class Unban implements Command {
         let unbanUsername = args;
 
         if (!msg.guild.me.hasPermission('BAN_MEMBERS')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'I do not have enough permissions to do that!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'I do not have enough permissions to do that!');
             return;
         }
 
         let bannee = await msg.guild.fetchBans().then((bans) => bans.find('tag', unbanUsername));
 
         if (!bannee) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, `Could not find a banned user called \`${args}\`!`);
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, `Could not find a banned user called \`${args}\`!`);
         } else {
-            await bot.successReact(msg);
+            await Utils.successReact(msg);
             await msg.guild.unban(bannee.id);
             await Bans.update<Bans>({ unbanned: true }, {
                 where: {

@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 
 interface SeperatedMessages {
@@ -15,19 +17,19 @@ class Clean implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let newArgs = args.split(' ');
         let deleteAmount = parseInt(newArgs[0]);
 
         if (!msg.member.hasPermission('MANAGE_MESSAGES')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
         if (!msg.guild.me.hasPermission('MANAGE_MESSAGES')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
 
@@ -41,14 +43,14 @@ class Clean implements Command {
         }
 
         if (deleteAmount < 1) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You can\'t delete zero or negative messages.');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You can\'t delete zero or negative messages.');
             return;
         }
 
         if (deleteAmount > 100) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You can\'t delete more than 100 messages.');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You can\'t delete more than 100 messages.');
             return;
         }
 
@@ -61,7 +63,7 @@ class Clean implements Command {
 
         if (!newArgs[1].match(Discord.MessageMentions.USERS_PATTERN) &&
             newArgs[1].toLowerCase() !== 'bot') {
-                await bot.failReact(msg);
+                await Utils.failReact(msg);
                 return true;
         }
 
@@ -78,7 +80,7 @@ class Clean implements Command {
 
             await this.deleteBulk(this.seperateMessages(newMessages), msg);
             if (deleteUser.id === msg.author.id) {
-                await bot.successReact(msg);
+                await Utils.successReact(msg);
             }
             return;
         }
@@ -89,7 +91,7 @@ class Clean implements Command {
                 .slice(0, deleteAmount);
 
             await this.deleteBulk(this.seperateMessages(newMessages), msg);
-            await bot.successReact(msg);
+            await Utils.successReact(msg);
             return;
         }
         return;

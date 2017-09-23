@@ -1,6 +1,8 @@
 import * as parseUri from 'parse-uri';
 
 import { SafetyJim, MessageProcessor } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import { Message, MessageReaction, User, PermissionString } from 'discord.js';
 import { Settings } from '../../database/models/Settings';
 
@@ -21,8 +23,8 @@ class InviteLink implements MessageProcessor {
         ];
     }
 
-    public async onMessage(bot: SafetyJim, msg: Message): Promise<boolean> {
-        let user = await bot.client.fetchUser(msg.author.id, true);
+    public async onMessage(shard: Shard, jim: SafetyJim, msg: Message): Promise<boolean> {
+        let user = await shard.client.fetchUser(msg.author.id, true);
         let member = await msg.guild.fetchMember(msg.author.id);
 
         for (let role of this.whitelistedRoles) {
@@ -31,7 +33,7 @@ class InviteLink implements MessageProcessor {
             }
         }
 
-        let enabled = await bot.database.getGuildSetting(msg.guild, 'invitelinkremover');
+        let enabled = await jim.database.getGuildSetting(msg.guild, 'invitelinkremover');
 
         if (enabled === 'false') {
             return;
@@ -48,7 +50,7 @@ class InviteLink implements MessageProcessor {
 
         try {
             await msg.delete();
-            await bot.sendMessage(msg.channel, `I'm sorry ${msg.author}, you can't send invite links here.`);
+            await Utils.sendMessage(msg.channel, `I'm sorry ${msg.author}, you can't send invite links here.`);
         } finally {
             return true;
         }

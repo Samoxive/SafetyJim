@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 import { Mutes } from '../../database/models/Mutes';
 
@@ -8,12 +10,12 @@ class Unmute implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
 
         if (!msg.member.hasPermission('MANAGE_ROLES')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -29,17 +31,17 @@ class Unmute implements Command {
         let role = msg.guild.roles.find('name', 'Muted');
 
         if (!role) {
-            await bot.failReact(msg);
+            await Utils.failReact(msg);
             // tslint:disable-next-line:max-line-length
-            await bot.sendMessage(msg.channel, 'Could not find a Muted role, please create one yourself or mute a user to automatically setup one.');
+            await Utils.sendMessage(msg.channel, 'Could not find a Muted role, please create one yourself or mute a user to automatically setup one.');
             return;
         }
 
-        await bot.client.fetchUser(msg.mentions.users.first().id, true);
+        await shard.client.fetchUser(msg.mentions.users.first().id, true);
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         await member.removeRole(role);
-        await bot.successReact(msg);
+        await Utils.successReact(msg);
         await Mutes.update<Mutes>({ unmuted: true }, {
             where: {
                 userid: member.id,

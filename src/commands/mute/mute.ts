@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 import * as time from 'time-parser';
 import { Settings } from '../../database/models/Settings';
@@ -10,12 +12,12 @@ class Mute implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
 
         if (!msg.member.hasPermission('MANAGE_ROLES')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -25,8 +27,8 @@ class Mute implements Command {
         }
 
         if (!msg.guild.me.hasPermission('MANAGE_ROLES')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
 
@@ -39,8 +41,8 @@ class Mute implements Command {
                     permissions: ['READ_MESSAGES', 'READ_MESSAGE_HISTORY', 'CONNECT'],
                 });
             } catch (e) {
-                await bot.failReact(msg);
-                await bot.sendMessage(msg.channel, 'Could not create a Muted role!');
+                await Utils.failReact(msg);
+                await Utils.sendMessage(msg.channel, 'Could not create a Muted role!');
                 return;
             }
 
@@ -52,8 +54,8 @@ class Mute implements Command {
                         SPEAK: false,
                     });
                 } catch (e) {
-                    await bot.failReact(msg);
-                    await bot.sendMessage(msg.channel, 'Could not setup the Muted role!');
+                    await Utils.failReact(msg);
+                    await Utils.sendMessage(msg.channel, 'Could not setup the Muted role!');
                     return;
                 }
             }
@@ -74,19 +76,19 @@ class Mute implements Command {
                         SPEAK: false,
                     });
                 } catch (e) {
-                    await bot.failReact(msg);
-                    await bot.sendMessage(msg.channel, 'Could not setup the Muted role!');
+                    await Utils.failReact(msg);
+                    await Utils.sendMessage(msg.channel, 'Could not setup the Muted role!');
                     return;
                 }
             }
         }
 
-        await bot.client.fetchUser(msg.mentions.users.first().id, true);
+        await shard.client.fetchUser(msg.mentions.users.first().id, true);
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You can\'t mute yourself, dummy!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You can\'t mute yourself, dummy!');
             return;
         }
 
@@ -106,13 +108,13 @@ class Mute implements Command {
             }
             parsedTime = time(timeArg);
             if (!parsedTime.relative) {
-                await bot.failReact(msg);
-                await bot.sendMessage(msg.channel, `Invalid time argument \`${timeArg}\`. Try again.`);
+                await Utils.failReact(msg);
+                await Utils.sendMessage(msg.channel, `Invalid time argument \`${timeArg}\`. Try again.`);
                 return;
             }
             if (parsedTime.relative < 0) {
-                await bot.failReact(msg);
-                await bot.sendMessage(msg.channel, 'Your time argument was set for the past. Try again.' +
+                await Utils.failReact(msg);
+                await Utils.sendMessage(msg.channel, 'Your time argument was set for the past. Try again.' +
                 '\nIf you\'re specifying a date, e.g. `30 December`, make sure you pass the year.');
                 return;
             }
@@ -139,16 +141,16 @@ class Mute implements Command {
             await member.send({ embed });
         } catch (e) {
             // tslint:disable-next-line:max-line-length
-            await bot.sendMessage(msg.channel, 'Could not send private message to specified user, I am probably blocked.');
+            await Utils.sendMessage(msg.channel, 'Could not send private message to specified user, I am probably blocked.');
         } finally {
             try {
                 await member.addRole(msg.guild.roles.find('name', 'Muted'));
             } catch (e) {
-                await bot.failReact(msg);
-                await bot.sendMessage(msg.channel, 'I do not have permissions to do that!');
+                await Utils.failReact(msg);
+                await Utils.sendMessage(msg.channel, 'I do not have permissions to do that!');
                 return;
             }
-            await bot.successReact(msg);
+            await Utils.successReact(msg);
         }
 
         let now = Math.round((new Date()).getTime() / 1000);
@@ -164,10 +166,10 @@ class Mute implements Command {
             unmuted: false,
         });
 
-        await bot.createModLogEntry(msg, member, reason, 'mute',
+        await Utils.createModLogEntry(msg, member, reason, 'mute',
                                     muteRecord.id, parsedTime ? parsedTime.absolute : null);
 
-        await bot.deleteCommandMessage(msg);
+        await Utils.deleteCommandMessage(msg);
         return;
     }
 }

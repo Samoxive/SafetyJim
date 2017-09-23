@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 import { Settings } from '../../database/models/Settings';
 import { Kicks } from '../../database/models/Kicks';
@@ -9,13 +11,13 @@ class Kick implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
         args = splitArgs.slice(1).join(' ');
 
         if (!msg.member.hasPermission('KICK_MEMBERS')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -25,22 +27,22 @@ class Kick implements Command {
         }
 
         if (!msg.guild.me.hasPermission('KICK_MEMBERS')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
 
         let member = msg.guild.member(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You can\'t kick yourself, dummy!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You can\'t kick yourself, dummy!');
             return;
         }
 
         if (!member || !member.kickable || msg.member.highestRole.comparePositionTo(member.highestRole) <= 0) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'The specified member is not kickable.');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'The specified member is not kickable.');
             return;
         }
 
@@ -59,11 +61,11 @@ class Kick implements Command {
             await member.send({ embed });
         } catch (e) {
             // tslint:disable-next-line:max-line-length
-            await bot.sendMessage(msg.channel, 'Could not send a private message to specified user, I am probably blocked.');
+            await Utils.sendMessage(msg.channel, 'Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
                 await member.kick(reason);
-                await bot.successReact(msg);
+                await Utils.successReact(msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
                 let kickRecord = await Kicks.create<Kicks>({
@@ -74,14 +76,14 @@ class Kick implements Command {
                     reason,
                 });
 
-                await bot.createModLogEntry(msg, member, reason, 'kick', kickRecord.id);
+                await Utils.createModLogEntry(msg, member, reason, 'kick', kickRecord.id);
             } catch (e) {
-                await bot.failReact(msg);
-                await bot.sendMessage(msg.channel, 'Could not kick specified user. Do I have enough permissions?');
+                await Utils.failReact(msg);
+                await Utils.sendMessage(msg.channel, 'Could not kick specified user. Do I have enough permissions?');
             }
         }
 
-        await bot.deleteCommandMessage(msg);
+        await Utils.deleteCommandMessage(msg);
         return;
     }
 }

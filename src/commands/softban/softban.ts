@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 import { Softbans } from '../../database/models/Softbans';
 
@@ -8,12 +10,12 @@ class Softban implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
 
         if (!msg.member.hasPermission('BAN_MEMBERS')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -22,18 +24,18 @@ class Softban implements Command {
             return true;
         }
 
-        await bot.client.fetchUser(msg.mentions.users.first().id, true);
+        await shard.client.fetchUser(msg.mentions.users.first().id, true);
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You can\'t softban yourself, dummy!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You can\'t softban yourself, dummy!');
             return false;
         }
 
         if (!member.bannable || !msg.guild.me.hasPermission('BAN_MEMBERS')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
 
@@ -48,14 +50,14 @@ class Softban implements Command {
             }
             daysArgument = args.split('|')[1].trim();
             if (!parseInt(daysArgument)) {
-                await bot.failReact(msg);
+                await Utils.failReact(msg);
                 return true;
             }
             daysArgument = parseInt(daysArgument);
 
             if (daysArgument < 1 || daysArgument > 7) {
-                await bot.failReact(msg);
-                await bot.sendMessage(msg.channel, 'The amount of days must be between 1 and 7.');
+                await Utils.failReact(msg);
+                await Utils.sendMessage(msg.channel, 'The amount of days must be between 1 and 7.');
                 return;
             }
         } else if (args.length > 0) {
@@ -80,13 +82,13 @@ class Softban implements Command {
             await member.send({ embed });
         } catch (e) {
             // tslint:disable-next-line:max-line-length
-            await bot.sendMessage(msg.channel, 'Could not send a private message to specified user, I am probably blocked.');
+            await Utils.sendMessage(msg.channel, 'Could not send a private message to specified user, I am probably blocked.');
         } finally {
             try {
                 let auditLogReason = `Softbanned by ${msg.author.tag} (${msg.author.id}) - ${reason}`;
                 await member.ban({ reason: auditLogReason, days: daysArgument || 1 });
                 await msg.guild.unban(member.id);
-                await bot.successReact(msg);
+                await Utils.successReact(msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
                 let softbanRecord = await Softbans.create<Softbans>({
@@ -98,11 +100,11 @@ class Softban implements Command {
                     reason,
                 });
 
-                await bot.createModLogEntry(msg, member, reason, 'softban', softbanRecord.id);
+                await Utils.createModLogEntry(msg, member, reason, 'softban', softbanRecord.id);
             } catch (e) {
-                await bot.failReact(msg);
+                await Utils.failReact(msg);
                 // tslint:disable-next-line:max-line-length
-                await bot.sendMessage(msg.channel, 'Could not softban / unban specified user. Do I have enough permissions?');
+                await Utils.sendMessage(msg.channel, 'Could not softban / unban specified user. Do I have enough permissions?');
             }
         }
 

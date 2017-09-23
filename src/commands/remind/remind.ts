@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 import * as time from 'time-parser';
 import { Reminders } from '../../database/models/Reminders';
@@ -12,7 +14,7 @@ class Remind implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         if (!args) {
             return true;
         }
@@ -28,14 +30,14 @@ class Remind implements Command {
             let parsedTime = time(splitArgs[1]);
 
             if (!parsedTime.relative) {
-                await bot.failReact(msg);
-                await bot.sendMessage(msg.channel, `Invalid time argument \`${splitArgs[1]}\`. Try again.`);
+                await Utils.failReact(msg);
+                await Utils.sendMessage(msg.channel, `Invalid time argument \`${splitArgs[1]}\`. Try again.`);
                 return;
             }
 
             if (parsedTime.relative < 0) {
-                await bot.failReact(msg);
-                await bot.sendMessage(msg.channel, 'Your time argument was set for the past. Try again.' +
+                await Utils.failReact(msg);
+                await Utils.sendMessage(msg.channel, 'Your time argument was set for the past. Try again.' +
                 '\nIf you\'re specifying a date, e.g. `30 December`, make sure you pass the year.');
                 return;
             }
@@ -53,7 +55,7 @@ class Remind implements Command {
             reminded: false,
         });
 
-        await bot.successReact(msg);
+        await Utils.successReact(msg);
         return;
     }
 }

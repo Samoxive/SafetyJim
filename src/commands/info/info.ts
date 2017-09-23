@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 import { Settings } from '../../database/models/Settings';
 import { Bans } from '../../database/models/Bans';
@@ -20,7 +22,7 @@ class Info implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let lastBan = await Bans.find<Bans>({
             where: {
                 guildid: msg.guild.id,
@@ -34,17 +36,17 @@ class Info implements Command {
         if (lastBan != null) {
             daysSince = this.daysSinceBan(lastBan.bantime).toString();
         }
-        let uptimeString = this.timeElapsed(Date.now(), bot.bootTime.getTime());
+        let uptimeString = this.timeElapsed(Date.now(), jim.bootTime.getTime());
         let embed = {
-            author: { name: `Safety Jim - v${bot.config.version}`,
-                      icon_url: bot.client.user.avatarURL,
+            author: { name: `Safety Jim - v${jim.config.version}`,
+                      icon_url: shard.client.user.avatarURL,
                       url: 'https://discordbots.org/bot/313749262687141888' },
             description: `Lifting the :hammer: since ${uptimeString} ago.`,
             fields: [
-                { name: 'Server Count', value:  bot.client.guilds.size, inline: true },
-                { name: 'User Count', value: bot.client.users.size, inline: true },
-                { name: 'Channel Count', value: bot.client.channels.size, inline: true },
-                { name: 'Websocket Ping', value: `${bot.client.pings[0].toFixed(0)}ms`, inline: true},
+                { name: 'Server Count', value:  shard.client.guilds.size, inline: true },
+                { name: 'User Count', value: shard.client.users.size, inline: true },
+                { name: 'Channel Count', value: shard.client.channels.size, inline: true },
+                { name: 'Websocket Ping', value: `${shard.client.pings[0].toFixed(0)}ms`, inline: true},
                 // tslint:disable-next-line:max-line-length
                 { name: 'RAM usage', value: `${(process.memoryUsage().rss / (1024 * 1024)).toFixed(0)}MB`, inline: true },
                 { name: 'Links', value: `[Support](https://discord.io/safetyjim) | [Github](https://github.com/samoxive/safetyjim) | [Invite](${this.inviteLink})`, inline: true },
@@ -53,8 +55,8 @@ class Info implements Command {
             color: 0x4286f4,
         } as Discord.RichEmbedOptions;
 
-        await bot.successReact(msg);
-        await bot.sendMessage(msg.channel, { embed });
+        await Utils.successReact(msg);
+        await Utils.sendMessage(msg.channel, { embed });
         return;
     }
 

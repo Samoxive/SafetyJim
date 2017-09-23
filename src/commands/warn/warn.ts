@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 import { Settings } from '../../database/models/Settings';
 import { Warns } from '../../database/models/Warns';
@@ -9,13 +11,13 @@ class Warn implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let splitArgs = args.split(' ');
         args = splitArgs.slice(1).join(' ');
 
         if (!msg.member.hasPermission('KICK_MEMBERS')) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
@@ -24,18 +26,18 @@ class Warn implements Command {
             return true;
         }
 
-        await bot.client.fetchUser(msg.mentions.users.first().id, true);
+        await shard.client.fetchUser(msg.mentions.users.first().id, true);
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            await bot.failReact(msg);
-            await bot.sendMessage(msg.channel, 'You can\'t warn yourself, dummy!');
+            await Utils.failReact(msg);
+            await Utils.sendMessage(msg.channel, 'You can\'t warn yourself, dummy!');
             return;
         }
 
         let reason = args || 'No reason specified';
 
-        bot.log.info(`Warned user "${member.user.tag}" in "${msg.guild.name}".`);
+        shard.log.info(`Warned user "${member.user.tag}" in "${msg.guild.name}".`);
 
         let embed = {
             title: `Warned in ${msg.guild.name}`,
@@ -49,9 +51,9 @@ class Warn implements Command {
         try {
             await member.send({ embed });
         } catch (e) {
-            await bot.sendMessage(msg.channel, 'Could not send a warning to specified user via private message!');
+            await Utils.sendMessage(msg.channel, 'Could not send a warning to specified user via private message!');
         } finally {
-            bot.successReact(msg);
+            Utils.successReact(msg);
         }
 
         let now = Math.round((new Date()).getTime() / 1000);
@@ -63,8 +65,8 @@ class Warn implements Command {
             reason,
         });
 
-        await bot.createModLogEntry(msg, member, reason, 'warn', warnRecord.id);
-        await bot.deleteCommandMessage(msg);
+        await Utils.createModLogEntry(msg, member, reason, 'warn', warnRecord.id);
+        await Utils.deleteCommandMessage(msg);
         return;
     }
 }

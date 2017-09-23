@@ -1,4 +1,6 @@
 import { Command, SafetyJim } from '../../safetyjim/safetyjim';
+import { Shard } from '../../safetyjim/shard';
+import * as Utils from '../../safetyjim/utils';
 import * as Discord from 'discord.js';
 
 const botLink = 'https://discordapp.com/oauth2/authorize?client_id=313749262687141888&permissions=268446790&scope=bot';
@@ -21,13 +23,13 @@ class Invite implements Command {
     // tslint:disable-next-line:no-empty
     constructor(bot: SafetyJim) {}
 
-    public async run(bot: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
-        await bot.successReact(msg);
+    public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
+        await Utils.successReact(msg);
 
         if (this.embed.author.icon_url == null) {
-            this.embed.author.icon_url = bot.client.user.avatarURL;
+            this.embed.author.icon_url = shard.client.user.avatarURL;
         }
-        await bot.sendMessage(msg.channel, { embed: this.embed });
+        await Utils.sendMessage(msg.channel, { embed: this.embed });
         return;
     }
 }
