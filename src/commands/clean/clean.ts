@@ -22,13 +22,13 @@ class Clean implements Command {
         let deleteAmount = parseInt(newArgs[0]);
 
         if (!msg.member.hasPermission('MANAGE_MESSAGES')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
 
         if (!msg.guild.me.hasPermission('MANAGE_MESSAGES')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
@@ -43,13 +43,13 @@ class Clean implements Command {
         }
 
         if (deleteAmount < 1) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You can\'t delete zero or negative messages.');
             return;
         }
 
         if (deleteAmount > 100) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You can\'t delete more than 100 messages.');
             return;
         }
@@ -63,7 +63,7 @@ class Clean implements Command {
 
         if (!newArgs[1].match(Discord.MessageMentions.USERS_PATTERN) &&
             newArgs[1].toLowerCase() !== 'bot') {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 return true;
         }
 
@@ -80,7 +80,7 @@ class Clean implements Command {
 
             await this.deleteBulk(this.seperateMessages(newMessages), msg);
             if (deleteUser.id === msg.author.id) {
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
             }
             return;
         }
@@ -91,7 +91,7 @@ class Clean implements Command {
                 .slice(0, deleteAmount);
 
             await this.deleteBulk(this.seperateMessages(newMessages), msg);
-            await Utils.successReact(msg);
+            await Utils.successReact(jim, msg);
             return;
         }
         return;

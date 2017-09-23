@@ -16,7 +16,7 @@ class Mute implements Command {
         let splitArgs = args.split(' ');
 
         if (!msg.member.hasPermission('MANAGE_ROLES')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
@@ -27,7 +27,7 @@ class Mute implements Command {
         }
 
         if (!msg.guild.me.hasPermission('MANAGE_ROLES')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
@@ -41,7 +41,7 @@ class Mute implements Command {
                     permissions: ['READ_MESSAGES', 'READ_MESSAGE_HISTORY', 'CONNECT'],
                 });
             } catch (e) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, 'Could not create a Muted role!');
                 return;
             }
@@ -54,7 +54,7 @@ class Mute implements Command {
                         SPEAK: false,
                     });
                 } catch (e) {
-                    await Utils.failReact(msg);
+                    await Utils.failReact(jim, msg);
                     await Utils.sendMessage(msg.channel, 'Could not setup the Muted role!');
                     return;
                 }
@@ -76,7 +76,7 @@ class Mute implements Command {
                         SPEAK: false,
                     });
                 } catch (e) {
-                    await Utils.failReact(msg);
+                    await Utils.failReact(jim, msg);
                     await Utils.sendMessage(msg.channel, 'Could not setup the Muted role!');
                     return;
                 }
@@ -87,7 +87,7 @@ class Mute implements Command {
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You can\'t mute yourself, dummy!');
             return;
         }
@@ -108,12 +108,12 @@ class Mute implements Command {
             }
             parsedTime = time(timeArg);
             if (!parsedTime.relative) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, `Invalid time argument \`${timeArg}\`. Try again.`);
                 return;
             }
             if (parsedTime.relative < 0) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, 'Your time argument was set for the past. Try again.' +
                 '\nIf you\'re specifying a date, e.g. `30 December`, make sure you pass the year.');
                 return;
@@ -146,11 +146,11 @@ class Mute implements Command {
             try {
                 await member.addRole(msg.guild.roles.find('name', 'Muted'));
             } catch (e) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, 'I do not have permissions to do that!');
                 return;
             }
-            await Utils.successReact(msg);
+            await Utils.successReact(jim, msg);
         }
 
         let now = Math.round((new Date()).getTime() / 1000);

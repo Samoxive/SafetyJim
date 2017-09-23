@@ -24,7 +24,7 @@ class Invite implements Command {
     constructor(bot: SafetyJim) {}
 
     public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
-        await Utils.successReact(msg);
+        await Utils.successReact(jim, msg);
 
         if (this.embed.author.icon_url == null) {
             this.embed.author.icon_url = shard.client.user.avatarURL;

@@ -16,7 +16,7 @@ class Ban implements Command {
         let splitArgs = args.split(' ');
 
         if (!msg.member.hasPermission('BAN_MEMBERS')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
@@ -27,7 +27,7 @@ class Ban implements Command {
         }
 
         if (!msg.guild.me.hasPermission('BAN_MEMBERS')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
@@ -36,13 +36,13 @@ class Ban implements Command {
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You can\'t ban yourself, dummy!');
             return false;
         }
 
         if (!member.bannable) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
@@ -63,12 +63,12 @@ class Ban implements Command {
             }
             parsedTime = time(timeArg);
             if (!parsedTime.relative) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, `Invalid time argument \`${timeArg}\`. Try again.`);
                 return;
             }
             if (parsedTime.relative < 0) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, 'Your time argument was set for the past. Try again.' +
                 '\nIf you\'re specifying a date, e.g. `30 December`, make sure you pass the year.');
                 return;
@@ -101,7 +101,7 @@ class Ban implements Command {
             try {
                 let auditLogReason = `Banned by ${msg.author.tag} (${msg.author.id}) - ${reason}`;
                 await member.ban({ days: 0, reason: auditLogReason });
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
                 let expires = parsedTime != null;
@@ -120,7 +120,7 @@ class Ban implements Command {
                 await Utils.createModLogEntry(shard, msg, member, reason, 'ban',
                                             banRecord.id, parsedTime ? parsedTime.absolute : null);
             } catch (e) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, 'Could not ban specified user. Do I have enough permissions?');
             }
         }

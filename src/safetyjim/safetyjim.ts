@@ -38,7 +38,7 @@ export interface MessageProcessor {
 
 export class SafetyJim {
     public bootTime: Date;
-    private clients: Shard[] = [];
+    public clients: Shard[] = [];
     private allowUsersCronJob;
     private unbanUserCronJob;
     private unmuteUserCronJob;

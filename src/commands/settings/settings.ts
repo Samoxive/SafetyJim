@@ -35,7 +35,7 @@ class SettingsCommand implements Command {
         }
 
         if (splitArgs[0] === 'display') {
-            await Utils.successReact(msg);
+            await Utils.successReact(jim, msg);
             await this.handleSettingsDisplay(shard, msg);
             return;
         }
@@ -57,13 +57,13 @@ class SettingsCommand implements Command {
                 fields: [{ name: 'List of settings', value: output }],
                 color: 0x4286f4,
             };
-            await Utils.successReact(msg);
+            await Utils.successReact(jim, msg);
             await Utils.sendMessage(msg.channel, { embed });
             return;
         }
 
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to modify guild settings!');
             return;
         }
@@ -76,7 +76,7 @@ class SettingsCommand implements Command {
             });
             await jim.database.createGuildSettings(shard, msg.guild);
             shard.createRegexForGuild(msg.guild.id, jim.config.jim.default_prefix);
-            await Utils.successReact(msg);
+            await Utils.successReact(jim, msg);
             return;
         }
 
@@ -85,7 +85,7 @@ class SettingsCommand implements Command {
         let setArgument = setArguments.join(' ');
 
         if (!keys.includes(setKey) || !setArgument) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             return true;
         }
 
@@ -99,7 +99,7 @@ class SettingsCommand implements Command {
                     return true;
                 }
 
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, 'silentcommands', setArgument);
                 break;
             case 'invitelinkremover':
@@ -111,7 +111,7 @@ class SettingsCommand implements Command {
                     return true;
                 }
 
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, 'invitelinkremover', setArgument);
                 break;
             case 'holdingroom':
@@ -126,12 +126,12 @@ class SettingsCommand implements Command {
                 let roleID = await jim.database.getGuildSetting(msg.guild, 'holdingroomroleid');
 
                 if (roleID == null) {
-                    await Utils.failReact(msg);
+                    await Utils.failReact(jim, msg);
                     // tslint:disable-next-line:max-line-length
                     await Utils.sendMessage(msg.channel, 'You can\'t enable holding room because you didn\'t set a role first!');
                     return;
                 }
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, 'holdingroomactive', setArgument);
                 break;
             case 'modlog':
@@ -143,7 +143,7 @@ class SettingsCommand implements Command {
                     return true;
                 }
 
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, 'modlogactive', setArgument);
                 break;
             case 'welcomemessage':
@@ -155,15 +155,15 @@ class SettingsCommand implements Command {
                     return true;
                 }
 
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, 'welcomemessageactive', setArgument);
                 break;
             case 'message':
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, 'welcomemessage', setArgument);
                 break;
             case 'prefix':
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, 'prefix', setArgument);
                 shard.createRegexForGuild(msg.guild.id, setArgument);
                 break;
@@ -174,7 +174,7 @@ class SettingsCommand implements Command {
                     return true;
                 }
 
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, 'holdingroomminutes', minutes.toString());
                 break;
             case 'welcomemessagechannel':
@@ -186,7 +186,7 @@ class SettingsCommand implements Command {
 
                 let key: SettingKey = (setKey === 'modlogchannel' ? 'modlogchannelid' : 'welcomemessagechannelid');
 
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, key, msg.mentions.channels.first().id);
                 break;
             case 'holdingroomrole':
@@ -196,11 +196,11 @@ class SettingsCommand implements Command {
                     return true;
                 }
 
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
                 await jim.database.updateSetting(msg.guild, 'holdingroomroleid', role.id);
                 break;
             default:
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 return true;
         }
 
@@ -258,7 +258,7 @@ class SettingsCommand implements Command {
             fields: [{ name: 'Guild Settings', value: output }],
             color: 0x4286f4,
         };
-        await Utils.successReact(msg);
+        await Utils.successReact(jim, msg);
         await Utils.sendMessage(msg.channel, { embed });
     }
 }

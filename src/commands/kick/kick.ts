@@ -16,7 +16,7 @@ class Kick implements Command {
         args = splitArgs.slice(1).join(' ');
 
         if (!msg.member.hasPermission('KICK_MEMBERS')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
@@ -27,7 +27,7 @@ class Kick implements Command {
         }
 
         if (!msg.guild.me.hasPermission('KICK_MEMBERS')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
@@ -35,13 +35,13 @@ class Kick implements Command {
         let member = msg.guild.member(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You can\'t kick yourself, dummy!');
             return;
         }
 
         if (!member || !member.kickable || msg.member.highestRole.comparePositionTo(member.highestRole) <= 0) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'The specified member is not kickable.');
             return;
         }
@@ -65,7 +65,7 @@ class Kick implements Command {
         } finally {
             try {
                 await member.kick(reason);
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
                 let kickRecord = await Kicks.create<Kicks>({
@@ -78,7 +78,7 @@ class Kick implements Command {
 
                 await Utils.createModLogEntry(shard, msg, member, reason, 'kick', kickRecord.id);
             } catch (e) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, 'Could not kick specified user. Do I have enough permissions?');
             }
         }

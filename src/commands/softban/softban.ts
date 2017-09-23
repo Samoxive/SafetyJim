@@ -14,7 +14,7 @@ class Softban implements Command {
         let splitArgs = args.split(' ');
 
         if (!msg.member.hasPermission('BAN_MEMBERS')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
@@ -28,13 +28,13 @@ class Softban implements Command {
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You can\'t softban yourself, dummy!');
             return false;
         }
 
         if (!member.bannable || !msg.guild.me.hasPermission('BAN_MEMBERS')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'I don\'t have enough permissions to do that!');
             return;
         }
@@ -50,13 +50,13 @@ class Softban implements Command {
             }
             daysArgument = args.split('|')[1].trim();
             if (!parseInt(daysArgument)) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 return true;
             }
             daysArgument = parseInt(daysArgument);
 
             if (daysArgument < 1 || daysArgument > 7) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, 'The amount of days must be between 1 and 7.');
                 return;
             }
@@ -88,7 +88,7 @@ class Softban implements Command {
                 let auditLogReason = `Softbanned by ${msg.author.tag} (${msg.author.id}) - ${reason}`;
                 await member.ban({ reason: auditLogReason, days: daysArgument || 1 });
                 await msg.guild.unban(member.id);
-                await Utils.successReact(msg);
+                await Utils.successReact(jim, msg);
 
                 let now = Math.round((new Date()).getTime() / 1000);
                 let softbanRecord = await Softbans.create<Softbans>({
@@ -102,7 +102,7 @@ class Softban implements Command {
 
                 await Utils.createModLogEntry(shard, msg, member, reason, 'softban', softbanRecord.id);
             } catch (e) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 // tslint:disable-next-line:max-line-length
                 await Utils.sendMessage(msg.channel, 'Could not softban / unban specified user. Do I have enough permissions?');
             }

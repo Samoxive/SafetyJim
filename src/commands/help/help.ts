@@ -12,7 +12,7 @@ class Help implements Command {
 
     public async run(shard: Shard, jim: SafetyJim, msg: Discord.Message, args: string): Promise<boolean> {
         let prefix = await jim.database.getGuildSetting(msg.guild, 'prefix');
-        await Utils.successReact(msg);
+        await Utils.successReact(jim, msg);
         await Utils.sendMessage(msg.channel, { embed: {
             author: { name: 'Safety Jim - Commands', icon_url: shard.client.user.avatarURL },
             description: shard.getUsageStrings(prefix),

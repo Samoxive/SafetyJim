@@ -14,7 +14,7 @@ class Unmute implements Command {
         let splitArgs = args.split(' ');
 
         if (!msg.member.hasPermission('MANAGE_ROLES')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
@@ -31,7 +31,7 @@ class Unmute implements Command {
         let role = msg.guild.roles.find('name', 'Muted');
 
         if (!role) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             // tslint:disable-next-line:max-line-length
             await Utils.sendMessage(msg.channel, 'Could not find a Muted role, please create one yourself or mute a user to automatically setup one.');
             return;
@@ -41,7 +41,7 @@ class Unmute implements Command {
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         await member.removeRole(role);
-        await Utils.successReact(msg);
+        await Utils.successReact(jim, msg);
         await Mutes.update<Mutes>({ unmuted: true }, {
             where: {
                 userid: member.id,

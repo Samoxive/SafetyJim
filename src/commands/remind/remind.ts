@@ -30,13 +30,13 @@ class Remind implements Command {
             let parsedTime = time(splitArgs[1]);
 
             if (!parsedTime.relative) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, `Invalid time argument \`${splitArgs[1]}\`. Try again.`);
                 return;
             }
 
             if (parsedTime.relative < 0) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, 'Your time argument was set for the past. Try again.' +
                 '\nIf you\'re specifying a date, e.g. `30 December`, make sure you pass the year.');
                 return;
@@ -55,7 +55,7 @@ class Remind implements Command {
             reminded: false,
         });
 
-        await Utils.successReact(msg);
+        await Utils.successReact(jim, msg);
         return;
     }
 }

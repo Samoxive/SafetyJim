@@ -16,7 +16,7 @@ class Warn implements Command {
         args = splitArgs.slice(1).join(' ');
 
         if (!msg.member.hasPermission('KICK_MEMBERS')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to execute this command!');
             return;
         }
@@ -30,7 +30,7 @@ class Warn implements Command {
         let member = await msg.guild.fetchMember(msg.mentions.users.first());
 
         if (member.id === msg.author.id) {
-            await Utils.failReact(msg);
+            await Utils.failReact(jim, msg);
             await Utils.sendMessage(msg.channel, 'You can\'t warn yourself, dummy!');
             return;
         }
@@ -53,7 +53,7 @@ class Warn implements Command {
         } catch (e) {
             await Utils.sendMessage(msg.channel, 'Could not send a warning to specified user via private message!');
         } finally {
-            Utils.successReact(msg);
+            Utils.successReact(jim, msg);
         }
 
         let now = Math.round((new Date()).getTime() / 1000);

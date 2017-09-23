@@ -55,7 +55,7 @@ class Info implements Command {
             color: 0x4286f4,
         } as Discord.RichEmbedOptions;
 
-        await Utils.successReact(msg);
+        await Utils.successReact(jim, msg);
         await Utils.sendMessage(msg.channel, { embed });
         return;
     }

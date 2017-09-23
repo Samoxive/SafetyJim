@@ -28,9 +28,18 @@ export async function sendMessage(channel: Discord.Channel, message: string | Di
     }
 }
 
-export async function failReact(msg: Discord.Message): Promise<void> {
+export async function failReact(jim: SafetyJim, msg: Discord.Message): Promise<void> {
+    let emoji;
+
+    for (let shard of jim.clients) {
+        let tmp = shard.client.emojis.find('id', '322698553980092417');
+
+        if (tmp != null) {
+            emoji = tmp;
+        }
+    }
     try {
-        await msg.react('322698553980092417');
+        await msg.react(emoji);
     } catch (e) {
         //
     }
@@ -38,9 +47,19 @@ export async function failReact(msg: Discord.Message): Promise<void> {
     return;
 }
 
-export async function successReact(msg: Discord.Message): Promise<void> {
+export async function successReact(jim: SafetyJim, msg: Discord.Message): Promise<void> {
+    let emoji;
+
+    for (let shard of jim.clients) {
+        let tmp = shard.client.emojis.find('id', '322698554294534144');
+
+        if (tmp != null) {
+            emoji = tmp;
+        }
+    }
+
     try {
-        await msg.react('322698554294534144');
+        await msg.react(emoji);
     } catch (e) {
         //
     }

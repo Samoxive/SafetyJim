@@ -24,17 +24,17 @@ class Tag implements Command {
             await this.displayTags(shard, msg);
             return;
         } else if (splitArgs[0] === 'add') {
-            await this.addTag(msg, splitArgs[1], splitArgs.slice(2).join(' '));
+            await this.addTag(shard, msg, splitArgs[1], splitArgs.slice(2).join(' '));
             return;
         } else if (splitArgs[0] === 'edit') {
-            await this.editTag(msg, splitArgs[1], splitArgs.slice(2).join(' '));
+            await this.editTag(shard, msg, splitArgs[1], splitArgs.slice(2).join(' '));
             return;
         } else if (splitArgs[0] === 'remove') {
-           await this.deleteTag(msg, splitArgs[1]);
+           await this.deleteTag(shard, msg, splitArgs[1]);
            return;
         } else {
             if (!splitArgs[0]) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 return true;
             }
 
@@ -46,12 +46,12 @@ class Tag implements Command {
             });
 
             if (!response) {
-                await Utils.failReact(msg);
+                await Utils.failReact(jim, msg);
                 await Utils.sendMessage(msg.channel, 'Could not find a tag with that name!');
                 return;
             }
 
-            await Utils.successReact(msg);
+            await Utils.successReact(jim, msg);
             await Utils.sendMessage(msg.channel, response.response);
             return;
         }
@@ -66,7 +66,7 @@ class Tag implements Command {
         });
 
         if (tags.length === 0) {
-            await Utils.successReact(msg);
+            await Utils.successReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, `No tags have been added yet!`);
             return;
         }
@@ -79,31 +79,31 @@ class Tag implements Command {
             color: 0x4286f4,
         };
 
-        await Utils.successReact(msg);
+        await Utils.successReact(shard.jim, msg);
         await Utils.sendMessage(msg.channel, { embed });
         return;
     }
 
-    private async addTag(msg: Discord.Message, name: string, response: string) {
+    private async addTag(shard: Shard, msg: Discord.Message, name: string, response: string) {
         if (this.subcommands.includes(name)) {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, `You can't create a tag with the same name as a subcommand!`);
             return;
         }
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to use this command!');
             return;
         }
 
         if (name === undefined || name === '') {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, 'Please give a tag and a response to add!');
             return;
         }
 
         if (response === undefined || response === '') {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, 'Empty responses aren\'t allowed!');
             return;
         }
@@ -115,28 +115,28 @@ class Tag implements Command {
                 response,
             });
 
-            await Utils.successReact(msg);
+            await Utils.successReact(shard.jim, msg);
         } catch (e) {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, `Tag "${name}" already exists!`);
         }
     }
 
-    private async editTag(msg: Discord.Message, name: string, response: string) {
+    private async editTag(shard: Shard, msg: Discord.Message, name: string, response: string) {
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to use this command!');
             return;
         }
 
         if (name === undefined || name === '') {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, 'Please give a tag and a response to edit!');
             return;
         }
 
         if (response === undefined || response === '') {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, 'Empty responses are not allowed!');
             return;
         }
@@ -149,7 +149,7 @@ class Tag implements Command {
         });
 
         if (!dbResponse) {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, `Tag ${name} does not exist!`);
             return;
         }
@@ -161,19 +161,19 @@ class Tag implements Command {
             },
         });
 
-        await Utils.successReact(msg);
+        await Utils.successReact(shard.jim, msg);
         return;
     }
 
-    private async deleteTag(msg: Discord.Message, name: string) {
+    private async deleteTag(shard: Shard, msg: Discord.Message, name: string) {
         if (!msg.member.hasPermission('ADMINISTRATOR')) {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, 'You don\'t have enough permissions to use this command!');
             return;
         }
 
         if (name === undefined) {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, 'Remove command requires an argument!');
             return;
         }
@@ -186,7 +186,7 @@ class Tag implements Command {
         });
 
         if (!dbResponse) {
-            await Utils.failReact(msg);
+            await Utils.failReact(shard.jim, msg);
             await Utils.sendMessage(msg.channel, `Tag ${name} does not exist!`);
             return;
         }
@@ -198,7 +198,7 @@ class Tag implements Command {
             },
         });
 
-        await Utils.successReact(msg);
+        await Utils.successReact(shard.jim, msg);
     }
 }
 
