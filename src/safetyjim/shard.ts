@@ -109,8 +109,6 @@ export class Shard {
 
     private onReady(): () => void {
         return (async () => {
-            this.log.info(`Client is ready, username: ${this.client.user.username}.`);
-
             let link = await this.client.generateInvite([
                 'KICK_MEMBERS',
                 'BAN_MEMBERS',
@@ -121,7 +119,9 @@ export class Shard {
                 'MANAGE_ROLES',
             ]);
 
-            this.log.info(`Bot invite link: ${link}`);
+            if (this.shardId === 0) {
+                this.log.info(`Bot invite link: ${link}`);
+            }
 
             for (let [id, guild] of this.client.guilds) {
                 if (this.isBotFarm(guild)) {
@@ -135,13 +135,13 @@ export class Shard {
                 this.log.error('something happened');
             }
 
-            await this.client.user.setGame(`-mod help | ${this.config.version}`);
+            await this.client.user.setGame(`-mod help | ${this.config.version} | ${Utils.getShardString(this)}`);
 
             for (let message of this.unprocessedMessages) {
                 await this.onMessage()(message);
             }
 
-            this.log.info('onReady finished.');
+            this.log.info(`Shard ${this.shardId} ready.`);
         });
     }
 
