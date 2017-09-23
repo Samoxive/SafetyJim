@@ -13,6 +13,7 @@ import { Mutes } from '../database/models/Mutes';
 import { CommandLogs } from '../database/models/CommandLogs';
 import { Reminders } from '../database/models/Reminders';
 import * as Utils from './utils';
+import { Observable, Subject } from 'rxjs';
 
 type RegexRecords = { string: RegExp };
 type Commands = { string: Command };
@@ -32,6 +33,7 @@ export class Shard {
     private commands = {} as Commands;
     private processors = [] as MessageProcessor[];
     private unprocessedMessages: Discord.Message[] = [];
+    private readySubject: Subject<number>;
 
     constructor(public shardId: number,
                 public jim: SafetyJim,
@@ -71,8 +73,12 @@ export class Shard {
         this.client.on('messageReactionRemove', this.onReactionDelete());
     }
 
-    public init(): void {
-        this.client.login(this.config.jim.token);
+    public async init(): Promise<Observable<number>> {
+        await this.client.login(this.config.jim.token);
+
+        this.readySubject = new Subject();
+
+        return this.readySubject.asObservable();
     }
 
     public createRegexForGuild(guildID: string, prefix: string) {
@@ -141,6 +147,7 @@ export class Shard {
                 await this.onMessage()(message);
             }
 
+            this.readySubject.next(this.shardId);
             this.log.info(`Shard ${this.shardId} ready.`);
         });
     }
