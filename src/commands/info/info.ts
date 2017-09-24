@@ -46,7 +46,8 @@ class Info implements Command {
                 // tslint:disable-next-line:max-line-length
                 { name: 'Server Count', value:  jim.clients.reduce((acc, elem) => acc + elem.client.guilds.size, 0), inline: true },
                 { name: 'User Count', value: jim.clients.reduce((acc, elem) => acc + elem.client.users.size, 0), inline: true },
-                { name: 'Channel Count', value: shard.client.channels.size, inline: true },
+                // tslint:disable-next-line:max-line-length
+                { name: 'Channel Count', value: jim.clients.reduce((acc, elem) => acc + elem.client.channels.size, 0), inline: true },
                 { name: 'Websocket Ping', value: `${shard.client.pings[0].toFixed(0)}ms`, inline: true},
                 // tslint:disable-next-line:max-line-length
                 { name: 'RAM usage', value: `${(process.memoryUsage().rss / (1024 * 1024)).toFixed(0)}MB`, inline: true },
