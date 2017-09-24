@@ -1,12 +1,13 @@
 import * as Discord from 'discord.js';
 import { Shard } from './shard';
 import { SafetyJim } from './safetyjim';
+import * as Long from 'long';
 
 export function findShardIdFromGuildId(guildId: string, shardCount: number): number {
     // (guild_id >> 22) % num_shards == shard_id
 
-    let id = parseInt(guildId);
-    return (id >> 22) % shardCount;
+    let id = Long.fromString(guildId);
+    return (id.shiftRight(22).modulo(shardCount)).toNumber();
 }
 
 export function getDefaultChannel(guild: Discord.Guild): Discord.TextChannel {
