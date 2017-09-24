@@ -43,8 +43,9 @@ class Info implements Command {
                       url: 'https://discordbots.org/bot/313749262687141888' },
             description: `Lifting the :hammer: since ${uptimeString} ago.`,
             fields: [
-                { name: 'Server Count', value:  shard.client.guilds.size, inline: true },
-                { name: 'User Count', value: shard.client.users.size, inline: true },
+                // tslint:disable-next-line:max-line-length
+                { name: 'Server Count', value:  jim.clients.reduce((acc, elem) => acc + elem.client.guilds.size, 0), inline: true },
+                { name: 'User Count', value: jim.clients.reduce((acc, elem) => acc + elem.client.users.size, 0), inline: true },
                 { name: 'Channel Count', value: shard.client.channels.size, inline: true },
                 { name: 'Websocket Ping', value: `${shard.client.pings[0].toFixed(0)}ms`, inline: true},
                 // tslint:disable-next-line:max-line-length
