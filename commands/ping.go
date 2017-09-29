@@ -2,11 +2,13 @@ package commands
 
 import (
 	"github.com/bwmarrin/discordgo"
+
+	"../safetyjim"
 )
 
 type Ping struct {}
 
-func (p *Ping) Run(session *discordgo.Session, bot *interface{}, msg *discordgo.MessageCreate, args string) chan (bool) {
+func (p *Ping) Run(session *discordgo.Session, bot *safetyjim.DiscordBot, msg *discordgo.MessageCreate, args string) chan (bool) {
 	result := make(chan(bool))
 
 	go func() {

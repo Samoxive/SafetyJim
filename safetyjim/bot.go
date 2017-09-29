@@ -26,7 +26,7 @@ func New(token string) (*DiscordBot, error) {
 		sessions[i] = discord
 	}
 	pingCommand := commands.Ping{}
-	commandArray := []*commands.Command{&pingCommand}
+	commandArray := []*Command{&pingCommand}
 
 	bot := &DiscordBot{sessions, commandArray}
 
