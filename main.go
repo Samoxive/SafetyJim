@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,10 +9,16 @@ import (
 )
 
 func main() {
-	discord := safetyjim.New("something")
-	fmt.Println(discord)
-	fmt.Println(discord.Session)
+	discord, err := safetyjim.New("something")
+	if err != nil {
+		os.Exit(-1)
+	}
+
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
+
+	for i := 0; i < 2; i++ {
+		discord.Sessions[i].Close()
+	}
 }
