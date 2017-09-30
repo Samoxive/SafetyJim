@@ -1,5 +1,6 @@
 extern crate safetyjim;
 #[macro_use] extern crate serenity;
+extern crate tokio_core;
 
 use safetyjim::config;
 use safetyjim::commands::ping::Ping;
@@ -10,29 +11,36 @@ use std::sync::Arc;
 use std::marker::Send;
 use std::marker::Sync;
 use std::collections::HashMap;
-
+use tokio_core::reactor::Handle;
+use serenity::model::Message;
+use serenity::client::Context;
+use serenity::framework::Framework;
 fn main() {
-    struct JHandler {
-        commands: Arc<Commands>,
+    struct MyFramework {
+        client:  &'static serenity::Client<JHandler>,
     }
 
-    unsafe impl Sync for JHandler {}
-    unsafe impl Send for JHandler {}
+    impl Framework for MyFramework {
+        fn dispatch(&mut self, _: Context, msg: Message) {
+            let shards = self.client.shards.as_ref();
+            let mut x = 0;
 
-    impl serenity::client::EventHandler for JHandler {
-        fn on_message(&self, ctx: serenity::client::Context, msg: serenity::model::Message) {
-            if msg.author.bot {
-                return;
+            for i in shards.lock().values() {
+                x = x + i.lock().guilds_handled()
             }
-            let x: &Command = self.commands.get("ping").unwrap().as_ref();
-            let y: &String = &x.usage()[0];
-            msg.channel_id.say((*y).as_str());
-        } 
+
+            msg.channel_id.say(format!("Guild Count: {}", x));
+        }
     }
+    
+    #[derive(Clone)]
+    struct JHandler;
+
+    impl serenity::client::EventHandler for JHandler {}
+
     let config = config::get_config(String::from("config.toml")).unwrap();
-    let mut commands: Commands = HashMap::new();
-    commands.insert(String::from("ping"), Arc::new(Ping));
-    let mut client = serenity::Client::new(config.jim.token.as_str(), JHandler { commands: Arc::new(commands) });
+    let mut client = serenity::Client::new(config.jim.token.as_str(), JHandler);
+    client.with_framework(MyFramework {client: &client});
     client.start_shards(2).unwrap();
     println!("{:?}", config);
 }
