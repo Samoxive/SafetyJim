@@ -1,0 +1,17 @@
+[package]
+name = "safetyjim"
+version = "0.1.0"
+authors = ["Şamil NART <samil.nart@gmail.com>"]
+
+[lib]
+name = "safetyjim"
+path = "src/lib.rs"
+
+[[bin]]
+name = "jim"
+path = "src/main.rs"
+
+[dependencies]
+toml = "0.4"
+serde = "1.0.15"
+serde_derive = "1.0.15"
