@@ -1,10 +1,7 @@
 package safetyjim
 
-import
-(
+import (
 	"github.com/bwmarrin/discordgo"
-
-	"../commands"
 )
 
 func New(token string) (*DiscordBot, error) {
@@ -25,15 +22,19 @@ func New(token string) (*DiscordBot, error) {
 
 		sessions[i] = discord
 	}
-	pingCommand := commands.Ping{}
-	commandArray := []*Command{&pingCommand}
 
-	bot := &DiscordBot{sessions, commandArray}
+	pingCommand := NewPing()
+	usages := map[string]GetUsage{"ping": pingCommand.GetUsage}
+	commands := map[string]Run{"ping": pingCommand.Run}
+
+	bot := &DiscordBot{&sessions, &usages, &commands}
 
 	return bot, nil
 }
 
 type DiscordBot struct {
-	Sessions []*discordgo.Session
-	Commands []*commands.Command
+	Sessions *[]*discordgo.Session
+	Usages   *map[string]GetUsage
+	Commands *map[string]Run
+	Processors
 }

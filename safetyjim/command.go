@@ -4,7 +4,5 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type Command interface {
-	GetUsage() []string
-	Run(session *discordgo.Session, bot Command, msg *discordgo.MessageCreate, args string) chan(bool)
-}
+type GetUsage func() []string
+type Run func(session *discordgo.Session, bot *DiscordBot, msg *discordgo.MessageCreate, args string) chan (bool)
