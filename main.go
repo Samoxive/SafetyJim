@@ -5,11 +5,16 @@ import (
 	"os/signal"
 	"syscall"
 
+	"./config"
 	"./safetyjim"
 )
 
 func main() {
-	discord, err := safetyjim.New("token")
+	config, err := config.New()
+	if err != nil {
+		os.Exit(-1)
+	}
+	discord, err := safetyjim.New(config)
 	if err != nil {
 		os.Exit(-1)
 	}
