@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	discord, err := safetyjim.New("something")
+	discord, err := safetyjim.New("token")
 	if err != nil {
 		os.Exit(-1)
 	}
@@ -19,6 +19,6 @@ func main() {
 	<-sc
 
 	for i := 0; i < 2; i++ {
-		discord.Sessions[i].Close()
+		(*discord.Sessions)[i].Close()
 	}
 }
