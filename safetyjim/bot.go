@@ -36,5 +36,4 @@ type DiscordBot struct {
 	Sessions *[]*discordgo.Session
 	Usages   *map[string]GetUsage
 	Commands *map[string]Run
-	Processors
 }
