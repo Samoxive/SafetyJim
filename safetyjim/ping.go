@@ -9,8 +9,8 @@ type Ping struct {
 }
 
 func NewPing() Ping {
-	return Ping {
-		[]string{"ping - pong"}
+	return Ping{
+		usage: []string{"ping - pong"},
 	}
 }
 
