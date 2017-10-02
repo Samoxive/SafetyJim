@@ -1,10 +1,11 @@
 package safetyjim
 
 import (
-	"../config"
+	"github.com/Samoxive/SafetyJim/config"
 	"github.com/bwmarrin/discordgo"
 )
 
+// New creates a Bot from a bot Config
 func New(config *config.Config) (*DiscordBot, error) {
 	sessions := make([]*discordgo.Session, 2)
 
@@ -44,6 +45,7 @@ func New(config *config.Config) (*DiscordBot, error) {
 	return bot, nil
 }
 
+// A DiscordBot is a bot which has a set of sessions and commands.
 type DiscordBot struct {
 	Sessions *[]*discordgo.Session
 	Usages   *map[string]GetUsage
