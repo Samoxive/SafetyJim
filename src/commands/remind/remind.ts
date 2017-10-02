@@ -56,6 +56,8 @@ class Remind implements Command {
         });
 
         await Utils.successReact(jim, msg);
+        
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 }

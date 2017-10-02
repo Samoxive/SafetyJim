@@ -204,6 +204,7 @@ class SettingsCommand implements Command {
                 return true;
         }
 
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 

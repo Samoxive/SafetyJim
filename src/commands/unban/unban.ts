@@ -45,6 +45,8 @@ class Unban implements Command {
             });
         }
 
+        
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 }

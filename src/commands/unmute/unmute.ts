@@ -48,6 +48,9 @@ class Unmute implements Command {
                 guildid: msg.guild.id,
             },
         });
+
+        await Utils.deleteCommandMessage(jim, msg);
+        return;
     }
 }
 
