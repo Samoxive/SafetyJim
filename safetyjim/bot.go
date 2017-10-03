@@ -1,7 +1,8 @@
 package safetyjim
 
 import (
-	"github.com/Samoxive/SafetyJim/config"
+	"SafetyJim/config"
+
 	"github.com/bwmarrin/discordgo"
 )
 

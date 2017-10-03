@@ -5,8 +5,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Samoxive/SafetyJim/config"
-	"github.com/Samoxive/SafetyJim/safetyjim"
+	"SafetyJim/config"
+	"SafetyJim/safetyjim"
 )
 
 func main() {
