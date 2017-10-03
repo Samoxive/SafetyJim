@@ -1,17 +1,16 @@
 package main
 
 import (
-	"bufio"
-  "os"
-	"io"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"SafetyJim/config"
-	"SafetyJim/safetyjim"
 	"SafetyJim/log"
+	"SafetyJim/safetyjim"
 )
 
 func main() {
-	/*
 	config, err := config.New()
 	if err != nil {
 		os.Exit(-1)
@@ -28,11 +27,7 @@ func main() {
 	for i := 0; i < 2; i++ {
 		(*discord.Sessions)[i].Close()
 	}
-	*/
-	l := log.Logger{
-		Outputs: []io.Writer{bufio.NewWriter(os.Stdout)},
-	}
 
-	l.Error("hola")
+	log.Error("hola")
 	os.Stdout.Sync()
 }
