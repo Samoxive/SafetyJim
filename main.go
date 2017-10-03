@@ -1,11 +1,13 @@
 package main
 
 import (
-	"os"
-
-	"./log"
 	"bufio"
+  "os"
 	"io"
+
+	"SafetyJim/config"
+	"SafetyJim/safetyjim"
+	"SafetyJim/log"
 )
 
 func main() {
