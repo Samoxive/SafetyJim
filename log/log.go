@@ -6,6 +6,7 @@ import (
 )
 
 func log(s string, t string) {
+	// TODO(sam): format the time better, maybe copy javascript one?
 	fmt.Printf("%s [%s] %s", time.Now().String(), t, s)
 }
 
