@@ -13,21 +13,19 @@ import (
 func main() {
 	config, err := config.New()
 	if err != nil {
-		os.Exit(-1)
+		log.Error("Could not read config file! " + err)
+		os.Exit(1)
 	}
+
 	discord, err := safetyjim.New(config)
 	if err != nil {
-		os.Exit(-1)
+		log.Error("Could not initialize discord clients! " + err)
+		os.Exit(1)
 	}
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	for i := 0; i < 2; i++ {
-		(*discord.Sessions)[i].Close()
-	}
-
-	log.Error("hola")
-	os.Stdout.Sync()
+	discord.Close()
 }
