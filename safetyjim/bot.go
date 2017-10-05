@@ -22,7 +22,7 @@ func New(config *config.Config) (*DiscordBot, error) {
 			return nil, err
 		}
 
-		discord.ShardCount = 2
+		discord.ShardCount = config.Jim.Shard_Count
 		discord.ShardID = i
 
 		discord.AddHandler(bot.ReadyHandler)
