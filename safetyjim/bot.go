@@ -8,15 +8,15 @@ import (
 
 // New creates a Bot from a bot Config
 func New(config *config.Config) (*DiscordBot, error) {
-	sessions := make([]*discordgo.Session, 2)
+	sessions := make([]*discordgo.Session, config.Jim.Shard_Count)
 
 	pingCommand := NewPing()
 	usages := map[string]GetUsage{"ping": pingCommand.GetUsage}
 	commands := map[string]Run{"ping": pingCommand.Run}
 
-	bot := &DiscordBot{&sessions, &usages, &commands}
+	bot := &DiscordBot{&sessions, &usages, &commands, config}
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < config.Jim.Shard_Count; i++ {
 		discord, err := discordgo.New("Bot " + config.Jim.Token)
 		if err != nil {
 			return nil, err
@@ -46,9 +46,17 @@ func New(config *config.Config) (*DiscordBot, error) {
 	return bot, nil
 }
 
+// Close all of the websocket clients connected to discord API
+func (d *DiscordBot) Close() {
+	for i := 0; i < d.Config.Jim.Shard_Count; i++ {
+		(*d.Sessions)[i].Close()
+	}
+}
+
 // A DiscordBot is a bot which has a set of sessions and commands.
 type DiscordBot struct {
 	Sessions *[]*discordgo.Session
 	Usages   *map[string]GetUsage
 	Commands *map[string]Run
+	Config   *config.Config
 }
