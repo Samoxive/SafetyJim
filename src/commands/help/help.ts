@@ -19,6 +19,7 @@ class Help implements Command {
             color: 0x4286f4,
         } });
 
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 }

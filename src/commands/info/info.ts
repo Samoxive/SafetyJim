@@ -59,6 +59,8 @@ class Info implements Command {
 
         await Utils.successReact(jim, msg);
         await Utils.sendMessage(msg.channel, { embed });
+        
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 

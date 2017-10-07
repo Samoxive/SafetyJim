@@ -30,6 +30,8 @@ class Invite implements Command {
             this.embed.author.icon_url = shard.client.user.avatarURL;
         }
         await Utils.sendMessage(msg.channel, { embed: this.embed });
+        
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 }

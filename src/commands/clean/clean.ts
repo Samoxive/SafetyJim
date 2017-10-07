@@ -94,6 +94,8 @@ class Clean implements Command {
             await Utils.successReact(jim, msg);
             return;
         }
+
+        await Utils.deleteCommandMessage(jim, msg);
         return;
     }
 

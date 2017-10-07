@@ -53,6 +53,7 @@ class Tag implements Command {
 
             await Utils.successReact(jim, msg);
             await Utils.sendMessage(msg.channel, response.response);
+            await Utils.deleteCommandMessage(jim, msg);
             return;
         }
 
