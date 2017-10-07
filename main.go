@@ -13,13 +13,13 @@ import (
 func main() {
 	config, err := config.New()
 	if err != nil {
-		log.Error("Could not read config file! " + err)
+		log.Error("Could not read config file! " + err.Error())
 		os.Exit(1)
 	}
 
 	discord, err := safetyjim.New(config)
 	if err != nil {
-		log.Error("Could not initialize discord clients! " + err)
+		log.Error("Could not initialize discord clients! " + err.Error())
 		os.Exit(1)
 	}
 
