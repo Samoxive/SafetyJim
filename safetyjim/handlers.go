@@ -28,7 +28,7 @@ func (bot *DiscordBot) MessageCreateHandler(s *discordgo.Session, m *discordgo.M
 	prefix := splitMessage[0]
 
 	if prefix != "-mod" {
-		bot.SuccessReact(m.Message)
+
 	}
 }
 
