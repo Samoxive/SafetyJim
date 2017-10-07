@@ -1,33 +1,35 @@
 package safetyjim
 
 import (
+	"SafetyJim/log"
 	"fmt"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 // ReadyHandler handles when the bot is initialized.
 func (bot *DiscordBot) ReadyHandler(s *discordgo.Session, r *discordgo.Ready) {
-	fmt.Println("Ready")
-	fmt.Println((*bot.Usages)["ping"]()[0])
+	log.Info(fmt.Sprintf("Shard %d ready", s.ShardID))
 }
 
 // MessageCreateHandler handles when a message is sent
 func (bot *DiscordBot) MessageCreateHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
-	fmt.Println("New Message")
-
 	if m.Author.Bot {
 		return
 	}
 
-	x := 0
-
-	for i := 0; i < 2; i++ {
-		y, _ := (*bot.Sessions)[i].UserGuilds(0, "", "")
-		x += len(y)
+	channel, err := s.Channel(m.ChannelID)
+	if err != nil || channel.Type != discordgo.ChannelTypeGuildText {
+		return
 	}
 
-	println(x)
+	splitMessage := strings.Split(m.Content, " ")
+	prefix := splitMessage[0]
+
+	if prefix != "-mod" {
+		bot.SuccessReact(m.Message)
+	}
 }
 
 // MessageDeleteHandler handles when a message is deleted
