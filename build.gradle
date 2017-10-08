@@ -18,6 +18,7 @@ dependencies {
     jooqRuntime 'postgresql:postgresql:9.1-901.jdbc4'
     compile 'postgresql:postgresql:9.1-901.jdbc4'
     compile 'org.jooq:jooq'
+    compile 'com.moandjiezana.toml:toml4j:0.7.2'
 }
 
 jooq {
