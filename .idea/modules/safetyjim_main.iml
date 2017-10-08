@@ -14,5 +14,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Gradle: postgresql:postgresql:9.1-901.jdbc4" level="project" />
     <orderEntry type="library" name="Gradle: org.jooq:jooq:3.9.5" level="project" />
+    <orderEntry type="library" name="Gradle: com.moandjiezana.toml:toml4j:0.7.2" level="project" />
+    <orderEntry type="library" name="Gradle: com.google.code.gson:gson:2.8.1" level="project" />
   </component>
 </module>
