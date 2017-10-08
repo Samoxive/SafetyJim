@@ -7,36 +7,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d574a127-27d6-44e5-a14a-21c3671f0f88" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/DefaultCatalog.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/Keys.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/Public.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/Sequences.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/Tables.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Banlist.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Commandlogs.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Joinlist.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Kicklist.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Mutelist.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Reminderlist.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Settings.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Softbanlist.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Taglist.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/Warnlist.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/BanlistRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/CommandlogsRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/JoinlistRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/KicklistRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/MutelistRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/ReminderlistRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/SettingsRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/SoftbanlistRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/TaglistRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/generated-src/jooq/sample/jooq/generated/tables/records/WarnlistRecord.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/build/tmp/jooq/config.xml" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.gradle" afterPath="$PROJECT_DIR$/build.gradle" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/org/samoxive/safetyjim/Main.java" afterPath="$PROJECT_DIR$/src/main/java/org/samoxive/safetyjim/Main.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/.gradle/" />
@@ -124,8 +96,8 @@
       <file leaf-file-name=".gitignore" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/.gitignore">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="54">
-              <caret line="3" column="0" lean-forward="true" selection-start-line="3" selection-start-column="0" selection-end-line="3" selection-end-column="0" />
+            <state relative-caret-position="225">
+              <caret line="91" column="0" lean-forward="true" selection-start-line="91" selection-start-column="0" selection-end-line="91" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -727,12 +699,12 @@
       <option name="presentableId" value="Default" />
       <updated>1507460719264</updated>
       <workItem from="1507460722690" duration="69000" />
-      <workItem from="1507460870513" duration="5243000" />
+      <workItem from="1507460870513" duration="5335000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="5312000" />
+    <option name="totallyTimeSpent" value="5404000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
@@ -841,8 +813,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="54">
-          <caret line="3" column="0" lean-forward="true" selection-start-line="3" selection-start-column="0" selection-end-line="3" selection-end-column="0" />
+        <state relative-caret-position="225">
+          <caret line="91" column="0" lean-forward="true" selection-start-line="91" selection-start-column="0" selection-end-line="91" selection-end-column="0" />
           <folding />
         </state>
       </provider>
