@@ -14,7 +14,17 @@ func New(config *config.Config) (*DiscordBot, error) {
 	usages := map[string]GetUsage{"ping": pingCommand.GetUsage}
 	commands := map[string]Run{"ping": pingCommand.Run}
 
-	bot := &DiscordBot{&sessions, &usages, &commands, config}
+	inviteLinkProcessor := NewInviteLink()
+	onMessageProcessors := []ProcessorOnMessage{inviteLinkProcessor.InviteLinkOnMessage}
+	onMessageDeleteProcessors := []ProcessorOnMessageDelete{}
+	onReactionProcessors := []ProcessorOnReaction{}
+	onReactionDeleteProcessors := []ProcessorOnReactionDelete{}
+
+	processors := Processors{
+		onMessageProcessors, onMessageDeleteProcessors, onReactionProcessors, onReactionDeleteProcessors,
+	}
+
+	bot := &DiscordBot{&sessions, &usages, &commands, &processors, config}
 
 	for i := 0; i < config.Jim.Shard_Count; i++ {
 		discord, err := discordgo.New("Bot " + config.Jim.Token)
@@ -55,8 +65,16 @@ func (d *DiscordBot) Close() {
 
 // A DiscordBot is a bot which has a set of sessions and commands.
 type DiscordBot struct {
-	Sessions *[]*discordgo.Session
-	Usages   *map[string]GetUsage
-	Commands *map[string]Run
-	Config   *config.Config
+	Sessions   *[]*discordgo.Session
+	Usages     *map[string]GetUsage
+	Commands   *map[string]Run
+	Processors *Processors
+	Config     *config.Config
+}
+
+type Processors struct {
+	OnMessage        []ProcessorOnMessage
+	OnMessageDelete  []ProcessorOnMessageDelete
+	OnReaction       []ProcessorOnReaction
+	OnReactionDelete []ProcessorOnReactionDelete
 }

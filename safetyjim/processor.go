@@ -4,7 +4,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type OnMessage func(*DiscordBot, *discordgo.Session, *discordgo.MessageCreate)
-type OnMessageDelete func(*DiscordBot, *discordgo.Session, *discordgo.MessageDelete)
-type OnReaction func(*DiscordBot, *discordgo.Session, *discordgo.MessageReactionAdd)
-type OnReactionDelete func(*DiscordBot, *discordgo.Session, *discordgo.MessageReactionRemove)
+type ProcessorOnMessage func(*DiscordBot, *discordgo.Session, *discordgo.MessageCreate) bool
+type ProcessorOnMessageDelete func(*DiscordBot, *discordgo.Session, *discordgo.MessageDelete)
+type ProcessorOnReaction func(*DiscordBot, *discordgo.Session, *discordgo.MessageReactionAdd)
+type ProcessorOnReactionDelete func(*DiscordBot, *discordgo.Session, *discordgo.MessageReactionRemove)

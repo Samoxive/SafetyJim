@@ -4,6 +4,7 @@ import (
 	"SafetyJim/log"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -22,6 +23,26 @@ func (bot *DiscordBot) MessageCreateHandler(s *discordgo.Session, m *discordgo.M
 	channel, err := s.Channel(m.ChannelID)
 	if err != nil || channel.Type != discordgo.ChannelTypeGuildText {
 		return
+	}
+
+	procCount := len(bot.Processors.OnMessage)
+	ch := make(chan (bool), procCount)
+	var wg sync.WaitGroup
+	wg.Add(procCount)
+
+	for _, proc := range bot.Processors.OnMessage {
+		go func(wg *sync.WaitGroup, proc ProcessorOnMessage) {
+			defer wg.Done()
+			ch <- proc(bot, s, m)
+		}(&wg, proc)
+	}
+
+	wg.Wait()
+
+	for result := range ch {
+		if result {
+			return
+		}
 	}
 
 	splitMessage := strings.Split(m.Content, " ")

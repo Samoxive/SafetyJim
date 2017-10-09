@@ -8,6 +8,13 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+func (bot *DiscordBot) GetMember(s *discordgo.Session, channelID string, userID string) *discordgo.Member {
+	channel, _ := s.Channel(channelID)
+	member, _ := s.GuildMember(channel.GuildID, userID)
+
+	return member
+}
+
 func (bot *DiscordBot) SuccessReact(m *discordgo.Message) {
 	react(bot, m, "jimsuccess:322698554294534144")
 }
