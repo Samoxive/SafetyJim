@@ -1,18 +1,20 @@
 package org.samoxive.safetyjim;
 
-
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
-import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.records.*;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.samoxive.safetyjim.config.Config;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
 
 public class Main {
     public static void main(String ...args) {
+            Config config = null;
 
-    }
+            try {
+                config = Config.fromFileName("config.toml");
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+
+            HikariConfig hikariConfig = new HikariConfig();
+        }
 }
