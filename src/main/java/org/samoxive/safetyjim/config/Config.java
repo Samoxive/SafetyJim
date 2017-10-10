@@ -25,13 +25,13 @@ public class Config {
         }
     }
 
-    private class Jim {
+    public class Jim {
         public String token;
         public String default_prefix;
         public Integer shard_count;
     }
 
-    private class Database {
+    public class Database {
         public String user;
         public String pass;
         public String host;
@@ -39,19 +39,19 @@ public class Config {
         public Integer port;
     }
 
-    private class Metrics {
+    public class Metrics {
         public Boolean enabled;
         public String api_key;
         public String host;
         public Integer flush_interval;
     }
 
-    private class BotList {
+    public class BotList {
         public Boolean enabled;
         public List<list> list;
     }
 
-    private class list {
+    public class list {
         public String name;
         public String url;
         public String token;
