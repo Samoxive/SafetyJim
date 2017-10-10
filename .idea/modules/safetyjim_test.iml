@@ -13,9 +13,20 @@
     <orderEntry type="library" name="Gradle: postgresql:postgresql:9.1-901.jdbc4" level="project" />
     <orderEntry type="library" name="Gradle: org.jooq:jooq:3.9.5" level="project" />
     <orderEntry type="library" name="Gradle: com.moandjiezana.toml:toml4j:0.7.2" level="project" />
+    <orderEntry type="library" name="Gradle: net.dv8tion:JDA:3.3.1_286" level="project" />
+    <orderEntry type="library" name="Gradle: com.zaxxer:HikariCP:2.7.2" level="project" />
     <orderEntry type="library" name="Gradle: junit:junit:4.12" level="project" />
     <orderEntry type="library" name="Gradle: com.google.code.gson:gson:2.8.1" level="project" />
+    <orderEntry type="library" name="Gradle: com.google.code.findbugs:jsr305:3.0.2" level="project" />
+    <orderEntry type="library" name="Gradle: org.slf4j:slf4j-api:1.7.25" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.commons:commons-collections4:4.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.json:json:20160810" level="project" />
+    <orderEntry type="library" name="Gradle: net.sf.trove4j:trove4j:3.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: net.java.dev.jna:jna:4.4.0" level="project" />
+    <orderEntry type="library" name="Gradle: com.neovisionaries:nv-websocket-client:2.2" level="project" />
+    <orderEntry type="library" name="Gradle: com.squareup.okhttp3:okhttp:3.8.1" level="project" />
     <orderEntry type="library" name="Gradle: org.hamcrest:hamcrest-core:1.3" level="project" />
+    <orderEntry type="library" name="Gradle: com.squareup.okio:okio:1.13.0" level="project" />
   </component>
   <component name="TestModuleProperties" production-module="safetyjim_main" />
 </module>
