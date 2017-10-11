@@ -47,7 +47,11 @@ public class DiscordShard extends ListenerAdapter {
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
         if (event.getMessage().getContent().equals("ping")) {
-            event.getChannel().sendMessage("Pong").complete();
+            event.getChannel().sendMessage("Pong, Guild Count" + bot.getGuildCount()).complete();
         }
+    }
+
+    public JDA getShard() {
+        return shard;
     }
 }
