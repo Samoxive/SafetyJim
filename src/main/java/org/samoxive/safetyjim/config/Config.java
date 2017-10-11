@@ -14,15 +14,9 @@ public class Config {
     public BotList botlist;
 
     public static Config fromFileName(String filename) throws IOException {
-        try {
-            //
-            String fileContent = new String(Files.readAllBytes(Paths.get(filename)));
-
-            Toml toml = (new Toml()).read(fileContent);
-            return toml.to(Config.class);
-        } catch (IOException e) {
-            throw e;
-        }
+        String fileContent = new String(Files.readAllBytes(Paths.get(filename)));
+        Toml toml = (new Toml()).read(fileContent);
+        return toml.to(Config.class);
     }
 
     public class Jim {
