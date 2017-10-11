@@ -1,8 +1,10 @@
 package org.samoxive.safetyjim.discord;
 
+import com.sun.javafx.scene.control.skin.VirtualFlow;
 import org.jooq.DSLContext;
 import org.samoxive.safetyjim.config.Config;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DiscordBot {
@@ -13,6 +15,7 @@ public class DiscordBot {
     public DiscordBot(DSLContext database, Config config) {
         this.database = database;
         this.config = config;
+        this.shards = new ArrayList<>();
 
         for (int i = 0; i < config.jim.shard_count; i++) {
             DiscordShard shard = new DiscordShard(this, i);
@@ -24,6 +27,13 @@ public class DiscordBot {
             }
         }
 
+    }
+
+    public long getGuildCount() {
+        return shards.stream()
+                     .map(shard -> shard.getShard())
+                     .mapToLong(shards -> shards.getGuildCache().size())
+                     .sum();
     }
 
     public List<DiscordShard> getShards() {
