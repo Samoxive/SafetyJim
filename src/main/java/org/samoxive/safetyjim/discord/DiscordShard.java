@@ -3,6 +3,7 @@ package org.samoxive.safetyjim.discord;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.events.*;
 import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.core.events.guild.GuildLeaveEvent;
@@ -15,10 +16,13 @@ import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionRemov
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.SessionReconnectQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
 
 public class DiscordShard extends ListenerAdapter {
+    private Logger log;
     private DiscordBot bot;
     private JDA shard;
     private int shardId;
@@ -26,8 +30,9 @@ public class DiscordShard extends ListenerAdapter {
     public DiscordShard(DiscordBot bot, int shardId) {
         this.bot = bot;
         this.shardId = shardId;
-        JDABuilder builder = new JDABuilder(AccountType.BOT);
+        log = LoggerFactory.getLogger("DiscordShard " + DiscordUtils.getShardString(shardId, bot.getConfig().jim.shard_count));
 
+        JDABuilder builder = new JDABuilder(AccountType.BOT);
         try {
             this.shard = builder.setToken(bot.getConfig().jim.token)
                                 .setAudioEnabled(false)
@@ -48,7 +53,13 @@ public class DiscordShard extends ListenerAdapter {
 
     @Override
     public void onReady(ReadyEvent event) {
-        System.out.println(event.getJDA().getShardInfo() + " ready.");
+        log.info("Shard is ready.");
+
+        for (Guild guild: event.getJDA().getGuilds()) {
+            if (DiscordUtils.isBotFarm(guild)) {
+                guild.leave().queue();
+            }
+        }
     }
 
     @Override
