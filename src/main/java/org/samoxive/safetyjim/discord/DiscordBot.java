@@ -16,6 +16,7 @@ public class DiscordBot {
 
         for (int i = 0; i < config.jim.shard_count; i++) {
             DiscordShard shard = new DiscordShard(this, i);
+            shards.add(shard);
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
