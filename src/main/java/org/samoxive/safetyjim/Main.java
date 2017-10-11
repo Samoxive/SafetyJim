@@ -2,15 +2,9 @@ package org.samoxive.safetyjim;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import net.dv8tion.jda.core.entities.TextChannel;
-import org.coursera.metrics.datadog.DatadogReporter;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.Banlist;
-import org.samoxive.jooq.generated.tables.records.BanlistRecord;
-import org.samoxive.jooq.generated.tables.records.CommandlogsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
 
@@ -38,6 +32,5 @@ public class Main {
         DSLContext database = DSL.using(ds, SQLDialect.POSTGRES);
 
         DiscordBot bot = new DiscordBot(database, config);
-
     }
 }
