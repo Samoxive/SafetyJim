@@ -3,8 +3,15 @@ package org.samoxive.safetyjim.discord;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.events.ReadyEvent;
+import net.dv8tion.jda.core.events.*;
+import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.core.events.guild.GuildLeaveEvent;
+import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.core.events.guild.member.GuildMemberLeaveEvent;
+import net.dv8tion.jda.core.events.message.guild.GuildMessageDeleteEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionAddEvent;
+import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionRemoveEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.SessionReconnectQueue;
@@ -49,6 +56,61 @@ public class DiscordShard extends ListenerAdapter {
         if (event.getMessage().getContent().equals("ping")) {
             event.getChannel().sendMessage("Pong, Guild Count" + bot.getGuildCount()).complete();
         }
+    }
+
+    @Override
+    public void onResume(ResumedEvent event) {
+        super.onResume(event);
+    }
+
+    @Override
+    public void onReconnect(ReconnectedEvent event) {
+        super.onReconnect(event);
+    }
+
+    @Override
+    public void onDisconnect(DisconnectEvent event) {
+        super.onDisconnect(event);
+    }
+
+    @Override
+    public void onException(ExceptionEvent event) {
+        super.onException(event);
+    }
+
+    @Override
+    public void onGuildMessageDelete(GuildMessageDeleteEvent event) {
+        super.onGuildMessageDelete(event);
+    }
+
+    @Override
+    public void onGuildMessageReactionAdd(GuildMessageReactionAddEvent event) {
+        super.onGuildMessageReactionAdd(event);
+    }
+
+    @Override
+    public void onGuildMessageReactionRemove(GuildMessageReactionRemoveEvent event) {
+        super.onGuildMessageReactionRemove(event);
+    }
+
+    @Override
+    public void onGuildJoin(GuildJoinEvent event) {
+        super.onGuildJoin(event);
+    }
+
+    @Override
+    public void onGuildLeave(GuildLeaveEvent event) {
+        super.onGuildLeave(event);
+    }
+
+    @Override
+    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+        super.onGuildMemberJoin(event);
+    }
+
+    @Override
+    public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
+        super.onGuildMemberLeave(event);
     }
 
     public JDA getShard() {
