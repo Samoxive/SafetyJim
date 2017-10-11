@@ -23,12 +23,12 @@ public class DiscordShard extends ListenerAdapter {
 
         try {
             this.shard = builder.setToken(bot.getConfig().jim.token)
-                    .setAudioEnabled(false)
-                    .addEventListener(this)
-                    .setReconnectQueue(new SessionReconnectQueue())
-                    .setEnableShutdownHook(true)
-                    .useSharding(shardId, bot.getConfig().jim.shard_count)
-                    .buildBlocking();
+                                .setAudioEnabled(false)
+                                .addEventListener(this)
+                                .setReconnectQueue(new SessionReconnectQueue())
+                                .setEnableShutdownHook(true)
+                                .useSharding(shardId, bot.getConfig().jim.shard_count)
+                                .buildBlocking();
         } catch (LoginException e) {
             System.out.println("Invalid token.");
             System.exit(1);
