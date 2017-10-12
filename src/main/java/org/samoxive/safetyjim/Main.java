@@ -1,5 +1,7 @@
 package org.samoxive.safetyjim;
 
+import com.timgroup.statsd.NonBlockingStatsDClient;
+import com.timgroup.statsd.StatsDClient;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.log4j.*;
@@ -8,6 +10,7 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
+import org.samoxive.safetyjim.metrics.Metrics;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -24,6 +27,8 @@ public class Main {
             System.exit(1);
         }
 
+        Metrics metrics = new Metrics("jim", "localhost", 8125, config.metrics.enabled);
+
         HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setJdbcUrl("jdbc:postgresql://" +
                                 config.database.host +
@@ -35,7 +40,7 @@ public class Main {
         HikariDataSource ds = new HikariDataSource(hikariConfig);
         DSLContext database = DSL.using(ds, SQLDialect.POSTGRES);
 
-        DiscordBot bot = new DiscordBot(database, config);
+        DiscordBot bot = new DiscordBot(database, config, metrics);
 
     }
 
