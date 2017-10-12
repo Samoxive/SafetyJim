@@ -1,14 +1,18 @@
 package org.samoxive.safetyjim.discord;
 
 import com.sun.javafx.scene.control.skin.VirtualFlow;
+import net.dv8tion.jda.core.Permission;
 import org.jooq.DSLContext;
 import org.samoxive.safetyjim.config.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public class DiscordBot {
+    private Logger log = LoggerFactory.getLogger(DiscordBot.class);
     private List<DiscordShard> shards;
     private DSLContext database;
     private Config config;
@@ -31,6 +35,19 @@ public class DiscordBot {
                 e.printStackTrace();
             }
         }
+
+        String inviteLink = shards.get(0).getShard().asBot().getInviteUrl(
+                Permission.KICK_MEMBERS,
+                Permission.BAN_MEMBERS,
+                Permission.MESSAGE_ADD_REACTION,
+                Permission.MESSAGE_READ,
+                Permission.MESSAGE_WRITE,
+                Permission.MESSAGE_MANAGE,
+                Permission.MANAGE_ROLES
+        );
+        log.info("All shards ready.");
+        log.info("Bot invite link: " + inviteLink);
+
 
     }
 
