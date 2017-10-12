@@ -21,6 +21,15 @@ public class DiscordUtils {
         return botCount > 20;
 
     }
+
+    public static void sendMessage(TextChannel channel, String message) {
+        try {
+            channel.sendMessage(message).queue();
+        } catch (Exception e) {
+            //
+        }
+    }
+
     public static TextChannel getDefaultChannel(Guild guild) {
         List<TextChannel> channels = guild.getTextChannels();
         for (TextChannel channel: channels) {
