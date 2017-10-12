@@ -4,6 +4,7 @@ import com.sun.javafx.scene.control.skin.VirtualFlow;
 import net.dv8tion.jda.core.Permission;
 import org.jooq.DSLContext;
 import org.samoxive.safetyjim.config.Config;
+import org.samoxive.safetyjim.metrics.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,10 +19,12 @@ public class DiscordBot {
     private Config config;
     private HashMap<String, Command> commands;
     private HashMap<String, MessageProcessor> processors;
+    private Metrics metrics;
 
-    public DiscordBot(DSLContext database, Config config) {
+    public DiscordBot(DSLContext database, Config config, Metrics metrics) {
         this.database = database;
         this.config = config;
+        this.metrics = metrics;
         this.shards = new ArrayList<>();
         this.commands = new HashMap<>();
         this.processors = new HashMap<>();
@@ -60,6 +63,10 @@ public class DiscordBot {
 
     private void loadCommands() {
 
+    }
+
+    public Metrics getMetrics() {
+        return metrics;
     }
 
     public HashMap<String, Command> getCommands() {
