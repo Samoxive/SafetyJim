@@ -3,6 +3,8 @@ package org.samoxive.safetyjim.discord;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.entities.ChannelType;
+import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.events.*;
 import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
@@ -16,10 +18,13 @@ import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionRemov
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.SessionReconnectQueue;
+import org.jooq.DSLContext;
+import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
+import java.util.Map;
 
 public class DiscordShard extends ListenerAdapter {
     private Logger log;
@@ -54,11 +59,28 @@ public class DiscordShard extends ListenerAdapter {
     @Override
     public void onReady(ReadyEvent event) {
         log.info("Shard is ready.");
-
+        // TODO(sam): Change the game text
+        event.getJDA().getPresence().setGame(Game.of("-mod help"));
+        DSLContext database = this.bot.getDatabase();
         for (Guild guild: event.getJDA().getGuilds()) {
             if (DiscordUtils.isBotFarm(guild)) {
                 guild.leave().queue();
             }
+        }
+
+        int guildsWithMissingKeys = 0;
+        for (Guild guild: event.getJDA().getGuilds()) {
+            Map<String, String> guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+
+            if (guildSettings.size() != DatabaseUtils.possibleSettingKeys.length) {
+                DatabaseUtils.deleteGuildSettings(database, guild);
+                DatabaseUtils.createGuildSettings(this.bot, database, guild);
+                guildsWithMissingKeys++;
+            }
+        }
+
+        if (guildsWithMissingKeys > 0) {
+            log.warn("Added {} guild(s) to the database with invalid number of settings.", guildsWithMissingKeys);
         }
     }
 
@@ -91,22 +113,41 @@ public class DiscordShard extends ListenerAdapter {
 
     @Override
     public void onGuildMessageDelete(GuildMessageDeleteEvent event) {
-        super.onGuildMessageDelete(event);
+        // TODO(sam): Add message cache and trigger message processors if
+        // deleted message is in the cache
     }
 
     @Override
     public void onGuildMessageReactionAdd(GuildMessageReactionAddEvent event) {
-        super.onGuildMessageReactionAdd(event);
+        if (event.getMember().getUser().isBot() || event.getChannelType() != ChannelType.TEXT) {
+            return;
+        }
+
+        for (MessageProcessor processor: bot.getProcessors().values()) {
+            processor.onReactionAdd(bot, event);
+        }
     }
 
     @Override
     public void onGuildMessageReactionRemove(GuildMessageReactionRemoveEvent event) {
-        super.onGuildMessageReactionRemove(event);
+        if (event.getMember().getUser().isBot() || event.getChannelType() != ChannelType.TEXT) {
+            return;
+        }
+
+        for (MessageProcessor processor: bot.getProcessors().values()) {
+            processor.onReactionRemove(bot, event);
+        }
     }
 
     @Override
     public void onGuildJoin(GuildJoinEvent event) {
-        super.onGuildJoin(event);
+        if (DiscordUtils.isBotFarm(event.getGuild())) {
+            event.getGuild().leave().queue();
+        }
+
+        String message = String.format("Hello! I am Safety Jim, `%s` is my default prefix!", bot.getConfig().jim.default_prefix);
+        DiscordUtils.sendMessage(DiscordUtils.getDefaultChannel(event.getGuild()), message);
+        DatabaseUtils.createGuildSettings(bot, bot.getDatabase(), event.getGuild());
     }
 
     @Override
