@@ -62,6 +62,14 @@ public class DiscordBot {
 
     }
 
+    public HashMap<String, Command> getCommands() {
+        return commands;
+    }
+
+    public HashMap<String, MessageProcessor> getProcessors() {
+        return processors;
+    }
+
     public List<DiscordShard> getShards() {
         return shards;
     }
