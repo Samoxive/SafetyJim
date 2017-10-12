@@ -53,8 +53,9 @@ public class Main {
             System.exit(1);
         }
 
-        org.apache.log4j.Logger.getRootLogger().addAppender(fa);
-        org.apache.log4j.Logger.getRootLogger().addAppender(ca);
-        org.apache.log4j.Logger.getRootLogger().setLevel(Level.INFO);
+        Logger.getLogger("org.jooq.Constants").setLevel(Level.WARN);
+        Logger.getRootLogger().addAppender(fa);
+        Logger.getRootLogger().addAppender(ca);
+        Logger.getRootLogger().setLevel(Level.INFO);
     }
 }
