@@ -24,6 +24,7 @@ dependencies {
     compile 'com.moandjiezana.toml:toml4j:0.7.2'
     compile 'net.dv8tion:JDA:3.3.1_286'
     compile 'com.zaxxer:HikariCP:2.7.2'
+    compile 'com.datadoghq:java-dogstatsd-client:2.3'
 }
 
 jooq {
