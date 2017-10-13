@@ -26,6 +26,14 @@ public class DatabaseUtils {
     };
     private static final String DEFAULT_WELCOME_MESSAGE = "Welcome to $guild $user!";
 
+    public static String getGuildSetting(DSLContext database, Guild guild, String key) {
+        return database.selectFrom(Tables.SETTINGS)
+                       .where(Tables.SETTINGS.GUILDID.eq(guild.getId()))
+                       .and(Tables.SETTINGS.KEY.eq(key))
+                       .fetchOne()
+                       .getValue();
+    }
+
     public static Map<String, String> getGuildSettings(DSLContext database, Guild guild) {
         Map<String, String> settings = new HashMap<>();
         SettingsRecord[] settingsRecords = database.selectFrom(Tables.SETTINGS)
