@@ -120,7 +120,7 @@ public class DiscordShard extends ListenerAdapter {
         }
 
         List<Future<Boolean>> processorResults = new LinkedList<>();
-        for (MessageProcessor processor: bot.getProcessors().values()) {
+        for (MessageProcessor processor: bot.getProcessors()) {
             Future<Boolean> future = threadPool.submit(() -> processor.onMessage(bot, event));
             processorResults.add(future);
         }
@@ -180,7 +180,7 @@ public class DiscordShard extends ListenerAdapter {
             return;
         }
 
-        for (MessageProcessor processor: bot.getProcessors().values()) {
+        for (MessageProcessor processor: bot.getProcessors()) {
             processor.onReactionAdd(bot, event);
         }
     }
@@ -191,7 +191,7 @@ public class DiscordShard extends ListenerAdapter {
             return;
         }
 
-        for (MessageProcessor processor: bot.getProcessors().values()) {
+        for (MessageProcessor processor: bot.getProcessors()) {
             processor.onReactionRemove(bot, event);
         }
     }
