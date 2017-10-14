@@ -1,9 +1,10 @@
 package org.samoxive.safetyjim.discord;
 
-import com.sun.javafx.scene.control.skin.VirtualFlow;
 import net.dv8tion.jda.core.Permission;
 import org.jooq.DSLContext;
 import org.samoxive.safetyjim.config.Config;
+import org.samoxive.safetyjim.discord.commands.Ping;
+import org.samoxive.safetyjim.discord.processors.InviteLink;
 import org.samoxive.safetyjim.metrics.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,7 @@ public class DiscordBot {
     private DSLContext database;
     private Config config;
     private HashMap<String, Command> commands;
-    private HashMap<String, MessageProcessor> processors;
+    private List<MessageProcessor> processors;
     private Metrics metrics;
 
     public DiscordBot(DSLContext database, Config config, Metrics metrics) {
@@ -27,11 +28,16 @@ public class DiscordBot {
         this.metrics = metrics;
         this.shards = new ArrayList<>();
         this.commands = new HashMap<>();
-        this.processors = new HashMap<>();
+        this.processors = new ArrayList<>();
+
+        loadCommands();
+        loadProcessors();
 
         for (int i = 0; i < config.jim.shard_count; i++) {
             DiscordShard shard = new DiscordShard(this, i);
             shards.add(shard);
+
+            // Discord API rate limits login requests to once per 5 seconds
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
@@ -50,19 +56,21 @@ public class DiscordBot {
         );
         log.info("All shards ready.");
         log.info("Bot invite link: " + inviteLink);
+    }
 
+    private void loadCommands() {
+        commands.put("ping", new Ping());
+    }
 
+    private void loadProcessors() {
+        processors.add(new InviteLink());
     }
 
     public long getGuildCount() {
         return shards.stream()
-                     .map(shard -> shard.getShard())
-                     .mapToLong(shards -> shards.getGuildCache().size())
-                     .sum();
-    }
-
-    private void loadCommands() {
-
+                .map(shard -> shard.getShard())
+                .mapToLong(shard -> shard.getGuildCache().size())
+                .sum();
     }
 
     public Metrics getMetrics() {
@@ -73,7 +81,7 @@ public class DiscordBot {
         return commands;
     }
 
-    public HashMap<String, MessageProcessor> getProcessors() {
+    public List<MessageProcessor> getProcessors() {
         return processors;
     }
 
