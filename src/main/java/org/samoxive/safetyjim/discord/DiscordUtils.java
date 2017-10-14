@@ -83,6 +83,14 @@ public class DiscordUtils {
         }
     }
 
+    public static void sendMessage(TextChannel channel, MessageEmbed embed) {
+        try {
+            channel.sendMessage(embed).queue();
+        } catch (Exception e) {
+            //
+        }
+    }
+
     public static String getUsageString(String prefix, String[] usages) {
         StringJoiner joiner = new StringJoiner("\n");
 
