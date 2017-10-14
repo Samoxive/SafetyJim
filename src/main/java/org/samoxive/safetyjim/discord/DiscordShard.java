@@ -20,6 +20,7 @@ import net.dv8tion.jda.core.requests.SessionReconnectQueue;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.CommandlogsRecord;
+import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,19 +48,21 @@ public class DiscordShard extends ListenerAdapter {
         JDABuilder builder = new JDABuilder(AccountType.BOT);
         try {
             this.shard = builder.setToken(bot.getConfig().jim.token)
-                                .setAudioEnabled(false)
+                                .setAudioEnabled(false) // jim doesn't have any audio functionality
                                 .addEventListener(this)
-                                .setReconnectQueue(new SessionReconnectQueue())
+                                .setReconnectQueue(new SessionReconnectQueue()) // needed to prevent shards trying to reconnect too soon
                                 .setEnableShutdownHook(true)
                                 .useSharding(shardId, bot.getConfig().jim.shard_count)
                                 .buildBlocking();
         } catch (LoginException e) {
-            System.out.println("Invalid token.");
+            log.error("Invalid token.");
             System.exit(1);
         } catch (InterruptedException e) {
-            System.out.println("Something something");
+            log.error("Something something", e);
+            System.exit(1);
         } catch (RateLimitedException e) {
-            System.out.println("Hit Discord API Rate Limit");
+            log.error("Hit Discord API Rate Limit", e);
+            System.exit(1);
         }
 
         threadPool = Executors.newCachedThreadPool();
@@ -69,18 +72,20 @@ public class DiscordShard extends ListenerAdapter {
     public void onReady(ReadyEvent event) {
         log.info("Shard is ready.");
         // TODO(sam): Change the game text
-        event.getJDA().getPresence().setGame(Game.of("-mod help"));
+        shard.getPresence().setGame(Game.of("-mod help"));
         DSLContext database = this.bot.getDatabase();
-        for (Guild guild: event.getJDA().getGuilds()) {
+        for (Guild guild: shard.getGuilds()) {
             if (DiscordUtils.isBotFarm(guild)) {
                 guild.leave().queue();
             }
         }
 
         int guildsWithMissingKeys = 0;
-        for (Guild guild: event.getJDA().getGuilds()) {
+        for (Guild guild: shard.getGuilds()) {
             Map<String, String> guildSettings = DatabaseUtils.getGuildSettings(database, guild);
 
+            // Guild has more or less amount of keys than the normal count so we reset them
+            // This is also the case if a guild joined when jim was offline, which means their settings didn't get initialized
             if (guildSettings.size() != DatabaseUtils.possibleSettingKeys.length) {
                 DatabaseUtils.deleteGuildSettings(database, guild);
                 DatabaseUtils.createGuildSettings(this.bot, database, guild);
@@ -100,31 +105,33 @@ public class DiscordShard extends ListenerAdapter {
         }
 
         DSLContext database = bot.getDatabase();
+        Guild guild = event.getGuild();
         Message message = event.getMessage();
+        String content = message.getContent();
+        SelfUser self = shard.getSelfUser();
 
-        if (message.isMentioned(shard.getSelfUser()) && message.getContent().contains("prefix")) {
-            String prefix = database.selectFrom(Tables.SETTINGS)
-                                    .where(Tables.SETTINGS.GUILDID.eq(message.getGuild().getId()))
-                                    .and(Tables.SETTINGS.KEY.eq("prefix"))
-                                    .fetchOne()
-                                    .getValue();
+        if (message.isMentioned(self) && content.contains("prefix")) {
+            String prefix = DatabaseUtils.getGuildSetting(database, guild, "prefix");
             DiscordUtils.successReact(bot, message);
 
             EmbedBuilder embed = new EmbedBuilder();
-            embed.setAuthor("Safety Jim - Prefix", null, shard.getSelfUser().getAvatarUrl())
+            embed.setAuthor("Safety Jim - Prefix", null, self.getAvatarUrl())
                  .setDescription("This guild's prefix is: " + prefix)
                  .setColor(new Color(0x4286F4));
 
-            message.getChannel().sendMessage(embed.build()).queue();
+            DiscordUtils.sendMessage(message.getTextChannel(), embed.build());
             return;
         }
 
         List<Future<Boolean>> processorResults = new LinkedList<>();
+
+        // Spread processing jobs across threads as they are likely to be independent of io operations
         for (MessageProcessor processor: bot.getProcessors()) {
             Future<Boolean> future = threadPool.submit(() -> processor.onMessage(bot, event));
             processorResults.add(future);
         }
 
+        // If processors return true, that means they deleted the original message so we don't need to continue further
         for (Future<Boolean> result: processorResults) {
             try {
                 if (result.get().equals(true)) {
@@ -135,37 +142,46 @@ public class DiscordShard extends ListenerAdapter {
             }
         }
 
-        String prefix = DatabaseUtils.getGuildSetting(bot.getDatabase(), event.getGuild(), "prefix");
+        String prefix = DatabaseUtils.getGuildSetting(database, guild, "prefix");
 
-        String[] splitContent = message.getContent().trim().split(" ");
+        // 0 = prefix, 1 = command, rest are accepted as arguments
+        String[] splitContent = content.trim().split(" ");
 
-        if (!splitContent[0].equals(prefix)) {
+        // We want prefixes to be case insensitive
+        if (!splitContent[0].toLowerCase().equals(prefix)) {
             return;
         }
 
+        // This means the user only entered the prefix
         if (splitContent.length == 1) {
             DiscordUtils.failReact(bot, message);
             return;
         }
 
-        Command command = bot.getCommands().get(splitContent[1]);
+        // We also want commands to be case insensitive
+        Command command = bot.getCommands().get(splitContent[1].toLowerCase());
 
+        // Command not found
         if (command == null) {
             DiscordUtils.failReact(bot, message);
             return;
         }
-        StringJoiner args = new StringJoiner(" ");
 
+        // Join words back with whitespace as some commands don't need them split,
+        // they can split the arguments again if needed
+        StringJoiner args = new StringJoiner(" ");
         for (int i = 2; i < splitContent.length; i++) {
             args.add(splitContent[i]);
         }
 
+        // Command executions are likely to be io dependant, better send them in a seperate thread to not block
+        // discord client
         threadPool.execute(() -> executeCommand(event, command, splitContent[1], args.toString()));
     }
 
     @Override
     public void onException(ExceptionEvent event) {
-        log.error(event.toString());
+        log.error("An exception occurred.", event.getCause());
     }
 
     @Override
@@ -181,7 +197,7 @@ public class DiscordShard extends ListenerAdapter {
         }
 
         for (MessageProcessor processor: bot.getProcessors()) {
-            processor.onReactionAdd(bot, event);
+            threadPool.execute(() -> processor.onReactionAdd(bot, event));
         }
     }
 
@@ -192,7 +208,7 @@ public class DiscordShard extends ListenerAdapter {
         }
 
         for (MessageProcessor processor: bot.getProcessors()) {
-            processor.onReactionRemove(bot, event);
+            threadPool.execute(() -> processor.onReactionRemove(bot, event));
         }
     }
 
@@ -203,26 +219,63 @@ public class DiscordShard extends ListenerAdapter {
             return;
         }
 
+        Guild guild = event.getGuild();
+        DSLContext database = bot.getDatabase();
         String message = String.format("Hello! I am Safety Jim, `%s` is my default prefix!", bot.getConfig().jim.default_prefix);
-        DiscordUtils.sendMessage(DiscordUtils.getDefaultChannel(event.getGuild()), message);
-        DatabaseUtils.createGuildSettings(bot, bot.getDatabase(), event.getGuild());
+        DiscordUtils.sendMessage(DiscordUtils.getDefaultChannel(guild), message);
+        DatabaseUtils.createGuildSettings(bot, database, guild);
         bot.getMetrics().increment("guild.join");
     }
 
     @Override
     public void onGuildLeave(GuildLeaveEvent event) {
-        bot.getDatabase().deleteFrom(Tables.SETTINGS).where(Tables.SETTINGS.GUILDID.eq(event.getGuild().getId()));
+        DatabaseUtils.deleteGuildSettings(bot.getDatabase(), event.getGuild());
         bot.getMetrics().increment("guild.left");
     }
 
     @Override
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        super.onGuildMemberJoin(event);
+        Guild guild = event.getGuild();
+        Member member = event.getMember();
+        DSLContext database = bot.getDatabase();
+        Map<String, String> settings = DatabaseUtils.getGuildSettings(database, guild);
+
+        if (settings.get("welcomemessageactive").equals("true")) {
+            String textChannelId = settings.get("welcomemessagechannelid");
+            TextChannel channel = shard.getTextChannelById(textChannelId);
+            if (channel != null) {
+                String message = settings.get("welcomemessage")
+                                         .replace("$user", member.getAsMention())
+                                         .replace("$guild", guild.getName());
+                if (settings.get("holdingroomactive").equals("true")) {
+                    String waitTime = settings.get("holdingroomminutes");
+                    message = message.replace("$minute", waitTime);
+                }
+
+                DiscordUtils.sendMessage(channel, message);
+            }
+        }
+
+        if (settings.get("holdingroomactive").equals("true")) {
+            int waitTime = Integer.parseInt(settings.get("holdingroomminutes"));
+            long currentTime = System.currentTimeMillis() / 1000;
+
+            JoinlistRecord newRecord = database.newRecord(Tables.JOINLIST);
+            newRecord.setUserid(member.getUser().getId());
+            newRecord.setGuildid(guild.getId());
+            newRecord.setJointime(currentTime);
+            newRecord.setAllowtime(currentTime + waitTime * 60);
+            newRecord.setAllowed(false);
+            newRecord.store();
+        }
     }
 
     @Override
     public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
-        super.onGuildMemberLeave(event);
+        bot.getDatabase()
+           .deleteFrom(Tables.JOINLIST)
+           .where(Tables.JOINLIST.USERID.eq(event.getUser().getId()))
+           .execute();
     }
 
     public JDA getShard() {
