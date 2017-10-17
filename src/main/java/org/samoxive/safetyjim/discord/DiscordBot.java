@@ -15,6 +15,7 @@ import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
 import org.samoxive.jooq.generated.tables.records.MutelistRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
+import org.samoxive.safetyjim.discord.commands.Invite;
 import org.samoxive.safetyjim.discord.commands.Ping;
 import org.samoxive.safetyjim.discord.processors.InviteLink;
 import org.samoxive.safetyjim.metrics.Metrics;
@@ -81,6 +82,7 @@ public class DiscordBot {
 
     private void loadCommands() {
         commands.put("ping", new Ping());
+        commands.put("invite", new Invite());
     }
 
     private void loadProcessors() {
