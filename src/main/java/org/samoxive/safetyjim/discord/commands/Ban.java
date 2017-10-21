@@ -135,8 +135,7 @@ public class Ban extends Command {
         embed.setFooter("Banned by " + DiscordUtils.getUserTagAndId(user), null);
         embed.setTimestamp(now.toInstant());
 
-        PrivateChannel dmChannel = banUser.openPrivateChannel().complete();
-        DiscordUtils.sendMessage(dmChannel, embed.build());
+        DiscordUtils.sendDM(banUser, embed.build());
 
         try {
             String auditLogReason = String.format("Banned by %s (%s) - %s", DiscordUtils.getTag(user), user.getId(), reason);
