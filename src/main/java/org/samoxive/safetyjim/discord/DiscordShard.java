@@ -175,7 +175,7 @@ public class DiscordShard extends ListenerAdapter {
 
         // Command executions are likely to be io dependant, better send them in a seperate thread to not block
         // discord client
-        threadPool.execute(() -> executeCommand(event, command, splitContent[1], args.toString()));
+        threadPool.execute(() -> executeCommand(event, command, splitContent[1], args.toString().trim()));
     }
 
     @Override
