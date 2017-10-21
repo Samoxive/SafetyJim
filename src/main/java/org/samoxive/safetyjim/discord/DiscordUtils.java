@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.regex.Pattern;
 
 public class DiscordUtils {
     private static final Logger log = LoggerFactory.getLogger(DiscordUtils.class);
@@ -14,10 +15,14 @@ public class DiscordUtils {
                                                 "264445053596991498", // DiscordBotList
                                                 "297462937646530562", // NovoBotList
                                                };
-    private static String SUCCESS_EMOTE_ID = "322698554294534144";
-    private static String FAIL_EMOTE_ID = "322698553980092417";
+    private static final String SUCCESS_EMOTE_ID = "322698554294534144";
+    private static final String FAIL_EMOTE_ID = "322698553980092417";
     private static Emote SUCCESS_EMOTE;
     private static Emote FAIL_EMOTE;
+
+    public static final Pattern USER_MENTION_PATTERN = Pattern.compile("<@!?([0-9]+)>");
+    public static final Pattern CHANNEL_MENTION_PATTERN = Pattern.compile("<#!?([0-9]+)>");
+    public static final Pattern ROLE_MENTION_PATTERN = Pattern.compile("<@&!?([0-9]+)>");
 
     public static boolean isBotFarm(Guild guild) {
         for (String botList: botListIds) {
