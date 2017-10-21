@@ -212,6 +212,16 @@ public class DiscordUtils {
         }
     }
 
+    public static void sendDM(User user, String message) {
+        PrivateChannel channel = user.openPrivateChannel().complete();
+        sendMessage(channel, message);
+    }
+
+    public static void sendDM(User user, MessageEmbed embed) {
+        PrivateChannel channel = user.openPrivateChannel().complete();
+        sendMessage(channel, embed);
+    }
+
     public static String getChannelMention(MessageChannel channel) {
         return "<#" + channel.getId() + ">";
     }
