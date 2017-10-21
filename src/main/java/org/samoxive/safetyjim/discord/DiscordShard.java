@@ -53,6 +53,7 @@ public class DiscordShard extends ListenerAdapter {
                                 .setReconnectQueue(new SessionReconnectQueue()) // needed to prevent shards trying to reconnect too soon
                                 .setEnableShutdownHook(true)
                                 .useSharding(shardId, bot.getConfig().jim.shard_count)
+                                .setGame(Game.of("-mod help"))
                                 .buildBlocking();
         } catch (LoginException e) {
             log.error("Invalid token.");
@@ -71,8 +72,6 @@ public class DiscordShard extends ListenerAdapter {
     @Override
     public void onReady(ReadyEvent event) {
         log.info("Shard is ready.");
-        // TODO(sam): Change the game text
-        shard.getPresence().setGame(Game.of("-mod help"));
         DSLContext database = this.bot.getDatabase();
         for (Guild guild: shard.getGuilds()) {
             if (DiscordUtils.isBotFarm(guild)) {

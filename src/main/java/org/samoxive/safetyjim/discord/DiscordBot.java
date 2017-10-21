@@ -15,6 +15,7 @@ import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
 import org.samoxive.jooq.generated.tables.records.MutelistRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
+import org.samoxive.safetyjim.discord.commands.Invite;
 import org.samoxive.safetyjim.discord.commands.Ping;
 import org.samoxive.safetyjim.discord.commands.Unmute;
 import org.samoxive.safetyjim.discord.processors.InviteLink;
@@ -82,7 +83,11 @@ public class DiscordBot {
 
     private void loadCommands() {
         commands.put("ping", new Ping());
+<<<<<<< HEAD
         commands.put("unmute", new Unmute());
+=======
+        commands.put("invite", new Invite());
+>>>>>>> bbe88ccd0c14394a53c3fe427958339074f0c41f
     }
 
     private void loadProcessors() {
