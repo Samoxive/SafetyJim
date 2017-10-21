@@ -106,7 +106,7 @@ public class DiscordShard extends ListenerAdapter {
         DSLContext database = bot.getDatabase();
         Guild guild = event.getGuild();
         Message message = event.getMessage();
-        String content = message.getContent();
+        String content = message.getRawContent();
         SelfUser self = shard.getSelfUser();
 
         if (message.isMentioned(self) && content.contains("prefix")) {
@@ -321,6 +321,8 @@ public class DiscordShard extends ListenerAdapter {
 
             DiscordUtils.failReact(bot, event.getMessage());
             event.getChannel().sendMessage(embed.build()).queue();
+        } else {
+            DiscordUtils.deleteCommandMessage(bot, event.getMessage());
         }
     }
 }
