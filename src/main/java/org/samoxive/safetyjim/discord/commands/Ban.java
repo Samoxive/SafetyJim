@@ -1,7 +1,5 @@
 package org.samoxive.safetyjim.discord.commands;
 
-import com.joestelmach.natty.DateGroup;
-import com.joestelmach.natty.Parser;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.Permission;
@@ -14,10 +12,11 @@ import org.samoxive.jooq.generated.tables.records.BanlistRecord;
 import org.samoxive.safetyjim.discord.Command;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.discord.DiscordUtils;
+import org.samoxive.safetyjim.discord.TextUtils;
+import org.samoxive.safetyjim.helpers.Pair;
 
 import java.awt.*;
 import java.util.Date;
-import java.util.List;
 import java.util.Scanner;
 
 public class Ban extends Command {
@@ -41,8 +40,7 @@ public class Ban extends Command {
         Member selfMember = guild.getSelfMember();
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
-            DiscordUtils.failReact(bot, message);
-            DiscordUtils.sendMessage(channel, "You don't have enough permissions to execute this command!");
+            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command!");
             return false;
         }
 
@@ -58,73 +56,37 @@ public class Ban extends Command {
         GuildController controller = guild.getController();
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-            DiscordUtils.failReact(bot, message);
-            DiscordUtils.sendMessage(channel, "I don't have enough permissions to do that!");
+            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!");
             return false;
         }
 
         if (user.getId().equals(banUser.getId())) {
-            DiscordUtils.failReact(bot, message);
-            DiscordUtils.sendMessage(channel, "You can't ban yourself, dummy!");
+            DiscordUtils.failMessage(bot, message, "You can't ban yourself, dummy!");
             return false;
         }
 
         if (!DiscordUtils.isBannable(banMember, selfMember)) {
-            DiscordUtils.failReact(bot, message);
-            DiscordUtils.sendMessage(channel, "I don't have enough permissions to do that!");
+            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!");
             return false;
         }
 
-        String reason;
-        String timeArgument;
+        Pair<String, Date> parsedReasonAndTime;
 
-        if (!messageIterator.hasNext()) {
-            reason = "No reason specified";
-            timeArgument = null;
-        } else {
-            StringBuilder argumentsRaw = new StringBuilder();
-
-            while (messageIterator.hasNextLine()) {
-                argumentsRaw.append(messageIterator.nextLine());
-                argumentsRaw.append("\n");
-            }
-
-            String[] splitArgumentsRaw = argumentsRaw.toString().split("\\|");
-
-            if (splitArgumentsRaw.length == 1) {
-                reason = splitArgumentsRaw[0];
-                timeArgument = null;
-            } else {
-                reason = splitArgumentsRaw[0];
-                timeArgument = splitArgumentsRaw[1];
-            }
-
-            reason = reason.trim();
-            timeArgument = timeArgument == null ? null : timeArgument.trim();
+        try {
+            parsedReasonAndTime = TextUtils.getTextAndTime(messageIterator);
+        } catch (TextUtils.InvalidTimeInputException e) {
+            DiscordUtils.failMessage(bot, message, "Invalid time argument. Please try again.");
+            return false;
+        } catch (TextUtils.TimeInputInPastException e) {
+            DiscordUtils.failMessage(bot, message, "Your time argument was set for the past. Try again.\n" +
+                                                               "If you're specifying a date, e.g. `30 December`, make sure you also write the year.");
+            return false;
         }
 
-        Date expirationDate = null;
+        String text = parsedReasonAndTime.getLeft();
+        String reason = text == null || text.equals("") ? "No reason specified" : text;
+        Date expirationDate = parsedReasonAndTime.getRight();
         Date now = new Date();
-
-        if (timeArgument != null) {
-            Parser parser = new Parser();
-            List<DateGroup> dateGroups = parser.parse(timeArgument);
-
-            try {
-                expirationDate = dateGroups.get(0).getDates().get(0);
-            } catch (IndexOutOfBoundsException e) {
-                DiscordUtils.failReact(bot, message);
-                DiscordUtils.sendMessage(channel, "Invalid time argument `" + timeArgument + "`. Try again");
-                return false;
-            }
-
-            if (expirationDate.compareTo(now) < 0) {
-                DiscordUtils.failReact(bot, message);
-                DiscordUtils.sendMessage(channel, "Your time argument was set for the past. Try again.\n" +
-                                                           "If you're specifying a date, e.g. `30 December`, make sure you also write the year.");
-                return false;
-            }
-        }
 
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("Banned from " + guild.getName());
@@ -169,8 +131,7 @@ public class Ban extends Command {
             DiscordUtils.createModLogEntry(bot, shard, message, banMember, reason, "ban", banId, expirationDate, true);
             DiscordUtils.sendMessage(channel, "Banned " + DiscordUtils.getUserTagAndId(banUser));
         } catch (Exception e) {
-            DiscordUtils.failReact(bot, message);
-            DiscordUtils.sendMessage(channel, "Could not ban specified user. Do I have enough permissions?");
+            DiscordUtils.failMessage(bot, message, "Could not ban specified user. Do I have enough permissions?");
         }
 
         return false;
