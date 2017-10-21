@@ -170,6 +170,11 @@ public class DiscordUtils {
         reactToMessage(message, SUCCESS_EMOTE);
     }
 
+    public static void failMessage(DiscordBot bot, Message message, String errorMessage) {
+        failReact(bot, message);
+        sendMessage(message.getTextChannel(), errorMessage);
+    }
+
     public static void failReact(DiscordBot bot, Message message) {
         if (FAIL_EMOTE == null) {
             for (DiscordShard shard: bot.getShards()) {
