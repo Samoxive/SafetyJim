@@ -10,7 +10,6 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.managers.GuildController;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.Banlist;
 import org.samoxive.jooq.generated.tables.records.BanlistRecord;
 import org.samoxive.safetyjim.discord.Command;
 import org.samoxive.safetyjim.discord.DiscordBot;
@@ -31,7 +30,6 @@ public class Ban extends Command {
 
     @Override
     public boolean run(DiscordBot bot, GuildMessageReceivedEvent event, String args) {
-        String[] splitArgs = args.split(" ");
         Scanner messageIterator = new Scanner(args);
         JDA shard = event.getJDA();
 
@@ -142,7 +140,7 @@ public class Ban extends Command {
 
         try {
             String auditLogReason = String.format("Banned by %s (%s) - %s", DiscordUtils.getTag(user), user.getId(), reason);
-            // controller.ban(banMember, 0, auditLogReason).complete();
+            controller.ban(banMember, 0, auditLogReason).complete();
             DiscordUtils.successReact(bot, message);
 
             boolean expires = expirationDate != null;
