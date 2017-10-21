@@ -11,6 +11,8 @@ import java.awt.*;
 
 public class Ping extends Command {
     private String[] usages = {"ping - pong"};
+
+    @Override
     public String[] getUsages() {
         return usages;
     }
