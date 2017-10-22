@@ -100,7 +100,7 @@ public class Ban extends Command {
         DiscordUtils.sendDM(banUser, embed.build());
 
         try {
-            String auditLogReason = String.format("Banned by %s (%s) - %s", DiscordUtils.getTag(user), user.getId(), reason);
+            String auditLogReason = String.format("Banned by %s - %s", DiscordUtils.getUserTagAndId(user), reason);
             controller.ban(banMember, 0, auditLogReason).complete();
             DiscordUtils.successReact(bot, message);
 
@@ -131,7 +131,7 @@ public class Ban extends Command {
             DiscordUtils.createModLogEntry(bot, shard, message, banMember, reason, "ban", banId, expirationDate, true);
             DiscordUtils.sendMessage(channel, "Banned " + DiscordUtils.getUserTagAndId(banUser));
         } catch (Exception e) {
-            DiscordUtils.failMessage(bot, message, "Could not ban specified user. Do I have enough permissions?");
+            DiscordUtils.failMessage(bot, message, "Could not ban the specified user. Do I have enough permissions?");
         }
 
         return false;
