@@ -9,6 +9,16 @@ import java.util.List;
 import java.util.Scanner;
 
 public class TextUtils {
+    public static String seekScannerToEnd(Scanner scan) {
+        StringBuilder data = new StringBuilder();
+
+        while (scan.hasNextLine()) {
+            data.append(scan.nextLine());
+            data.append("\n");
+        }
+
+        return data.toString().trim();
+    }
     /**
      * Parses command arguments and returns a text and a date provided that
      * the argument is in the form of "text | human time", the date argument
@@ -19,29 +29,20 @@ public class TextUtils {
      * @throws TimeInputInPastException
      */
     public static Pair<String, Date> getTextAndTime(Scanner scan) throws InvalidTimeInputException, TimeInputInPastException {
-        String text = null;
+        String text;
         String timeArgument = null;
 
-        if (scan.hasNext()) {
-            StringBuilder argumentsRaw = new StringBuilder();
+        String[] splitArgumentsRaw = seekScannerToEnd(scan).split("\\|");
 
-            while (scan.hasNextLine()) {
-                argumentsRaw.append(scan.nextLine());
-                argumentsRaw.append("\n");
-            }
-
-            String[] splitArgumentsRaw = argumentsRaw.toString().split("\\|");
-
-            if (splitArgumentsRaw.length == 1) {
-                text = splitArgumentsRaw[0];
-            } else {
-                text = splitArgumentsRaw[0];
-                timeArgument = splitArgumentsRaw[1];
-            }
-
-            text = text.trim();
-            timeArgument = timeArgument == null ? null: timeArgument.trim();
+        if (splitArgumentsRaw.length == 1) {
+            text = splitArgumentsRaw[0];
+        } else {
+            text = splitArgumentsRaw[0];
+            timeArgument = splitArgumentsRaw[1];
         }
+
+        text = text.trim();
+        timeArgument = timeArgument == null ? null: timeArgument.trim();
 
         Date time = null;
         Date now = new Date();
