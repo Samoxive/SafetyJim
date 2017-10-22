@@ -1,11 +1,11 @@
 package org.samoxive.safetyjim.discord;
 
+import jdk.nashorn.internal.scripts.JD;
+import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
+import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.Role;
-import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.managers.GuildController;
 import org.jooq.DSLContext;
 import org.jooq.Result;
@@ -13,15 +13,19 @@ import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.BanlistRecord;
 import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
 import org.samoxive.jooq.generated.tables.records.MutelistRecord;
+import org.samoxive.jooq.generated.tables.records.ReminderlistRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.commands.*;
+import org.samoxive.safetyjim.discord.commands.Invite;
 import org.samoxive.safetyjim.discord.processors.InviteLink;
 import org.samoxive.safetyjim.metrics.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -87,6 +91,7 @@ public class DiscordBot {
         commands.put("kick", new Kick());
         commands.put("mute", new Mute());
         commands.put("warn", new Warn());
+        commands.put("help", new Help());
     }
 
     private void loadProcessors() {
@@ -173,10 +178,10 @@ public class DiscordBot {
         long currentTime = System.currentTimeMillis() / 1000;
 
         Result<MutelistRecord> usersToBeUnmuted = database.selectFrom(Tables.MUTELIST)
-                                                          .where(Tables.MUTELIST.UNMUTED.eq(false))
-                                                          .and(Tables.MUTELIST.EXPIRES.eq(true))
-                                                          .and(Tables.MUTELIST.EXPIRETIME.lt(currentTime))
-                                                          .fetch();
+                .where(Tables.MUTELIST.UNMUTED.eq(false))
+                .and(Tables.MUTELIST.EXPIRES.eq(true))
+                .and(Tables.MUTELIST.EXPIRETIME.lt(currentTime))
+                .fetch();
 
         for (MutelistRecord user: usersToBeUnmuted) {
             String guildId = user.getGuildid();
@@ -202,6 +207,60 @@ public class DiscordBot {
             } finally {
                 user.setUnmuted(true);
                 user.update();
+            }
+        }
+    }
+
+    private void remindReminders() {
+        long now = (new Date().getTime()) / 1000;
+
+        Result<ReminderlistRecord> reminders = database.selectFrom(Tables.REMINDERLIST)
+                .where(Tables.REMINDERLIST.REMINDED.eq(false))
+                .and(Tables.REMINDERLIST.REMINDTIME.lt(now))
+                .fetch();
+
+        for (ReminderlistRecord reminder: reminders) {
+            String guildId = reminder.getGuildid();
+            long guildIdLong = Long.parseLong(guildId);
+            String channelId = reminder.getChannelid();
+            String userId = reminder.getUserid();
+            int shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config.jim.shard_count);
+            JDA shard = shards.get(shardId).getShard();
+            Guild guild = shard.getGuildById(guildId);
+            User user = shard.getUserById(userId);
+
+            if (guild == null) {
+                reminder.setReminded(true);
+                reminder.update();
+                continue;
+            }
+
+            TextChannel channel = guild.getTextChannelById(channelId);
+            Member member = guild.getMember(user);
+
+            EmbedBuilder embed = new EmbedBuilder();
+            embed.setTitle("Reminder - #" + reminder.getId());
+            embed.setDescription(reminder.getMessage());
+            embed.setAuthor("Safety Jim", null, shard.getSelfUser().getAvatarUrl());
+            embed.setFooter("Reminder set on", null);
+            embed.setTimestamp((new Date(reminder.getRemindtime() * 1000)).toInstant());
+            embed.setColor(new Color(0x4286F4));
+
+            if (channel == null || member == null) {
+                DiscordUtils.sendDM(user, embed.build());
+            } else {
+                try {
+                    MessageBuilder builder = new MessageBuilder();
+                    builder.append(user.getAsMention());
+                    builder.setEmbed(embed.build());
+
+                    channel.sendMessage(builder.build()).complete();
+                } catch (Exception e) {
+                    DiscordUtils.sendDM(user, embed.build());
+                } finally {
+                    reminder.setReminded(true);
+                    reminder.update();
+                }
             }
         }
     }
