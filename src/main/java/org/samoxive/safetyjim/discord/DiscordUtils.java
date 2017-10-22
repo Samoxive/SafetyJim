@@ -68,7 +68,7 @@ public class DiscordUtils {
         User user = member.getUser();
         TextChannel channel = message.getTextChannel();
         embed.setColor(modLogColors.get(action));
-        embed.addField("Action ", modLogActionTexts.get(action) + "- #" + id, false);
+        embed.addField("Action ", modLogActionTexts.get(action) + " - #" + id, false);
         embed.addField("User:", getUserTagAndId(user), false);
         embed.addField("Reason:", reason, false);
         embed.addField("Responsible Moderator:", getUserTagAndId(message.getAuthor()), false);
@@ -109,6 +109,11 @@ public class DiscordUtils {
             //
         }
     }
+
+    public static boolean isKickable(Member toKick, Member kicker) {
+        return isBannable(toKick, kicker);
+    }
+
     public static boolean isBannable(Member toBan, Member banner) {
         Guild guild = toBan.getGuild();
         User toBanUser = toBan.getUser();
