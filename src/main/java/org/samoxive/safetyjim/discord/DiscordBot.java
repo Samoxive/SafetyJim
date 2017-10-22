@@ -86,6 +86,7 @@ public class DiscordBot {
         commands.put("ban", new Ban());
         commands.put("kick", new Kick());
         commands.put("mute", new Mute());
+        commands.put("warn", new Warn());
     }
 
     private void loadProcessors() {
