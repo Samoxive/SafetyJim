@@ -58,6 +58,7 @@ public class Main {
             System.exit(1);
         }
 
+        Logger.getLogger("com.joestelmach.natty.Parser").setLevel(Level.WARN);
         Logger.getLogger("org.jooq.Constants").setLevel(Level.WARN);
         Logger.getRootLogger().addAppender(fa);
         Logger.getRootLogger().addAppender(ca);
