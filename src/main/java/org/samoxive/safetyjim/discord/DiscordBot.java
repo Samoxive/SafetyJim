@@ -92,6 +92,7 @@ public class DiscordBot {
         commands.put("mute", new Mute());
         commands.put("warn", new Warn());
         commands.put("help", new Help());
+        commands.put("clean", new Clean());
     }
 
     private void loadProcessors() {
