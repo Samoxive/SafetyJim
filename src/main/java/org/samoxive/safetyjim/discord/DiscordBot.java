@@ -41,8 +41,10 @@ public class DiscordBot {
     private List<MessageProcessor> processors;
     private Metrics metrics;
     private ScheduledExecutorService scheduler;
+    private Date startTime;
 
     public DiscordBot(DSLContext database, Config config, Metrics metrics) {
+        this.startTime = new Date();
         this.database = database;
         this.config = config;
         this.metrics = metrics;
@@ -50,10 +52,6 @@ public class DiscordBot {
         this.commands = new HashMap<>();
         this.processors = new ArrayList<>();
         scheduler = Executors.newScheduledThreadPool(3);
-
-        scheduler.scheduleAtFixedRate(() -> allowUsers(), 30, 5, TimeUnit.SECONDS);
-        scheduler.scheduleAtFixedRate(() -> unmuteUsers(), 30, 10, TimeUnit.SECONDS);
-        scheduler.scheduleAtFixedRate(() -> unbanUsers(), 30, 30, TimeUnit.SECONDS);
 
         loadCommands();
         loadProcessors();
@@ -69,6 +67,12 @@ public class DiscordBot {
                 e.printStackTrace();
             }
         }
+
+
+        scheduler.scheduleAtFixedRate(() -> allowUsers(), 30, 5, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> unmuteUsers(), 30, 10, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> unbanUsers(), 30, 30, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> remindReminders(), 30, 5, TimeUnit.SECONDS);
 
         String inviteLink = shards.get(0).getShard().asBot().getInviteUrl(
                 Permission.KICK_MEMBERS,
@@ -273,6 +277,14 @@ public class DiscordBot {
                 .map(shard -> shard.getShard())
                 .mapToLong(shard -> shard.getGuildCache().size())
                 .sum();
+    }
+
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
     }
 
     public Metrics getMetrics() {
