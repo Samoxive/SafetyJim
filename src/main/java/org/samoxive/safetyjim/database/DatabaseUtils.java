@@ -1,6 +1,7 @@
 package org.samoxive.safetyjim.database;
 
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
@@ -24,7 +25,8 @@ public class DatabaseUtils {
             "welcomemessageactive",
             "silentcommands"
     };
-    private static final String DEFAULT_WELCOME_MESSAGE = "Welcome to $guild $user!";
+
+    public static final String DEFAULT_WELCOME_MESSAGE = "Welcome to $guild $user!";
 
     public static String getGuildSetting(DSLContext database, Guild guild, String key) {
         return database.selectFrom(Tables.SETTINGS)
@@ -44,6 +46,16 @@ public class DatabaseUtils {
         }
 
         return settings;
+    }
+
+    public static void updateGuildSetting(DSLContext database, Guild guild, String key, String value) {
+        SettingsRecord record = database.selectFrom(Tables.SETTINGS)
+                                        .where(Tables.SETTINGS.GUILDID.eq(guild.getId()))
+                                        .and(Tables.SETTINGS.KEY.eq(key))
+                                        .fetchOne();
+
+        record.setValue(value);
+        record.update();
     }
 
     public static void deleteGuildSettings(DSLContext database, Guild guild) {
