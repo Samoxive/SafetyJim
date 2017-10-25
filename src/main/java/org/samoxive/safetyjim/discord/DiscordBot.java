@@ -132,7 +132,7 @@ public class DiscordBot {
             String enabled = DatabaseUtils.getGuildSetting(database, guild, "holdingroomactive");
 
             if (enabled.equals("true")) {
-                User guildUser = shardClient.getUserById(user.getUserid());
+                User guildUser = DiscordUtils.getUserById(shard.getShard(), user.getUserid());
                 Member member = guild.getMember(guildUser);
                 String roleId = DatabaseUtils.getGuildSetting(database, guild, "holdingroomroleid");
                 Role role = guild.getRoleById(roleId);
@@ -171,7 +171,7 @@ public class DiscordBot {
                 continue;
             }
 
-            User guildUser = shardClient.getUserById(user.getId());
+            User guildUser = DiscordUtils.getUserById(shard.getShard(), user.getUserid());
             GuildController controller = guild.getController();
 
             try {
@@ -206,7 +206,7 @@ public class DiscordBot {
                 continue;
             }
 
-            User guildUser = shardClient.getUserById(user.getUserid());
+            User guildUser = DiscordUtils.getUserById(shard.getShard(), user.getUserid());
             Member member = guild.getMember(guildUser);
             Role role = guild.getRolesByName("Muted", false).get(0);
             GuildController controller = guild.getController();
@@ -236,7 +236,7 @@ public class DiscordBot {
             int shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config.jim.shard_count);
             JDA shard = shards.get(shardId).getShard();
             Guild guild = shard.getGuildById(guildId);
-            User user = shard.getUserById(userId);
+            User user = DiscordUtils.getUserById(shard, userId);
 
             if (guild == null) {
                 reminder.setReminded(true);
