@@ -26,6 +26,7 @@ dependencies {
     compile 'com.zaxxer:HikariCP:2.7.2'
     compile 'com.datadoghq:java-dogstatsd-client:2.3'
     compile "com.joestelmach:natty:0.11"
+    compile 'org.ocpsoft.prettytime:prettytime:4.0.1.Final'
     compile group: 'log4j', name: 'log4j', version: '1.2.17'
 }
 
