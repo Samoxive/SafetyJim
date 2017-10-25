@@ -21,6 +21,7 @@ import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.CommandlogsRecord;
 import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
+import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,10 @@ public class DiscordShard extends ListenerAdapter {
         this.shardId = shardId;
         log = LoggerFactory.getLogger("DiscordShard " + DiscordUtils.getShardString(shardId, bot.getConfig().jim.shard_count));
 
+        Config config = bot.getConfig();
+        int shardCount = config.jim.shard_count;
+        String version = config.version;
+
         JDABuilder builder = new JDABuilder(AccountType.BOT);
         try {
             this.shard = builder.setToken(bot.getConfig().jim.token)
@@ -53,7 +58,7 @@ public class DiscordShard extends ListenerAdapter {
                                 .setReconnectQueue(new SessionReconnectQueue()) // needed to prevent shards trying to reconnect too soon
                                 .setEnableShutdownHook(true)
                                 .useSharding(shardId, bot.getConfig().jim.shard_count)
-                                .setGame(Game.of("-mod help"))
+                                .setGame(Game.of(String.format("-mod help | %s | %s", version, DiscordUtils.getShardString(shardId, shardCount))))
                                 .buildBlocking();
         } catch (LoginException e) {
             log.error("Invalid token.");
