@@ -86,7 +86,7 @@ public class Kick extends Command {
 
         try {
             String auditLogReason = String.format("Kicked by %s - %s", DiscordUtils.getUserTagAndId(user), reason);
-            //controller.kick(kickMember, auditLogReason).complete();
+            controller.kick(kickMember, auditLogReason).complete();
             DiscordUtils.successReact(bot, message);
 
             DSLContext database = bot.getDatabase();
