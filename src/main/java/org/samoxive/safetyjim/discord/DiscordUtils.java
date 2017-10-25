@@ -287,6 +287,6 @@ public class DiscordUtils {
     }
 
     public static String getShardString(int shardId, int shardCount) {
-        return "[" + shardId + " / " + shardCount + "]";
+        return "[" + (shardId + 1) + " / " + shardCount + "]";
     }
 }
