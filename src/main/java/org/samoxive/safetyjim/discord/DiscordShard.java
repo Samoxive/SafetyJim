@@ -73,6 +73,8 @@ public class DiscordShard extends ListenerAdapter {
     public void onReady(ReadyEvent event) {
         log.info("Shard is ready.");
         DSLContext database = this.bot.getDatabase();
+        JDA shard = event.getJDA();
+
         for (Guild guild: shard.getGuilds()) {
             if (DiscordUtils.isBotFarm(guild)) {
                 guild.leave().queue();
