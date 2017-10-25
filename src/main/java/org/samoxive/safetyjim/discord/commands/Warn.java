@@ -70,8 +70,7 @@ public class Warn extends Command {
         embed.setTimestamp(now.toInstant());
 
         try {
-            PrivateChannel dmChannel = user.openPrivateChannel().complete();
-            dmChannel.sendMessage(embed.build()).complete();
+            DiscordUtils.sendDM(warnUser, embed.build());
         } catch (Exception e) {
             DiscordUtils.sendMessage(channel, "Could not send a warning to the specified user via private message!");
         }
