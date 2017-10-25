@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Config {
+    public String version;
     public Jim jim;
     public Database database;
     public Metrics metrics;
