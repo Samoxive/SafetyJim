@@ -232,6 +232,16 @@ public class DiscordUtils {
         sendMessage(channel, embed);
     }
 
+    public static User getUserById(JDA shard, String userId) {
+        User user = shard.getUserById(userId);
+
+        if (user == null) {
+            user = shard.retrieveUserById(userId).complete();
+        }
+
+        return user;
+    }
+
     public static String getChannelMention(MessageChannel channel) {
         return "<#" + channel.getId() + ">";
     }
