@@ -68,11 +68,10 @@ public class DiscordBot {
             }
         }
 
-
-        scheduler.scheduleAtFixedRate(() -> allowUsers(), 30, 5, TimeUnit.SECONDS);
-        scheduler.scheduleAtFixedRate(() -> unmuteUsers(), 30, 10, TimeUnit.SECONDS);
-        scheduler.scheduleAtFixedRate(() -> unbanUsers(), 30, 30, TimeUnit.SECONDS);
-        scheduler.scheduleAtFixedRate(() -> remindReminders(), 30, 5, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> allowUsers(), 1, 5, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> unmuteUsers(), 1, 10, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> unbanUsers(), 1, 30, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> remindReminders(), 1, 5, TimeUnit.SECONDS);
 
         String inviteLink = shards.get(0).getShard().asBot().getInviteUrl(
                 Permission.KICK_MEMBERS,
@@ -100,6 +99,8 @@ public class DiscordBot {
         commands.put("tag", new Tag());
         commands.put("remind", new Remind());
         commands.put("info", new Info());
+        commands.put("settings", new Settings());
+        commands.put("softban", new Softban());
     }
 
     private void loadProcessors() {
@@ -131,7 +132,7 @@ public class DiscordBot {
             String enabled = DatabaseUtils.getGuildSetting(database, guild, "holdingroomactive");
 
             if (enabled.equals("true")) {
-                User guildUser = shardClient.getUserById(user.getId());
+                User guildUser = shardClient.getUserById(user.getUserid());
                 Member member = guild.getMember(guildUser);
                 String roleId = DatabaseUtils.getGuildSetting(database, guild, "holdingroomroleid");
                 Role role = guild.getRoleById(roleId);
@@ -205,7 +206,7 @@ public class DiscordBot {
                 continue;
             }
 
-            User guildUser = shardClient.getUserById(user.getId());
+            User guildUser = shardClient.getUserById(user.getUserid());
             Member member = guild.getMember(guildUser);
             Role role = guild.getRolesByName("Muted", false).get(0);
             GuildController controller = guild.getController();
