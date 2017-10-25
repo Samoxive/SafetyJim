@@ -99,6 +99,7 @@ public class DiscordBot {
         commands.put("clean", new Clean());
         commands.put("tag", new Tag());
         commands.put("remind", new Remind());
+        commands.put("info", new Info());
     }
 
     private void loadProcessors() {
