@@ -1,14 +1,15 @@
 package org.samoxive.safetyjim.discord;
 
-import jdk.nashorn.internal.scripts.JD;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.managers.GuildController;
+import okhttp3.*;
 import org.jooq.DSLContext;
 import org.jooq.Result;
+import org.json.JSONObject;
 import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.BanlistRecord;
 import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,6 +43,7 @@ public class DiscordBot {
     private List<MessageProcessor> processors;
     private Metrics metrics;
     private ScheduledExecutorService scheduler;
+    private OkHttpClient httpClient;
     private Date startTime;
 
     public DiscordBot(DSLContext database, Config config, Metrics metrics) {
@@ -51,6 +54,7 @@ public class DiscordBot {
         this.shards = new ArrayList<>();
         this.commands = new HashMap<>();
         this.processors = new ArrayList<>();
+        httpClient = new OkHttpClient();
         scheduler = Executors.newScheduledThreadPool(3);
 
         loadCommands();
@@ -282,12 +286,42 @@ public class DiscordBot {
                 .sum();
     }
 
-    public Date getStartTime() {
-        return startTime;
+    public void updateBotLists() {
+        if (!config.botlist.enabled) {
+            return;
+        }
+
+        long guildCount = getGuildCount();
+        String clientId = shards.get(0).getShard().getSelfUser().getId();
+        for (Config.list list: config.botlist.list) {
+            JSONObject body = new JSONObject().put("server_count", guildCount);
+            Request.Builder builder = new Request.Builder();
+            builder.addHeader("Content-Type", "application/json")
+                   .addHeader("Authorization", list.token)
+                   .url(list.url.replace("$id", clientId))
+                   .post(RequestBody.create(MediaType.parse("application/json"), body.toString()));
+            httpClient.newCall(builder.build()).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    log.error("Failed to update a bot list.", e);
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (list.ignore_errors) {
+                        return;
+                    }
+
+                    if (!response.isSuccessful()) {
+                        log.error("Failed to update " + list.name + ".\n" + response.toString());
+                    }
+                }
+            });
+        }
     }
 
-    public void setStartTime(Date startTime) {
-        this.startTime = startTime;
+    public Date getStartTime() {
+        return startTime;
     }
 
     public Metrics getMetrics() {
