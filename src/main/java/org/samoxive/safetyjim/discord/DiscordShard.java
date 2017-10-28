@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.login.LoginException;
 import java.awt.*;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -292,13 +293,15 @@ public class DiscordShard extends ListenerAdapter {
 
     private void createCommandLog(GuildMessageReceivedEvent event, Command command, String commandName, String args) {
         User author = event.getAuthor();
-        CommandlogsRecord record = Tables.COMMANDLOGS.newRecord();
+        CommandlogsRecord record = bot.getDatabase().newRecord(Tables.COMMANDLOGS);
         record.setCommand(commandName);
         record.setArguments(args);
+        record.setTime(new Timestamp((new Date()).getTime()));
         record.setUsername(DiscordUtils.getTag(author));
         record.setUserid(author.getId());
         record.setGuildname(event.getGuild().getName());
         record.setGuildid(event.getGuild().getId());
+        record.store();
     }
 
     private void executeCommand(GuildMessageReceivedEvent event, Command command, String commandName, String args) {
