@@ -230,12 +230,14 @@ public class DiscordShard extends ListenerAdapter {
         String message = String.format("Hello! I am Safety Jim, `%s` is my default prefix!", bot.getConfig().jim.default_prefix);
         DiscordUtils.sendMessage(DiscordUtils.getDefaultChannel(guild), message);
         DatabaseUtils.createGuildSettings(bot, database, guild);
+        bot.updateBotLists();
         bot.getMetrics().increment("guild.join");
     }
 
     @Override
     public void onGuildLeave(GuildLeaveEvent event) {
         DatabaseUtils.deleteGuildSettings(bot.getDatabase(), event.getGuild());
+        bot.updateBotLists();
         bot.getMetrics().increment("guild.left");
     }
 
