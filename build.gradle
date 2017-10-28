@@ -27,6 +27,7 @@ dependencies {
     compile 'com.datadoghq:java-dogstatsd-client:2.3'
     compile "com.joestelmach:natty:0.11"
     compile 'org.ocpsoft.prettytime:prettytime:4.0.1.Final'
+    compile 'com.squareup.okhttp3:okhttp:3.9.0'
     compile group: 'log4j', name: 'log4j', version: '1.2.17'
 }
 
