@@ -4,6 +4,7 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.requests.RequestFuture;
+import net.dv8tion.jda.core.requests.restaction.AuditableRestAction;
 import org.samoxive.safetyjim.discord.Command;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.discord.DiscordUtils;
@@ -87,24 +88,26 @@ public class Clean extends Command {
     private void bulkDelete(Pair<List<Message>, List<Message>> messages, TextChannel channel) {
         List<Message> newMessages = messages.getRight();
         List<Message> oldMessage = messages.getLeft();
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        List<AuditableRestAction> futures = new ArrayList<>();
 
         if (newMessages.size() >= 2 && newMessages.size() <= 100) {
             channel.deleteMessages(newMessages).complete();
         } else {
             for (Message message: newMessages) {
-                futures.add(message.delete().submit().toCompletableFuture());
+                futures.add(message.delete());
             }
         }
 
         for (Message message: oldMessage) {
-            futures.add(message.delete().submit().toCompletableFuture());
+            futures.add(message.delete());
         }
 
-        try {
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
-        } catch (Exception e) {
-            //
+        for (AuditableRestAction future: futures) {
+            try {
+                future.complete();
+            } catch (Exception e) {
+                //
+            }
         }
     }
 
