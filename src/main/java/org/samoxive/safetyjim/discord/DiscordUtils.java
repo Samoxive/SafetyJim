@@ -299,4 +299,11 @@ public class DiscordUtils {
     public static String getShardString(int shardId, int shardCount) {
         return "[" + (shardId + 1) + " / " + shardCount + "]";
     }
+
+    public static String getShardString(JDA.ShardInfo shardInfo) {
+        int shardId = shardInfo.getShardId();
+        int shardCount = shardInfo.getShardTotal();
+
+        return "[" + (shardId + 1) + " / " + shardCount + "]";
+    }
 }
