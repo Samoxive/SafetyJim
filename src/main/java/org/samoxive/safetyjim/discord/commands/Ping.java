@@ -20,11 +20,11 @@ public class Ping extends Command {
     @Override
     public boolean run(DiscordBot bot, GuildMessageReceivedEvent event, String args) {
         JDA shard = event.getJDA();
-        DiscordUtils.successReact(bot, event.getMessage());
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setAuthor("Safety Jim " + shard.getShardInfo().getShardString(), null, shard.getSelfUser().getAvatarUrl());
+        embed.setAuthor("Safety Jim " + DiscordUtils.getShardString(shard.getShardInfo()), null, shard.getSelfUser().getAvatarUrl());
         embed.setDescription(":ping_pong: Ping: " + shard.getPing() + "ms");
         embed.setColor(new Color(0x4286F4));
+        DiscordUtils.successReact(bot, event.getMessage());
         DiscordUtils.sendMessage(event.getChannel(), embed.build());
         return false;
     }
