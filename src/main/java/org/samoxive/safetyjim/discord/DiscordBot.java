@@ -76,6 +76,7 @@ public class DiscordBot {
         scheduler.scheduleAtFixedRate(() -> unmuteUsers(), 1, 10, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> unbanUsers(), 1, 30, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> remindReminders(), 1, 5, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> metrics.gauge("uptime", (int)((new Date()).getTime() - startTime.getTime()) / (1000 * 60 * 60)), 1, 30, TimeUnit.MINUTES);
         scheduler.schedule(() -> updateBotLists(), 10, TimeUnit.SECONDS);
 
         String inviteLink = shards.get(0).getShard().asBot().getInviteUrl(
