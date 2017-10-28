@@ -25,13 +25,8 @@ public class Help extends Command {
         StringJoiner joiner = new StringJoiner("\n");
         HashMap<String, Command> commandList = bot.getCommands();
 
-        for (Map.Entry<String, Command> commandEntry: commandList.entrySet()) {
-            Command command = commandEntry.getValue();
-            String commandName = commandEntry.getKey();
-
-            for (String usage: command.getUsages()) {
-                joiner.add(String.format("`%s %s` - %s", prefix, commandName, usage));
-            }
+        for (Command command: commandList.values()) {
+            joiner.add(DiscordUtils.getUsageString(prefix, command.getUsages()));
         }
 
         return joiner.toString();
