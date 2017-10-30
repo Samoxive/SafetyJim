@@ -1,0 +1,35 @@
+[jim]
+token = "" # put your discord token here
+default_prefix = "-dev" # all guilds will use this prefix unless changed
+shard_count = 1 # amount of shards jim will create
+
+[database]
+user = "postgres"
+pass = "postgres"
+host = "localhost"
+name = "dev"
+port = 5432
+
+[metrics] # keys can be gathered from datadog
+enabled = false
+api_key = ""
+app_key = ""
+host = "jim_dev"
+flush_interval = 3 # seconds
+
+[botlist]
+enabled = false # be careful with enabling this, bot will fail every time it tries to update lists if you have missing tokens
+
+# $id is the placeholder for bot's user id
+[[botlist.list]]
+name = "Discord Bots (pw)"
+url = "https://bots.discord.pw/api/bots/$id/stats"
+token = ""
+ignore_errors = true # their server keeps shitting itself, shame 🔔
+
+
+[[botlist.list]]
+name = "Discord Bot List"
+url = "https://discordbots.org/api/bots/$id/stats"
+token = ""
+ignore_errors = false
