@@ -51,6 +51,7 @@ public class DiscordShard extends ListenerAdapter {
         int shardCount = config.jim.shard_count;
         String version = config.version;
 
+        threadPool = Executors.newCachedThreadPool();
         JDABuilder builder = new JDABuilder(AccountType.BOT);
         try {
             this.shard = builder.setToken(bot.getConfig().jim.token)
@@ -71,8 +72,6 @@ public class DiscordShard extends ListenerAdapter {
             log.error("Hit Discord API Rate Limit", e);
             System.exit(1);
         }
-
-        threadPool = Executors.newCachedThreadPool();
     }
 
     @Override
@@ -115,6 +114,7 @@ public class DiscordShard extends ListenerAdapter {
         Guild guild = event.getGuild();
         Message message = event.getMessage();
         String content = message.getRawContent();
+        JDA shard = event.getJDA();
         SelfUser self = shard.getSelfUser();
 
         if (message.isMentioned(self) && content.contains("prefix")) {
