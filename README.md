@@ -1,3 +1,5 @@
+## Safety Jim has been rewritten! To view the old typescript version, click [here](https://github.com/Samoxive/SafetyJim/tree/2.3.3)
+
 # SafetyJim 
 A moderation bot for discord communities.
 
