@@ -3,10 +3,13 @@ plugins {
     id 'com.sedmelluq.jdaction' version '1.0.2'
     id "com.github.johnrengelman.shadow" version "2.0.1"
 }
+
 group 'org.samoxive'
 version '3.0.0'
 
 apply plugin: 'java'
+apply plugin: 'application'
+mainClassName = "org.samoxive.safetyjim.Main"
 
 sourceCompatibility = 1.8
 
