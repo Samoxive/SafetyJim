@@ -75,7 +75,7 @@ public class Clean extends Command {
         long now = (new Date()).getTime() / 1000;
 
         for (Message message: messages) {
-            if ((now - message.getCreationTime().toEpochSecond()) <= 1000 * 60 * 60 * 24 * 13) {
+            if ((now - message.getCreationTime().toEpochSecond()) <= 1000 * 60 * 60 * 24 * 12) {
                 newMessages.add(message);
             } else {
                 oldMessages.add(message);
@@ -123,7 +123,6 @@ public class Clean extends Command {
         Scanner messageIterator = new Scanner(args);
 
         Member member = event.getMember();
-        User user = event.getAuthor();
         Message message = event.getMessage();
         TextChannel channel = event.getChannel();
         Guild guild = event.getGuild();
