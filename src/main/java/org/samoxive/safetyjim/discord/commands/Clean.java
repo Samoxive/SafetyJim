@@ -75,7 +75,7 @@ public class Clean extends Command {
         long now = (new Date()).getTime() / 1000;
 
         for (Message message: messages) {
-            if ((now - message.getCreationTime().toEpochSecond()) <= 1000 * 60 * 60 * 24 * 12) {
+            if ((now - message.getCreationTime().toEpochSecond()) <= 60 * 60 * 24 * 12) {
                 newMessages.add(message);
             } else {
                 oldMessages.add(message);
