@@ -65,3 +65,7 @@ jar {
         attributes 'Main-Class': 'org.samoxive.safetyjim.Main'
     }
 }
+
+shadowJar {
+    archiveName = "safetyjim.jar"
+}
