@@ -108,6 +108,7 @@ public class DiscordBot {
         commands.put("settings", new Settings());
         commands.put("softban", new Softban());
         commands.put("unban", new Unban());
+        commands.put("server", new Server());
     }
 
     private void loadProcessors() {
