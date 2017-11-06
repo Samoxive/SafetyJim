@@ -23,22 +23,14 @@ public class Clean extends Command {
                                 "clean <number> @user - deletes number of messages from specified user",
                                 "clean <number> bot - deletes number of messages sent from bots" };
 
-    /**
-     *
-     * @param channel
-     * @param messageCount amount of messages you want to delete
-     * @param skipOneMessage
-     * @param filterBotMessages
-     * @return
-     */
-    private List<Message> fetchMessages(TextChannel channel, int messageCount, boolean skipOneMessage, boolean filterBotMessages) {
+    private List<Message> fetchMessages(TextChannel channel, int messageCount, boolean skipOneMessage, boolean filterBotMessages, boolean filterUserMessages, User filterUser) {
         if (skipOneMessage) {
             messageCount = messageCount == 100 ? 100 : messageCount + 1;
         }
 
         // if we want to delete bot messages, we want to find as much as we can and then only delete the amount we need
-        // if not, we just pass the messageCount back
-        List<Message> messages = channel.getHistory().retrievePast(filterBotMessages ? 100 : messageCount).complete();
+        // if not, we just pass the messageCount back, same story with user messages
+        List<Message> messages = channel.getHistory().retrievePast((filterBotMessages || filterUserMessages) ? 100 : messageCount).complete();
 
         if (skipOneMessage) {
             try {
@@ -57,6 +49,25 @@ public class Clean extends Command {
                     break;
                 } else {
                     if (message.getAuthor().isBot()) {
+                        tempMessages.add(message);
+                        iterationCount++;
+                    }
+                }
+            }
+
+            messages = tempMessages;
+        }
+
+        if (filterUserMessages) {
+            List<Message> tempMessages = new ArrayList<>();
+            messageCount--;
+            int iterationCount = 0;
+
+            for (Message message: messages) {
+                if (iterationCount == messageCount) {
+                    break;
+                } else {
+                    if (message.getAuthor().getId().equals(filterUser.getId())) {
                         tempMessages.add(message);
                         iterationCount++;
                     }
@@ -168,14 +179,14 @@ public class Clean extends Command {
         List<Message> messages;
         switch (targetArgument) {
             case "":
-                messages = fetchMessages(channel, messageCount, true, false);
+                messages = fetchMessages(channel, messageCount, true, false, false, null);
                 break;
             case "bot":
-                messages = fetchMessages(channel, messageCount, false, true);
+                messages = fetchMessages(channel, messageCount, false, true, false, null);
                 break;
             case "user":
                 if (targetUser != null) {
-                    messages = fetchMessages(channel, messageCount, true, false);
+                    messages = fetchMessages(channel, messageCount, true, false, true, targetUser);
                     break;
                 }
             default:
