@@ -14,7 +14,7 @@
     <orderEntry type="library" name="Gradle: postgresql:postgresql:9.1-901.jdbc4" level="project" />
     <orderEntry type="library" name="Gradle: org.jooq:jooq:3.9.5" level="project" />
     <orderEntry type="library" name="Gradle: com.moandjiezana.toml:toml4j:0.7.2" level="project" />
-    <orderEntry type="library" name="Gradle: net.dv8tion:JDA:3.3.1_286" level="project" />
+    <orderEntry type="library" name="Gradle: net.dv8tion:JDA:3.3.1_303" level="project" />
     <orderEntry type="library" name="Gradle: com.zaxxer:HikariCP:2.7.2" level="project" />
     <orderEntry type="library" name="Gradle: com.datadoghq:java-dogstatsd-client:2.3" level="project" />
     <orderEntry type="library" name="Gradle: com.joestelmach:natty:0.11" level="project" />

@@ -2,6 +2,7 @@ plugins {
     id 'nu.studer.jooq' version '2.0.7'
     id 'com.sedmelluq.jdaction' version '1.0.2'
     id "com.github.johnrengelman.shadow" version "2.0.1"
+    id 'com.github.ben-manes.versions' version '0.17.0'
 }
 
 group 'org.samoxive'
@@ -25,7 +26,7 @@ dependencies {
     compile 'postgresql:postgresql:9.1-901.jdbc4'
     compile 'org.jooq:jooq'
     compile 'com.moandjiezana.toml:toml4j:0.7.2'
-    compile 'net.dv8tion:JDA:3.3.1_286'
+    compile 'net.dv8tion:JDA:3.3.1_303'
     compile 'com.zaxxer:HikariCP:2.7.2'
     compile 'com.datadoghq:java-dogstatsd-client:2.3'
     compile "com.joestelmach:natty:0.11"
