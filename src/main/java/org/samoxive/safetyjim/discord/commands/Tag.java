@@ -61,7 +61,7 @@ public class Tag extends Command {
         StringJoiner tagString = new StringJoiner("\n");
 
         for (TaglistRecord record: records) {
-            tagString.add("• `" + record.getName() + "`");
+            tagString.add("\u2022 `" + record.getName() + "`");
         }
 
         EmbedBuilder embed = new EmbedBuilder();
