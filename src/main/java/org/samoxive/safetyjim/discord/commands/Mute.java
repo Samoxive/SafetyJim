@@ -23,8 +23,7 @@ import java.util.Scanner;
 public class Mute extends Command {
     private String[] usages = { "mute @user [reason] | [time] - mutes the user with specific args. Both arguments can be omitted." };
 
-    private Role setupMutedRole(Guild guild) {
-        JDA shard = guild.getJDA();
+    public static Role setupMutedRole(Guild guild) {
         GuildController controller = guild.getController();
         List<TextChannel> channels = guild.getTextChannels();
         List<Role> roleList = guild.getRoles();
@@ -172,6 +171,12 @@ public class Mute extends Command {
 
             boolean expires = expirationDate != null;
             DSLContext database = bot.getDatabase();
+
+            database.update(Tables.MUTELIST)
+                    .set(Tables.MUTELIST.UNMUTED, true)
+                    .where(Tables.MUTELIST.GUILDID.eq(guild.getId()))
+                    .and(Tables.MUTELIST.USERID.eq(muteUser.getId()))
+                    .execute();
 
             MutelistRecord record = database.insertInto(Tables.MUTELIST,
                                                         Tables.MUTELIST.USERID,

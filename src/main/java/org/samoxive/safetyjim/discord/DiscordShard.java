@@ -16,13 +16,17 @@ import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionAddEv
 import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionRemoveEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.managers.GuildController;
 import net.dv8tion.jda.core.requests.SessionReconnectQueue;
 import org.jooq.DSLContext;
+import org.jooq.Result;
 import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.CommandlogsRecord;
 import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
+import org.samoxive.jooq.generated.tables.records.MutelistRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
+import org.samoxive.safetyjim.discord.commands.Mute;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -245,7 +249,9 @@ public class DiscordShard extends ListenerAdapter {
     @Override
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         Guild guild = event.getGuild();
+        GuildController controller = guild.getController();
         Member member = event.getMember();
+        User user = member.getUser();
         DSLContext database = bot.getDatabase();
         Map<String, String> settings = DatabaseUtils.getGuildSettings(database, guild);
 
@@ -276,6 +282,29 @@ public class DiscordShard extends ListenerAdapter {
             newRecord.setAllowtime(currentTime + waitTime * 60);
             newRecord.setAllowed(false);
             newRecord.store();
+        }
+
+
+        Result<MutelistRecord> records = database.selectFrom(Tables.MUTELIST)
+                                               .where(Tables.MUTELIST.GUILDID.eq(guild.getId()))
+                                               .and(Tables.MUTELIST.USERID.eq(user.getId()))
+                                               .fetch();
+
+        if (records.isEmpty()) {
+            return;
+        }
+
+        Role mutedRole =  null;
+        try {
+            mutedRole = Mute.setupMutedRole(guild);
+        } catch (Exception e) {
+            return;
+        }
+
+        try {
+            controller.addSingleRoleToMember(member, mutedRole).complete();
+        } catch (Exception e) {
+            // Maybe actually do something if this fails?
         }
     }
 
