@@ -154,7 +154,7 @@ public class Settings extends Command {
         }
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to modify guild settings!");
+            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to modify guild settings! Required permission: Administrator");
             return false;
         }
 

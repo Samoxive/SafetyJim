@@ -35,7 +35,7 @@ public class Unban extends Command {
 
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command!");
+            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Ban Members");
             return false;
         }
 

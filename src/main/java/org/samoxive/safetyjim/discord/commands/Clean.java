@@ -140,7 +140,7 @@ public class Clean extends Command {
         Member selfMember = guild.getSelfMember();
 
         if (!member.hasPermission(Permission.MESSAGE_MANAGE)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command!");
+            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Manage Messages");
             return false;
         }
 

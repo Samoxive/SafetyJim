@@ -39,7 +39,7 @@ public class Kick extends Command {
         Member selfMember = guild.getSelfMember();
 
         if (!member.hasPermission(Permission.KICK_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command!");
+            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Kick Members");
             return false;
         }
 

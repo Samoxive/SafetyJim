@@ -34,7 +34,7 @@ public class Unmute extends Command {
         DSLContext database = bot.getDatabase();
 
         if (!member.hasPermission(Permission.MANAGE_ROLES)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command!");
+            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Manage Roles");
             return false;
         }
 
