@@ -18,6 +18,7 @@ public class DiscordUtils {
     private static final String[] botListIds = {"110373943822540800", // DiscordBots
                                                 "264445053596991498", // DiscordBotList
                                                 "297462937646530562", // NovoBotList
+                                                "330777295952543744", // terminal.ink
                                                };
     private static final String SUCCESS_EMOTE_ID = "322698554294534144";
     private static final String FAIL_EMOTE_ID = "322698553980092417";
