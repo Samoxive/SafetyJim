@@ -7,6 +7,7 @@ import org.samoxive.safetyjim.helpers.Pair;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 public class TextUtils {
     public static String seekScannerToEnd(Scanner scan) {
@@ -63,6 +64,26 @@ public class TextUtils {
         }
 
         return new Pair<>(text, time);
+    }
+
+    private static String nextPattern(Scanner scan, Pattern pattern) {
+        if (scan.hasNext(pattern)) {
+            return scan.next(pattern);
+        } else {
+            return null;
+        }
+    }
+
+    public static String nextUserMention(Scanner scan) {
+        return nextPattern(scan, DiscordUtils.USER_MENTION_PATTERN);
+    }
+
+    public static String nextChannelMention(Scanner scan) {
+        return nextPattern(scan, DiscordUtils.CHANNEL_MENTION_PATTERN);
+    }
+
+    public static String nextRoleMention(Scanner scan) {
+        return nextPattern(scan, DiscordUtils.ROLE_MENTION_PATTERN);
     }
 
     public static class InvalidTimeInputException extends Exception {}
