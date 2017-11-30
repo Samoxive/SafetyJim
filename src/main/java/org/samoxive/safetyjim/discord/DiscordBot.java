@@ -110,6 +110,7 @@ public class DiscordBot {
         commands.put("unban", new Unban());
         commands.put("server", new Server());
         commands.put("assign", new Assign());
+        commands.put("role", new RoleCommand());
     }
 
     private void loadProcessors() {
