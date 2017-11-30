@@ -133,3 +133,12 @@ create table warnlist
 )
 ;
 
+CREATE TABLE rolelist
+(
+    guildid TEXT,
+    roleid TEXT,
+    constraint rolelist_pkey
+    primary key (guildid, roleid)
+)
+;
+
