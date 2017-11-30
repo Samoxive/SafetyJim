@@ -294,7 +294,7 @@ public class DiscordShard extends ListenerAdapter {
             return;
         }
 
-        Role mutedRole =  null;
+        Role mutedRole = null;
         try {
             mutedRole = Mute.setupMutedRole(guild);
         } catch (Exception e) {
