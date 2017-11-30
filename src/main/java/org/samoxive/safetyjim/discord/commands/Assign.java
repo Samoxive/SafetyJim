@@ -28,15 +28,11 @@ public class Assign extends Command {
     @Override
     public boolean run(DiscordBot bot, GuildMessageReceivedEvent event, String args) {
         Scanner messageIterator = new Scanner(args);
-        JDA shard = event.getJDA();
         DSLContext database = bot.getDatabase();
 
         Member member = event.getMember();
-        User user = event.getAuthor();
         Message message = event.getMessage();
-        TextChannel channel = event.getChannel();
         Guild guild = event.getGuild();
-        Member selfMember = guild.getSelfMember();
 
         String roleName = TextUtils.seekScannerToEnd(messageIterator)
                                    .toLowerCase();
