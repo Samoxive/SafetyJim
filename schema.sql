@@ -86,16 +86,6 @@ create table reminderlist
 )
 ;
 
-create table settings
-(
-	guildid text not null,
-	key text not null,
-	value text,
-	constraint settings_pkey
-	primary key (guildid, key)
-)
-;
-
 create table softbanlist
 (
 	id serial not null
