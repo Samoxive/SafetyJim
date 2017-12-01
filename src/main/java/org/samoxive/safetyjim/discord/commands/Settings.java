@@ -114,6 +114,16 @@ public class Settings extends Command {
         return output.toString();
     }
 
+    private boolean isEnabledInput(String input) throws BadInputException {
+        if (input.equals("enabled")) {
+            return true;
+        } else if (input.equals("disabled")) {
+            return false;
+        } else {
+            throw new BadInputException();
+        }
+    }
+
     @Override
     public String[] getUsages() {
         return usages;
@@ -194,91 +204,106 @@ public class Settings extends Command {
             return false;
         }
 
-        switch (key) {
-            case "silentcommands":
-            case "invitelinkremover":
-            case "welcomemessage":
-            case "modlog":
-                if (argument.equals("enabled")) {
-                    argument = "true";
-                } else if (argument.equals("disabled")) {
-                    argument = "false";
-                } else {
+        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+        TextChannel argumentChannel;
+
+        try {
+            switch (key) {
+                case "silentcommands":
+                    if (isEnabledInput(argument)) {
+                        guildSettings.setSilentcommands(true);
+                    } else {
+                        guildSettings.setSilentcommands(false);
+                    }
+                    break;
+                case "invitelinkremover":
+                    if (isEnabledInput(argument)) {
+                        guildSettings.setInvitelinkremover(true);
+                    } else {
+                        guildSettings.setInvitelinkremover(false);
+                    }
+                    break;
+                case "welcomemessage":
+                    if (isEnabledInput(argument)) {
+                        guildSettings.setWelcomemessage(true);
+                    } else {
+                        guildSettings.setWelcomemessage(false);
+                    }
+                    break;
+                case "modlog":
+                    if (isEnabledInput(argument)) {
+                        guildSettings.setModlog(true);
+                    } else {
+                        guildSettings.setModlog(false);
+                    }
+                    break;
+                case "welcomemessagechannel":
+                    argument = argumentSplit[0];
+
+                    if (!DiscordUtils.CHANNEL_MENTION_PATTERN.matcher(argument).matches()) {
+                        return true;
+                    }
+
+                    argumentChannel = message.getMentionedChannels().get(0);
+                    guildSettings.setWelcomemessagechannelid(argumentChannel.getId());
+                    break;
+                case "modlogchannel":
+                    argument = argumentSplit[0];
+
+                    if (!DiscordUtils.CHANNEL_MENTION_PATTERN.matcher(argument).matches()) {
+                        return true;
+                    }
+
+                    argumentChannel = message.getMentionedChannels().get(0);
+                    guildSettings.setModlogchannelid(argumentChannel.getId());
+                    break;
+                case "holdingroomminutes":
+                    int minutes;
+
+                    try {
+                        minutes = Integer.parseInt(argumentSplit[0]);
+                    } catch (NumberFormatException e) {
+                        return true;
+                    }
+
+                    guildSettings.setHoldingroomminutes(minutes);
+                    break;
+                case "prefix":
+                    guildSettings.setPrefix(argumentSplit[0]);
+                    break;
+                case "message":
+                    guildSettings.setMessage(argument);
+                    break;
+                case "holdingroom":
+                    boolean holdingRoomEnabled = isEnabledInput(argument);
+                    String roleId = guildSettings.getHoldingroomroleid();
+
+                    if (roleId == null) {
+                        DiscordUtils.failMessage(bot, message, "You can't enable holding room before setting a role for it first.");
+                        return false;
+                    }
+
+                    guildSettings.setHoldingroom(holdingRoomEnabled);
+                    break;
+                case "holdingroomrole":
+                    List<Role> foundRoles = guild.getRolesByName(argument, true);
+                    if (foundRoles.size() == 0) {
+                        return true;
+                    }
+
+                    Role role = foundRoles.get(0);
+                    guildSettings.setHoldingroomroleid(role.getId());
+                    break;
+                default:
                     return true;
-                }
-
-                key = key.equals("welcomemessage") ? "welcomemessageactive" : key;
-                key = key.equals("modlog") ? "modlogactive" : key;
-
-                DatabaseUtils.updateGuildSetting(database, guild, key, argument);
-                DiscordUtils.successReact(bot, message);
-                break;
-            case "welcomemessagechannel":
-            case "modlogchannel":
-                argument = argumentSplit[0];
-
-                if (!DiscordUtils.CHANNEL_MENTION_PATTERN.matcher(argument).matches()) {
-                    return true;
-                }
-
-                key = (key.equals("modlogchannel")) ? "modlogchannelid" : "welcomemessagechannelid";
-                TextChannel argumentChannel = message.getMentionedChannels().get(0);
-                DatabaseUtils.updateGuildSetting(database, guild, key, argumentChannel.getId());
-                DiscordUtils.successReact(bot, message);
-                break;
-            case "holdingroomminutes":
-                int minutes;
-
-                try {
-                    minutes = Integer.parseInt(argumentSplit[0]);
-                } catch (NumberFormatException e) {
-                    return true;
-                }
-
-                DatabaseUtils.updateGuildSetting(database, guild, key, Integer.toString(minutes));
-                DiscordUtils.successReact(bot, message);
-                break;
-            case "prefix":
-                DatabaseUtils.updateGuildSetting(database, guild, key, argumentSplit[0]);
-                DiscordUtils.successReact(bot, message);
-                break;
-            case "message":
-                DatabaseUtils.updateGuildSetting(database, guild, "welcomemessage", argument);
-                DiscordUtils.successReact(bot, message);
-                break;
-            case "holdingroom":
-                if (argument.equals("enabled")) {
-                    argument = "true";
-                } else if (argument.equals("disabled")) {
-                    argument = "false";
-                } else {
-                    return true;
-                }
-
-                String roleId = DatabaseUtils.getGuildSetting(database, guild, "holdingroomroleid");
-
-                if (roleId == null) {
-                    DiscordUtils.failMessage(bot, message, "You can't enable holding room before setting a role for it first.");
-                    return false;
-                }
-
-                DiscordUtils.successReact(bot, message);
-                DatabaseUtils.updateGuildSetting(database, guild, "holdingroomactive", argument);
-                break;
-            case "holdingroomrole":
-                List<Role> foundRoles = guild.getRolesByName(argument, true);
-                if (foundRoles.size() == 0) {
-                    return true;
-                }
-
-                Role role = foundRoles.get(0);
-                DatabaseUtils.updateGuildSetting(database, guild, "holdingroomroleid", role.getId());
-                DiscordUtils.successReact(bot, message);
-                break;
-            default:
-                return true;
+            }
+        } catch (BadInputException e) {
+            return true;
         }
 
+        DiscordUtils.successReact(bot, message);
         return false;
     }
+
+    private static class BadInputException extends Exception {}
 }
