@@ -142,3 +142,19 @@ CREATE TABLE rolelist
 )
 ;
 
+CREATE TABLE settings
+(
+    guildid TEXT constraint settings_pkey primary key,
+    modlog BOOLEAN,
+    modlogchannelid TEXT,
+    holdingroom BOOLEAN,
+		holdingroomroleid TEXT,
+		holdingroomminutes INTEGER,
+		invitelinkremover BOOLEAN,
+		welcomemessage BOOLEAN,
+		message TEXT,
+		welcomemessagechannelid TEXT,
+		prefix TEXT,
+		silentcommands BOOLEAN
+)
+;
