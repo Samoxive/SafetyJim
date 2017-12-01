@@ -4,6 +4,7 @@ import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.managers.GuildController;
+import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,17 +50,17 @@ public class DiscordUtils {
     }
 
     public static void createModLogEntry(DiscordBot bot, JDA shard, Message message, Member member, String reason, String action, int id, Date expirationDate, boolean expires) {
-        Map<String, String> guildSettings = DatabaseUtils.getGuildSettings(bot.getDatabase(), member.getGuild());
+        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot.getDatabase(), member.getGuild());
         Date now = new Date();
 
-        boolean modLogActive = guildSettings.get("modlogactive").equals("true");
-        String prefix = guildSettings.get("prefix");
+        boolean modLogActive = guildSettings.getModlog();
+        String prefix = guildSettings.getPrefix();
 
         if (!modLogActive) {
             return;
         }
 
-        TextChannel modLogChannel = shard.getTextChannelById(guildSettings.get("modlogchannelid"));
+        TextChannel modLogChannel = shard.getTextChannelById(guildSettings.getModlogchannelid());
 
         if (modLogChannel == null) {
             sendMessage(message.getChannel(), "Invalid moderator log channel in guild configuration, set a proper one via `" + prefix + " settings` command.");
@@ -99,7 +100,7 @@ public class DiscordUtils {
     }
 
     public static void deleteCommandMessage(DiscordBot bot, Message message) {
-        boolean silentCommandsActive = DatabaseUtils.getGuildSetting(bot.getDatabase(), message.getGuild(), "silentcommands").equals("true");
+        boolean silentCommandsActive = DatabaseUtils.getGuildSettings(bot.getDatabase(), message.getGuild()).getSilentcommands();
 
         if (!silentCommandsActive) {
             return;

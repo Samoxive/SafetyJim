@@ -24,6 +24,7 @@ import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.CommandlogsRecord;
 import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
 import org.samoxive.jooq.generated.tables.records.MutelistRecord;
+import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.commands.Mute;
@@ -92,11 +93,9 @@ public class DiscordShard extends ListenerAdapter {
 
         int guildsWithMissingKeys = 0;
         for (Guild guild: shard.getGuilds()) {
-            Map<String, String> guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
 
-            // Guild has more or less amount of keys than the normal count so we reset them
-            // This is also the case if a guild joined when jim was offline, which means their settings didn't get initialized
-            if (guildSettings.size() != DatabaseUtils.possibleSettingKeys.length) {
+            if (guildSettings == null) {
                 DatabaseUtils.deleteGuildSettings(database, guild);
                 DatabaseUtils.createGuildSettings(this.bot, database, guild);
                 guildsWithMissingKeys++;
@@ -122,7 +121,8 @@ public class DiscordShard extends ListenerAdapter {
         SelfUser self = shard.getSelfUser();
 
         if (message.isMentioned(self) && content.contains("prefix")) {
-            String prefix = DatabaseUtils.getGuildSetting(database, guild, "prefix");
+            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+            String prefix = guildSettings.getPrefix();
             DiscordUtils.successReact(bot, message);
 
             EmbedBuilder embed = new EmbedBuilder();
@@ -153,7 +153,8 @@ public class DiscordShard extends ListenerAdapter {
             }
         }
 
-        String prefix = DatabaseUtils.getGuildSetting(database, guild, "prefix");
+        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+        String prefix = guildSettings.getPrefix();
 
         // 0 = prefix, 1 = command, rest are accepted as arguments
         String[] splitContent = content.trim().split(" ");
@@ -253,17 +254,17 @@ public class DiscordShard extends ListenerAdapter {
         Member member = event.getMember();
         User user = member.getUser();
         DSLContext database = bot.getDatabase();
-        Map<String, String> settings = DatabaseUtils.getGuildSettings(database, guild);
+        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
 
-        if (settings.get("welcomemessageactive").equals("true")) {
-            String textChannelId = settings.get("welcomemessagechannelid");
+        if (guildSettings.getWelcomemessage()) {
+            String textChannelId = guildSettings.getWelcomemessagechannelid();
             TextChannel channel = shard.getTextChannelById(textChannelId);
             if (channel != null) {
-                String message = settings.get("welcomemessage")
+                String message = guildSettings.getMessage()
                                          .replace("$user", member.getAsMention())
                                          .replace("$guild", guild.getName());
-                if (settings.get("holdingroomactive").equals("true")) {
-                    String waitTime = settings.get("holdingroomminutes");
+                if (guildSettings.getHoldingroom()) {
+                    String waitTime = guildSettings.getHoldingroomminutes().toString();
                     message = message.replace("$minute", waitTime);
                 }
 
@@ -271,8 +272,8 @@ public class DiscordShard extends ListenerAdapter {
             }
         }
 
-        if (settings.get("holdingroomactive").equals("true")) {
-            int waitTime = Integer.parseInt(settings.get("holdingroomminutes"));
+        if (guildSettings.getHoldingroom()) {
+            int waitTime = guildSettings.getHoldingroomminutes();
             long currentTime = System.currentTimeMillis() / 1000;
 
             JoinlistRecord newRecord = database.newRecord(Tables.JOINLIST);
@@ -353,7 +354,8 @@ public class DiscordShard extends ListenerAdapter {
 
         if (showUsage) {
             String[] usages = command.getUsages();
-            String prefix = DatabaseUtils.getGuildSetting(bot.getDatabase(), event.getGuild(), "prefix");
+            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot.getDatabase(), event.getGuild());
+            String prefix = guildSettings.getPrefix();
 
             EmbedBuilder embed = new EmbedBuilder();
             embed.setAuthor("Safety Jim - \"" + commandName + "\" Syntax", null, shard.getSelfUser().getAvatarUrl())

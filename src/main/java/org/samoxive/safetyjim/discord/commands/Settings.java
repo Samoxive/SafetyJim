@@ -6,6 +6,7 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import org.jooq.DSLContext;
+import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.Command;
 import org.samoxive.safetyjim.discord.DiscordBot;
@@ -68,43 +69,43 @@ public class Settings extends Command {
         DSLContext database = bot.getDatabase();
         Guild guild = event.getGuild();
 
-        Map<String, String> config = DatabaseUtils.getGuildSettings(database, guild);
+        SettingsRecord config = DatabaseUtils.getGuildSettings(database, guild);
         StringJoiner output = new StringJoiner("\n");
 
-        if (config.get("modlogactive").equals("false")) {
+        if (!config.getModlog()) {
             output.add("**Mod Log:** Disabled");
         } else {
-            TextChannel modLogChannel = guild.getTextChannelById(config.get("modlogchannelid"));
+            TextChannel modLogChannel = guild.getTextChannelById(config.getModlogchannelid());
             output.add("**Mod Log:** Enabled");
             output.add("\t**Mod Log Channel:** " + (modLogChannel == null ? "null" : modLogChannel.getAsMention()));
         }
 
-        if (config.get("welcomemessageactive").equals("false")) {
+        if (!config.getWelcomemessage()) {
             output.add("**Welcome Messages:** Disabled");
         } else {
-            TextChannel welcomeMessageChannel = guild.getTextChannelById(config.get("welcomemessagechannelid"));
+            TextChannel welcomeMessageChannel = guild.getTextChannelById(config.getWelcomemessagechannelid());
             output.add("**Welcome Messages:** Enabled");
             output.add("\t**Welcome Message Channel:** " + (welcomeMessageChannel == null ? "null" : welcomeMessageChannel.getAsMention()));
         }
 
-        if (config.get("holdingroomactive").equals("false")) {
+        if (!config.getHoldingroom()) {
             output.add("**Holding Room:** Disabled");
         } else {
-            String holdingRoomMinutes = config.get("holdingroomminutes");
-            String holdingRoomRoleId = config.get("holdingroomroleid");
+            int holdingRoomMinutes = config.getHoldingroomminutes();
+            String holdingRoomRoleId = config.getHoldingroomroleid();
             Role holdingRoomRole = guild.getRoleById(holdingRoomRoleId);
             output.add("**Holding Room:** Enabled");
             output.add("\t**Holding Room Role:** " + (holdingRoomRole == null ? "null" : holdingRoomRole.getName()));
             output.add("\t**Holding Room Delay:** " + holdingRoomMinutes + " minute(s)");
         }
 
-        if (config.get("invitelinkremover").equals("true")) {
+        if (config.getInvitelinkremover()) {
             output.add("**Invite Link Remover:** Enabled");
         } else {
             output.add("**Invite Link Remover:** Disabled");
         }
 
-        if (config.get("silentcommands").equals("true")) {
+        if (config.getSilentcommands()) {
             output.add("**Silent Commands:** Enabled");
         } else {
             output.add("**Silent Commands:** Disabled");
