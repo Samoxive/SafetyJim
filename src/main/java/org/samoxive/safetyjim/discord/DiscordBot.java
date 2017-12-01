@@ -106,7 +106,7 @@ public class DiscordBot {
         commands.put("softban", new Softban());
         commands.put("unban", new Unban());
         commands.put("server", new Server());
-        commands.put("assign", new Assign());
+        commands.put("iam", new Iam());
         commands.put("role", new RoleCommand());
     }
 
