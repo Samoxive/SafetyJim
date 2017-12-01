@@ -45,7 +45,7 @@ public class Help extends Command {
             Guild guild = event.getGuild();
             EmbedBuilder builder = new EmbedBuilder();
             builder.setAuthor("Safety Jim - Commands", null, shard.getSelfUser().getAvatarUrl());
-            builder.setDescription(getUsageTexts(bot, DatabaseUtils.getGuildSetting(database, guild, "prefix")));
+            builder.setDescription(getUsageTexts(bot, DatabaseUtils.getGuildSettings(database, guild).getPrefix()));
             builder.setColor(new Color(0x4286F4));
 
             embed = builder.build();

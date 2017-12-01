@@ -86,16 +86,6 @@ create table reminderlist
 )
 ;
 
-create table settings
-(
-	guildid text not null,
-	key text not null,
-	value text,
-	constraint settings_pkey
-	primary key (guildid, key)
-)
-;
-
 create table softbanlist
 (
 	id serial not null
@@ -142,3 +132,19 @@ CREATE TABLE rolelist
 )
 ;
 
+CREATE TABLE settings
+(
+    guildid TEXT constraint settings_pkey primary key,
+    modlog BOOLEAN,
+    modlogchannelid TEXT,
+    holdingroom BOOLEAN,
+		holdingroomroleid TEXT,
+		holdingroomminutes INTEGER,
+		invitelinkremover BOOLEAN,
+		welcomemessage BOOLEAN,
+		message TEXT,
+		welcomemessagechannelid TEXT,
+		prefix TEXT,
+		silentcommands BOOLEAN
+)
+;

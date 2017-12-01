@@ -31,8 +31,8 @@ public class InviteLink extends MessageProcessor {
             }
         }
 
-        String processorEnabled = DatabaseUtils.getGuildSetting(bot.getDatabase(), event.getGuild(), "invitelinkremover");
-        if (processorEnabled.equals("false")) {
+        boolean processorEnabled = DatabaseUtils.getGuildSettings(bot.getDatabase(), event.getGuild()).getInvitelinkremover();
+        if (!processorEnabled) {
             return false;
         }
 

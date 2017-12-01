@@ -11,10 +11,7 @@ import org.jooq.DSLContext;
 import org.jooq.Result;
 import org.json.JSONObject;
 import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.records.BanlistRecord;
-import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
-import org.samoxive.jooq.generated.tables.records.MutelistRecord;
-import org.samoxive.jooq.generated.tables.records.ReminderlistRecord;
+import org.samoxive.jooq.generated.tables.records.*;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.commands.*;
@@ -139,12 +136,13 @@ public class DiscordBot {
                 continue;
             }
 
-            String enabled = DatabaseUtils.getGuildSetting(database, guild, "holdingroomactive");
+            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+            boolean enabled = guildSettings.getHoldingroom();
 
-            if (enabled.equals("true")) {
+            if (enabled) {
                 User guildUser = DiscordUtils.getUserById(shard.getShard(), user.getUserid());
                 Member member = guild.getMember(guildUser);
-                String roleId = DatabaseUtils.getGuildSetting(database, guild, "holdingroomroleid");
+                String roleId = guildSettings.getHoldingroomroleid();
                 Role role = guild.getRoleById(roleId);
                 GuildController controller = guild.getController();
 
