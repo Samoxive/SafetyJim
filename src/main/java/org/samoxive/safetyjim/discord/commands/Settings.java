@@ -36,7 +36,8 @@ public class Settings extends Command {
                                      "welcomemessagechannel",
                                      "invitelinkremover",
                                      "silentcommands",
-                                     "nospaceprefix" };
+                                     "nospaceprefix",
+                                     "statistics" };
 
     private String settingsListString = "`HoldingRoom <enabled/disabled>` - Default: disabled\n" +
                                         "`HoldingRoomMinutes <number>` - Default: 3\n" +
@@ -287,6 +288,9 @@ public class Settings extends Command {
                     break;
                 case "nospaceprefix":
                     guildSettings.setNospaceprefix(isEnabledInput(argument));
+                    break;
+                case "statistics":
+                    guildSettings.setStatistics(isEnabledInput(argument));
                     break;
                 default:
                     return true;
