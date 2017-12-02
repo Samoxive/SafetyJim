@@ -150,3 +150,24 @@ CREATE TABLE settings
 		statistics BOOLEAN
 )
 ;
+
+CREATE TABLE messages
+(
+  messageid TEXT CONSTRAINT messages_pkey PRIMARY KEY,
+  userid TEXT,
+  guildid TEXT,
+  channelid TEXT,
+  date BIGINT,
+  wordcount INTEGER
+)
+;
+
+CREATE TABLE membercounts
+(
+  id SERIAL NOT NULL CONSTRAINT membercounts_pkey PRIMARY KEY,
+  guildid TEXT,
+  date BIGINT,
+  onlinecount INTEGER,
+  count INTEGER
+)
+;
