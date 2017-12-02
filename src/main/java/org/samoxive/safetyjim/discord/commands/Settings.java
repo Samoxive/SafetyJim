@@ -301,6 +301,7 @@ public class Settings extends Command {
             return true;
         }
 
+        guildSettings.update();
         DiscordUtils.successReact(bot, message);
         return false;
     }
