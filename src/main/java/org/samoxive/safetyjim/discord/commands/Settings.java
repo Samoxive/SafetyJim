@@ -35,7 +35,8 @@ public class Settings extends Command {
                                      "message",
                                      "welcomemessagechannel",
                                      "invitelinkremover",
-                                     "silentcommands" };
+                                     "silentcommands",
+                                     "nospaceprefix" };
 
     private String settingsListString = "`HoldingRoom <enabled/disabled>` - Default: disabled\n" +
                                         "`HoldingRoomMinutes <number>` - Default: 3\n" +
@@ -47,7 +48,8 @@ public class Settings extends Command {
                                         "`WelcomeMessageChannel <#channel>` - Default: %s\n" +
                                         "`Message <text>` - Default: " + DatabaseUtils.DEFAULT_WELCOME_MESSAGE + "\n" +
                                         "`InviteLinkRemover <enabled/disabled>` - Default: disabled\n" +
-                                        "`SilentCommands <enabled/disabled>` - Default: disabled";
+                                        "`SilentCommands <enabled/disabled>` - Default: disabled\n" +
+                                        "`NoSpacePrefix <enabled/disabled>` - Default: disabled";
 
     private void handleSettingsDisplay(DiscordBot bot, GuildMessageReceivedEvent event) {
         JDA shard = event.getJDA();
@@ -111,6 +113,11 @@ public class Settings extends Command {
             output.add("**Silent Commands:** Disabled");
         }
 
+        if (config.getNospaceprefix()) {
+            output.add("**No Space Prefix:** Enabled");
+        } else {
+            output.add("**No Space Prefix:** Disabled");
+        }
         return output.toString();
     }
 
@@ -293,6 +300,13 @@ public class Settings extends Command {
 
                     Role role = foundRoles.get(0);
                     guildSettings.setHoldingroomroleid(role.getId());
+                    break;
+                case "nospaceprefix":
+                    if (isEnabledInput(argument)) {
+                        guildSettings.setNospaceprefix(true);
+                    } else {
+                        guildSettings.setNospaceprefix(false);
+                    }
                     break;
                 default:
                     return true;

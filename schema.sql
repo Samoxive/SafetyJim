@@ -145,6 +145,7 @@ CREATE TABLE settings
 		message TEXT,
 		welcomemessagechannelid TEXT,
 		prefix TEXT,
-		silentcommands BOOLEAN
+		silentcommands BOOLEAN,
+		nospaceprefix BOOLEAN
 )
 ;

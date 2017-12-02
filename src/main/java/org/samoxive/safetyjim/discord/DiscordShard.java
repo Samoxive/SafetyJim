@@ -158,20 +158,37 @@ public class DiscordShard extends ListenerAdapter {
 
         // 0 = prefix, 1 = command, rest are accepted as arguments
         String[] splitContent = content.trim().split(" ");
+        String firstWord = splitContent[0].toLowerCase();
+        Command command;
+        String commandName;
 
-        // We want prefixes to be case insensitive
-        if (!splitContent[0].toLowerCase().equals(prefix)) {
-            return;
+        if (!guildSettings.getNospaceprefix()) {
+            if (!firstWord.equals(prefix)) {
+                return;
+            }
+
+            // This means the user only entered the prefix
+            if (splitContent.length == 1) {
+                DiscordUtils.failReact(bot, message);
+                return;
+            }
+
+            // We also want commands to be case insensitive
+            commandName = splitContent[1].toLowerCase();
+            command = bot.getCommands().get(commandName);
+        } else {
+            if (!firstWord.startsWith(prefix)) {
+                return;
+            }
+
+            if (firstWord.length() == prefix.length()) {
+                DiscordUtils.failReact(bot, message);
+                return;
+            }
+
+            commandName = firstWord.substring(prefix.length());
+            command = bot.getCommands().get(commandName);
         }
-
-        // This means the user only entered the prefix
-        if (splitContent.length == 1) {
-            DiscordUtils.failReact(bot, message);
-            return;
-        }
-
-        // We also want commands to be case insensitive
-        Command command = bot.getCommands().get(splitContent[1].toLowerCase());
 
         // Command not found
         if (command == null) {
@@ -182,13 +199,14 @@ public class DiscordShard extends ListenerAdapter {
         // Join words back with whitespace as some commands don't need them split,
         // they can split the arguments again if needed
         StringJoiner args = new StringJoiner(" ");
-        for (int i = 2; i < splitContent.length; i++) {
+        int startIndex = guildSettings.getNospaceprefix() ? 1 : 2;
+        for (int i = startIndex; i < splitContent.length; i++) {
             args.add(splitContent[i]);
         }
 
         // Command executions are likely to be io dependant, better send them in a seperate thread to not block
         // discord client
-        threadPool.execute(() -> executeCommand(event, command, splitContent[1], args.toString().trim()));
+        threadPool.execute(() -> executeCommand(event, command, commandName, args.toString().trim()));
     }
 
     @Override
