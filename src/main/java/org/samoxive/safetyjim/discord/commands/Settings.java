@@ -217,32 +217,16 @@ public class Settings extends Command {
         try {
             switch (key) {
                 case "silentcommands":
-                    if (isEnabledInput(argument)) {
-                        guildSettings.setSilentcommands(true);
-                    } else {
-                        guildSettings.setSilentcommands(false);
-                    }
+                    guildSettings.setSilentcommands(isEnabledInput(argument));
                     break;
                 case "invitelinkremover":
-                    if (isEnabledInput(argument)) {
-                        guildSettings.setInvitelinkremover(true);
-                    } else {
-                        guildSettings.setInvitelinkremover(false);
-                    }
+                    guildSettings.setInvitelinkremover(isEnabledInput(argument));
                     break;
                 case "welcomemessage":
-                    if (isEnabledInput(argument)) {
-                        guildSettings.setWelcomemessage(true);
-                    } else {
-                        guildSettings.setWelcomemessage(false);
-                    }
+                    guildSettings.setWelcomemessage(isEnabledInput(argument));
                     break;
                 case "modlog":
-                    if (isEnabledInput(argument)) {
-                        guildSettings.setModlog(true);
-                    } else {
-                        guildSettings.setModlog(false);
-                    }
+                    guildSettings.setModlog(isEnabledInput(argument));
                     break;
                 case "welcomemessagechannel":
                     argument = argumentSplit[0];
@@ -302,11 +286,7 @@ public class Settings extends Command {
                     guildSettings.setHoldingroomroleid(role.getId());
                     break;
                 case "nospaceprefix":
-                    if (isEnabledInput(argument)) {
-                        guildSettings.setNospaceprefix(true);
-                    } else {
-                        guildSettings.setNospaceprefix(false);
-                    }
+                    guildSettings.setNospaceprefix(isEnabledInput(argument));
                     break;
                 default:
                     return true;
