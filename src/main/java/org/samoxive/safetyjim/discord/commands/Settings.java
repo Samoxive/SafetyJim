@@ -50,7 +50,8 @@ public class Settings extends Command {
                                         "`Message <text>` - Default: " + DatabaseUtils.DEFAULT_WELCOME_MESSAGE + "\n" +
                                         "`InviteLinkRemover <enabled/disabled>` - Default: disabled\n" +
                                         "`SilentCommands <enabled/disabled>` - Default: disabled\n" +
-                                        "`NoSpacePrefix <enabled/disabled>` - Default: disabled";
+                                        "`NoSpacePrefix <enabled/disabled>` - Default: disabled\n" +
+                                        "`Statistics <enabled/disabled>` - Default: disabled";
 
     private void handleSettingsDisplay(DiscordBot bot, GuildMessageReceivedEvent event) {
         JDA shard = event.getJDA();
@@ -118,6 +119,12 @@ public class Settings extends Command {
             output.add("**No Space Prefix:** Enabled");
         } else {
             output.add("**No Space Prefix:** Disabled");
+        }
+
+        if (config.getStatistics()) {
+            output.add("**Statistics:** Enabled");
+        } else {
+            output.add("**Statistics:** Disabled");
         }
         return output.toString();
     }
