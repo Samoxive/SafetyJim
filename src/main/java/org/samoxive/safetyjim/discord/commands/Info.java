@@ -74,7 +74,7 @@ public class Info extends Command {
                                               .orderBy(Tables.BANLIST.BANTIME.desc())
                                               .fetchAny();
 
-        String daysSince = "\u221E"; // ∞
+        String daysSince = "\u221E"; // Infinity symbol
 
         if (lastBanRecord != null) {
             Date now = new Date();
