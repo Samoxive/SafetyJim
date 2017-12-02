@@ -50,7 +50,7 @@ public class RoleCommand extends Command {
                 return true;
         }
 
-        if (member.hasPermission(Permission.ADMINISTRATOR)) {
+        if (!member.hasPermission(Permission.ADMINISTRATOR)) {
             DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Administrator");
             return false;
         }
