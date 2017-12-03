@@ -154,7 +154,7 @@ public class DiscordShard extends ListenerAdapter {
         }
 
         SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
-        String prefix = guildSettings.getPrefix();
+        String prefix = guildSettings.getPrefix().toLowerCase();
 
         // 0 = prefix, 1 = command, rest are accepted as arguments
         String[] splitContent = content.trim().split(" ");
