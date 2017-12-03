@@ -3,6 +3,7 @@ package org.samoxive.safetyjim.database;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import org.jooq.DSLContext;
+import org.jooq.Result;
 import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.discord.DiscordBot;
@@ -10,6 +11,7 @@ import org.samoxive.safetyjim.discord.DiscordUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class DatabaseUtils {
     public static final String DEFAULT_WELCOME_MESSAGE = "Welcome to $guild $user!";
@@ -18,6 +20,17 @@ public class DatabaseUtils {
         return database.selectFrom(Tables.SETTINGS)
                        .where(Tables.SETTINGS.GUILDID.eq(guild.getId()))
                        .fetchAny();
+    }
+
+    public static Map<String, SettingsRecord> getAllGuildSettings(DSLContext database) {
+        HashMap<String, SettingsRecord> map = new HashMap<>();
+        Result<SettingsRecord> records = database.selectFrom(Tables.SETTINGS).fetch();
+
+        for (SettingsRecord record: records) {
+            map.put(record.getGuildid(), record);
+        }
+
+        return map;
     }
 
     public static void deleteGuildSettings(DSLContext database, Guild guild) {
