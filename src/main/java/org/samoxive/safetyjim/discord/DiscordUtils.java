@@ -2,6 +2,7 @@ package org.samoxive.safetyjim.discord;
 
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
+import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.managers.GuildController;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
@@ -158,6 +159,14 @@ public class DiscordUtils {
         int botCount = (int)guild.getMembers().stream().filter(member -> member.getUser().isBot()).count();
         return botCount > 20;
 
+    }
+
+    public static boolean isOnline(Member member) {
+        OnlineStatus status = member.getOnlineStatus();
+
+        return (status == OnlineStatus.ONLINE) ||
+               (status == OnlineStatus.DO_NOT_DISTURB) ||
+               (status == OnlineStatus.IDLE);
     }
 
     public static void successReact(DiscordBot bot, Message message) {
