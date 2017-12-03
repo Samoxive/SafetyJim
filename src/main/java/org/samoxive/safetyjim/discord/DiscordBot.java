@@ -1,9 +1,6 @@
 package org.samoxive.safetyjim.discord;
 
-import net.dv8tion.jda.core.EmbedBuilder;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.MessageBuilder;
-import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.managers.GuildController;
 import okhttp3.*;
@@ -17,19 +14,19 @@ import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.commands.*;
 import org.samoxive.safetyjim.discord.commands.Invite;
 import org.samoxive.safetyjim.discord.processors.InviteLink;
+import org.samoxive.safetyjim.discord.processors.MessageStats;
 import org.samoxive.safetyjim.metrics.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class DiscordBot {
     private Logger log = LoggerFactory.getLogger(DiscordBot.class);
@@ -74,6 +71,7 @@ public class DiscordBot {
         scheduler.scheduleAtFixedRate(() -> { try { unbanUsers(); } catch (Exception e) {} }, 10, 30, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> { try { remindReminders(); } catch (Exception e) {} }, 10, 5, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> metrics.gauge("uptime", (int)((new Date()).getTime() - startTime.getTime()) / (1000 * 60 * 60)), 1, 30, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(() -> saveMemberCounts(), 1, 1, TimeUnit.MINUTES);
         scheduler.schedule(() -> { try { updateBotLists(); } catch (Exception e) {} }, 10, TimeUnit.SECONDS);
 
         String inviteLink = shards.get(0).getShard().asBot().getInviteUrl(
@@ -112,6 +110,28 @@ public class DiscordBot {
 
     private void loadProcessors() {
         processors.add(new InviteLink());
+        processors.add(new MessageStats());
+    }
+
+    private void saveMemberCounts() {
+        Map<String, SettingsRecord> settings = DatabaseUtils.getAllGuildSettings(database);
+        List<MembercountsRecord> records = shards.stream()
+              .map((shard) -> shard.getShard().getGuilds())
+              .flatMap(List::stream)
+              .filter(guild -> settings.get(guild.getId()).getStatistics())
+              .map(guild -> {
+                  MembercountsRecord record = database.newRecord(Tables.MEMBERCOUNTS);
+                  List<Member> members = guild.getMembers();
+                  long onlineCount = members.stream().filter((member -> DiscordUtils.isOnline(member))).count();
+                  record.setGuildid(guild.getId());
+                  record.setDate((new Date()).getTime());
+                  record.setOnlinecount((int)onlineCount);
+                  record.setCount(members.size());
+                  return record;
+              })
+              .collect(Collectors.toList());
+
+        database.batchStore(records).execute();
     }
 
     private void allowUsers() {
