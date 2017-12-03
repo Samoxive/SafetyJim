@@ -7,6 +7,7 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.DiscordBot;
+import org.samoxive.safetyjim.discord.DiscordShard;
 import org.samoxive.safetyjim.discord.DiscordUtils;
 import org.samoxive.safetyjim.discord.MessageProcessor;
 
@@ -22,7 +23,7 @@ public class InviteLink extends MessageProcessor {
     };
 
     @Override
-    public boolean onMessage(DiscordBot bot, GuildMessageReceivedEvent event) {
+    public boolean onMessage(DiscordBot bot, DiscordShard shard, GuildMessageReceivedEvent event) {
         Message message = event.getMessage();
         Member member = event.getMember();
         for (Permission permission: whitelistedPermissions) {
