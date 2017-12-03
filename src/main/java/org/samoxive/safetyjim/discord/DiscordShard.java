@@ -138,7 +138,7 @@ public class DiscordShard extends ListenerAdapter {
 
         // Spread processing jobs across threads as they are likely to be independent of io operations
         for (MessageProcessor processor: bot.getProcessors()) {
-            Future<Boolean> future = threadPool.submit(() -> processor.onMessage(bot, event));
+            Future<Boolean> future = threadPool.submit(() -> processor.onMessage(bot, this, event));
             processorResults.add(future);
         }
 
@@ -227,7 +227,7 @@ public class DiscordShard extends ListenerAdapter {
         }
 
         for (MessageProcessor processor: bot.getProcessors()) {
-            threadPool.execute(() -> processor.onReactionAdd(bot, event));
+            threadPool.execute(() -> processor.onReactionAdd(bot, this, event));
         }
     }
 
@@ -238,7 +238,7 @@ public class DiscordShard extends ListenerAdapter {
         }
 
         for (MessageProcessor processor: bot.getProcessors()) {
-            threadPool.execute(() -> processor.onReactionRemove(bot, event));
+            threadPool.execute(() -> processor.onReactionRemove(bot, this, event));
         }
     }
 
