@@ -386,4 +386,8 @@ public class DiscordShard extends ListenerAdapter {
             DiscordUtils.deleteCommandMessage(bot, event.getMessage());
         }
     }
+
+    public ExecutorService getThreadPool() {
+        return threadPool;
+    }
 }
