@@ -21,10 +21,7 @@ import net.dv8tion.jda.core.requests.SessionReconnectQueue;
 import org.jooq.DSLContext;
 import org.jooq.Result;
 import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.records.CommandlogsRecord;
-import org.samoxive.jooq.generated.tables.records.JoinlistRecord;
-import org.samoxive.jooq.generated.tables.records.MutelistRecord;
-import org.samoxive.jooq.generated.tables.records.SettingsRecord;
+import org.samoxive.jooq.generated.tables.records.*;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.commands.Mute;
@@ -39,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 public class DiscordShard extends ListenerAdapter {
     private Logger log;
@@ -79,6 +77,27 @@ public class DiscordShard extends ListenerAdapter {
         }
     }
 
+    private void populateStatistics(JDA shard) {
+        DSLContext database = bot.getDatabase();
+        List<TextChannel> channels = shard.getGuilds()
+                                      .stream()
+                                      .filter((guild) -> DatabaseUtils.getGuildSettings(database, guild).getStatistics())
+                                      .map((guild) -> guild.getTextChannels())
+                                      .flatMap(List::stream)
+                                      .collect(Collectors.toList());
+
+        for(TextChannel channel: channels) {
+            Guild guild = channel.getGuild();
+            MessagesRecord lastRecord = database.selectFrom(Tables.MESSAGES)
+                                                .where(Tables.MESSAGES.GUILDID.eq(guild.getId()))
+                                                .and(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
+                                                .orderBy(Tables.MESSAGES.DATE.asc())
+                                                .fetchAny();
+        }
+
+
+    }
+
     @Override
     public void onReady(ReadyEvent event) {
         log.info("Shard is ready.");
@@ -105,6 +124,8 @@ public class DiscordShard extends ListenerAdapter {
         if (guildsWithMissingKeys > 0) {
             log.warn("Added {} guild(s) to the database with invalid number of settings.", guildsWithMissingKeys);
         }
+
+
     }
 
     @Override
