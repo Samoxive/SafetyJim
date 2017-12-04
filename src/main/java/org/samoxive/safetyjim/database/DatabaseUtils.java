@@ -53,6 +53,7 @@ public class DatabaseUtils {
         record.setMessage(DEFAULT_WELCOME_MESSAGE);
         record.setWelcomemessagechannelid(DiscordUtils.getDefaultChannel(guild).getId());
         record.setNospaceprefix(false);
+        record.setStatistics(false);
 
         record.store();
     }
