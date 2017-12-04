@@ -79,23 +79,63 @@ public class DiscordShard extends ListenerAdapter {
 
     private void populateStatistics(JDA shard) {
         DSLContext database = bot.getDatabase();
-        List<TextChannel> channels = shard.getGuilds()
-                                      .stream()
-                                      .filter((guild) -> DatabaseUtils.getGuildSettings(database, guild).getStatistics())
-                                      .map((guild) -> guild.getTextChannels())
-                                      .flatMap(List::stream)
-                                      .collect(Collectors.toList());
+        shard.getGuilds()
+             .stream()
+             .filter((guild) -> DatabaseUtils.getGuildSettings(database, guild).getStatistics())
+             .forEach((guild -> populateGuildStatistics(guild)));
+    }
 
+    public void populateGuildStatistics(Guild guild) {
+        DSLContext database = bot.getDatabase();
+        List<TextChannel> channels = guild.getTextChannels();
         for(TextChannel channel: channels) {
-            Guild guild = channel.getGuild();
             MessagesRecord lastRecord = database.selectFrom(Tables.MESSAGES)
-                                                .where(Tables.MESSAGES.GUILDID.eq(guild.getId()))
-                                                .and(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
-                                                .orderBy(Tables.MESSAGES.DATE.asc())
-                                                .fetchAny();
+                    .where(Tables.MESSAGES.GUILDID.eq(guild.getId()))
+                    .and(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
+                    .orderBy(Tables.MESSAGES.DATE.asc())
+                    .fetchAny();
+
+            List<Message> fetchedMessages;
+            if (lastRecord == null) {
+                fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel);
+            } else {
+                Message lastStoredMessage;
+
+                try {
+                    lastStoredMessage = channel.getMessageById(lastRecord.getMessageid()).complete();
+                    fetchedMessages = DiscordUtils.fetchFullHistoryBeforeMessage(channel, lastStoredMessage);
+                } catch (Exception e) {
+                    database.deleteFrom(Tables.MESSAGES)
+                            .where(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
+                            .and(Tables.MESSAGES.GUILDID.eq(guild.getId()))
+                            .execute();
+                    fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel);
+                }
+            }
+
+            if (fetchedMessages.size() == 0) {
+                continue;
+            }
+
+            List<MessagesRecord> records = fetchedMessages.stream()
+                    .map(message -> {
+                        MessagesRecord record = database.newRecord(Tables.MESSAGES);
+                        User user = message.getAuthor();
+                        String content = message.getRawContent();
+                        int wordCount = content.split(" ").length;
+                        record.setMessageid(message.getId());
+                        record.setUserid(user.getId());
+                        record.setChannelid(channel.getId());
+                        record.setGuildid(channel.getGuild().getId());
+                        record.setDate(DiscordUtils.getCreationTime(message.getId()));
+                        record.setWordcount(wordCount);
+                        record.setSize(content.length());
+                        return record;
+                        })
+                    .collect(Collectors.toList());
+
+            database.batchStore(records).execute();
         }
-
-
     }
 
     @Override
@@ -125,7 +165,14 @@ public class DiscordShard extends ListenerAdapter {
             log.warn("Added {} guild(s) to the database with invalid number of settings.", guildsWithMissingKeys);
         }
 
-
+        threadPool.submit(() -> {
+            try {
+                populateStatistics(shard);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            log.info("Populated statistics.");
+        });
     }
 
     @Override
