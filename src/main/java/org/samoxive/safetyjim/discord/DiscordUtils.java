@@ -28,6 +28,8 @@ public class DiscordUtils {
     private static Emote SUCCESS_EMOTE;
     private static Emote FAIL_EMOTE;
 
+    public static final long DISCORD_EPOCH = 1420070400000L;
+    public static final long TIMESTAMP_OFFSET = 22;
     public static final Pattern USER_MENTION_PATTERN = Pattern.compile("<@!?([0-9]+)>");
     public static final Pattern CHANNEL_MENTION_PATTERN = Pattern.compile("<#!?([0-9]+)>");
     public static final Pattern ROLE_MENTION_PATTERN = Pattern.compile("<@&!?([0-9]+)>");
@@ -252,6 +254,11 @@ public class DiscordUtils {
         }
 
         return user;
+    }
+
+    public static long getCreationTime(String id) {
+        long idLong = Long.parseLong(id);
+        return (idLong >>> TIMESTAMP_OFFSET) + DISCORD_EPOCH;
     }
 
     public static String getChannelMention(MessageChannel channel) {
