@@ -256,6 +256,41 @@ public class DiscordUtils {
         return user;
     }
 
+    public static List<Message> fetchHistoryFromScratch(TextChannel channel) {
+        List<Message> lastMessageList = channel.getHistory().retrievePast(1).complete();
+        if (lastMessageList.size() != 1) {
+            return new ArrayList<>();
+        }
+
+        Message lastMessage = lastMessageList.get(0);
+        List<Message> fetchedMessages = DiscordUtils.fetchFullHistoryBeforeMessage(channel, lastMessage);
+        // we want last message to also be included
+        fetchedMessages.add(lastMessage);
+        return fetchedMessages;
+    }
+
+    public static List<Message> fetchFullHistoryBeforeMessage(TextChannel channel, Message beforeMessage) {
+        List<Message> messages = new ArrayList<>();
+
+        Message lastFetchedMessage = beforeMessage;
+        boolean lastMessageReceived = false;
+        while (!lastMessageReceived) {
+            List<Message> fetchedMessages = channel.getHistoryBefore(lastFetchedMessage, 100)
+                                                   .complete()
+                                                   .getRetrievedHistory();
+
+            messages.addAll(fetchedMessages);
+
+            if (fetchedMessages.size() < 100) {
+                lastMessageReceived = true;
+            } else {
+                lastFetchedMessage = fetchedMessages.get(99);
+            }
+        }
+
+        return messages;
+    }
+
     public static long getCreationTime(String id) {
         long idLong = Long.parseLong(id);
         return (idLong >>> TIMESTAMP_OFFSET) + DISCORD_EPOCH;
