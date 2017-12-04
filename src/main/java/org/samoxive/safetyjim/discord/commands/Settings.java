@@ -298,6 +298,12 @@ public class Settings extends Command {
                     break;
                 case "statistics":
                     guildSettings.setStatistics(isEnabledInput(argument));
+                    // Please look away from this mess.
+                    bot.getShards()
+                       .stream()
+                       .filter((discordShard -> discordShard.getShard() == shard))
+                       .findAny()
+                       .ifPresent((discordShard) -> discordShard.getThreadPool().submit(() -> discordShard.populateGuildStatistics(guild)));
                     break;
                 default:
                     return true;
