@@ -13,6 +13,7 @@ import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.discord.DiscordShard;
+import org.samoxive.safetyjim.discord.DiscordUtils;
 import org.samoxive.safetyjim.discord.MessageProcessor;
 
 public class MessageStats extends MessageProcessor {
@@ -38,8 +39,9 @@ public class MessageStats extends MessageProcessor {
             record.setUserid(user.getId());
             record.setChannelid(channel.getId());
             record.setGuildid(guild.getId());
-            record.setDate(message.getCreationTime().toEpochSecond());
+            record.setDate(DiscordUtils.getCreationTime(message.getId()));
             record.setWordcount(wordCount);
+            record.setSize(content.length());
             record.store();
         });
 
