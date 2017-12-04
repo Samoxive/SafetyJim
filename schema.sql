@@ -158,7 +158,8 @@ CREATE TABLE messages
   guildid TEXT,
   channelid TEXT,
   date BIGINT,
-  wordcount INTEGER
+  wordcount INTEGER,
+  size INTEGER
 )
 ;
 
