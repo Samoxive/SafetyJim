@@ -11,6 +11,7 @@ import org.jooq.impl.DSL;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.metrics.Metrics;
+import org.samoxive.safetyjim.server.Server;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -41,6 +42,7 @@ public class Main {
         DSLContext database = DSL.using(ds, SQLDialect.POSTGRES);
 
         DiscordBot bot = new DiscordBot(database, config, metrics);
+        Server server = new Server();
 
     }
 
