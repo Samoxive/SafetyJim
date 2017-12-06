@@ -12,8 +12,11 @@ import org.jooq.DSLContext;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.server.routes.Login;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Server {
+    private Logger log = LoggerFactory.getLogger(Server.class);
     private DiscordBot bot;
     private DSLContext database;
     private Config config;
@@ -32,6 +35,8 @@ public class Server {
 
         vertx.createHttpServer()
              .requestHandler(router::accept)
-             .listen(8080, "0.0.0.0");
+             .listen(80, "0.0.0.0");
+        log.info("Started web server.");
+
     }
 }
