@@ -42,7 +42,7 @@ public class Main {
         DSLContext database = DSL.using(ds, SQLDialect.POSTGRES);
 
         DiscordBot bot = new DiscordBot(database, config, metrics);
-        Server server = new Server();
+        Server server = new Server(bot, database, config);
 
     }
 
