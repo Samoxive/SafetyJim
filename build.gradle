@@ -1,5 +1,5 @@
 plugins {
-    id 'nu.studer.jooq' version '2.0.7'
+    id 'nu.studer.jooq' version '2.0.9'
     id 'com.sedmelluq.jdaction' version '1.0.2'
     id "com.github.johnrengelman.shadow" version "2.0.1"
     id 'com.github.ben-manes.versions' version '0.17.0'
@@ -21,17 +21,17 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
-    jooqRuntime 'postgresql:postgresql:9.1-901.jdbc4'
-    compile 'postgresql:postgresql:9.1-901.jdbc4'
+    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.8.0-beta0'
+    jooqRuntime 'postgresql:postgresql:9.4.1208-jdbc42-atlassian-hosted'
+    compile 'postgresql:postgresql:9.4.1208-jdbc42-atlassian-hosted'
     compile 'org.jooq:jooq'
     compile 'com.moandjiezana.toml:toml4j:0.7.2'
-    compile 'net.dv8tion:JDA:3.3.1_303'
-    compile 'com.zaxxer:HikariCP:2.7.2'
+    compile 'net.dv8tion:JDA:3.3.1_308'
+    compile 'com.zaxxer:HikariCP:2.7.4'
     compile 'com.datadoghq:java-dogstatsd-client:2.3'
-    compile "com.joestelmach:natty:0.11"
+    compile "com.joestelmach:natty:0.13"
     compile 'org.ocpsoft.prettytime:prettytime:4.0.1.Final'
-    compile 'com.squareup.okhttp3:okhttp:3.9.0'
+    compile 'com.squareup.okhttp3:okhttp:3.9.1'
     compile "io.vertx:vertx-web:3.5.0"
     compile group: 'log4j', name: 'log4j', version: '1.2.17'
 }
