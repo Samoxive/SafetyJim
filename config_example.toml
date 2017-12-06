@@ -41,3 +41,4 @@ redirect_uri = "" # uri you set in developer panel
 
 [http]
 secret = "" # secret to be used with JWT
+base_url = "safetyjim.xyz"
