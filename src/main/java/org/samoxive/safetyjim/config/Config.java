@@ -13,6 +13,8 @@ public class Config {
     public Database database;
     public Metrics metrics;
     public BotList botlist;
+    public Oauth oauth;
+    public Server server;
 
     public static Config fromFileName(String filename) throws IOException {
         String fileContent = new String(Files.readAllBytes(Paths.get(filename)));
@@ -51,5 +53,15 @@ public class Config {
         public String url;
         public String token;
         public boolean ignore_errors;
+    }
+
+    public class Oauth {
+        public String client_id;
+        public String client_secret;
+        public String redirect_uri;
+    }
+
+    public class Server {
+        public String secret;
     }
 }

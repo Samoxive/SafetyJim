@@ -33,3 +33,11 @@ name = "Discord Bot List"
 url = "https://discordbots.org/api/bots/$id/stats"
 token = ""
 ignore_errors = false
+
+[oauth]
+client_id = "" # your client_id given by discord
+client_secret = "" # your client_secret given by discord
+redirect_uri = "" # uri you set in developer panel
+
+[http]
+secret = "" # secret to be used with JWT
