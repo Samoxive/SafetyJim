@@ -172,3 +172,12 @@ CREATE TABLE membercounts
   count INTEGER
 )
 ;
+
+CREATE TABLE OauthSecrets
+(
+	userid TEXT CONSTRAINT oauthsecrets_pkey PRIMARY KEY,
+	accesstoken TEXT,
+	refreshtoken TEXT,
+	expirationdate BIGINT
+)
+;
