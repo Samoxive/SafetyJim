@@ -12,6 +12,7 @@ import org.jooq.DSLContext;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.server.routes.Login;
+import org.samoxive.safetyjim.server.routes.Root;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,9 @@ public class Server {
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
 
+        router.route("/").handler(new Root(bot, database, this, config));
         router.route("/login").handler(new Login(bot, database, this, config));
+
 
         vertx.createHttpServer()
              .requestHandler(router::accept)
