@@ -2,7 +2,6 @@ package org.samoxive.safetyjim.server.routes;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Cookie;
@@ -17,9 +16,8 @@ import org.samoxive.safetyjim.discord.entities.DiscordSecrets;
 import org.samoxive.safetyjim.discord.entities.SelfUser;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
+import org.samoxive.safetyjim.server.ServerUtils;
 
-import java.net.URI;
-import java.net.URLEncoder;
 import java.util.Date;
 
 public class Login extends RequestHandler {
@@ -27,26 +25,7 @@ public class Login extends RequestHandler {
         super(bot, database, server, config);
     }
 
-    private void redirectToDiscord(HttpServerResponse response) {
-        try {
-            response.setStatusCode(302);
-            response.putHeader("Location", "https://discordapp.com/api/oauth2/authorize?" +
-                    "client_id=" + config.oauth.client_id +
-                    "&redirect_uri=" + URLEncoder.encode(config.oauth.redirect_uri, "utf-8") +
-                    "&response_type=code" +
-                    "&scope=guilds%20identify");
-            response.putHeader("User-Agent", "Safety Jim");
-            response.end();
-        } catch (Exception e) {
 
-        }
-    }
-
-    private void redirectToWebsite(HttpServerResponse response) {
-        response.setStatusCode(302);
-        response.putHeader("Location", "http://safetyjim.xyz");
-        response.end();
-    }
 
     private String getJwtToken(String userId) {
         try {
@@ -66,19 +45,19 @@ public class Login extends RequestHandler {
         String code = request.getParam("code");
 
         if (code == null) {
-            redirectToDiscord(response);
+            ServerUtils.redirectToDiscord(response, config);
             return;
         }
 
         DiscordSecrets secrets = DiscordApiUtils.getUserSecrets(config, code);
         if (secrets == null || !secrets.scope.equals("guilds identify")) {
-            redirectToDiscord(response);
+            ServerUtils.redirectToDiscord(response, config);
             return;
         }
 
         SelfUser self = DiscordApiUtils.getSelf(secrets.accessToken);
         if (self == null) {
-            redirectToDiscord(response);
+            ServerUtils.redirectToDiscord(response, config);
             return;
         }
 
@@ -100,9 +79,6 @@ public class Login extends RequestHandler {
         tokenCookie.setDomain(config.server.base_url);
 
         response.putHeader("Set-Cookie", tokenCookie.encode());
-        response.end(tokenCookie.encode());
-
-
-
+        ServerUtils.redirectToWebsite(response);
     }
 }
