@@ -38,7 +38,7 @@ public class Server {
 
         vertx.createHttpServer()
              .requestHandler(router::accept)
-             .listen(80, "0.0.0.0");
+             .listen(config.server.port, "0.0.0.0");
         log.info("Started web server.");
 
     }
