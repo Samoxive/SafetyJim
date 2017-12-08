@@ -39,6 +39,7 @@ client_id = "" # your client_id given by discord
 client_secret = "" # your client_secret given by discord
 redirect_uri = "" # uri you set in developer panel
 
-[http]
+[server]
 secret = "" # secret to be used with JWT
-base_url = "safetyjim.xyz"
+base_url = "http://safetyjim.xyz"
+port = 8080
