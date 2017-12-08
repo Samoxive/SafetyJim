@@ -45,19 +45,22 @@ public class Login extends RequestHandler {
         String code = request.getParam("code");
 
         if (code == null) {
-            ServerUtils.redirectToDiscord(response, config);
+            response.setStatusCode(400);
+            response.end();
             return;
         }
 
         DiscordSecrets secrets = DiscordApiUtils.getUserSecrets(config, code);
         if (secrets == null || !secrets.scope.equals("guilds identify")) {
-            ServerUtils.redirectToDiscord(response, config);
+            response.setStatusCode(400);
+            response.end();
             return;
         }
 
         SelfUser self = DiscordApiUtils.getSelf(secrets.accessToken);
         if (self == null) {
-            ServerUtils.redirectToDiscord(response, config);
+            response.setStatusCode(400);
+            response.end();
             return;
         }
 
@@ -74,11 +77,9 @@ public class Login extends RequestHandler {
                 .set(record)
                 .execute();
 
-        Cookie tokenCookie = Cookie.cookie("token", getJwtToken(self.id));
-        tokenCookie.setMaxAge(60 * 24 * 1000);
-        tokenCookie.setDomain(config.server.base_url);
-
-        response.putHeader("Set-Cookie", tokenCookie.encode());
-        ServerUtils.redirectToWebsite(response);
+        response.putHeader("Access-Control-Allow-Origin", config.server.base_url);
+        String token = getJwtToken(self.id);
+        response.putHeader("Content-Type", "application/json");
+        response.end("\"" + token + "\"");
     }
 }
