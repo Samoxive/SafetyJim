@@ -64,5 +64,6 @@ public class Config {
     public class Server {
         public String secret;
         public String base_url;
+        public int port;
     }
 }
