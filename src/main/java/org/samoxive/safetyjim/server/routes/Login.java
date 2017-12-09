@@ -75,7 +75,6 @@ public class Login extends RequestHandler {
                 .set(record)
                 .execute();
 
-        response.putHeader("Access-Control-Allow-Origin", config.server.base_url);
         String token = getJwtToken(self.id);
         response.putHeader("Content-Type", "application/json");
         response.end("\"" + token + "\"");
