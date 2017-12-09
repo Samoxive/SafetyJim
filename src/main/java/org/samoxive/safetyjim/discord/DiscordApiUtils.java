@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DiscordApiUtils {
+    private static final HttpUrl CDN_LINK = HttpUrl.parse("https://cdn.discordapp.com/");
+    private static final HttpUrl API_ENDPOINT = HttpUrl.parse("https://discordapp.com/api");
     private static OkHttpClient client = new OkHttpClient();
     private static Gson gson = new Gson();
 
@@ -25,8 +27,13 @@ public class DiscordApiUtils {
                 .addFormDataPart("redirect_uri", config.oauth.redirect_uri)
                 .build();
 
+        HttpUrl url = API_ENDPOINT.newBuilder()
+                                  .addPathSegment("oauth2")
+                                  .addPathSegment("token")
+                                  .build();
+
         Request request = (new Request.Builder())
-                .url("https://discordapp.com/api/oauth2/token")
+                .url(url)
                 .addHeader("User-Agent", "Safety Jim")
                 .post(body)
                 .build();
@@ -71,8 +78,14 @@ public class DiscordApiUtils {
     }
 
     public static List<PartialGuild> getUserGuilds(String accessToken) {
+        HttpUrl url = API_ENDPOINT.newBuilder()
+                                  .addPathSegment("users")
+                                  .addPathSegment("@me")
+                                  .addPathSegment("guilds")
+                                  .build();
+
         Request request = (new Request.Builder())
-                .url("https://discordapp.com/api/users/@me/guilds")
+                .url(url)
                 .addHeader("Authorization", "Bearer " + accessToken)
                 .addHeader("User-Agent", "Safety Jim")
                 .get()
@@ -91,5 +104,13 @@ public class DiscordApiUtils {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static String getGuildIconUrl(String id, String iconHash) {
+        return CDN_LINK.newBuilder()
+                       .addPathSegment("icons")
+                       .addPathSegment(id)
+                       .addPathSegment(iconHash + ".png")
+                       .toString();
     }
 }
