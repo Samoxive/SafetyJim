@@ -109,3 +109,7 @@ gradle-app.setting
 # End of https://www.gitignore.io/api/java,gradle,intellij
 logs/
 config.toml
+
+.classpath
+.project
+.settings
