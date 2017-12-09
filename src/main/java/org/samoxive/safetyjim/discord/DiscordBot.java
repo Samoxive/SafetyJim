@@ -366,6 +366,12 @@ public class DiscordBot {
         return shards;
     }
 
+    public List<Guild> getGuilds() {
+        return shards.stream()
+                     .flatMap((shard) -> shard.getShard().getGuilds().stream())
+                     .collect(Collectors.toList());
+    }
+
     public DSLContext getDatabase() {
         return database;
     }
