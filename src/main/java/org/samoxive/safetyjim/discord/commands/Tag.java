@@ -11,14 +11,12 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import org.jooq.DSLContext;
 import org.jooq.Result;
 import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.Taglist;
 import org.samoxive.jooq.generated.tables.records.TaglistRecord;
 import org.samoxive.safetyjim.discord.Command;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.discord.DiscordUtils;
 import org.samoxive.safetyjim.discord.TextUtils;
 
-import javax.xml.soap.Text;
 import java.awt.*;
 import java.util.Scanner;
 import java.util.StringJoiner;
@@ -159,9 +157,7 @@ public class Tag extends Command {
 
     private void deleteTag(DiscordBot bot, GuildMessageReceivedEvent event, Scanner messageIterator) {
         DSLContext database = bot.getDatabase();
-        JDA shard = event.getJDA();
         Guild guild = event.getGuild();
-        TextChannel channel = event.getChannel();
         Message message = event.getMessage();
         Member member = event.getMember();
 

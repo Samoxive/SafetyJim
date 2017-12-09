@@ -1,6 +1,5 @@
 package org.samoxive.safetyjim.discord.commands;
 
-import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import org.jooq.DSLContext;

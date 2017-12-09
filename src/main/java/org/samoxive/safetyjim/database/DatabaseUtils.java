@@ -1,7 +1,6 @@
 package org.samoxive.safetyjim.database;
 
 import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import org.jooq.DSLContext;
 import org.jooq.Result;
 import org.samoxive.jooq.generated.Tables;
@@ -11,7 +10,6 @@ import org.samoxive.safetyjim.discord.DiscordUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class DatabaseUtils {
     public static final String DEFAULT_WELCOME_MESSAGE = "Welcome to $guild $user!";

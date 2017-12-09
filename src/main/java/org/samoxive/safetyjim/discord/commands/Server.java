@@ -8,9 +8,6 @@ import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.discord.DiscordUtils;
 
 import java.awt.*;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.StringJoiner;
 
 public class Server extends Command {
     private String[] usages = { "server - displays information about the current server" };

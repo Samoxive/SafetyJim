@@ -42,12 +42,10 @@ public class DiscordShard extends ListenerAdapter {
     private Logger log;
     private DiscordBot bot;
     private JDA shard;
-    private int shardId;
     private ExecutorService threadPool;
 
     public DiscordShard(DiscordBot bot, int shardId) {
         this.bot = bot;
-        this.shardId = shardId;
         log = LoggerFactory.getLogger("DiscordShard " + DiscordUtils.getShardString(shardId, bot.getConfig().jim.shard_count));
 
         Config config = bot.getConfig();
@@ -63,7 +61,7 @@ public class DiscordShard extends ListenerAdapter {
                                 .setReconnectQueue(new SessionReconnectQueue()) // needed to prevent shards trying to reconnect too soon
                                 .setEnableShutdownHook(true)
                                 .useSharding(shardId, bot.getConfig().jim.shard_count)
-                                .setGame(Game.of(String.format("-mod help | %s | %s", version, DiscordUtils.getShardString(shardId, shardCount))))
+                                .setGame(Game.playing(String.format("-mod help | %s | %s", version, DiscordUtils.getShardString(shardId, shardCount))))
                                 .buildBlocking();
         } catch (LoginException e) {
             log.error("Invalid token.");

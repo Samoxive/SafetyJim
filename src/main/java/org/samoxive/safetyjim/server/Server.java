@@ -1,13 +1,8 @@
 package org.samoxive.safetyjim.server;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.handler.sockjs.SockJSHandler;
-import io.vertx.ext.web.handler.sockjs.SockJSHandlerOptions;
 import org.jooq.DSLContext;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;

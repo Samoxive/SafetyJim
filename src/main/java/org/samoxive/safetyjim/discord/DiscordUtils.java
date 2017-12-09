@@ -4,7 +4,6 @@ import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.*;
-import net.dv8tion.jda.core.managers.GuildController;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.slf4j.Logger;

@@ -3,20 +3,16 @@ package org.samoxive.safetyjim.discord.commands;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
-import net.dv8tion.jda.core.requests.RequestFuture;
 import net.dv8tion.jda.core.requests.restaction.AuditableRestAction;
 import org.samoxive.safetyjim.discord.Command;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.discord.DiscordUtils;
-import org.samoxive.safetyjim.discord.MessageProcessor;
 import org.samoxive.safetyjim.helpers.Pair;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 public class Clean extends Command {
     private String[] usages = { "clean <number> - deletes last number of messages",
@@ -99,7 +95,7 @@ public class Clean extends Command {
     private void bulkDelete(Pair<List<Message>, List<Message>> messages, TextChannel channel) {
         List<Message> newMessages = messages.getRight();
         List<Message> oldMessage = messages.getLeft();
-        List<AuditableRestAction> futures = new ArrayList<>();
+        List<AuditableRestAction<Void>> futures = new ArrayList<>();
 
         if (newMessages.size() >= 2 && newMessages.size() <= 100) {
             channel.deleteMessages(newMessages).complete();
@@ -113,7 +109,7 @@ public class Clean extends Command {
             futures.add(message.delete());
         }
 
-        for (AuditableRestAction future: futures) {
+        for (AuditableRestAction<Void> future: futures) {
             try {
                 future.complete();
             } catch (Exception e) {

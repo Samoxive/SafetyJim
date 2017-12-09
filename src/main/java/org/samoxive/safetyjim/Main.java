@@ -1,7 +1,5 @@
 package org.samoxive.safetyjim;
 
-import com.timgroup.statsd.NonBlockingStatsDClient;
-import com.timgroup.statsd.StatsDClient;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.log4j.*;

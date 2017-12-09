@@ -2,7 +2,6 @@ package org.samoxive.safetyjim.discord.commands;
 
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.SelfUser;
@@ -66,8 +65,6 @@ public class Info extends Command {
         Runtime runtime = Runtime.getRuntime();
         long ramTotal = runtime.totalMemory() / (1024 * 1024);
         long ramUsed = ramTotal - (runtime.freeMemory() / (1024 * 1024));
-        String ramTotalString = Long.toString(ramTotal);
-        String ramUsedString = Long.toString(ramUsed);
 
         BanlistRecord lastBanRecord = database.selectFrom(Tables.BANLIST)
                                               .where(Tables.BANLIST.GUILDID.eq(guild.getId()))

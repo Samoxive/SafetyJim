@@ -4,7 +4,6 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.ext.web.Cookie;
 import io.vertx.ext.web.RoutingContext;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
@@ -16,7 +15,6 @@ import org.samoxive.safetyjim.discord.entities.DiscordSecrets;
 import org.samoxive.safetyjim.discord.entities.SelfUser;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
-import org.samoxive.safetyjim.server.ServerUtils;
 
 import java.util.Date;
 

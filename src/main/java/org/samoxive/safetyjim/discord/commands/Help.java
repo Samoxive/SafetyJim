@@ -13,8 +13,6 @@ import org.samoxive.safetyjim.discord.DiscordUtils;
 
 import java.awt.Color;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
 
 public class Help extends Command {

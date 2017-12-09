@@ -8,7 +8,6 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.managers.GuildController;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.records.BanlistRecord;
 import org.samoxive.jooq.generated.tables.records.KicklistRecord;
 import org.samoxive.safetyjim.discord.Command;
 import org.samoxive.safetyjim.discord.DiscordBot;

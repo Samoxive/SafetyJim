@@ -7,7 +7,6 @@ import net.dv8tion.jda.core.managers.GuildController;
 import org.jooq.DSLContext;
 import org.jooq.Result;
 import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.Mutelist;
 import org.samoxive.jooq.generated.tables.records.MutelistRecord;
 import org.samoxive.safetyjim.discord.Command;
 import org.samoxive.safetyjim.discord.DiscordBot;

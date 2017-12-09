@@ -1,11 +1,9 @@
 package org.samoxive.safetyjim.discord.commands;
 
-import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import org.jooq.DSLContext;
-import org.jooq.Result;
 import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.RolelistRecord;
 import org.samoxive.safetyjim.discord.Command;

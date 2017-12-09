@@ -15,7 +15,6 @@ import org.samoxive.safetyjim.discord.TextUtils;
 
 import java.awt.Color;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.StringJoiner;
 
