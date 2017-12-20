@@ -30,18 +30,8 @@ public class Guilds extends RequestHandler {
         HttpServerRequest request = ctx.request();
         HttpServerResponse response = ctx.response();
 
-        String token = request.getHeader("token");
-        if (token == null) {
-            response.setStatusCode(403);
-            response.end();
-            return;
-        }
-
-        String userId = ServerUtils.getIdFromToken(config, token);
-
+        String userId = ServerUtils.authUser(request, response, config);
         if (userId == null) {
-            response.setStatusCode(403);
-            response.end();
             return;
         }
 
