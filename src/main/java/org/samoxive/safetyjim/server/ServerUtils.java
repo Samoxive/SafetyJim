@@ -4,12 +4,31 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import org.samoxive.safetyjim.config.Config;
 
 import java.net.URLEncoder;
 
 public class ServerUtils {
+    public static String authUser(HttpServerRequest request, HttpServerResponse response, Config config) {
+        String token = request.getHeader("token");
+        if (token == null) {
+            response.setStatusCode(403);
+            response.end();
+            return null;
+        }
+
+        String userId = ServerUtils.getIdFromToken(config, token);
+
+        if (userId == null) {
+            response.setStatusCode(403);
+            response.end();
+            return null;
+        }
+
+        return userId;
+    }
     public static String getIdFromToken(Config config, String token) {
         try {
             Algorithm algorithm = Algorithm.HMAC512(config.server.secret);
