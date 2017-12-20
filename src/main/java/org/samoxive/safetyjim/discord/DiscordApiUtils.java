@@ -7,6 +7,7 @@ import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.entities.DiscordSecrets;
 import org.samoxive.safetyjim.discord.entities.PartialGuild;
 import org.samoxive.safetyjim.discord.entities.SelfUser;
+import org.samoxive.safetyjim.discord.entities.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +76,35 @@ public class DiscordApiUtils {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static User getUser(String userId, String botToken) {
+        HttpUrl url = API_ENDPOINT.newBuilder()
+                                  .addPathSegment("users")
+                                  .addPathSegment(userId)
+                                  .build();
+
+        Request request = (new Request.Builder())
+                .url(url)
+                .addHeader("Authorization", "Bot " + botToken)
+                .addHeader("User-Agent", "Safety Jim")
+                .get()
+                .build();
+
+        try {
+            ResponseBody responseBody = client.newCall(request)
+                                              .execute()
+                                              .body();
+            String userJson = responseBody.string();
+            if (userJson == null) {
+                return null;
+            }
+
+            return gson.fromJson(userJson, User.class);
+        } catch (Exception e) {
+            return null;
+        }
+
     }
 
     public static List<PartialGuild> getUserGuilds(String accessToken) {
