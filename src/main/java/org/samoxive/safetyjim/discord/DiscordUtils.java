@@ -4,6 +4,9 @@ import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.managers.GuildController;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.slf4j.Logger;
@@ -23,7 +26,9 @@ public class DiscordUtils {
                                                 "276011076552753153",
                                                };
     private static final String SUCCESS_EMOTE_ID = "322698554294534144";
+    private static final String SUCCESS_EMOTE_NAME = "jimsuccess";
     private static final String FAIL_EMOTE_ID = "322698553980092417";
+    private static final String FAIL_EMOTE_NAME = "jimfail";
     private static Emote SUCCESS_EMOTE;
     private static Emote FAIL_EMOTE;
 
@@ -161,21 +166,7 @@ public class DiscordUtils {
     }
 
     public static void successReact(DiscordBot bot, Message message) {
-        if (SUCCESS_EMOTE == null) {
-            for (DiscordShard shard: bot.getShards()) {
-                Emote emote = shard.getShard().getEmoteById(SUCCESS_EMOTE_ID);
-                if (emote != null) {
-                    SUCCESS_EMOTE = emote;
-                }
-            }
-
-            if (SUCCESS_EMOTE == null) {
-                log.error("Success emote couldn't be found. Aborting...");
-                System.exit(1);
-            }
-        }
-
-        reactToMessage(message, SUCCESS_EMOTE);
+        reactToMessage(bot, message, SUCCESS_EMOTE_NAME, SUCCESS_EMOTE_ID);
     }
 
     public static void failMessage(DiscordBot bot, Message message, String errorMessage) {
@@ -184,26 +175,23 @@ public class DiscordUtils {
     }
 
     public static void failReact(DiscordBot bot, Message message) {
-        if (FAIL_EMOTE == null) {
-            for (DiscordShard shard: bot.getShards()) {
-                Emote emote = shard.getShard().getEmoteById(FAIL_EMOTE_ID);
-                if (emote != null) {
-                    FAIL_EMOTE = emote;
-                }
-            }
-
-            if (FAIL_EMOTE == null) {
-                log.error("Failure emote couldn't be found. Aborting...");
-                System.exit(1);
-            }
-        }
-
-        reactToMessage(message, FAIL_EMOTE);
+        reactToMessage(bot, message, FAIL_EMOTE_NAME, FAIL_EMOTE_ID);
     }
 
-    public static void reactToMessage(Message message, Emote emote) {
+    public static void reactToMessage(DiscordBot bot, Message message, String emoteName, String emoteId) {
+        String API_REACTION_URL = "https://discordapp.com/api/channels/%s/messages/%s/reactions/%s:%s/@me";
+        String channelId = message.getTextChannel().getId();
+        String messageId = message.getId();
+        String token = bot.getConfig().jim.token;
+        String requestUrl = String.format(API_REACTION_URL, channelId, messageId, emoteName, emoteId);
+
+        Request request = (new Request.Builder()).put(RequestBody.create(MediaType.parse("application/json"), ""))
+                .url(requestUrl)
+                .addHeader("User-Agent", "Safety Jim")
+                .addHeader("Authorization", "Bot " + token)
+                .build();
         try {
-            message.addReaction(emote).queue();
+            bot.getHttpClient().newCall(request).execute();
         } catch (Exception e) {
             //
         }
