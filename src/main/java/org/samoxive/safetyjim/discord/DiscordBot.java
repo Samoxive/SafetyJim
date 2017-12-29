@@ -379,4 +379,8 @@ public class DiscordBot {
     public Config getConfig() {
         return config;
     }
+
+    public OkHttpClient getHttpClient() {
+        return httpClient;
+    }
 }
