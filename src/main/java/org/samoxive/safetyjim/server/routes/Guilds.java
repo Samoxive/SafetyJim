@@ -17,12 +17,36 @@ import org.samoxive.safetyjim.server.Server;
 import org.samoxive.safetyjim.server.ServerUtils;
 import org.samoxive.safetyjim.server.entries.GuildEntity;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class Guilds extends RequestHandler {
     public Guilds(DiscordBot bot, DSLContext database, Server server, Config config) {
         super(bot, database, server, config);
+    }
+
+    private static String[] getGuildsOfUser(OauthsecretsRecord record) {
+        if (record.getGuilds() != null) {
+            return record.getGuilds();
+        }
+
+        String[] guildIds = DiscordApiUtils.getUserGuilds(record.getAccesstoken())
+                                           .stream()
+                                           .map((guild) -> guild.id)
+                                           .toArray(String[]::new);
+        record.setGuilds(guildIds);
+        record.update();
+        return guildIds;
+    }
+
+    private static boolean isInUserGuilds(Guild guild, String[] userGuilds) {
+        for (String userGuild: userGuilds) {
+            if (guild.getId().equals(userGuild)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -46,18 +70,18 @@ public class Guilds extends RequestHandler {
         }
 
 
-        List<String> jimGuilds = bot.getGuilds()
-                                   .stream()
-                                   .map((guild -> guild.getId()))
-                                   .collect(Collectors.toList());
-        List<PartialGuild> partialGuilds = DiscordApiUtils.getUserGuilds(record.getAccesstoken());
-        List<GuildEntity> result = partialGuilds.stream()
-                                                .filter((guild) -> jimGuilds.contains(guild.id))
-                                                .map((guild) -> {
-                                                    String url = DiscordApiUtils.getGuildIconUrl(guild.id, guild.icon);
-                                                    return new GuildEntity(guild.id, guild.name, url);
-                                                })
-                                                .collect(Collectors.toList());
+        List<Guild> jimGuilds = bot.getGuilds();
+        String[] userGuilds = getGuildsOfUser(record);
+        long start = System.currentTimeMillis();
+        List<GuildEntity> result = jimGuilds.stream()
+                                            .filter((guild) -> isInUserGuilds(guild, userGuilds))
+                                            .map((guild) -> {
+                                                String url = guild.getIconUrl();
+                                                return new GuildEntity(guild.getId(), guild.getName(), url);
+                                            })
+                                            .collect(Collectors.toList());
+        long end = System.currentTimeMillis();
+        System.out.println(end - start);
 
         Gson gson = new Gson();
         response.putHeader("Content-Type", "application/json");

@@ -178,6 +178,7 @@ CREATE TABLE OauthSecrets
 	userid TEXT CONSTRAINT oauthsecrets_pkey PRIMARY KEY,
 	accesstoken TEXT,
 	refreshtoken TEXT,
-	expirationdate BIGINT
+	expirationdate BIGINT,
+	guilds TEXT[]
 )
 ;
