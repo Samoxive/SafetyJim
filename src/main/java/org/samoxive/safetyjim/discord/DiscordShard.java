@@ -321,14 +321,12 @@ public class DiscordShard extends ListenerAdapter {
         DiscordUtils.sendMessage(DiscordUtils.getDefaultChannel(guild), message);
         DatabaseUtils.createGuildSettings(bot, database, guild);
         bot.updateBotLists();
-        bot.getMetrics().increment("guild.join");
     }
 
     @Override
     public void onGuildLeave(GuildLeaveEvent event) {
         DatabaseUtils.deleteGuildSettings(bot.getDatabase(), event.getGuild());
         bot.updateBotLists();
-        bot.getMetrics().increment("guild.left");
     }
 
     @Override
@@ -420,7 +418,6 @@ public class DiscordShard extends ListenerAdapter {
 
     private void executeCommand(GuildMessageReceivedEvent event, Command command, String commandName, String args) {
         createCommandLog(event, command, commandName, args);
-        bot.getMetrics().increment("command.count");
 
         long startTime = System.currentTimeMillis();
         boolean showUsage = false;
@@ -432,8 +429,6 @@ public class DiscordShard extends ListenerAdapter {
             log.error(String.format("%s failed with arguments %s in guild %s - %s", commandName, args, event.getGuild().getName(), event.getGuild().getId()), e);
         } finally {
             long endTime = System.currentTimeMillis();
-            bot.getMetrics().increment(commandName + ".count");
-            bot.getMetrics().histogram(commandName + ".time", (int)(endTime - startTime));
         }
 
         if (showUsage) {

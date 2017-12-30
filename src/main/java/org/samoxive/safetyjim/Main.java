@@ -8,7 +8,6 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
-import org.samoxive.safetyjim.metrics.Metrics;
 import org.samoxive.safetyjim.server.Server;
 
 import java.io.IOException;
@@ -26,8 +25,6 @@ public class Main {
             System.exit(1);
         }
 
-        Metrics metrics = new Metrics("jim", "localhost", 8125, config.metrics.enabled);
-
         HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setJdbcUrl("jdbc:postgresql://" +
                                 config.database.host +
@@ -39,7 +36,7 @@ public class Main {
         HikariDataSource ds = new HikariDataSource(hikariConfig);
         DSLContext database = DSL.using(ds, SQLDialect.POSTGRES);
 
-        DiscordBot bot = new DiscordBot(database, config, metrics);
+        DiscordBot bot = new DiscordBot(database, config);
         Server server = new Server(bot, database, config);
 
     }

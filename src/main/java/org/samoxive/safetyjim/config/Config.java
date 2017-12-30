@@ -11,7 +11,6 @@ public class Config {
     public String version;
     public Jim jim;
     public Database database;
-    public Metrics metrics;
     public BotList botlist;
     public Oauth oauth;
     public Server server;
@@ -34,13 +33,6 @@ public class Config {
         public String host;
         public String name;
         public Integer port;
-    }
-
-    public class Metrics {
-        public Boolean enabled;
-        public String api_key;
-        public String host;
-        public Integer flush_interval;
     }
 
     public class BotList {

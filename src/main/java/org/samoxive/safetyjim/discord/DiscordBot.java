@@ -15,7 +15,6 @@ import org.samoxive.safetyjim.discord.commands.*;
 import org.samoxive.safetyjim.discord.commands.Invite;
 import org.samoxive.safetyjim.discord.processors.InviteLink;
 import org.samoxive.safetyjim.discord.processors.MessageStats;
-import org.samoxive.safetyjim.metrics.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,16 +34,14 @@ public class DiscordBot {
     private Config config;
     private HashMap<String, Command> commands;
     private List<MessageProcessor> processors;
-    private Metrics metrics;
     private ScheduledExecutorService scheduler;
     private OkHttpClient httpClient;
     private Date startTime;
 
-    public DiscordBot(DSLContext database, Config config, Metrics metrics) {
+    public DiscordBot(DSLContext database, Config config) {
         this.startTime = new Date();
         this.database = database;
         this.config = config;
-        this.metrics = metrics;
         this.shards = new ArrayList<>();
         this.commands = new HashMap<>();
         this.processors = new ArrayList<>();
@@ -70,7 +67,6 @@ public class DiscordBot {
         scheduler.scheduleAtFixedRate(() -> { try { unmuteUsers(); } catch (Exception e) {} }, 10, 10, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> { try { unbanUsers(); } catch (Exception e) {} }, 10, 30, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> { try { remindReminders(); } catch (Exception e) {} }, 10, 5, TimeUnit.SECONDS);
-        scheduler.scheduleAtFixedRate(() -> metrics.gauge("uptime", (int)((new Date()).getTime() - startTime.getTime()) / (1000 * 60 * 60)), 1, 30, TimeUnit.MINUTES);
         scheduler.scheduleAtFixedRate(() -> saveMemberCounts(), 1, 1, TimeUnit.MINUTES);
         scheduler.schedule(() -> { try { updateBotLists(); } catch (Exception e) {} }, 10, TimeUnit.SECONDS);
 
@@ -348,10 +344,6 @@ public class DiscordBot {
 
     public Date getStartTime() {
         return startTime;
-    }
-
-    public Metrics getMetrics() {
-        return metrics;
     }
 
     public HashMap<String, Command> getCommands() {

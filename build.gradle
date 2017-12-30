@@ -28,7 +28,6 @@ dependencies {
     compile 'com.moandjiezana.toml:toml4j:0.7.2'
     compile 'net.dv8tion:JDA:3.3.1_308'
     compile 'com.zaxxer:HikariCP:2.7.4'
-    compile 'com.datadoghq:java-dogstatsd-client:2.3'
     compile "com.joestelmach:natty:0.13"
     compile 'org.ocpsoft.prettytime:prettytime:4.0.1.Final'
     compile 'com.squareup.okhttp3:okhttp:3.9.1'
