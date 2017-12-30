@@ -72,7 +72,6 @@ public class Guilds extends RequestHandler {
 
         List<Guild> jimGuilds = bot.getGuilds();
         String[] userGuilds = getGuildsOfUser(record);
-        long start = System.currentTimeMillis();
         List<GuildEntity> result = jimGuilds.stream()
                                             .filter((guild) -> isInUserGuilds(guild, userGuilds))
                                             .map((guild) -> {
@@ -80,8 +79,6 @@ public class Guilds extends RequestHandler {
                                                 return new GuildEntity(guild.getId(), guild.getName(), url);
                                             })
                                             .collect(Collectors.toList());
-        long end = System.currentTimeMillis();
-        System.out.println(end - start);
 
         Gson gson = new Gson();
         response.putHeader("Content-Type", "application/json");
