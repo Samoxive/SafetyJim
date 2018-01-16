@@ -4,19 +4,19 @@ import java.util.List;
 
 public class GuildSettings {
     public String id;
-    public boolean modLog;
+    public Boolean modLog;
     public PartialChannel modLogChannel;
-    public boolean holdingRoom;
+    public Boolean holdingRoom;
     public PartialRole holdingRoomRole;
-    public int holdingRoomMinutes;
-    public boolean inviteLinkRemover;
-    public boolean welcomeMessage;
+    public Integer holdingRoomMinutes;
+    public Boolean inviteLinkRemover;
+    public Boolean welcomeMessage;
     public String message;
     public PartialChannel welcomeMessageChannel;
     public String prefix;
-    public boolean silentCommands;
-    public boolean noSpacePrefix;
-    public boolean statistics;
+    public Boolean silentCommands;
+    public Boolean noSpacePrefix;
+    public Boolean statistics;
     public List<PartialChannel> channels;
     public List<PartialRole> roles;
 
