@@ -7,10 +7,7 @@ import io.vertx.ext.web.handler.BodyHandler;
 import org.jooq.DSLContext;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
-import org.samoxive.safetyjim.server.routes.GetGuildSettings;
-import org.samoxive.safetyjim.server.routes.Guilds;
-import org.samoxive.safetyjim.server.routes.Login;
-import org.samoxive.safetyjim.server.routes.Self;
+import org.samoxive.safetyjim.server.routes.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +32,8 @@ public class Server {
         router.get("/guilds").handler(new Guilds(bot, database, this, config));
         router.get("/self").handler(new Self(bot, database, this, config));
         router.get("/guilds/:id/settings").handler(new GetGuildSettings(bot, database, this, config));
+        router.post("/guilds/:id/settings").handler(new PostGuildSettings(bot, database, this, config));
+
         router.options().handler((ctx) -> {
             HttpServerResponse response = ctx.response();
             response.putHeader("Access-Control-Allow-Origin", config.server.base_url);
@@ -50,6 +49,6 @@ public class Server {
              })
              .listen(config.server.port, "0.0.0.0");
         log.info("Started web server.");
-
+        
     }
 }
