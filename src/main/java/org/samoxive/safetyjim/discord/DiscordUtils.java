@@ -176,6 +176,10 @@ public class DiscordUtils {
                (status == OnlineStatus.IDLE);
     }
 
+    public static boolean isUserInGuild(Guild guild, String userId) {
+        return guild.getMemberById(userId) != null;
+    }
+
     public static void successReact(DiscordBot bot, Message message) {
         reactToMessage(bot, message, SUCCESS_EMOTE_NAME, SUCCESS_EMOTE_ID);
     }
@@ -347,5 +351,18 @@ public class DiscordUtils {
         int shardCount = shardInfo.getShardTotal();
 
         return "[" + (shardId + 1) + " / " + shardCount + "]";
+    }
+
+    public static Guild getGuildFromBot(DiscordBot bot, String guildId) {
+        List<DiscordShard> shards = bot.getShards();
+        long guildIdLong;
+        try {
+            guildIdLong = Long.parseLong(guildId);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+
+        int shardId = getShardIdFromGuildId(guildIdLong, shards.size());
+        return shards.get(shardId).getShard().getGuildById(guildId);
     }
 }
