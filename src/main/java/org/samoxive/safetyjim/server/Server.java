@@ -31,8 +31,8 @@ public class Server {
         router.get("/login").handler(new Login(bot, database, this, config));
         router.get("/guilds").handler(new Guilds(bot, database, this, config));
         router.get("/self").handler(new Self(bot, database, this, config));
-        router.get("/guilds/:id/settings").handler(new GetGuildSettings(bot, database, this, config));
-        router.post("/guilds/:id/settings").handler(new PostGuildSettings(bot, database, this, config));
+        router.get("/guilds/:guildId/settings").handler(new GetGuildSettings(bot, database, this, config));
+        router.post("/guilds/:guildId/settings").handler(new PostGuildSettings(bot, database, this, config));
 
         router.options().handler((ctx) -> {
             HttpServerResponse response = ctx.response();

@@ -55,8 +55,9 @@ public class PostGuildSettings extends RequestHandler {
             return;
         }
 
-        int shardId = DiscordUtils.getShardIdFromGuildId(Long.parseLong(newSettings.id), config.jim.shard_count);
-        Guild guild = bot.getShards().get(shardId).getShard().getGuildById(newSettings.id);
+        String guildId = request.getParam("guildId");
+        int shardId = DiscordUtils.getShardIdFromGuildId(Long.parseLong(guildId), config.jim.shard_count);
+        Guild guild = bot.getShards().get(shardId).getShard().getGuildById(guildId);
 
         if (guild == null) {
             response.setStatusCode(400);

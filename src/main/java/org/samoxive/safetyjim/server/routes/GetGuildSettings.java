@@ -35,7 +35,7 @@ public class GetGuildSettings extends RequestHandler {
         HttpServerRequest request = ctx.request();
         HttpServerResponse response = ctx.response();
 
-        String guildId = request.getParam("id");
+        String guildId = request.getParam("guildId");
         int shardId = DiscordUtils.getShardIdFromGuildId(Long.parseLong(guildId), bot.getConfig().jim.shard_count);
         JDA shard = bot.getShards().get(shardId).getShard();
         Guild guild = shard.getGuildById(guildId);
