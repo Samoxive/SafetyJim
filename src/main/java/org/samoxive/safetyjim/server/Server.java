@@ -35,6 +35,7 @@ public class Server {
         router.post("/guilds/:guildId/settings").handler(new PostGuildSettings(bot, database, this, config));
         router.get("/guilds/:guildId/messageStats").handler(new GuildMessageStats(bot, database, this, config));
         router.get("/guilds/:guildId/messageStats/channels/:channelId").handler(new ChannelMessageStats(bot, database, this, config));
+        router.get("/guilds/:guildId/messageStats/channels").handler(new ChannelsMessageStats(bot, database, this, config));
 
         router.options().handler((ctx) -> {
             HttpServerResponse response = ctx.response();
