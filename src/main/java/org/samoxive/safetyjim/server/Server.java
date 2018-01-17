@@ -33,6 +33,7 @@ public class Server {
         router.get("/self").handler(new Self(bot, database, this, config));
         router.get("/guilds/:guildId/settings").handler(new GetGuildSettings(bot, database, this, config));
         router.post("/guilds/:guildId/settings").handler(new PostGuildSettings(bot, database, this, config));
+        router.get("/guilds/:guildId/messageStats").handler(new GuildMessageStats(bot, database, this, config));
 
         router.options().handler((ctx) -> {
             HttpServerResponse response = ctx.response();
