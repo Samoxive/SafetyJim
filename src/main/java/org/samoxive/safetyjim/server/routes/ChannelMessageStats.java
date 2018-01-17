@@ -95,7 +95,8 @@ public class ChannelMessageStats extends RequestHandler {
         }
 
         Gson gson  = new Gson();
+        List<Stat> stats = Stat.getChannelMessageStats(database, guildId, channelId, from, to, 60);
         response.putHeader("Content-Type", "application/json");
-        response.end(gson.toJson(Stat.getChannelMessageStats(database, guildId, channelId, from, to, 60), new TypeToken<List<Stat>>() {}.getType()));
+        response.end(gson.toJson(stats, stats.getClass()));
     }
 }
