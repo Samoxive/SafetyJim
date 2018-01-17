@@ -23,6 +23,7 @@ public class Stat {
     private static List<Stat> fromRecords(Result<MessagesRecord> records, int interval) {
         HashMap<Long, Integer> group = new HashMap<>();
         for (MessagesRecord record: records) {
+            // reduce accuracy of date to get unique ids of records by interval
             long date = record.getDate() / (1000 * interval);
             group.put(date, group.getOrDefault(date, 0) + 1);
         }
@@ -31,10 +32,11 @@ public class Stat {
                 .stream()
                 .map((entry) -> new Pair<>(entry.getKey(), entry.getValue()))
                 .sorted(Comparator.comparing((e) -> e.getLeft()))
-                .map((pair) -> new Stat(pair.getLeft().intValue() * interval, pair.getRight()))
+                .map((pair) -> new Stat(pair.getLeft().intValue() * interval, pair.getRight())) // revert accuracy reduction to get the actual unix epoch in seconds
                 .collect(Collectors.toList());
 
         if (counts.size() < 2) {
+            // There isn't any data we can fill in
             return counts;
         }
 
