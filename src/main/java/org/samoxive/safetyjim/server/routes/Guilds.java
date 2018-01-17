@@ -11,13 +11,11 @@ import org.samoxive.jooq.generated.tables.records.OauthsecretsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordApiUtils;
 import org.samoxive.safetyjim.discord.DiscordBot;
-import org.samoxive.safetyjim.discord.entities.PartialGuild;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
 import org.samoxive.safetyjim.server.ServerUtils;
-import org.samoxive.safetyjim.server.entries.GuildEntity;
+import org.samoxive.safetyjim.server.entities.GuildEntity;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 

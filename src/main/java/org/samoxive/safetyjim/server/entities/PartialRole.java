@@ -1,4 +1,4 @@
-package org.samoxive.safetyjim.server.entries;
+package org.samoxive.safetyjim.server.entities;
 
 public class PartialRole {
     public String id;

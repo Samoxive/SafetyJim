@@ -1,10 +1,8 @@
-package org.samoxive.safetyjim.server.entries;
+package org.samoxive.safetyjim.server.entities;
 
 import org.jooq.DSLContext;
-import org.jooq.Record;
 import org.jooq.Result;
 import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.Messages;
 import org.samoxive.jooq.generated.tables.records.MessagesRecord;
 import org.samoxive.safetyjim.helpers.Pair;
 

@@ -14,13 +14,12 @@ import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
-import org.samoxive.safetyjim.discord.DiscordShard;
 import org.samoxive.safetyjim.discord.DiscordUtils;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
-import org.samoxive.safetyjim.server.entries.GuildSettings;
-import org.samoxive.safetyjim.server.entries.PartialChannel;
-import org.samoxive.safetyjim.server.entries.PartialRole;
+import org.samoxive.safetyjim.server.entities.GuildSettings;
+import org.samoxive.safetyjim.server.entities.PartialChannel;
+import org.samoxive.safetyjim.server.entities.PartialRole;
 
 import java.util.List;
 import java.util.stream.Collectors;

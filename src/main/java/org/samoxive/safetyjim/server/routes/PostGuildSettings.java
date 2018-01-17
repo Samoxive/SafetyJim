@@ -16,7 +16,7 @@ import org.samoxive.safetyjim.discord.DiscordUtils;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
 import org.samoxive.safetyjim.server.ServerUtils;
-import org.samoxive.safetyjim.server.entries.GuildSettings;
+import org.samoxive.safetyjim.server.entities.GuildSettings;
 
 import java.util.Optional;
 

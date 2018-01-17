@@ -1,4 +1,4 @@
-package org.samoxive.safetyjim.server.entries;
+package org.samoxive.safetyjim.server.entities;
 
 import java.util.List;
 
