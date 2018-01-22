@@ -4,7 +4,10 @@ import com.google.gson.Gson;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.entities.TextChannel;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.OauthsecretsRecord;
@@ -15,6 +18,7 @@ import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
 import org.samoxive.safetyjim.server.ServerUtils;
 import org.samoxive.safetyjim.server.entities.GuildEntity;
+import org.samoxive.safetyjim.server.entities.PartialChannel;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -74,7 +78,13 @@ public class Guilds extends RequestHandler {
                                             .filter((guild) -> isInUserGuilds(guild, userGuilds))
                                             .map((guild) -> {
                                                 String url = guild.getIconUrl();
-                                                return new GuildEntity(guild.getId(), guild.getName(), url);
+                                                Member member = guild.getMemberById(userId);
+                                                List<PartialChannel> channels = guild.getTextChannels()
+                                                                                     .stream()
+                                                                                     .filter((channel) -> member.hasPermission(channel, Permission.MESSAGE_READ))
+                                                                                     .map((channel) -> new PartialChannel(channel.getId(), channel.getName()))
+                                                                                     .collect(Collectors.toList());
+                                                return new GuildEntity(guild.getId(), guild.getName(), url, channels);
                                             })
                                             .collect(Collectors.toList());
 
