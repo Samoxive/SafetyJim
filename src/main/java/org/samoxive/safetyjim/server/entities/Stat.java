@@ -46,11 +46,12 @@ public class Stat {
         List<Stat> result = new ArrayList<>(count);
         int k = 0;
         for (int i = 0; i < count; i++) {
+            int date = first.date + i * interval;
             if (counts.get(k).date == first.date + i * interval) {
                 result.add(counts.get(k));
                 k++;
             } else {
-                result.add(null);
+                result.add(new Stat(date, 0));
             }
         }
 
