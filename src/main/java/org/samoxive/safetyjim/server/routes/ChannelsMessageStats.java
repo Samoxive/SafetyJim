@@ -76,7 +76,7 @@ public class ChannelsMessageStats extends RequestHandler {
 
         SettingsRecord settings = DatabaseUtils.getGuildSettings(database, guild);
         if (!settings.getStatistics()) {
-            response.setStatusCode(404);
+            response.setStatusCode(418);
             response.end();
             return;
         }
@@ -84,7 +84,7 @@ public class ChannelsMessageStats extends RequestHandler {
         Map<String, List<Stat>> stats = guild.getTextChannels()
                 .stream()
                 .filter((channel) -> member.hasPermission(channel, Permission.MESSAGE_READ))
-                .collect(Collectors.toMap((channel) -> channel.getId(), (channel) -> Stat.getChannelMessageStats(database, guildId, channel.getId(), from, to, 60)));
+                .collect(Collectors.toMap((channel) -> channel.getId(), (channel) -> Stat.getChannelMessageStats(database, guildId, channel.getId(), from, to, 60 * 10)));
 
         if (stats.isEmpty()) {
             response.setStatusCode(403);

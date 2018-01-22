@@ -89,13 +89,13 @@ public class ChannelMessageStats extends RequestHandler {
 
         SettingsRecord settings = DatabaseUtils.getGuildSettings(database, guild);
         if (!settings.getStatistics()) {
-            response.setStatusCode(404);
+            response.setStatusCode(418);
             response.end();
             return;
         }
 
         Gson gson  = new Gson();
-        List<Stat> stats = Stat.getChannelMessageStats(database, guildId, channelId, from, to, 60);
+        List<Stat> stats = Stat.getChannelMessageStats(database, guildId, channelId, from, to, 60 * 10);
         response.putHeader("Content-Type", "application/json");
         response.end(gson.toJson(stats, stats.getClass()));
     }

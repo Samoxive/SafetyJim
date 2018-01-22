@@ -73,13 +73,13 @@ public class GuildMessageStats extends RequestHandler {
 
         SettingsRecord settings = DatabaseUtils.getGuildSettings(database, guild);
         if (!settings.getStatistics()) {
-            response.setStatusCode(404);
+            response.setStatusCode(418);
             response.end();
             return;
         }
 
         Gson gson  = new Gson();
         response.putHeader("Content-Type", "application/json");
-        response.end(gson.toJson(Stat.getGuildMessageStats(database, guildId, from, to, 60), new TypeToken<List<Stat>>() {}.getType()));
+        response.end(gson.toJson(Stat.getGuildMessageStats(database, guildId, from, to, 60 * 10), new TypeToken<List<Stat>>() {}.getType()));
     }
 }
