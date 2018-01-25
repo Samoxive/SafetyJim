@@ -87,21 +87,35 @@ public class DiscordShard extends ListenerAdapter {
         DSLContext database = bot.getDatabase();
         List<TextChannel> channels = guild.getTextChannels();
         for(TextChannel channel: channels) {
-            MessagesRecord lastRecord = database.selectFrom(Tables.MESSAGES)
+            MessagesRecord oldestRecord = database.selectFrom(Tables.MESSAGES)
                     .where(Tables.MESSAGES.GUILDID.eq(guild.getId()))
                     .and(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
                     .orderBy(Tables.MESSAGES.DATE.asc())
+                    .limit(1)
                     .fetchAny();
 
-            List<Message> fetchedMessages;
-            if (lastRecord == null) {
+            MessagesRecord newestRecord = database.selectFrom(Tables.MESSAGES)
+                    .where(Tables.MESSAGES.GUILDID.eq(guild.getId()))
+                    .and(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
+                    .orderBy(Tables.MESSAGES.DATE.desc())
+                    .limit(1)
+                    .fetchAny();
+
+            List<Message> fetchedMessages = null;
+            if (oldestRecord == null || newestRecord == null) {
                 fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel);
             } else {
-                Message lastStoredMessage;
+                Message oldestMessageStored = null, newestMessageStored = null;
 
                 try {
-                    lastStoredMessage = channel.getMessageById(lastRecord.getMessageid()).complete();
-                    fetchedMessages = DiscordUtils.fetchFullHistoryBeforeMessage(channel, lastStoredMessage);
+                    oldestMessageStored = channel.getMessageById(oldestRecord.getMessageid()).complete();
+                    newestMessageStored = channel.getMessageById(newestRecord.getMessageid()).complete();
+                    if (oldestMessageStored == null || newestMessageStored == null) {
+                        throw new Exception();
+                    }
+
+                    fetchedMessages = DiscordUtils.fetchFullHistoryBeforeMessage(channel, oldestMessageStored);
+                    fetchedMessages.addAll(DiscordUtils.fetchFullHistoryAfterMessage(channel, newestMessageStored));
                 } catch (Exception e) {
                     database.deleteFrom(Tables.MESSAGES)
                             .where(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
@@ -129,7 +143,7 @@ public class DiscordShard extends ListenerAdapter {
                         record.setWordcount(wordCount);
                         record.setSize(content.length());
                         return record;
-                        })
+                    })
                     .collect(Collectors.toList());
 
             database.batchStore(records).execute();

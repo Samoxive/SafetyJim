@@ -283,6 +283,28 @@ public class DiscordUtils {
         return messages;
     }
 
+    public static List<Message> fetchFullHistoryAfterMessage(TextChannel channel, Message afterMessage) {
+        List<Message> messages = new ArrayList<>();
+
+        Message lastFetchedMessage = afterMessage;
+        boolean lastMessageReceived = false;
+        while (!lastMessageReceived) {
+            List<Message> fetchedMessages = channel.getHistoryAfter(lastFetchedMessage, 100)
+                                                   .complete()
+                                                   .getRetrievedHistory();
+
+            messages.addAll(fetchedMessages);
+
+            if (fetchedMessages.size() < 100) {
+                lastMessageReceived = true;
+            } else {
+                lastFetchedMessage = fetchedMessages.get(99);
+            }
+        }
+
+        return messages;
+    }
+
     public static long getCreationTime(String id) {
         long idLong = Long.parseLong(id);
         return (idLong >>> TIMESTAMP_OFFSET) + DISCORD_EPOCH;
