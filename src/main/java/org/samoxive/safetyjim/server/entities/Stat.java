@@ -13,7 +13,7 @@ public class Stat {
     public int date;
     public int count;
 
-    private Stat(int date, int count) {
+    public Stat(int date, int count) {
         this.date = date;
         this.count = count;
     }
