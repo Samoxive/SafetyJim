@@ -46,7 +46,7 @@ public class DiscordBot {
         this.commands = new HashMap<>();
         this.processors = new ArrayList<>();
         httpClient = new OkHttpClient();
-        scheduler = Executors.newScheduledThreadPool(3);
+        scheduler = Executors.newScheduledThreadPool(5);
 
         loadCommands();
         loadProcessors();
@@ -67,7 +67,7 @@ public class DiscordBot {
         scheduler.scheduleAtFixedRate(() -> { try { unmuteUsers(); } catch (Exception e) { log.error("Exception occured in unmuteUsers", e); } }, 10, 10, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> { try { unbanUsers(); } catch (Exception e) { log.error("Exception occured in unbanUsers", e); } }, 10, 30, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> { try { remindReminders(); } catch (Exception e) { log.error("Exception occured in remindReminders", e); } }, 10, 5, TimeUnit.SECONDS);
-        scheduler.scheduleAtFixedRate(() -> { try { saveMemberCounts(); } catch (Exception e) { log.error("Exception occured in saveMemberCounts", e); } }, 1, 30, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(() -> { try { saveMemberCounts(); } catch (Exception e) { log.error("Exception occured in saveMemberCounts", e); } }, 1, 10, TimeUnit.MINUTES);
         scheduler.schedule(() -> { try { updateBotLists(); } catch (Exception e) {} }, 10, TimeUnit.SECONDS);
 
         String inviteLink = shards.get(0).getShard().asBot().getInviteUrl(
