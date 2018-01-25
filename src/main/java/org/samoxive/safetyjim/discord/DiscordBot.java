@@ -67,7 +67,7 @@ public class DiscordBot {
         scheduler.scheduleAtFixedRate(() -> { try { unmuteUsers(); } catch (Exception e) {} }, 10, 10, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> { try { unbanUsers(); } catch (Exception e) {} }, 10, 30, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> { try { remindReminders(); } catch (Exception e) {} }, 10, 5, TimeUnit.SECONDS);
-        scheduler.scheduleAtFixedRate(() -> saveMemberCounts(), 1, 1, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(() -> saveMemberCounts(), 1, 30, TimeUnit.MINUTES);
         scheduler.schedule(() -> { try { updateBotLists(); } catch (Exception e) {} }, 10, TimeUnit.SECONDS);
 
         String inviteLink = shards.get(0).getShard().asBot().getInviteUrl(
