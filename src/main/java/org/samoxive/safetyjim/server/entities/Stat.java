@@ -80,4 +80,18 @@ public class Stat {
 
         return fromRecords(records, interval);
     }
+
+    public static int getPreferredInterval(long from, long to) {
+        long delta = to - from;
+        long tenDays = 1000L * 60L * 60L * 25L * 10L;
+        long hundredDays = 1000L * 60L * 60L * 25L * 100L;
+        if (delta < tenDays) {
+            return 60 * 10; // 10 minutes
+        } else if (delta < hundredDays) {
+            return 60 * 60; // an hour
+        } else {
+            // query is for hundreds of days of data
+            return 60 * 60 * 6;
+        }
+    }
 }

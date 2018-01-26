@@ -94,8 +94,9 @@ public class ChannelMessageStats extends RequestHandler {
             return;
         }
 
+        int interval = Stat.getPreferredInterval(from, to);
         Gson gson  = new Gson();
-        List<Stat> stats = Stat.getChannelMessageStats(database, guildId, channelId, from, to, 60 * 10);
+        List<Stat> stats = Stat.getChannelMessageStats(database, guildId, channelId, from, to, interval);
         response.putHeader("Content-Type", "application/json");
         response.end(gson.toJson(stats, stats.getClass()));
     }

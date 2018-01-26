@@ -78,8 +78,9 @@ public class GuildMessageStats extends RequestHandler {
             return;
         }
 
+        int interval = Stat.getPreferredInterval(from, to);
         Gson gson  = new Gson();
         response.putHeader("Content-Type", "application/json");
-        response.end(gson.toJson(Stat.getGuildMessageStats(database, guildId, from, to, 60 * 10), new TypeToken<List<Stat>>() {}.getType()));
+        response.end(gson.toJson(Stat.getGuildMessageStats(database, guildId, from, to, interval), new TypeToken<List<Stat>>() {}.getType()));
     }
 }

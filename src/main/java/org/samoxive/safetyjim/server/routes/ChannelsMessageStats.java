@@ -81,10 +81,11 @@ public class ChannelsMessageStats extends RequestHandler {
             return;
         }
 
+        int interval = Stat.getPreferredInterval(from, to);
         Map<String, List<Stat>> stats = guild.getTextChannels()
                 .stream()
                 .filter((channel) -> member.hasPermission(channel, Permission.MESSAGE_READ))
-                .collect(Collectors.toMap((channel) -> channel.getId(), (channel) -> Stat.getChannelMessageStats(database, guildId, channel.getId(), from, to, 60 * 10)));
+                .collect(Collectors.toMap((channel) -> channel.getId(), (channel) -> Stat.getChannelMessageStats(database, guildId, channel.getId(), from, to, interval)));
 
         if (stats.isEmpty()) {
             response.setStatusCode(403);
