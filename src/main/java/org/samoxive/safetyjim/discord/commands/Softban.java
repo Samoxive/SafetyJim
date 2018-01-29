@@ -103,7 +103,7 @@ public class Softban extends Command {
         embed.setTitle("Softbanned from " + guild.getName());
         embed.setColor(new Color(0x4286F4));
         embed.setDescription("You were softbanned from " + guild.getName());
-        embed.addField("Reason:", reason, false);
+        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false);
         embed.setFooter("Softbanned by " + DiscordUtils.getUserTagAndId(user), null);
         embed.setTimestamp(now.toInstant());
 

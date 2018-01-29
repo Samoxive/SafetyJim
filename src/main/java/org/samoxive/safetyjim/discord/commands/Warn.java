@@ -65,7 +65,7 @@ public class Warn extends Command {
         embed.setTitle("Warned in " + guild.getName());
         embed.setColor(new Color(0x4286F4));
         embed.setDescription("You were warned in " + guild.getName());
-        embed.addField("Reason:", reason, false);
+        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false);
         embed.setFooter("Warned by " + DiscordUtils.getUserTagAndId(user), null);
         embed.setTimestamp(now.toInstant());
 

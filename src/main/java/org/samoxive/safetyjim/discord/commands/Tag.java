@@ -64,7 +64,7 @@ public class Tag extends Command {
 
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor("Safety Jim", null, shard.getSelfUser().getAvatarUrl());
-        embed.addField("List of tags", tagString.toString(), false);
+        embed.addField("List of tags", TextUtils.truncateForEmbed(tagString.toString()), false);
         embed.setColor(new Color(0x4286F4));
 
         DiscordUtils.successReact(bot, message);

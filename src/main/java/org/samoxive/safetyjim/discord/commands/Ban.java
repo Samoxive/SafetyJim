@@ -92,7 +92,7 @@ public class Ban extends Command {
         embed.setTitle("Banned from " + guild.getName());
         embed.setColor(new Color(0x4286F4));
         embed.setDescription("You were banned from " + guild.getName());
-        embed.addField("Reason:", reason, false);
+        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false);
         embed.addField("Banned until", expirationDate != null ? expirationDate.toString() : "Indefinitely", false);
         embed.setFooter("Banned by " + DiscordUtils.getUserTagAndId(user), null);
         embed.setTimestamp(now.toInstant());

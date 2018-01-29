@@ -163,7 +163,7 @@ public class Mute extends Command {
         embed.setTitle("Muted in " + guild.getName());
         embed.setColor(new Color(0x4286F4));
         embed.setDescription("You were muted in " + guild.getName());
-        embed.addField("Reason:", reason, false);
+        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false);
         embed.addField("Muted until", expirationDate != null ? expirationDate.toString() : "Indefinitely", false);
         embed.setFooter("Muted by " + DiscordUtils.getUserTagAndId(user), null);
         embed.setTimestamp(now.toInstant());

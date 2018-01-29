@@ -10,6 +10,14 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class TextUtils {
+    public static String truncateForEmbed(String s) {
+        if (s.length() < 1024) {
+            return s;
+        } else {
+            return s.substring(0, 1021) + "...";
+        }
+    }
+
     public static String seekScannerToEnd(Scanner scan) {
         StringBuilder data = new StringBuilder();
 

@@ -81,7 +81,7 @@ public class DiscordUtils {
         embed.setColor(modLogColors.get(action));
         embed.addField("Action ", modLogActionTexts.get(action) + " - #" + id, false);
         embed.addField("User:", getUserTagAndId(user), false);
-        embed.addField("Reason:", reason, false);
+        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false);
         embed.addField("Responsible Moderator:", getUserTagAndId(message.getAuthor()), false);
         embed.addField("Channel", getChannelMention(channel), false);
         embed.setTimestamp(now.toInstant());
