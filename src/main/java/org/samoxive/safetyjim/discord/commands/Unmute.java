@@ -47,13 +47,13 @@ public class Unmute extends Command {
             return true;
         }
 
-        Role muteRole = guild.getRolesByName("Muted", false).get(0);
-
-        if (muteRole == null) {
+        List<Role> mutedRoles = guild.getRolesByName("Muted", false);
+        if (mutedRoles.size() == 0) {
             DiscordUtils.failMessage(bot, message, "Could not find a role called Muted, please create one yourself or mute a user to set it up automatically.");
             return false;
         }
 
+        Role muteRole = mutedRoles.get(0);
         for (User unmuteUser: mentions) {
             Member unmuteMember = guild.getMember(unmuteUser);
             controller.removeSingleRoleFromMember(unmuteMember, muteRole).queue();
