@@ -6,6 +6,8 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import org.jooq.DSLContext;
+import org.samoxive.jooq.generated.Tables;
+import org.samoxive.jooq.generated.tables.records.MembercountsRecord;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.Command;
@@ -14,6 +16,7 @@ import org.samoxive.safetyjim.discord.DiscordUtils;
 import org.samoxive.safetyjim.discord.TextUtils;
 
 import java.awt.Color;
+import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 import java.util.StringJoiner;
@@ -126,6 +129,17 @@ public class Settings extends Command {
             output.add("**Statistics:** Disabled");
         }
         return output.toString();
+    }
+
+    private void kickstartStatistics(DSLContext database, Guild guild) {
+        MembercountsRecord record = database.newRecord(Tables.MEMBERCOUNTS);
+        List<Member> members = guild.getMembers();
+        long onlineCount = members.stream().filter((member -> DiscordUtils.isOnline(member))).count();
+        record.setGuildid(guild.getId());
+        record.setDate((new Date()).getTime());
+        record.setOnlinecount((int)onlineCount);
+        record.setCount(members.size());
+        record.store();
     }
 
     private boolean isEnabledInput(String input) throws BadInputException {
@@ -303,6 +317,7 @@ public class Settings extends Command {
                        .filter((discordShard -> discordShard.getShard() == shard))
                        .findAny()
                        .ifPresent((discordShard) -> discordShard.getThreadPool().submit(() -> discordShard.populateGuildStatistics(guild)));
+                    kickstartStatistics(database, guild);
                     break;
                 default:
                     return true;
