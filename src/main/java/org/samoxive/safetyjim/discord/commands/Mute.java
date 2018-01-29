@@ -128,6 +128,11 @@ public class Mute extends Command {
             return false;
         }
 
+        if (user.getId().equals(selfMember.getUser().getId())) {
+            DiscordUtils.failMessage(bot, message, "Now that's just rude. (I can't mute myself)");
+            return false;
+        }
+
         Role mutedRole = null;
         try {
             mutedRole = setupMutedRole(guild);
