@@ -458,7 +458,16 @@ public class DiscordShard extends ListenerAdapter {
             DiscordUtils.failReact(bot, event.getMessage());
             event.getChannel().sendMessage(embed.build()).queue();
         } else {
-            DiscordUtils.deleteCommandMessage(bot, event.getMessage());
+            String[] deleteCommands = {
+                    "ban", "kick", "mute", "softban", "warn"
+            };
+
+            for (String deleteCommand: deleteCommands) {
+                if (commandName.equals(deleteCommand)) {
+                    DiscordUtils.deleteCommandMessage(bot, event.getMessage());
+                    return;
+                }
+            }
         }
     }
 
