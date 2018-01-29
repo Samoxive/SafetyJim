@@ -229,13 +229,21 @@ public class DiscordUtils {
     }
 
     public static void sendDM(User user, String message) {
-        PrivateChannel channel = user.openPrivateChannel().complete();
-        sendMessage(channel, message);
+        try {
+            PrivateChannel channel = user.openPrivateChannel().complete();
+            sendMessage(channel, message);
+        } catch (Exception e) {
+            //
+        }
     }
 
     public static void sendDM(User user, MessageEmbed embed) {
-        PrivateChannel channel = user.openPrivateChannel().complete();
-        sendMessage(channel, embed);
+        try {
+            PrivateChannel channel = user.openPrivateChannel().complete();
+            sendMessage(channel, embed);
+        } catch (Exception e) {
+            //
+        }
     }
 
     public static User getUserById(JDA shard, String userId) {
