@@ -110,15 +110,9 @@ public class Clean extends Command {
         }
 
         for (AuditableRestAction<Void> future: futures) {
-            try {
-                future.complete();
-            } catch (Exception e) {
-                //
-            }
+            future.complete();
         }
     }
-
-    
 
     @Override
     public String[] getUsages() {
@@ -191,7 +185,12 @@ public class Clean extends Command {
         }
 
         Pair<List<Message>, List<Message>> seperatedMessages = seperateMessages(messages);
-        bulkDelete(seperatedMessages, channel);
+        try {
+            bulkDelete(seperatedMessages, channel);
+        } catch (Exception e) {
+            //
+        }
+
         DiscordUtils.successReact(bot, message);
 
         return false;
