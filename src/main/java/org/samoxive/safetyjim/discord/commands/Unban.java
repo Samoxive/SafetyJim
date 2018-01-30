@@ -50,13 +50,14 @@ public class Unban extends Command {
             return true;
         }
 
-        List<User> bans = guild.getBans().complete();
+        List<Guild.Ban> bans = guild.getBanList().complete();
 
         User targetUser = bans.stream()
-                              .filter((bannedUser) -> {
-                                  String tag = DiscordUtils.getTag(bannedUser);
+                              .filter((ban) -> {
+                                  String tag = DiscordUtils.getTag(ban.getUser());
                                   return tag.equals(unbanArgument);
                               })
+                              .map((ban) -> ban.getUser())
                               .findAny()
                               .orElse(null);
 

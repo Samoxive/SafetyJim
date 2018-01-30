@@ -14,10 +14,9 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageDeleteEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionAddEvent;
 import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionRemoveEvent;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.managers.GuildController;
-import net.dv8tion.jda.core.requests.SessionReconnectQueue;
+import net.dv8tion.jda.core.utils.SessionController;
 import org.jooq.DSLContext;
 import org.jooq.Result;
 import org.samoxive.jooq.generated.Tables;
@@ -44,7 +43,7 @@ public class DiscordShard extends ListenerAdapter {
     private JDA shard;
     private ExecutorService threadPool;
 
-    public DiscordShard(DiscordBot bot, int shardId) {
+    public DiscordShard(DiscordBot bot, int shardId, SessionController sessionController) {
         this.bot = bot;
         log = LoggerFactory.getLogger("DiscordShard " + DiscordUtils.getShardString(shardId, bot.getConfig().jim.shard_count));
 
@@ -58,7 +57,7 @@ public class DiscordShard extends ListenerAdapter {
             this.shard = builder.setToken(bot.getConfig().jim.token)
                                 .setAudioEnabled(false) // jim doesn't have any audio functionality
                                 .addEventListener(this)
-                                .setReconnectQueue(new SessionReconnectQueue()) // needed to prevent shards trying to reconnect too soon
+                                .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
                                 .setEnableShutdownHook(true)
                                 .useSharding(shardId, bot.getConfig().jim.shard_count)
                                 .setGame(Game.playing(String.format("-mod help | %s | %s", version, DiscordUtils.getShardString(shardId, shardCount))))
@@ -68,9 +67,6 @@ public class DiscordShard extends ListenerAdapter {
             System.exit(1);
         } catch (InterruptedException e) {
             log.error("Something something", e);
-            System.exit(1);
-        } catch (RateLimitedException e) {
-            log.error("Hit Discord API Rate Limit", e);
             System.exit(1);
         }
     }
@@ -133,7 +129,7 @@ public class DiscordShard extends ListenerAdapter {
                     .map(message -> {
                         MessagesRecord record = database.newRecord(Tables.MESSAGES);
                         User user = message.getAuthor();
-                        String content = message.getRawContent();
+                        String content = message.getContentRaw();
                         int wordCount = content.split(" ").length;
                         record.setMessageid(message.getId());
                         record.setUserid(user.getId());
@@ -196,7 +192,7 @@ public class DiscordShard extends ListenerAdapter {
         DSLContext database = bot.getDatabase();
         Guild guild = event.getGuild();
         Message message = event.getMessage();
-        String content = message.getRawContent();
+        String content = message.getContentRaw();
         JDA shard = event.getJDA();
         SelfUser self = shard.getSelfUser();
 

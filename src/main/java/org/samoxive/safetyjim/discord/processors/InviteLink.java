@@ -37,7 +37,7 @@ public class InviteLink extends MessageProcessor {
             return false;
         }
 
-        String content = message.getContent();
+        String content = message.getContentRaw();
 
         boolean inviteLinkExists = false;
         for (String blacklistedHost: blacklistedHosts) {

@@ -3,6 +3,8 @@ package org.samoxive.safetyjim.discord;
 import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.managers.GuildController;
+import net.dv8tion.jda.core.utils.SessionController;
+import net.dv8tion.jda.core.utils.SessionControllerAdapter;
 import okhttp3.*;
 import org.jooq.DSLContext;
 import org.jooq.Result;
@@ -51,8 +53,9 @@ public class DiscordBot {
         loadCommands();
         loadProcessors();
 
+        SessionController sessionController = new SessionControllerAdapter();
         for (int i = 0; i < config.jim.shard_count; i++) {
-            DiscordShard shard = new DiscordShard(this, i);
+            DiscordShard shard = new DiscordShard(this, i, sessionController);
             shards.add(shard);
 
             // Discord API rate limits login requests to once per 5 seconds

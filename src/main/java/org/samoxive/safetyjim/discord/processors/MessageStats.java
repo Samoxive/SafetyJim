@@ -30,7 +30,7 @@ public class MessageStats extends MessageProcessor {
 
             Message message = event.getMessage();
             TextChannel channel = event.getChannel();
-            String content = message.getRawContent();
+            String content = message.getContentRaw();
             User user = event.getMember().getUser();
             int wordCount = content.split(" ").length;
             MessagesRecord record = database.newRecord(Tables.MESSAGES);
