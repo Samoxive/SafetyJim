@@ -25,7 +25,8 @@ create table commandlogs
 	username text,
 	userid text,
 	guildname text,
-	guildid text
+	guildid text,
+	executiontime integer
 )
 ;
 
