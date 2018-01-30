@@ -416,23 +416,24 @@ public class DiscordShard extends ListenerAdapter {
         return shard;
     }
 
-    private void createCommandLog(GuildMessageReceivedEvent event, Command command, String commandName, String args) {
+    private void createCommandLog(GuildMessageReceivedEvent event, String commandName, String args, Date time, long from, long to) {
         User author = event.getAuthor();
         CommandlogsRecord record = bot.getDatabase().newRecord(Tables.COMMANDLOGS);
         record.setCommand(commandName);
         record.setArguments(args);
-        record.setTime(new Timestamp((new Date()).getTime()));
+        record.setTime(new Timestamp(time.getTime()));
         record.setUsername(DiscordUtils.getTag(author));
         record.setUserid(author.getId());
         record.setGuildname(event.getGuild().getName());
         record.setGuildid(event.getGuild().getId());
+        record.setExecutiontime((int) (to - from));
         record.store();
     }
 
     private void executeCommand(GuildMessageReceivedEvent event, Command command, String commandName, String args) {
         JDA shard = event.getJDA();
-        createCommandLog(event, command, commandName, args);
 
+        Date date = new Date();
         long startTime = System.currentTimeMillis();
         boolean showUsage = false;
         try {
@@ -443,6 +444,7 @@ public class DiscordShard extends ListenerAdapter {
             log.error(String.format("%s failed with arguments %s in guild %s - %s", commandName, args, event.getGuild().getName(), event.getGuild().getId()), e);
         } finally {
             long endTime = System.currentTimeMillis();
+            threadPool.submit(() -> createCommandLog(event, commandName, args, date, startTime, endTime));
         }
 
         if (showUsage) {
