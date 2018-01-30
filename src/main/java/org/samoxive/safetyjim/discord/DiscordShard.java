@@ -234,6 +234,9 @@ public class DiscordShard extends ListenerAdapter {
         }
 
         SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+        if (guildSettings == null) { // settings aren't initialized yet
+            return;
+        }
         String prefix = guildSettings.getPrefix().toLowerCase();
 
         // 0 = prefix, 1 = command, rest are accepted as arguments
