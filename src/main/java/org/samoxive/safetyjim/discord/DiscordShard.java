@@ -1,9 +1,6 @@
 package org.samoxive.safetyjim.discord;
 
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.EmbedBuilder;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.*;
 import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
@@ -80,70 +77,77 @@ public class DiscordShard extends ListenerAdapter {
     }
 
     public void populateGuildStatistics(Guild guild) {
+        Member self = guild.getMember(guild.getJDA().getSelfUser());
+        guild.getTextChannels()
+             .stream()
+             .filter((channel) -> self.hasPermission(channel, Permission.MESSAGE_HISTORY, Permission.MESSAGE_READ))
+             .map((channel) -> threadPool.submit(() -> populateChannelStatistics(channel)))
+             .forEach((future) -> { try { future.get(); } catch (Exception e) {}});
+    }
+
+    private void populateChannelStatistics(TextChannel channel) {
         DSLContext database = bot.getDatabase();
-        List<TextChannel> channels = guild.getTextChannels();
-        for(TextChannel channel: channels) {
-            MessagesRecord oldestRecord = database.selectFrom(Tables.MESSAGES)
-                    .where(Tables.MESSAGES.GUILDID.eq(guild.getId()))
-                    .and(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
-                    .orderBy(Tables.MESSAGES.DATE.asc())
-                    .limit(1)
-                    .fetchAny();
+        Guild guild = channel.getGuild();
+        MessagesRecord oldestRecord = database.selectFrom(Tables.MESSAGES)
+                .where(Tables.MESSAGES.GUILDID.eq(guild.getId()))
+                .and(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
+                .orderBy(Tables.MESSAGES.DATE.asc())
+                .limit(1)
+                .fetchAny();
 
-            MessagesRecord newestRecord = database.selectFrom(Tables.MESSAGES)
-                    .where(Tables.MESSAGES.GUILDID.eq(guild.getId()))
-                    .and(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
-                    .orderBy(Tables.MESSAGES.DATE.desc())
-                    .limit(1)
-                    .fetchAny();
+        MessagesRecord newestRecord = database.selectFrom(Tables.MESSAGES)
+                .where(Tables.MESSAGES.GUILDID.eq(guild.getId()))
+                .and(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
+                .orderBy(Tables.MESSAGES.DATE.desc())
+                .limit(1)
+                .fetchAny();
 
-            List<Message> fetchedMessages = null;
-            if (oldestRecord == null || newestRecord == null) {
-                fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel);
-            } else {
-                Message oldestMessageStored = null, newestMessageStored = null;
+        List<Message> fetchedMessages = null;
+        if (oldestRecord == null || newestRecord == null) {
+            fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel);
+        } else {
+            Message oldestMessageStored = null, newestMessageStored = null;
 
-                try {
-                    oldestMessageStored = channel.getMessageById(oldestRecord.getMessageid()).complete();
-                    newestMessageStored = channel.getMessageById(newestRecord.getMessageid()).complete();
-                    if (oldestMessageStored == null || newestMessageStored == null) {
-                        throw new Exception();
-                    }
-
-                    fetchedMessages = DiscordUtils.fetchFullHistoryBeforeMessage(channel, oldestMessageStored);
-                    fetchedMessages.addAll(DiscordUtils.fetchFullHistoryAfterMessage(channel, newestMessageStored));
-                } catch (Exception e) {
-                    database.deleteFrom(Tables.MESSAGES)
-                            .where(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
-                            .and(Tables.MESSAGES.GUILDID.eq(guild.getId()))
-                            .execute();
-                    fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel);
+            try {
+                oldestMessageStored = channel.getMessageById(oldestRecord.getMessageid()).complete();
+                newestMessageStored = channel.getMessageById(newestRecord.getMessageid()).complete();
+                if (oldestMessageStored == null || newestMessageStored == null) {
+                    throw new Exception();
                 }
+
+                fetchedMessages = DiscordUtils.fetchFullHistoryBeforeMessage(channel, oldestMessageStored);
+                fetchedMessages.addAll(DiscordUtils.fetchFullHistoryAfterMessage(channel, newestMessageStored));
+            } catch (Exception e) {
+                database.deleteFrom(Tables.MESSAGES)
+                        .where(Tables.MESSAGES.CHANNELID.eq(channel.getId()))
+                        .and(Tables.MESSAGES.GUILDID.eq(guild.getId()))
+                        .execute();
+                fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel);
             }
-
-            if (fetchedMessages.size() == 0) {
-                continue;
-            }
-
-            List<MessagesRecord> records = fetchedMessages.stream()
-                    .map(message -> {
-                        MessagesRecord record = database.newRecord(Tables.MESSAGES);
-                        User user = message.getAuthor();
-                        String content = message.getContentRaw();
-                        int wordCount = content.split(" ").length;
-                        record.setMessageid(message.getId());
-                        record.setUserid(user.getId());
-                        record.setChannelid(channel.getId());
-                        record.setGuildid(channel.getGuild().getId());
-                        record.setDate(DiscordUtils.getCreationTime(message.getId()));
-                        record.setWordcount(wordCount);
-                        record.setSize(content.length());
-                        return record;
-                    })
-                    .collect(Collectors.toList());
-
-            database.batchStore(records).execute();
         }
+
+        if (fetchedMessages.size() == 0) {
+            return;
+        }
+
+        List<MessagesRecord> records = fetchedMessages.stream()
+                .map(message -> {
+                    MessagesRecord record = database.newRecord(Tables.MESSAGES);
+                    User user = message.getAuthor();
+                    String content = message.getContentRaw();
+                    int wordCount = content.split(" ").length;
+                    record.setMessageid(message.getId());
+                    record.setUserid(user.getId());
+                    record.setChannelid(channel.getId());
+                    record.setGuildid(channel.getGuild().getId());
+                    record.setDate(DiscordUtils.getCreationTime(message.getId()));
+                    record.setWordcount(wordCount);
+                    record.setSize(content.length());
+                    return record;
+                })
+                .collect(Collectors.toList());
+
+        database.batchStore(records).execute();
     }
 
     @Override

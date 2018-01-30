@@ -129,13 +129,13 @@ public class Clean extends Command {
         Guild guild = event.getGuild();
         Member selfMember = guild.getSelfMember();
 
-        if (!member.hasPermission(Permission.MESSAGE_MANAGE)) {
+        if (!member.hasPermission(channel, Permission.MESSAGE_MANAGE)) {
             DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Manage Messages");
             return false;
         }
 
-        if (!selfMember.hasPermission(Permission.MESSAGE_MANAGE)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!");
+        if (!selfMember.hasPermission(channel, Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY)) {
+            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that! Required permission: Manage Messages, Read Message History");
             return false;
         }
 
