@@ -1,7 +1,7 @@
 plugins {
     id 'nu.studer.jooq' version '2.0.9'
     id 'com.sedmelluq.jdaction' version '1.0.2'
-    id "com.github.johnrengelman.shadow" version "2.0.1"
+    id "com.github.johnrengelman.shadow" version "2.0.2"
     id 'com.github.ben-manes.versions' version '0.17.0'
 }
 
@@ -21,13 +21,13 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.8.0-beta0'
+    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.8.0-beta1'
     jooqRuntime 'postgresql:postgresql:9.4.1208-jdbc42-atlassian-hosted'
     compile 'postgresql:postgresql:9.4.1208-jdbc42-atlassian-hosted'
     compile 'org.jooq:jooq'
     compile 'com.moandjiezana.toml:toml4j:0.7.2'
-    compile 'net.dv8tion:JDA:3.3.1_308'
-    compile 'com.zaxxer:HikariCP:2.7.4'
+    compile 'net.dv8tion:JDA:3.5.0_331'
+    compile 'com.zaxxer:HikariCP:2.7.6'
     compile "com.joestelmach:natty:0.13"
     compile 'org.ocpsoft.prettytime:prettytime:4.0.1.Final'
     compile 'com.squareup.okhttp3:okhttp:3.9.1'
