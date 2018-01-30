@@ -343,6 +343,7 @@ public class DiscordShard extends ListenerAdapter {
 
     @Override
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+        JDA shard = event.getJDA();
         Guild guild = event.getGuild();
         GuildController controller = guild.getController();
         Member member = event.getMember();
@@ -429,6 +430,7 @@ public class DiscordShard extends ListenerAdapter {
     }
 
     private void executeCommand(GuildMessageReceivedEvent event, Command command, String commandName, String args) {
+        JDA shard = event.getJDA();
         createCommandLog(event, command, commandName, args);
 
         long startTime = System.currentTimeMillis();
