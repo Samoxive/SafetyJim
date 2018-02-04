@@ -40,7 +40,7 @@ public class PostGuildSettings extends RequestHandler {
                 .fetchAny();
 
         if (oauthRecord == null) {
-            response.setStatusCode(403);
+            response.setStatusCode(401);
             response.end();
             return;
         }
@@ -67,7 +67,7 @@ public class PostGuildSettings extends RequestHandler {
 
         Member member = guild.getMemberById(userId);
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-           response.setStatusCode(401);
+           response.setStatusCode(403);
            response.end();
            return;
         }
