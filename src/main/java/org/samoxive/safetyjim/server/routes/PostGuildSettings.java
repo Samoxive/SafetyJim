@@ -12,7 +12,9 @@ import org.samoxive.jooq.generated.tables.records.OauthsecretsRecord;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
+import org.samoxive.safetyjim.discord.DiscordShard;
 import org.samoxive.safetyjim.discord.DiscordUtils;
+import org.samoxive.safetyjim.discord.commands.Settings;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
 import org.samoxive.safetyjim.server.ServerUtils;
@@ -57,7 +59,8 @@ public class PostGuildSettings extends RequestHandler {
 
         String guildId = request.getParam("guildId");
         int shardId = DiscordUtils.getShardIdFromGuildId(Long.parseLong(guildId), config.jim.shard_count);
-        Guild guild = bot.getShards().get(shardId).getShard().getGuildById(guildId);
+        DiscordShard shard = bot.getShards().get(shardId);
+        Guild guild = shard.getShard().getGuildById(guildId);
 
         if (guild == null) {
             response.setStatusCode(400);
@@ -96,6 +99,12 @@ public class PostGuildSettings extends RequestHandler {
                 response.end();
                 return;
             }
+        } else {
+            if (newSettings.holdingRoom) {
+                response.setStatusCode(400);
+                response.end();
+                return;
+            }
         }
 
         SettingsRecord record = database.selectFrom(Tables.SETTINGS)
@@ -116,6 +125,11 @@ public class PostGuildSettings extends RequestHandler {
         record.setNospaceprefix(newSettings.noSpacePrefix);
         record.setStatistics(newSettings.statistics);
         record.update();
+
+        if (newSettings.statistics) {
+            shard.getThreadPool().submit(() -> shard.populateGuildStatistics(guild));
+            Settings.kickstartStatistics(database, guild);
+        }
 
         response.setStatusCode(200);
         response.end();
