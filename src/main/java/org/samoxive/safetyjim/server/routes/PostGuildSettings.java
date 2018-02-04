@@ -122,39 +122,21 @@ public class PostGuildSettings extends RequestHandler {
     }
 
     private boolean isSettingsValid(GuildSettings guildSettings) {
-        if (guildSettings.id == null ||
-            guildSettings.modLog == null ||
-            guildSettings.holdingRoom == null ||
-            guildSettings.holdingRoomMinutes == null ||
-            guildSettings.inviteLinkRemover == null ||
-            guildSettings.welcomeMessage == null ||
-            guildSettings.message == null ||
-            guildSettings.prefix == null ||
-            guildSettings.silentCommands == null ||
-            guildSettings.noSpacePrefix == null ||
-            guildSettings.statistics == null ||
-            guildSettings.modLogChannel == null ||
-            guildSettings.welcomeMessageChannel == null) {
-            return false;
-        }
+        return guildSettings.id != null &&
+                guildSettings.modLog != null &&
+                guildSettings.holdingRoom != null &&
+                guildSettings.holdingRoomMinutes != null &&
+                guildSettings.inviteLinkRemover != null &&
+                guildSettings.welcomeMessage != null &&
+                guildSettings.message != null &&
+                guildSettings.prefix != null &&
+                guildSettings.silentCommands != null &&
+                guildSettings.noSpacePrefix != null &&
+                guildSettings.statistics != null &&
+                guildSettings.modLogChannel != null &&
+                guildSettings.welcomeMessageChannel != null &&
+                guildSettings.modLogChannel.id != null &&
+                guildSettings.welcomeMessageChannel.id != null && (guildSettings.holdingRoomRole == null || guildSettings.holdingRoomRole.id != null);
 
-        if (guildSettings.modLogChannel.id == null ||
-                guildSettings.modLogChannel.name == null) {
-            return false;
-        }
-
-        if (guildSettings.welcomeMessageChannel.id == null ||
-                guildSettings.welcomeMessageChannel.name == null) {
-            return false;
-        }
-
-        if (guildSettings.holdingRoomRole != null) {
-            if (guildSettings.holdingRoomRole.id == null ||
-                guildSettings.holdingRoomRole.name == null) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }
