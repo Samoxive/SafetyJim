@@ -131,7 +131,7 @@ public class Settings extends Command {
         return output.toString();
     }
 
-    private void kickstartStatistics(DSLContext database, Guild guild) {
+    public static void kickstartStatistics(DSLContext database, Guild guild) {
         MembercountsRecord record = database.newRecord(Tables.MEMBERCOUNTS);
         List<Member> members = guild.getMembers();
         long onlineCount = members.stream().filter((member -> DiscordUtils.isOnline(member))).count();
