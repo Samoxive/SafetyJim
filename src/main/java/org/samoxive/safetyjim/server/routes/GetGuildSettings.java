@@ -6,17 +6,21 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import net.dv8tion.jda.core.JDA;
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Channel;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
+import org.samoxive.jooq.generated.tables.records.OauthsecretsRecord;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.discord.DiscordUtils;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
+import org.samoxive.safetyjim.server.ServerUtils;
 import org.samoxive.safetyjim.server.entities.GuildSettings;
 import org.samoxive.safetyjim.server.entities.PartialChannel;
 import org.samoxive.safetyjim.server.entities.PartialRole;
@@ -34,6 +38,21 @@ public class GetGuildSettings extends RequestHandler {
         HttpServerRequest request = ctx.request();
         HttpServerResponse response = ctx.response();
 
+        String userId = ServerUtils.authUser(request, response, config);
+        if (userId == null) {
+            return;
+        }
+
+        OauthsecretsRecord oauthRecord = database.selectFrom(Tables.OAUTHSECRETS)
+                .where(Tables.OAUTHSECRETS.USERID.eq(userId))
+                .fetchAny();
+
+        if (oauthRecord == null) {
+            response.setStatusCode(401);
+            response.end();
+            return;
+        }
+
         String guildId = request.getParam("guildId");
         int shardId = DiscordUtils.getShardIdFromGuildId(Long.parseLong(guildId), bot.getConfig().jim.shard_count);
         JDA shard = bot.getShards().get(shardId).getShard();
@@ -48,11 +67,20 @@ public class GetGuildSettings extends RequestHandler {
             return;
         }
 
+        Member member = guild.getMemberById(userId);
+        if (member == null) {
+            response.setStatusCode(404);
+            response.end();
+            return;
+        }
+
         Gson gson = new GsonBuilder().serializeNulls().create();
         List<PartialChannel> channels = guild.getTextChannels()
                                              .stream()
+                                             .filter((channel) -> member.hasPermission(channel, Permission.MESSAGE_READ))
                                              .map((channel) -> new PartialChannel(channel.getId(), channel.getName()))
                                              .collect(Collectors.toList());
+
         List<PartialRole> roles = guild.getRoles()
                                        .stream()
                                        .map((role) -> new PartialRole(role.getId(), role.getName()))
