@@ -43,7 +43,7 @@ public class Server {
             HttpServerResponse response = ctx.response();
             response.putHeader("Access-Control-Allow-Origin", config.server.base_url);
             response.putHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-            response.putHeader("Access-Control-Allow-Headers", "token");
+            response.putHeader("Access-Control-Allow-Headers", "token, content-type");
             response.end();
         });
 
