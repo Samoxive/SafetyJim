@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
-import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Channel;
 import net.dv8tion.jda.core.entities.Guild;
@@ -13,11 +12,9 @@ import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.records.OauthsecretsRecord;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
-import org.samoxive.safetyjim.discord.DiscordUtils;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
 import org.samoxive.safetyjim.server.ServerUtils;
@@ -36,10 +33,7 @@ public class GetGuildSettings extends RequestHandler {
     }
 
     @Override
-    public void handle(RoutingContext ctx, Server server, DiscordBot bot, DSLContext database) {
-        HttpServerRequest request = ctx.request();
-        HttpServerResponse response = ctx.response();
-
+    public void handle(RoutingContext ctx, HttpServerRequest request, HttpServerResponse response) {
         Member member = ServerUtils.getMember(bot, request, response, config);
         if (member == null) {
             return;

@@ -24,10 +24,7 @@ public class GuildMessageStats extends RequestHandler {
     }
 
     @Override
-    public void handle(RoutingContext ctx, Server server, DiscordBot bot, DSLContext database) {
-        HttpServerRequest request = ctx.request();
-        HttpServerResponse response = ctx.response();
-
+    public void handle(RoutingContext ctx, HttpServerRequest request, HttpServerResponse response) {
         Member member = ServerUtils.getMember(bot, request, response, config);
         if (member == null) {
             return;

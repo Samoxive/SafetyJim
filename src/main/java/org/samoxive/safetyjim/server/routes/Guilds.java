@@ -1,13 +1,11 @@
 package org.samoxive.safetyjim.server.routes;
 
-import com.google.gson.Gson;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.TextChannel;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
 import org.samoxive.jooq.generated.tables.records.OauthsecretsRecord;
@@ -52,10 +50,7 @@ public class Guilds extends RequestHandler {
     }
 
     @Override
-    public void handle(RoutingContext ctx, Server server, DiscordBot bot, DSLContext database) {
-        HttpServerRequest request = ctx.request();
-        HttpServerResponse response = ctx.response();
-
+    public void handle(RoutingContext ctx, HttpServerRequest request, HttpServerResponse response) {
         String userId = ServerUtils.authUser(request, response, config);
         if (userId == null) {
             return;

@@ -13,7 +13,6 @@ import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.DiscordBot;
-import org.samoxive.safetyjim.discord.DiscordUtils;
 import org.samoxive.safetyjim.helpers.Pair;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
@@ -28,10 +27,7 @@ public class StatsOverview extends RequestHandler {
     }
 
     @Override
-    public void handle(RoutingContext ctx, Server server, DiscordBot bot, DSLContext database) {
-        HttpServerRequest request = ctx.request();
-        HttpServerResponse response = ctx.response();
-
+    public void handle(RoutingContext ctx, HttpServerRequest request, HttpServerResponse response) {
         Member member = ServerUtils.getMember(bot, request, response, config);
         if (member == null) {
             return;
