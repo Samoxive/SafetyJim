@@ -1,6 +1,5 @@
 package org.samoxive.safetyjim.server.routes;
 
-import com.google.gson.Gson;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
@@ -8,7 +7,6 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import org.jooq.DSLContext;
 import org.samoxive.jooq.generated.Tables;
-import org.samoxive.jooq.generated.tables.records.OauthsecretsRecord;
 import org.samoxive.jooq.generated.tables.records.SettingsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
@@ -32,24 +30,13 @@ public class PostGuildSettings extends RequestHandler {
         HttpServerRequest request = ctx.request();
         HttpServerResponse response = ctx.response();
 
-        String userId = ServerUtils.authUser(request, response, config);
-        if (userId == null) {
-            return;
-        }
-
-        OauthsecretsRecord oauthRecord = database.selectFrom(Tables.OAUTHSECRETS)
-                .where(Tables.OAUTHSECRETS.USERID.eq(userId))
-                .fetchAny();
-
-        if (oauthRecord == null) {
-            response.setStatusCode(401);
-            response.end();
+        Member member = ServerUtils.getMember(bot, request, response, config);
+        if (member == null) {
             return;
         }
 
         String body = ctx.getBodyAsString();
-        Gson gson = new Gson();
-        GuildSettings newSettings = gson.fromJson(body, GuildSettings.class);
+        GuildSettings newSettings = ServerUtils.gson.fromJson(body, GuildSettings.class);
 
         if (!isSettingsValid(newSettings)) {
             response.setStatusCode(400);
@@ -57,24 +44,13 @@ public class PostGuildSettings extends RequestHandler {
             return;
         }
 
-        String guildId = request.getParam("guildId");
-        int shardId = DiscordUtils.getShardIdFromGuildId(Long.parseLong(guildId), config.jim.shard_count);
-        DiscordShard shard = bot.getShards().get(shardId);
-        Guild guild = shard.getShard().getGuildById(guildId);
-
-        if (guild == null) {
-            response.setStatusCode(400);
-            response.end();
-            return;
-        }
-
-        Member member = guild.getMemberById(userId);
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
            response.setStatusCode(403);
            response.end();
            return;
         }
 
+        Guild guild = member.getGuild();
         Optional<TextChannel> welcomeChannel = guild.getTextChannels().stream()
                 .filter((channel) -> channel.getId().equals(newSettings.welcomeMessageChannel.id))
                 .findAny();
@@ -127,6 +103,7 @@ public class PostGuildSettings extends RequestHandler {
         record.update();
 
         if (newSettings.statistics) {
+            DiscordShard shard = bot.getShards().get(DiscordUtils.getShardIdFromGuildId(guild.getIdLong(), config.jim.shard_count));
             shard.getThreadPool().submit(() -> shard.populateGuildStatistics(guild));
             Settings.kickstartStatistics(database, guild);
         }

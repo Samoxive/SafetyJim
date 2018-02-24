@@ -1,6 +1,5 @@
 package org.samoxive.safetyjim.server.routes;
 
-import com.google.gson.Gson;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
@@ -35,8 +34,7 @@ public class Self extends RequestHandler {
             return;
         }
 
-        Gson gson = new Gson();
         response.putHeader("Content-Type", "application/json");
-        response.end(gson.toJson(user));
+        response.end(ServerUtils.gson.toJson(user));
     }
 }

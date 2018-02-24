@@ -88,8 +88,7 @@ public class Guilds extends RequestHandler {
                                             })
                                             .collect(Collectors.toList());
 
-        Gson gson = new Gson();
         response.putHeader("Content-Type", "application/json");
-        response.end(gson.toJson(result));
+        response.end(ServerUtils.gson.toJson(result));
     }
 }

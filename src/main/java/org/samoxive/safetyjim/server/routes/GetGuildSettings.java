@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class GetGuildSettings extends RequestHandler {
+    private Gson gson = new GsonBuilder().serializeNulls().create();
+
     public GetGuildSettings(DiscordBot bot, DSLContext database, Server server, Config config) {
         super(bot, database, server, config);
     }
@@ -38,43 +40,17 @@ public class GetGuildSettings extends RequestHandler {
         HttpServerRequest request = ctx.request();
         HttpServerResponse response = ctx.response();
 
-        String userId = ServerUtils.authUser(request, response, config);
-        if (userId == null) {
+        Member member = ServerUtils.getMember(bot, request, response, config);
+        if (member == null) {
             return;
         }
 
-        OauthsecretsRecord oauthRecord = database.selectFrom(Tables.OAUTHSECRETS)
-                .where(Tables.OAUTHSECRETS.USERID.eq(userId))
-                .fetchAny();
-
-        if (oauthRecord == null) {
-            response.setStatusCode(401);
-            response.end();
-            return;
-        }
-
-        String guildId = request.getParam("guildId");
-        int shardId = DiscordUtils.getShardIdFromGuildId(Long.parseLong(guildId), bot.getConfig().jim.shard_count);
-        JDA shard = bot.getShards().get(shardId).getShard();
-        Guild guild = shard.getGuildById(guildId);
+        Guild guild = member.getGuild();
         SettingsRecord record = database.selectFrom(Tables.SETTINGS)
-                                        .where(Tables.SETTINGS.GUILDID.eq(guildId))
+                                        .where(Tables.SETTINGS.GUILDID.eq(guild.getId()))
                                         .fetchAny();
 
-        if (record == null || guild == null) {
-            response.setStatusCode(404);
-            response.end();
-            return;
-        }
 
-        Member member = guild.getMemberById(userId);
-        if (member == null) {
-            response.setStatusCode(404);
-            response.end();
-            return;
-        }
-
-        Gson gson = new GsonBuilder().serializeNulls().create();
         List<PartialChannel> channels = guild.getTextChannels()
                                              .stream()
                                              .filter((channel) -> member.hasPermission(channel, Permission.MESSAGE_READ))
@@ -86,20 +62,20 @@ public class GetGuildSettings extends RequestHandler {
                                        .map((role) -> new PartialRole(role.getId(), role.getName()))
                                        .collect(Collectors.toList());
 
-        Channel modLogChannel = shard.getTextChannelById(record.getModlogchannelid());
+        Channel modLogChannel = guild.getTextChannelById(record.getModlogchannelid());
         PartialChannel modLogChannelPartial = new PartialChannel(modLogChannel.getId(), modLogChannel.getName());
-        Channel welcomeMessageChannel = shard.getTextChannelById(record.getWelcomemessagechannelid());
+        Channel welcomeMessageChannel = guild.getTextChannelById(record.getWelcomemessagechannelid());
         PartialChannel welcomeMessageChannelPartial = new PartialChannel(welcomeMessageChannel.getId(), welcomeMessageChannel.getName());
         Role holdingRoomRole = null;
         PartialRole holdingRoomRolePartial = null;
 
         if (record.getHoldingroomroleid() != null) {
-            holdingRoomRole = shard.getRoleById(record.getHoldingroomroleid());
+            holdingRoomRole = guild.getRoleById(record.getHoldingroomroleid());
             holdingRoomRolePartial = new PartialRole(holdingRoomRole.getId(), holdingRoomRole.getName());
         }
 
         GuildSettings settings = new GuildSettings(
-                guildId,
+                guild.getId(),
                 record.getModlog(),
                 modLogChannelPartial,
                 record.getHoldingroom(),
@@ -116,6 +92,7 @@ public class GetGuildSettings extends RequestHandler {
                 channels,
                 roles
         );
+
         String responseJson = gson.toJson(settings);
         response.putHeader("Content-Type", "application/json");
         response.end(responseJson);

@@ -17,6 +17,7 @@ import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.discord.DiscordUtils;
+import org.samoxive.safetyjim.helpers.Pair;
 import org.samoxive.safetyjim.server.RequestHandler;
 import org.samoxive.safetyjim.server.Server;
 import org.samoxive.safetyjim.server.ServerUtils;
@@ -36,46 +37,20 @@ public class MemberStats extends RequestHandler {
         HttpServerRequest request = ctx.request();
         HttpServerResponse response = ctx.response();
 
-        String userId = ServerUtils.authUser(request, response, config);
-        if (userId == null) {
-            return;
-        }
-
-        String guildId = request.getParam("guildId");
-        String fromParam = request.getParam("from");
-        String toParam = request.getParam("to");
-
-        long from;
-        long to;
-
-        try {
-            from = Long.parseLong(fromParam);
-            to = Long.parseLong(toParam);
-
-            if (from <= 0 || to <= 0 || from >= to) {
-                response.setStatusCode(400);
-                response.end();
-                return;
-            }
-        } catch (NumberFormatException e) {
-            response.setStatusCode(400);
-            response.end();
-            return;
-        }
-
-        Guild guild = DiscordUtils.getGuildFromBot(bot, guildId);
-        if (guild == null) {
-            response.setStatusCode(404);
-            response.end();
-            return;
-        }
-
-        Member member = guild.getMemberById(userId);
+        Member member = ServerUtils.getMember(bot, request, response, config);
         if (member == null) {
-            response.setStatusCode(403);
-            response.end();
             return;
         }
+
+        Pair<Long, Long> fromToPair = ServerUtils.validateFromAndTo(request, response);
+        if (fromToPair == null) {
+            return;
+        }
+
+        long from = fromToPair.getLeft();
+        long to = fromToPair.getRight();
+
+        Guild guild = member.getGuild();
 
         SettingsRecord settings = DatabaseUtils.getGuildSettings(database, guild);
         if (!settings.getStatistics()) {
@@ -85,7 +60,7 @@ public class MemberStats extends RequestHandler {
         }
 
         Result<MembercountsRecord> records = database.selectFrom(Tables.MEMBERCOUNTS)
-                                                     .where(Tables.MEMBERCOUNTS.GUILDID.eq(guildId))
+                                                     .where(Tables.MEMBERCOUNTS.GUILDID.eq(guild.getId()))
                                                      .and(Tables.MEMBERCOUNTS.DATE.between(from, to))
                                                      .fetch();
 
