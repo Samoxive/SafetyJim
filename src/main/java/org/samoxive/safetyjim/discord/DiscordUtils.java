@@ -17,6 +17,7 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class DiscordUtils {
     private static final Logger log = LoggerFactory.getLogger(DiscordUtils.class);
@@ -178,6 +179,15 @@ public class DiscordUtils {
 
     public static boolean isUserInGuild(Guild guild, String userId) {
         return guild.getMemberById(userId) != null;
+    }
+
+    public static boolean isGuildTalkable(Guild guild) {
+        List<TextChannel> channels = guild.getTextChannels()
+                                          .stream()
+                                          .filter((channel) -> channel.canTalk())
+                                          .collect(Collectors.toList());
+
+        return channels.size() != 0;
     }
 
     public static void successReact(DiscordBot bot, Message message) {
