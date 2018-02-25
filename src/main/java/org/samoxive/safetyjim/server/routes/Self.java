@@ -19,7 +19,7 @@ public class Self extends RequestHandler {
 
     @Override
     public void handle(RoutingContext ctx, HttpServerRequest request, HttpServerResponse response) {
-        String userId = ServerUtils.authUser(request, response, config);
+        String userId = ServerUtils.authUser(request, response, database, config);
         if (userId == null) {
             return;
         }

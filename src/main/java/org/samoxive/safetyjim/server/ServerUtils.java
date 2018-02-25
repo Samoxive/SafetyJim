@@ -66,8 +66,8 @@ public class ServerUtils {
         }
     }
 
-    public static Member getMember(DiscordBot bot, HttpServerRequest request, HttpServerResponse response, Config config) {
-        String userId = authUser(request, response, config);
+    public static Member getMember(DiscordBot bot, HttpServerRequest request, HttpServerResponse response, DSLContext database, Config config) {
+        String userId = authUser(request, response, database, config);
         if (userId == null) {
             response.setStatusCode(401);
             return null;

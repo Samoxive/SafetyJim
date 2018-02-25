@@ -34,7 +34,7 @@ public class GetGuildSettings extends RequestHandler {
 
     @Override
     public void handle(RoutingContext ctx, HttpServerRequest request, HttpServerResponse response) {
-        Member member = ServerUtils.getMember(bot, request, response, config);
+        Member member = ServerUtils.getMember(bot, request, response, database, config);
         if (member == null) {
             return;
         }
