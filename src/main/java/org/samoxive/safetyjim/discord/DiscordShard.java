@@ -331,14 +331,20 @@ public class DiscordShard extends ListenerAdapter {
 
     @Override
     public void onGuildJoin(GuildJoinEvent event) {
-        if (DiscordUtils.isBotFarm(event.getGuild())) {
-            event.getGuild().leave().queue();
+        Guild guild = event.getGuild();
+        if (DiscordUtils.isBotFarm(guild)) {
+            guild.leave().complete();
             return;
+        } else {
+            if (!DiscordUtils.isGuildTalkable(guild)) {
+                guild.leave().complete();
+                return;
+            }
         }
 
-        Guild guild = event.getGuild();
         DSLContext database = bot.getDatabase();
-        String message = String.format("Hello! I am Safety Jim, `%s` is my default prefix!", bot.getConfig().jim.default_prefix);
+        String defaultPrefix = bot.getConfig().jim.default_prefix
+        String message = String.format("Hello! I am Safety Jim, `%s` is my default prefix! Try typing `%s help` to see available commands.", defaultPrefix, defaultPrefix);
         DiscordUtils.sendMessage(DiscordUtils.getDefaultChannel(guild), message);
         DatabaseUtils.createGuildSettings(bot, database, guild);
     }
