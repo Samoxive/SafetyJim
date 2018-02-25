@@ -10,6 +10,10 @@ import io.vertx.core.http.HttpServerResponse;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
+import org.jooq.DSLContext;
+import org.samoxive.jooq.generated.Tables;
+import org.samoxive.jooq.generated.tables.Oauthsecrets;
+import org.samoxive.jooq.generated.tables.records.OauthsecretsRecord;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.discord.DiscordBot;
 import org.samoxive.safetyjim.discord.DiscordShard;
@@ -21,7 +25,7 @@ import java.net.URLEncoder;
 public class ServerUtils {
     public static Gson gson = new Gson();
 
-    public static String authUser(HttpServerRequest request, HttpServerResponse response, Config config) {
+    public static String authUser(HttpServerRequest request, HttpServerResponse response, DSLContext database, Config config) {
         String token = request.getHeader("token");
         if (token == null) {
             response.setStatusCode(403);
@@ -32,6 +36,16 @@ public class ServerUtils {
         String userId = ServerUtils.getIdFromToken(config, token);
 
         if (userId == null) {
+            response.setStatusCode(401);
+            response.end();
+            return null;
+        }
+
+        OauthsecretsRecord record = database.selectFrom(Tables.OAUTHSECRETS)
+                                            .where(Tables.OAUTHSECRETS.USERID.eq(userId))
+                                            .fetchAny();
+
+        if (record == null) {
             response.setStatusCode(403);
             response.end();
             return null;
