@@ -52,6 +52,7 @@ public class Server {
                  request.response().putHeader("Access-Control-Allow-Origin", config.server.base_url);
                  router.accept(request);
              })
+             .exceptionHandler((e) -> log.error("Error happened in web server", e))
              .listen(config.server.port, "0.0.0.0");
         log.info("Started web server.");
         
