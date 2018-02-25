@@ -10,11 +10,14 @@ import org.jooq.DSLContext;
 import org.jooq.Result;
 import org.json.JSONObject;
 import org.samoxive.jooq.generated.Tables;
+import org.samoxive.jooq.generated.tables.Oauthsecrets;
 import org.samoxive.jooq.generated.tables.records.*;
 import org.samoxive.safetyjim.config.Config;
 import org.samoxive.safetyjim.database.DatabaseUtils;
 import org.samoxive.safetyjim.discord.commands.*;
 import org.samoxive.safetyjim.discord.commands.Invite;
+import org.samoxive.safetyjim.discord.entities.DiscordSecrets;
+import org.samoxive.safetyjim.discord.entities.PartialGuild;
 import org.samoxive.safetyjim.discord.processors.InviteLink;
 import org.samoxive.safetyjim.discord.processors.MessageStats;
 import org.slf4j.Logger;
@@ -48,7 +51,7 @@ public class DiscordBot {
         this.commands = new HashMap<>();
         this.processors = new ArrayList<>();
         httpClient = new OkHttpClient();
-        scheduler = Executors.newScheduledThreadPool(5);
+        scheduler = Executors.newScheduledThreadPool(8);
 
         loadCommands();
         loadProcessors();
@@ -72,6 +75,8 @@ public class DiscordBot {
         scheduler.scheduleAtFixedRate(() -> { try { remindReminders(); } catch (Exception e) { log.error("Exception occured in remindReminders", e); } }, 10, 5, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(() -> { try { saveMemberCounts(); } catch (Exception e) { log.error("Exception occured in saveMemberCounts", e); } }, 1, 10, TimeUnit.MINUTES);
         scheduler.scheduleAtFixedRate(() -> { try { updateBotLists(); } catch (Exception e) { log.error("Exception occured in updateBotLists", e); } }, 10, 1, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(() -> { try { updateOauthTokens(); } catch (Exception e) { log.error("Exception occured in updateOauthTokens", e); } }, 1, 30, TimeUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(() -> { try { updateGuildsOfOauthUsers(); } catch (Exception e) { log.error("Exception occured in updateGuildsOfOauthUsers", e); } }, 1, 60 * 24, TimeUnit.MINUTES);
 
         String inviteLink = shards.get(0).getShard().asBot().getInviteUrl(
                 Permission.KICK_MEMBERS,
@@ -332,7 +337,7 @@ public class DiscordBot {
                 }
 
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
+                public void onResponse(Call call, Response response) {
                     if (list.ignore_errors) {
                         return;
                     }
@@ -340,8 +345,51 @@ public class DiscordBot {
                     if (!response.isSuccessful()) {
                         log.error("Failed to update " + list.name + ".\n" + response.toString());
                     }
+
+                    response.close();
                 }
             });
+        }
+    }
+
+    public void updateOauthTokens() {
+        Result<OauthsecretsRecord> records = database.selectFrom(Tables.OAUTHSECRETS)
+                                                     .where(Tables.OAUTHSECRETS.EXPIRATIONDATE.lt(System.currentTimeMillis() / 1000))
+                                                     .fetch();
+
+        for (OauthsecretsRecord record: records) {
+            DiscordSecrets secrets = DiscordApiUtils.refreshUserSecrets(config, record.getRefreshtoken());
+            if (secrets == null) {
+                record.delete();
+                continue;
+            }
+
+            record.setAccesstoken(secrets.accessToken);
+            record.setExpirationdate((System.currentTimeMillis() / 1000) + secrets.expiresIn);
+            record.update();
+
+            try {
+                Thread.sleep(1000);
+            } catch (Exception e) {}
+        }
+    }
+
+    public void updateGuildsOfOauthUsers() {
+        Result<OauthsecretsRecord> records = database.selectFrom(Tables.OAUTHSECRETS)
+                                                     .fetch();
+
+        for (OauthsecretsRecord record: records) {
+            String[] guildIds = DiscordApiUtils.getUserGuilds(record.getAccesstoken())
+                                               .stream()
+                                               .map((guild) -> guild.id)
+                                               .toArray((size) -> new String[size]);
+
+            record.setGuilds(guildIds);
+            record.update();
+
+            try {
+                Thread.sleep(2000);
+            } catch (Exception e) {}
         }
     }
 
