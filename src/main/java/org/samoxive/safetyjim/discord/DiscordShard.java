@@ -158,7 +158,11 @@ public class DiscordShard extends ListenerAdapter {
 
         for (Guild guild: shard.getGuilds()) {
             if (DiscordUtils.isBotFarm(guild)) {
-                guild.leave().queue();
+                guild.leave().complete();
+            } else {
+                if (!DiscordUtils.isGuildTalkable(guild)) {
+                    guild.leave().complete();
+                }
             }
         }
 
