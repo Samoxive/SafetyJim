@@ -28,7 +28,7 @@ public class Server extends Command {
         StringBuilder emojis = new StringBuilder();
 
         for (Emote emote: guild.getEmotes()) {
-            if (emojis.length() > 1000) {
+            if (emojis.length() > 950) {
                 emojis.append("...");
                 break;
             } else {
