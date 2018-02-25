@@ -43,6 +43,44 @@ public class DiscordApiUtils {
             ResponseBody responseBody = client.newCall(request)
                                               .execute()
                                               .body();
+
+            String secretsJson = responseBody.string();
+            if (secretsJson == null) {
+                return null;
+            }
+
+            return gson.fromJson(secretsJson, DiscordSecrets.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static DiscordSecrets refreshUserSecrets(Config config, String refreshToken) {
+        RequestBody body = (new MultipartBody.Builder())
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("client_id", config.oauth.client_id)
+                .addFormDataPart("client_secret", config.oauth.client_secret)
+                .addFormDataPart("grant_type", "refresh_token")
+                .addFormDataPart("refresh_token", refreshToken)
+                .addFormDataPart("redirect_uri", config.oauth.redirect_uri)
+                .build();
+
+        HttpUrl url = API_ENDPOINT.newBuilder()
+                                  .addPathSegment("oauth2")
+                                  .addPathSegment("token")
+                                  .build();
+
+        Request request = (new Request.Builder())
+                .url(url)
+                .addHeader("User-Agent", "Safety Jim")
+                .post(body)
+                .build();
+
+        try {
+            ResponseBody responseBody = client.newCall(request)
+                                              .execute()
+                                              .body();
+
             String secretsJson = responseBody.string();
             if (secretsJson == null) {
                 return null;
