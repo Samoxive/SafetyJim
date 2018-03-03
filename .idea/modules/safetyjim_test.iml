@@ -14,7 +14,7 @@
     <orderEntry type="library" name="Gradle: postgresql:postgresql:9.4.1208-jdbc42-atlassian-hosted" level="project" />
     <orderEntry type="library" name="Gradle: org.jooq:jooq:3.9.5" level="project" />
     <orderEntry type="library" name="Gradle: com.moandjiezana.toml:toml4j:0.7.2" level="project" />
-    <orderEntry type="library" name="Gradle: net.dv8tion:JDA:3.5.1_339" level="project" />
+    <orderEntry type="library" name="Gradle: net.dv8tion:JDA:3.5.1_343" level="project" />
     <orderEntry type="library" name="Gradle: com.zaxxer:HikariCP:2.7.8" level="project" />
     <orderEntry type="library" name="Gradle: com.joestelmach:natty:0.13" level="project" />
     <orderEntry type="library" name="Gradle: org.ocpsoft.prettytime:prettytime:4.0.1.Final" level="project" />
