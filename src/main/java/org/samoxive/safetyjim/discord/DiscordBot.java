@@ -215,6 +215,17 @@ public class DiscordBot {
             User guildUser = DiscordUtils.getUserById(shard.getShard(), user.getUserid());
             GuildController controller = guild.getController();
 
+            Optional<Guild.Ban> banRecord = guild.getBanList()
+                    .complete()
+                    .stream()
+                    .filter((ban) -> ban.getUser().getId().equals(guildUser.getId()))
+                    .findAny();
+
+            if (!banRecord.isPresent()) {
+                user.setUnbanned(true);
+                user.update();
+            }
+
             try {
                 controller.unban(guildUser).complete();
             } finally {
