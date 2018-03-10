@@ -170,6 +170,12 @@ public class DiscordBot {
                 Role role = guild.getRoleById(roleId);
                 GuildController controller = guild.getController();
 
+                if (role == null) {
+                    guildSettings.setHoldingroom(false);
+                    guildSettings.update();
+                    continue;
+                }
+
                 try {
                     controller.addSingleRoleToMember(member, role).complete();
                 } finally {
