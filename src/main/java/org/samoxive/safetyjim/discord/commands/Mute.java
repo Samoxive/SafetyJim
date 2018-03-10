@@ -118,7 +118,7 @@ public class Mute extends Command {
         Member muteMember = guild.getMember(muteUser);
         GuildController controller = guild.getController();
 
-        if (!selfMember.hasPermission(Permission.MANAGE_ROLES)) {
+        if (!selfMember.hasPermission(Permission.MANAGE_ROLES, Permission.MANAGE_PERMISSIONS)) {
             DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!");
             return false;
         }
