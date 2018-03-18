@@ -260,7 +260,30 @@ public class DiscordBot {
 
             User guildUser = DiscordUtils.getUserById(shard.getShard(), user.getUserid());
             Member member = guild.getMember(guildUser);
-            Role role = guild.getRolesByName("Muted", false).get(0);
+            if (member == null) {
+                user.setUnmuted(true);
+                user.update();
+                continue;
+            }
+
+            List<Role> mutedRoles = guild.getRolesByName("Muted", false);
+            Role role = null;
+            if (mutedRoles.isEmpty()) {
+                try {
+                    role = Mute.setupMutedRole(guild);
+                } catch (Exception e) {
+                    role = null;
+                }
+            } else {
+                role = mutedRoles.get(0);
+            }
+
+            if (role == null) {
+                user.setUnmuted(true);
+                user.update();
+                continue;
+            }
+
             GuildController controller = guild.getController();
 
             try {
