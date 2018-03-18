@@ -397,6 +397,7 @@ public class DiscordShard extends ListenerAdapter {
         Result<MutelistRecord> records = database.selectFrom(Tables.MUTELIST)
                                                .where(Tables.MUTELIST.GUILDID.eq(guild.getId()))
                                                .and(Tables.MUTELIST.USERID.eq(user.getId()))
+                                               .and(Tables.MUTELIST.UNMUTED.eq(false))
                                                .fetch();
 
         if (records.isEmpty()) {
