@@ -341,11 +341,11 @@ public class DiscordBot {
                     channel.sendMessage(builder.build()).complete();
                 } catch (Exception e) {
                     DiscordUtils.sendDM(user, embed.build());
-                } finally {
-                    reminder.setReminded(true);
-                    reminder.update();
                 }
             }
+
+            reminder.setReminded(true);
+            reminder.update();
         }
     }
 
