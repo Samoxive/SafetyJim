@@ -14,7 +14,16 @@ import java.util.Map;
 public class DatabaseUtils {
     public static final String DEFAULT_WELCOME_MESSAGE = "Welcome to $guild $user!";
 
-    public static SettingsRecord getGuildSettings(DSLContext database, Guild guild) {
+    public static SettingsRecord getGuildSettings(DiscordBot bot, DSLContext database, Guild guild) {
+        SettingsRecord record = database.selectFrom(Tables.SETTINGS)
+                                        .where(Tables.SETTINGS.GUILDID.eq(guild.getId()))
+                                        .fetchAny();
+
+        if (record == null) {
+            createGuildSettings(bot, database, guild);
+        }
+
+
         return database.selectFrom(Tables.SETTINGS)
                        .where(Tables.SETTINGS.GUILDID.eq(guild.getId()))
                        .fetchAny();
