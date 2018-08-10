@@ -59,7 +59,7 @@ public class DiscordUtils {
     }
 
     public static void createModLogEntry(DiscordBot bot, JDA shard, Message message, Member member, String reason, String action, int id, Date expirationDate, boolean expires) {
-        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot.getDatabase(), member.getGuild());
+        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot, bot.getDatabase(), member.getGuild());
         Date now = new Date();
 
         boolean modLogActive = guildSettings.getModlog();
@@ -109,7 +109,7 @@ public class DiscordUtils {
     }
 
     public static void deleteCommandMessage(DiscordBot bot, Message message) {
-        boolean silentCommandsActive = DatabaseUtils.getGuildSettings(bot.getDatabase(), message.getGuild()).getSilentcommands();
+        boolean silentCommandsActive = DatabaseUtils.getGuildSettings(bot, bot.getDatabase(), message.getGuild()).getSilentcommands();
 
         if (!silentCommandsActive) {
             return;

@@ -55,7 +55,7 @@ public class ChannelMessageStats extends RequestHandler {
             return;
         }
 
-        SettingsRecord settings = DatabaseUtils.getGuildSettings(database, guild);
+        SettingsRecord settings = DatabaseUtils.getGuildSettings(bot, database, guild);
         if (!settings.getStatistics()) {
             response.setStatusCode(418);
             response.end();

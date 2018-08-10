@@ -160,7 +160,7 @@ public class DiscordBot {
                 continue;
             }
 
-            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(this, database, guild);
             boolean enabled = guildSettings.getHoldingroom();
 
             if (enabled) {

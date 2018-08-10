@@ -75,7 +75,7 @@ public class Settings extends Command {
         DSLContext database = bot.getDatabase();
         Guild guild = event.getGuild();
 
-        SettingsRecord config = DatabaseUtils.getGuildSettings(database, guild);
+        SettingsRecord config = DatabaseUtils.getGuildSettings(bot, database, guild);
         StringJoiner output = new StringJoiner("\n");
 
         if (!config.getModlog()) {
@@ -232,7 +232,7 @@ public class Settings extends Command {
             return false;
         }
 
-        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild);
         TextChannel argumentChannel;
 
         try {

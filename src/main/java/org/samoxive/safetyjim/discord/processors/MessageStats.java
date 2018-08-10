@@ -23,7 +23,7 @@ public class MessageStats extends MessageProcessor {
             DSLContext database = bot.getDatabase();
 
             Guild guild = event.getGuild();
-            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild);
             if (!guildSettings.getStatistics()) {
                 return;
             }

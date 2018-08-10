@@ -72,7 +72,7 @@ public class DiscordShard extends ListenerAdapter {
         DSLContext database = bot.getDatabase();
         shard.getGuilds()
              .stream()
-             .filter((guild) -> DatabaseUtils.getGuildSettings(database, guild).getStatistics())
+             .filter((guild) -> DatabaseUtils.getGuildSettings(bot, database, guild).getStatistics())
              .forEach((guild -> populateGuildStatistics(guild)));
     }
 
@@ -168,7 +168,7 @@ public class DiscordShard extends ListenerAdapter {
 
         int guildsWithMissingKeys = 0;
         for (Guild guild: shard.getGuilds()) {
-            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild);
 
             if (guildSettings == null) {
                 DatabaseUtils.deleteGuildSettings(database, guild);
@@ -205,7 +205,7 @@ public class DiscordShard extends ListenerAdapter {
         SelfUser self = shard.getSelfUser();
 
         if (message.isMentioned(self) && content.contains("prefix")) {
-            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild);
             String prefix = guildSettings.getPrefix();
             DiscordUtils.successReact(bot, message);
 
@@ -237,7 +237,7 @@ public class DiscordShard extends ListenerAdapter {
             }
         }
 
-        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild);
         if (guildSettings == null) { // settings aren't initialized yet
             return;
         }
@@ -309,7 +309,7 @@ public class DiscordShard extends ListenerAdapter {
 
     @Override
     public void onGuildMessageReactionAdd(GuildMessageReactionAddEvent event) {
-        if (event.getMember().getUser().isBot() || event.getChannelType() != ChannelType.TEXT) {
+        if (event.getMember().getUser().isBot() || event.getChannel().getType() != ChannelType.TEXT) {
             return;
         }
 
@@ -320,7 +320,7 @@ public class DiscordShard extends ListenerAdapter {
 
     @Override
     public void onGuildMessageReactionRemove(GuildMessageReactionRemoveEvent event) {
-        if (event.getMember().getUser().isBot() || event.getChannelType() != ChannelType.TEXT) {
+        if (event.getMember().getUser().isBot() || event.getChannel().getType() != ChannelType.TEXT) {
             return;
         }
 
@@ -362,7 +362,7 @@ public class DiscordShard extends ListenerAdapter {
         Member member = event.getMember();
         User user = member.getUser();
         DSLContext database = bot.getDatabase();
-        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(database, guild);
+        SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild);
 
         if (guildSettings.getWelcomemessage()) {
             String textChannelId = guildSettings.getWelcomemessagechannelid();
@@ -463,7 +463,7 @@ public class DiscordShard extends ListenerAdapter {
 
         if (showUsage) {
             String[] usages = command.getUsages();
-            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot.getDatabase(), event.getGuild());
+            SettingsRecord guildSettings = DatabaseUtils.getGuildSettings(bot, bot.getDatabase(), event.getGuild());
             String prefix = guildSettings.getPrefix();
 
             EmbedBuilder embed = new EmbedBuilder();
