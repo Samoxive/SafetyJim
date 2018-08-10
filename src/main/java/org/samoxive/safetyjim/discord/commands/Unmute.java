@@ -56,7 +56,14 @@ public class Unmute extends Command {
         Role muteRole = mutedRoles.get(0);
         for (User unmuteUser: mentions) {
             Member unmuteMember = guild.getMember(unmuteUser);
-            controller.removeSingleRoleFromMember(unmuteMember, muteRole).queue();
+
+            try {
+                controller.removeSingleRoleFromMember(unmuteMember, muteRole).complete();
+            } catch (Exception e) {
+                DiscordUtils.failMessage(bot, message, "Could not unmute the user: \"" + unmuteUser.getName() + "\". Do I have enough permissions or is Muted role below me?");
+                return false;
+            }
+
             Result<MutelistRecord> records = database.selectFrom(Tables.MUTELIST)
                     .where(Tables.MUTELIST.USERID.eq(unmuteUser.getId()))
                     .and(Tables.MUTELIST.GUILDID.eq(guild.getId()))
