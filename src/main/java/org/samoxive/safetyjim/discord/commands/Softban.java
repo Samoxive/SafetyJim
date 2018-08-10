@@ -16,6 +16,7 @@ import org.samoxive.safetyjim.discord.TextUtils;
 
 import java.awt.*;
 import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 
 public class Softban extends Command {
@@ -50,7 +51,12 @@ public class Softban extends Command {
             messageIterator.next();
         }
 
-        User softbanUser = message.getMentionedUsers().get(0);
+        List<User> mentionedUsers = message.getMentionedUsers();
+        if (mentionedUsers.isEmpty()) {
+            DiscordUtils.failMessage(bot, message, "Could not find the user to softban!");
+            return false;
+        }
+        User softbanUser = mentionedUsers.get(0);
         Member softbanMember = guild.getMember(softbanUser);
         GuildController controller = guild.getController();
 

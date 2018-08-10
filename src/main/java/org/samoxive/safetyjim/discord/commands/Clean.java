@@ -160,7 +160,12 @@ public class Clean extends Command {
         if (!messageIterator.hasNext()) {
             targetArgument = "";
         } else if (messageIterator.hasNext(DiscordUtils.USER_MENTION_PATTERN)) {
-            targetUser = message.getMentionedUsers().get(0);
+            List<User> mentionedUsers = message.getMentionedUsers();
+            if (mentionedUsers.isEmpty()) {
+                DiscordUtils.failMessage(bot, message, "Could not find the user to clean messages of!");
+                return false;
+            }
+            targetUser = mentionedUsers.get(0);
             targetArgument = "user";
         } else {
             targetArgument = messageIterator.next();

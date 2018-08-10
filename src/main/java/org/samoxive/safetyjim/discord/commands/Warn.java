@@ -15,6 +15,7 @@ import org.samoxive.safetyjim.discord.TextUtils;
 
 import java.awt.*;
 import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 
 public class Warn extends Command {
@@ -48,7 +49,12 @@ public class Warn extends Command {
             messageIterator.next();
         }
 
-        User warnUser = message.getMentionedUsers().get(0);
+        List<User> mentionedUsers = message.getMentionedUsers();
+        if (mentionedUsers.isEmpty()) {
+            DiscordUtils.failMessage(bot, message, "Could not find the user to warn!");
+            return false;
+        }
+        User warnUser = mentionedUsers.get(0);
         Member warnMember = guild.getMember(warnUser);
 
         if (user.getId().equals(warnUser.getId())) {

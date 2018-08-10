@@ -17,6 +17,7 @@ import org.samoxive.safetyjim.helpers.Pair;
 
 import java.awt.*;
 import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 
 public class Ban extends Command {
@@ -51,7 +52,12 @@ public class Ban extends Command {
             messageIterator.next();
         }
 
-        User banUser = message.getMentionedUsers().get(0);
+        List<User> mentionedUsers = message.getMentionedUsers();
+        if (mentionedUsers.isEmpty()) {
+            DiscordUtils.failMessage(bot, message, "Could not find the user to ban!");
+            return false;
+        }
+        User banUser = mentionedUsers.get(0);
         Member banMember = guild.getMember(banUser);
         GuildController controller = guild.getController();
 

@@ -16,6 +16,7 @@ import org.samoxive.safetyjim.discord.TextUtils;
 
 import java.awt.*;
 import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 
 public class Kick extends Command {
@@ -49,7 +50,12 @@ public class Kick extends Command {
             messageIterator.next();
         }
 
-        User kickUser = message.getMentionedUsers().get(0);
+        List<User> mentionedUsers = message.getMentionedUsers();
+        if (mentionedUsers.isEmpty()) {
+            DiscordUtils.failMessage(bot, message, "Could not find the user to kick!");
+            return false;
+        }
+        User kickUser = mentionedUsers.get(0);
         Member kickMember = guild.getMember(kickUser);
         GuildController controller = guild.getController();
 
