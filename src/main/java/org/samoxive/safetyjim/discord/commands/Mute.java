@@ -114,7 +114,12 @@ public class Mute extends Command {
             messageIterator.next();
         }
 
-        User muteUser = message.getMentionedUsers().get(0);
+        List<User> mentinedUsers = message.getMentionedUsers();
+        if (mentinedUsers.isEmpty()) {
+            DiscordUtils.failMessage(bot, message, "Could not find the user to mute!");
+            return false;
+        }
+        User muteUser = mentinedUsers.get(0);
         Member muteMember = guild.getMember(muteUser);
         GuildController controller = guild.getController();
 
