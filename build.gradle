@@ -37,7 +37,7 @@ dependencies {
     compile 'org.postgresql:postgresql:42.2.2'
     compile 'org.jooq:jooq:3.10.0'
     compile 'com.moandjiezana.toml:toml4j:0.7.2'
-    compile 'net.dv8tion:JDA:3.7.1_392'
+    compile 'net.dv8tion:JDA:3.7.1_399'
     compile 'com.zaxxer:HikariCP:3.2.0'
     compile "com.joestelmach:natty:0.13"
     compile 'org.ocpsoft.prettytime:prettytime:4.0.2.Final'
