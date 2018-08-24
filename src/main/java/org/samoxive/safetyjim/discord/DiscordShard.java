@@ -58,7 +58,8 @@ public class DiscordShard extends ListenerAdapter {
                                 .setEnableShutdownHook(true)
                                 .useSharding(shardId, bot.getConfig().jim.shard_count)
                                 .setGame(Game.playing(String.format("-mod help | %s | %s", version, DiscordUtils.getShardString(shardId, shardCount))))
-                                .buildBlocking();
+                                .build()
+                                .awaitReady();
         } catch (LoginException e) {
             log.error("Invalid token.");
             System.exit(1);
