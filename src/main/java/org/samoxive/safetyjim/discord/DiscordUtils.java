@@ -21,12 +21,6 @@ import java.util.stream.Collectors;
 
 public class DiscordUtils {
     private static final Logger log = LoggerFactory.getLogger(DiscordUtils.class);
-    private static final String[] botListIds = {"110373943822540800", // DiscordBots
-                                                "264445053596991498", // DiscordBotList
-                                                "297462937646530562", // NovoBotList
-                                                "330777295952543744", // terminal.ink
-                                                "276011076552753153",
-                                               };
     private static final String SUCCESS_EMOTE_ID = "322698554294534144";
     private static final String SUCCESS_EMOTE_NAME = "jimsuccess";
     private static final String FAIL_EMOTE_ID = "322698553980092417";
@@ -155,18 +149,6 @@ public class DiscordUtils {
         }
 
         return highestRoleToBan.getPosition() < highestRoleBanner.getPosition();
-    }
-
-    public static boolean isBotFarm(Guild guild) {
-        for (String botList: botListIds) {
-            if (guild.getId().equals(botList)) {
-                return false;
-            }
-        }
-
-        int botCount = (int)guild.getMembers().stream().filter(member -> member.getUser().isBot()).count();
-        return botCount > 20;
-
     }
 
     public static boolean isOnline(Member member) {

@@ -158,12 +158,8 @@ public class DiscordShard extends ListenerAdapter {
         JDA shard = event.getJDA();
 
         for (Guild guild: shard.getGuilds()) {
-            if (DiscordUtils.isBotFarm(guild)) {
+            if (!DiscordUtils.isGuildTalkable(guild)) {
                 guild.leave().complete();
-            } else {
-                if (!DiscordUtils.isGuildTalkable(guild)) {
-                    guild.leave().complete();
-                }
             }
         }
 
@@ -333,14 +329,9 @@ public class DiscordShard extends ListenerAdapter {
     @Override
     public void onGuildJoin(GuildJoinEvent event) {
         Guild guild = event.getGuild();
-        if (DiscordUtils.isBotFarm(guild)) {
+        if (!DiscordUtils.isGuildTalkable(guild)) {
             guild.leave().complete();
             return;
-        } else {
-            if (!DiscordUtils.isGuildTalkable(guild)) {
-                guild.leave().complete();
-                return;
-            }
         }
 
         DSLContext database = bot.getDatabase();
