@@ -1,5 +1,6 @@
 package org.samoxive.safetyjim.discord;
 
+import com.mashape.unirest.http.Unirest;
 import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.managers.GuildController;
@@ -50,7 +51,6 @@ public class DiscordBot {
         this.shards = new ArrayList<>();
         this.commands = new HashMap<>();
         this.processors = new ArrayList<>();
-        httpClient = new OkHttpClient();
         scheduler = Executors.newScheduledThreadPool(8);
 
         loadCommands();
@@ -375,30 +375,10 @@ public class DiscordBot {
         String clientId = shards.get(0).getShard().getSelfUser().getId();
         for (Config.list list: config.botlist.list) {
             JSONObject body = new JSONObject().put("server_count", guildCount);
-            Request.Builder builder = new Request.Builder();
-            builder.addHeader("Content-Type", "application/json")
-                   .addHeader("Authorization", list.token)
-                   .url(list.url.replace("$id", clientId))
-                   .post(RequestBody.create(MediaType.parse("application/json"), body.toString()));
-            httpClient.newCall(builder.build()).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    log.error("Failed to update a bot list.", e);
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) {
-                    if (list.ignore_errors) {
-                        return;
-                    }
-
-                    if (!response.isSuccessful()) {
-                        log.error("Failed to update " + list.name + ".\n" + response.toString());
-                    }
-
-                    response.close();
-                }
-            });
+            Unirest.post(list.url.replace("$id", clientId))
+                   .header("Authorization", list.token)
+                   .body(body)
+                   .asBinaryAsync();
         }
     }
 

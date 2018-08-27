@@ -1,5 +1,6 @@
 package org.samoxive.safetyjim.discord;
 
+import com.mashape.unirest.http.Unirest;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.OnlineStatus;
@@ -192,13 +193,11 @@ public class DiscordUtils {
         String token = bot.getConfig().jim.token;
         String requestUrl = String.format(API_REACTION_URL, channelId, messageId, emoteName, emoteId);
 
-        Request request = (new Request.Builder()).put(RequestBody.create(MediaType.parse("application/json"), ""))
-                .url(requestUrl)
-                .addHeader("User-Agent", "Safety Jim")
-                .addHeader("Authorization", "Bot " + token)
-                .build();
         try {
-            bot.getHttpClient().newCall(request).execute();
+            Unirest.put(requestUrl)
+                   .header("User-Agent", "Safety Jim")
+                   .header("Authorization", "Bot " + token)
+                   .asJson();
         } catch (Exception e) {
             //
         }
