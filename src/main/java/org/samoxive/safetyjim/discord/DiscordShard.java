@@ -336,7 +336,8 @@ public class DiscordShard extends ListenerAdapter {
 
         DSLContext database = bot.getDatabase();
         String defaultPrefix = bot.getConfig().jim.default_prefix;
-        String message = String.format("Hello! I am Safety Jim, `%s` is my default prefix! Try typing `%s help` to see available commands.", defaultPrefix, defaultPrefix);
+        String message = String.format("Hello! I am Safety Jim, `%s` is my default prefix! Try typing `%s help` to see available commands.\n" +
+                "You can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help.", defaultPrefix, defaultPrefix);
         DiscordUtils.sendMessage(DiscordUtils.getDefaultChannel(guild), message);
         DatabaseUtils.createGuildSettings(bot, database, guild);
     }
