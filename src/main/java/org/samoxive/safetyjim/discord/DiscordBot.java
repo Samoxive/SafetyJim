@@ -178,6 +178,8 @@ public class DiscordBot {
 
                 try {
                     controller.addSingleRoleToMember(member, role).complete();
+                } catch (Exception e) {
+                    //
                 } finally {
                     user.setAllowed(true);
                     user.update();
@@ -234,6 +236,8 @@ public class DiscordBot {
 
             try {
                 controller.unban(guildUser).complete();
+            } catch (Exception e) {
+                //
             } finally {
                 user.setUnbanned(true);
                 user.update();
