@@ -14,14 +14,14 @@ plugins {
     id 'com.sedmelluq.jdaction' version '1.0.2'
     id "com.github.johnrengelman.shadow" version "2.0.4"
     id 'com.github.ben-manes.versions' version '0.20.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.2.61'
 }
 
 group 'org.samoxive'
 version '3.1.1'
 
-apply plugin: 'java'
 apply plugin: 'application'
-mainClassName = "org.samoxive.safetyjim.Main"
+mainClassName = "org.samoxive.safetyjim.MainKt"
 
 sourceCompatibility = 1.8
 
@@ -34,9 +34,8 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'org.slf4j:slf4j-log4j12:1.8.0-beta2'
     jooqRuntime 'org.postgresql:postgresql:42.2.2'
-    compile 'org.postgresql:postgresql:42.2.2'
+    compile 'org.postgresql:postgresql:42.2.5'
     compile 'org.jooq:jooq:3.10.0'
-    compile 'com.moandjiezana.toml:toml4j:0.7.2'
     compile 'com.zaxxer:HikariCP:3.2.0'
     compile 'com.joestelmach:natty:0.13'
     compile 'org.ocpsoft.prettytime:prettytime:4.0.2.Final'
@@ -45,25 +44,25 @@ dependencies {
     compile 'com.auth0:java-jwt:3.4.0'
     compile 'com.google.code.gson:gson:2.8.5'
     compile 'log4j:log4j:1.2.17'
-    compile ('net.dv8tion:JDA:3.7.1_399') {
+    compile ('net.dv8tion:JDA:3.7.1_405') {
         exclude module: 'opus-java'
     }
+    compile 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.61'
+    compile 'com.uchuhimo:konf:0.11'
 }
 
 jooq {
     def toml = new Toml().read(new File('./config.toml').text)
-    def host = toml.getString('database.host')
+    def jdbc_url = toml.getString('database.jdbc_url')
     def username = toml.getString('database.user')
     def pass = toml.getString('database.pass')
-    def port = toml.getLong('database.port')
-    def db = toml.getString('database.name')
 
     version = '3.9.5'
     edition = 'OSS'
     sample(sourceSets.main) {
         jdbc {
             driver = 'org.postgresql.Driver'
-            url = 'jdbc:postgresql://' + host + ':' + port + '/' + db
+            url = jdbc_url
             user = username
             password = pass
         }
@@ -85,10 +84,21 @@ jooq {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'org.samoxive.safetyjim.Main'
+        attributes 'Main-Class': 'org.samoxive.safetyjim.MainKt'
     }
 }
 
 shadowJar {
     archiveName = "safetyjim.jar"
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
