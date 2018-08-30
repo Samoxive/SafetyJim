@@ -2,7 +2,8 @@ package org.samoxive.safetyjim.discord
 
 import net.dv8tion.jda.core.*
 import net.dv8tion.jda.core.entities.*
-import net.dv8tion.jda.core.events.*
+import net.dv8tion.jda.core.events.ExceptionEvent
+import net.dv8tion.jda.core.events.ReadyEvent
 import net.dv8tion.jda.core.events.guild.GuildJoinEvent
 import net.dv8tion.jda.core.events.guild.GuildLeaveEvent
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent
@@ -13,20 +14,21 @@ import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionAddEv
 import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionRemoveEvent
 import net.dv8tion.jda.core.hooks.ListenerAdapter
 import net.dv8tion.jda.core.utils.SessionController
-import org.samoxive.jooq.generated.Tables
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.joda.time.DateTime
 import org.samoxive.safetyjim.config.JimConfig
-import org.samoxive.safetyjim.database.DatabaseUtils
+import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.commands.Mute
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
-import javax.security.auth.login.LoginException
-import java.awt.*
-import java.sql.Timestamp
+import java.awt.Color
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
+import javax.security.auth.login.LoginException
 import kotlin.system.exitProcess
 
 class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController) : ListenerAdapter() {
@@ -44,7 +46,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         threadPool = Executors.newCachedThreadPool()
         val builder = JDABuilder(AccountType.BOT)
         this.shard = try {
-             builder.setToken(config[JimConfig.token])
+            builder.setToken(config[JimConfig.token])
                     .setAudioEnabled(false) // jim doesn't have any audio functionality
                     .addEventListener(this)
                     .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
@@ -60,21 +62,17 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             log.error("Something something", e)
             exitProcess(1)
         }
-
     }
 
     private fun populateStatistics(shard: JDA) {
-        val database = bot.database
         shard.guilds
-                .stream()
-                .filter { guild -> DatabaseUtils.getGuildSettings(bot, database, guild).statistics }
+                .filter { guild -> getGuildSettings(guild, bot.config).statistics }
                 .forEach { guild -> populateGuildStatistics(guild) }
     }
 
     fun populateGuildStatistics(guild: Guild) {
         val self = guild.getMember(guild.jda.selfUser)
         guild.textChannels
-                .stream()
                 .filter { channel -> self.hasPermission(channel, Permission.MESSAGE_HISTORY, Permission.MESSAGE_READ) }
                 .map { channel -> threadPool.submit { populateChannelStatistics(channel) } }
                 .forEach { future ->
@@ -86,32 +84,35 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     }
 
     private fun populateChannelStatistics(channel: TextChannel) {
-        val database = bot.database
         val guild = channel.guild
-        val oldestRecord = database.selectFrom(Tables.MESSAGES)
-                .where(Tables.MESSAGES.GUILDID.eq(guild.id))
-                .and(Tables.MESSAGES.CHANNELID.eq(channel.id))
-                .orderBy(Tables.MESSAGES.DATE.asc())
-                .limit(1)
-                .fetchAny()
+        val oldestRecord = transaction {
+            JimMessageTable.select {
+                (JimMessageTable.guildid eq guild.id) and (JimMessageTable.channelid eq channel.id)
+            }
+                    .orderBy(JimMessageTable.date to SortOrder.ASC)
+                    .limit(1)
+                    .firstOrNull()
+        }
 
-        val newestRecord = database.selectFrom(Tables.MESSAGES)
-                .where(Tables.MESSAGES.GUILDID.eq(guild.id))
-                .and(Tables.MESSAGES.CHANNELID.eq(channel.id))
-                .orderBy(Tables.MESSAGES.DATE.desc())
-                .limit(1)
-                .fetchAny()
+        val newestRecord = transaction {
+            JimMessageTable.select {
+                (JimMessageTable.guildid eq guild.id) and (JimMessageTable.channelid eq channel.id)
+            }
+                    .orderBy(JimMessageTable.date to SortOrder.DESC)
+                    .limit(1)
+                    .firstOrNull()
+        }
 
         var fetchedMessages: List<Message>?
         if (oldestRecord == null || newestRecord == null) {
             fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel)
         } else {
-            var oldestMessageStored: Message?
-            var newestMessageStored: Message?
+            val oldestMessageStored: Message?
+            val newestMessageStored: Message?
 
             try {
-                oldestMessageStored = channel.getMessageById(oldestRecord.messageid).complete()
-                newestMessageStored = channel.getMessageById(newestRecord.messageid).complete()
+                oldestMessageStored = channel.getMessageById(oldestRecord[JimMessageTable.id].value).complete()
+                newestMessageStored = channel.getMessageById(newestRecord[JimMessageTable.id].value).complete()
                 if (oldestMessageStored == null || newestMessageStored == null) {
                     throw Exception()
                 }
@@ -119,42 +120,39 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 fetchedMessages = DiscordUtils.fetchFullHistoryBeforeMessage(channel, oldestMessageStored)
                 fetchedMessages.addAll(DiscordUtils.fetchFullHistoryAfterMessage(channel, newestMessageStored))
             } catch (e: Exception) {
-                database.deleteFrom(Tables.MESSAGES)
-                        .where(Tables.MESSAGES.CHANNELID.eq(channel.id))
-                        .and(Tables.MESSAGES.GUILDID.eq(guild.id))
-                        .execute()
+                transaction {
+                    JimMessage.find {
+                        (JimMessageTable.channelid eq channel.id) and (JimMessageTable.guildid eq guild.id)
+                    }.forEach { it.delete() }
+                }
                 fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel)
             }
-
         }
 
-        if (fetchedMessages!!.size == 0) {
+        if (fetchedMessages!!.isEmpty()) {
             return
         }
 
-        val records = fetchedMessages
-                .map { message ->
-                    val record = database.newRecord(Tables.MESSAGES)
+        transaction {
+            fetchedMessages.forEach { message ->
+                JimMessage.new(message.id) {
                     val user = message.author
                     val content = message.contentRaw
                     val wordCount = content.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray().size
-                    record.messageid = message.id
-                    record.userid = user.id
-                    record.channelid = channel.id
-                    record.guildid = channel.guild.id
-                    record.date = DiscordUtils.getCreationTime(message.id)
-                    record.wordcount = wordCount
-                    record.size = content.length
-                    record
+                    userid = user.id
+                    channelid = channel.id
+                    guildid = channel.guild.id
+                    date = DiscordUtils.getCreationTime(message.id)
+                    wordcount = wordCount
+                    size = content.length
                 }
-
-        database.batchStore(records).execute()
+            }
+        }
     }
 
-    override fun onReady(event: ReadyEvent?) {
+    override fun onReady(event: ReadyEvent) {
         log.info("Shard is ready.")
-        val database = this.bot.database
-        val shard = event!!.jda
+        val shard = event.jda
 
         for (guild in shard.guilds) {
             if (!DiscordUtils.isGuildTalkable(guild)) {
@@ -162,38 +160,22 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             }
         }
 
-        var guildsWithMissingKeys = 0
-        for (guild in shard.guilds) {
-            val guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild)
-
-            if (guildSettings == null) {
-                DatabaseUtils.deleteGuildSettings(database, guild)
-                DatabaseUtils.createGuildSettings(this.bot, database, guild)
-                guildsWithMissingKeys++
-            }
-        }
-
-        if (guildsWithMissingKeys > 0) {
-            log.warn("Added {} guild(s) to the database with invalid number of settings.", guildsWithMissingKeys)
-        }
-
         threadPool.submit {
             try {
                 populateStatistics(shard)
             } catch (e: Exception) {
-                e.printStackTrace()
+                log.error("Failed to populate statistics!", e)
             }
 
             log.info("Populated statistics.")
         }
     }
 
-    override fun onGuildMessageReceived(event: GuildMessageReceivedEvent?) {
-        if (event!!.author.isBot) {
+    override fun onGuildMessageReceived(event: GuildMessageReceivedEvent) {
+        if (event.author.isBot) {
             return
         }
 
-        val database = bot.database
         val guild = event.guild
         val message = event.message
         val content = message.contentRaw
@@ -201,7 +183,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val self = shard.selfUser
 
         if (message.isMentioned(self) && content.contains("prefix")) {
-            val guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild)
+            val guildSettings = getGuildSettings(guild, bot.config)
             val prefix = guildSettings.prefix
             DiscordUtils.successReact(bot, message)
 
@@ -214,13 +196,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             return
         }
 
-        val processorResults = LinkedList<Future<Boolean>>()
-
         // Spread processing jobs across threads as they are likely to be independent of io operations
-        for (processor in bot.processors) {
-            val future = threadPool.submit<Boolean> { processor.onMessage(bot, this, event) }
-            processorResults.add(future)
-        }
+        val processorResults = bot.processors.map { threadPool.submit { it.onMessage(bot, this, event) } }
 
         // If processors return true, that means they deleted the original message so we don't need to continue further
         for (result in processorResults) {
@@ -231,12 +208,9 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             } catch (e: Exception) {
                 //
             }
-
         }
 
-        val guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild)
-                ?: // settings aren't initialized yet
-                return
+        val guildSettings = getGuildSettings(guild, bot.config)
         val prefix = guildSettings.prefix.toLowerCase()
 
         // 0 = prefix, 1 = command, rest are accepted as arguments
@@ -292,17 +266,17 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         threadPool.execute { executeCommand(event, command, commandName, args.toString().trim { it <= ' ' }) }
     }
 
-    override fun onException(event: ExceptionEvent?) {
-        log.error("An exception occurred.", event!!.cause)
+    override fun onException(event: ExceptionEvent) {
+        log.error("An exception occurred.", event.cause)
     }
 
-    override fun onGuildMessageDelete(event: GuildMessageDeleteEvent?) {
+    override fun onGuildMessageDelete(event: GuildMessageDeleteEvent) {
         // TODO(sam): Add message cache and trigger message processors if
         // deleted message is in the cache
     }
 
-    override fun onGuildMessageReactionAdd(event: GuildMessageReactionAddEvent?) {
-        if (event!!.member.user.isBot || event.channel.type != ChannelType.TEXT) {
+    override fun onGuildMessageReactionAdd(event: GuildMessageReactionAddEvent) {
+        if (event.member.user.isBot || event.channel.type != ChannelType.TEXT) {
             return
         }
 
@@ -311,8 +285,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         }
     }
 
-    override fun onGuildMessageReactionRemove(event: GuildMessageReactionRemoveEvent?) {
-        if (event!!.member.user.isBot || event.channel.type != ChannelType.TEXT) {
+    override fun onGuildMessageReactionRemove(event: GuildMessageReactionRemoveEvent) {
+        if (event.member.user.isBot || event.channel.type != ChannelType.TEXT) {
             return
         }
 
@@ -321,42 +295,40 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         }
     }
 
-    override fun onGuildJoin(event: GuildJoinEvent?) {
-        val guild = event!!.guild
+    override fun onGuildJoin(event: GuildJoinEvent) {
+        val guild = event.guild
         if (!DiscordUtils.isGuildTalkable(guild)) {
             guild.leave().complete()
             return
         }
 
-        val database = bot.database
         val defaultPrefix = bot.config[JimConfig.default_prefix]
-        val message = String.format("Hello! I am Safety Jim, `%s` is my default prefix! Try typing `%s help` to see available commands.\n" + "You can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help.", defaultPrefix, defaultPrefix)
+        val message = "Hello! I am Safety Jim, `$defaultPrefix` is my default prefix! Try typing `$defaultPrefix help` to see available commands.\nYou can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help."
         DiscordUtils.sendMessage(DiscordUtils.getDefaultChannel(guild), message)
-        DatabaseUtils.createGuildSettings(bot, database, guild)
+        createGuildSettings(guild, bot.config)
     }
 
-    override fun onGuildLeave(event: GuildLeaveEvent?) {
-        DatabaseUtils.deleteGuildSettings(bot.database, event!!.guild)
+    override fun onGuildLeave(event: GuildLeaveEvent) {
+        deleteGuildSettings(event.guild)
     }
 
-    override fun onGuildMemberJoin(event: GuildMemberJoinEvent?) {
-        val shard = event!!.jda
+    override fun onGuildMemberJoin(event: GuildMemberJoinEvent) {
+        val shard = event.jda
         val guild = event.guild
         val controller = guild.controller
         val member = event.member
         val user = member.user
-        val database = bot.database
-        val guildSettings = DatabaseUtils.getGuildSettings(bot, database, guild)
+        val guildSettings = getGuildSettings(guild, bot.config)
 
-        if (guildSettings.welcomemessage!!) {
+        if (guildSettings.welcomemessage) {
             val textChannelId = guildSettings.welcomemessagechannelid
             val channel = shard.getTextChannelById(textChannelId)
             if (channel != null) {
                 var message = guildSettings.message
                         .replace("\$user", member.asMention)
                         .replace("\$guild", guild.name)
-                if (guildSettings.holdingroom!!) {
-                    val waitTime = guildSettings.holdingroomminutes!!.toString()
+                if (guildSettings.holdingroom) {
+                    val waitTime = guildSettings.holdingroomminutes.toString()
                     message = message.replace("\$minute", waitTime)
                 }
 
@@ -364,27 +336,28 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             }
         }
 
-        if (guildSettings.holdingroom!!) {
-            val waitTime = guildSettings.holdingroomminutes!!
+        if (guildSettings.holdingroom) {
+            val waitTime = guildSettings.holdingroomminutes
             val currentTime = System.currentTimeMillis() / 1000
 
-            val newRecord = database.newRecord(Tables.JOINLIST)
-            newRecord.userid = member.user.id
-            newRecord.guildid = guild.id
-            newRecord.jointime = currentTime
-            newRecord.allowtime = currentTime + waitTime * 60
-            newRecord.allowed = false
-            newRecord.store()
+            transaction {
+                JimJoin.new {
+                    userid = member.user.id
+                    guildid = guild.id
+                    jointime = currentTime
+                    allowtime = currentTime + waitTime * 60
+                    allowed = false
+                }
+            }
         }
 
+        val records = transaction {
+            JimMute.find {
+                (JimMuteTable.guildid eq guild.id) and (JimMuteTable.userid eq user.id) and (JimMuteTable.unmuted eq false)
+            }
+        }
 
-        val records = database.selectFrom(Tables.MUTELIST)
-                .where(Tables.MUTELIST.GUILDID.eq(guild.id))
-                .and(Tables.MUTELIST.USERID.eq(user.id))
-                .and(Tables.MUTELIST.UNMUTED.eq(false))
-                .fetch()
-
-        if (records.isEmpty()) {
+        if (transaction { records.empty() }) {
             return
         }
 
@@ -399,28 +372,28 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         } catch (e: Exception) {
             // Maybe actually do something if this fails?
         }
-
     }
 
-    override fun onGuildMemberLeave(event: GuildMemberLeaveEvent?) {
-        bot.database
-                .deleteFrom(Tables.JOINLIST)
-                .where(Tables.JOINLIST.USERID.eq(event!!.user.id))
-                .execute()
+    override fun onGuildMemberLeave(event: GuildMemberLeaveEvent) = transaction {
+        JimJoin.find {
+            (JimJoinTable.userid eq event.user.id) and (JimJoinTable.guildid eq event.guild.id)
+        }.forEach { it.delete() }
     }
 
     private fun createCommandLog(event: GuildMessageReceivedEvent, commandName: String, args: String, time: Date, from: Long, to: Long) {
         val author = event.author
-        val record = bot.database.newRecord(Tables.COMMANDLOGS)
-        record.command = commandName
-        record.arguments = args
-        record.time = Timestamp(time.time)
-        record.username = DiscordUtils.getTag(author)
-        record.userid = author.id
-        record.guildname = event.guild.name
-        record.guildid = event.guild.id
-        record.executiontime = (to - from).toInt()
-        record.store()
+        transaction {
+            JimCommandLog.new {
+                command = commandName
+                arguments = args
+                this.time = DateTime(time.toInstant())
+                username = DiscordUtils.getTag(author)
+                userid = author.id
+                guildname = event.guild.name
+                guildid = event.guild.id
+                executiontime = (to - from).toInt()
+            }
+        }
     }
 
     private fun executeCommand(event: GuildMessageReceivedEvent, command: Command?, commandName: String, args: String) {
@@ -442,7 +415,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         if (showUsage) {
             val usages = command!!.usages
-            val guildSettings = DatabaseUtils.getGuildSettings(bot, bot.database, event.guild)
+            val guildSettings = getGuildSettings(event.guild, bot.config)
             val prefix = guildSettings.prefix
 
             val embed = EmbedBuilder()

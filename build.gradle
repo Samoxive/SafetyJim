@@ -1,16 +1,4 @@
-import com.moandjiezana.toml.Toml
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.moandjiezana.toml:toml4j:0.7.2'
-    }
-}
-
 plugins {
-    id 'nu.studer.jooq' version '2.0.11'
     id 'com.sedmelluq.jdaction' version '1.0.2'
     id "com.github.johnrengelman.shadow" version "2.0.4"
     id 'com.github.ben-manes.versions' version '0.20.0'
@@ -21,6 +9,7 @@ group 'org.samoxive'
 version '3.1.1'
 
 apply plugin: 'application'
+apply plugin: 'java'
 mainClassName = "org.samoxive.safetyjim.MainKt"
 
 sourceCompatibility = 1.8
@@ -28,14 +17,38 @@ sourceCompatibility = 1.8
 repositories {
     mavenCentral()
     jcenter()
+    maven {
+        url  "https://dl.bintray.com/kotlin/exposed"
+    }
+}
+
+configurations {
+    ktlint
+}
+
+task ktlint(type: JavaExec, group: "verification") {
+    description = "Check Kotlin code style."
+    main = "com.github.shyiko.ktlint.Main"
+    classpath = configurations.ktlint
+    args "src/**/*.kt"
+    // to generate report in checkstyle format prepend following args:
+    // "--reporter=plain", "--reporter=checkstyle,output=${buildDir}/ktlint.xml"
+    // see https://github.com/shyiko/ktlint#usage for more
+}
+check.dependsOn ktlint
+
+task ktlintFormat(type: JavaExec, group: "formatting") {
+    description = "Fix Kotlin code style deviations."
+    main = "com.github.shyiko.ktlint.Main"
+    classpath = configurations.ktlint
+    args "-F", "src/**/*.kt"
 }
 
 dependencies {
+    ktlint 'com.github.shyiko:ktlint:0.27.0'
     testCompile 'junit:junit:4.12'
     compile 'org.slf4j:slf4j-log4j12:1.8.0-beta2'
-    jooqRuntime 'org.postgresql:postgresql:42.2.2'
     compile 'org.postgresql:postgresql:42.2.5'
-    compile 'org.jooq:jooq:3.10.0'
     compile 'com.zaxxer:HikariCP:3.2.0'
     compile 'com.joestelmach:natty:0.13'
     compile 'org.ocpsoft.prettytime:prettytime:4.0.2.Final'
@@ -49,37 +62,7 @@ dependencies {
     }
     compile 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.61'
     compile 'com.uchuhimo:konf:0.11'
-}
-
-jooq {
-    def toml = new Toml().read(new File('./config.toml').text)
-    def jdbc_url = toml.getString('database.jdbc_url')
-    def username = toml.getString('database.user')
-    def pass = toml.getString('database.pass')
-
-    version = '3.9.5'
-    edition = 'OSS'
-    sample(sourceSets.main) {
-        jdbc {
-            driver = 'org.postgresql.Driver'
-            url = jdbc_url
-            user = username
-            password = pass
-        }
-        generator {
-            name = 'org.jooq.util.DefaultGenerator'
-            strategy {
-                name = 'org.jooq.util.DefaultGeneratorStrategy'
-            }
-            target {
-                packageName = 'org.samoxive.jooq.generated'
-            }
-            database {
-                name = 'org.jooq.util.postgres.PostgresDatabase'
-                inputSchema = 'public'
-            }
-        }
-    }
+    compile 'org.jetbrains.exposed:exposed:0.10.4'
 }
 
 jar {

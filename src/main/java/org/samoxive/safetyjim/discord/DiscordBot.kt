@@ -2,28 +2,28 @@ package org.samoxive.safetyjim.discord
 
 import com.mashape.unirest.http.Unirest
 import com.uchuhimo.konf.Config
-import net.dv8tion.jda.core.*
-import net.dv8tion.jda.core.entities.*
+import net.dv8tion.jda.core.EmbedBuilder
+import net.dv8tion.jda.core.MessageBuilder
+import net.dv8tion.jda.core.Permission
+import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.utils.SessionControllerAdapter
-import org.jooq.DSLContext
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.json.JSONObject
-import org.samoxive.jooq.generated.Tables
 import org.samoxive.safetyjim.config.BotListConfig
 import org.samoxive.safetyjim.config.JimConfig
-import org.samoxive.safetyjim.database.DatabaseUtils
+import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.commands.*
-import org.samoxive.safetyjim.discord.commands.Invite
 import org.samoxive.safetyjim.discord.processors.InviteLink
 import org.samoxive.safetyjim.discord.processors.MessageStats
 import org.slf4j.LoggerFactory
-
-import java.awt.*
+import java.awt.Color
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 
-class DiscordBot(val database: DSLContext, val config: Config) {
+class DiscordBot(val config: Config) {
     private val log = LoggerFactory.getLogger(DiscordBot::class.java)
     val shards = ArrayList<DiscordShard>()
     val commands = HashMap<String, Command>()
@@ -54,7 +54,6 @@ class DiscordBot(val database: DSLContext, val config: Config) {
             } catch (e: InterruptedException) {
                 e.printStackTrace()
             }
-
         }
 
         scheduler.scheduleAtFixedRate({
@@ -139,32 +138,28 @@ class DiscordBot(val database: DSLContext, val config: Config) {
         processors.add(MessageStats())
     }
 
-    private fun saveMemberCounts() {
-        val settings = DatabaseUtils.getAllGuildSettings(database)
-        val records = shards.map { shard -> shard.shard.guilds }
+    private fun saveMemberCounts() = transaction {
+        val settings = getAllGuildSettings()
+        shards.map { shard -> shard.shard.guilds }
                 .flatMap { it }
                 .filter { guild -> settings[guild.id]!!.statistics }
-                .map { guild ->
-                    val record = database.newRecord(Tables.MEMBERCOUNTS)
-                    val members = guild.members
-                    val onlineCount = members.filter { member -> DiscordUtils.isOnline(member) }.count()
-                    record.guildid = guild.id
-                    record.date = Date().time
-                    record.onlinecount = onlineCount
-                    record.count = members.size
-                    record
+                .forEach { guild ->
+                    val onlineCount = guild.members.filter { member -> DiscordUtils.isOnline(member) }.count()
+                    JimMemberCount.new {
+                        guildid = guild.id
+                        date = Date().time
+                        onlinecount = onlineCount
+                        count = guild.members.size
+                    }
                 }
-
-        database.batchStore(records).execute()
     }
 
-    private fun allowUsers() {
+    private fun allowUsers() = transaction {
         val currentTime = System.currentTimeMillis() / 1000
 
-        val usersToBeAllowed = database.selectFrom(Tables.JOINLIST)
-                .where(Tables.JOINLIST.ALLOWED.eq(false))
-                .and(Tables.JOINLIST.ALLOWTIME.lt(currentTime))
-                .fetch()
+        val usersToBeAllowed = JimJoin.find {
+            (JimJoinTable.allowed eq false) and (JimJoinTable.allowtime less currentTime)
+        }
 
         for (user in usersToBeAllowed) {
             val guildId = user.guildid
@@ -176,12 +171,11 @@ class DiscordBot(val database: DSLContext, val config: Config) {
 
             if (guild == null) {
                 user.allowed = true
-                user.update()
                 continue
             }
 
-            val guildSettings = DatabaseUtils.getGuildSettings(this, database, guild)
-            val enabled = guildSettings.holdingroom!!
+            val guildSettings = getGuildSettings(guild, config)
+            val enabled = guildSettings.holdingroom
 
             if (enabled) {
                 val guildUser = DiscordUtils.getUserById(shard.shard, user.userid)
@@ -192,7 +186,6 @@ class DiscordBot(val database: DSLContext, val config: Config) {
 
                 if (role == null) {
                     guildSettings.holdingroom = false
-                    guildSettings.update()
                     continue
                 }
 
@@ -202,23 +195,19 @@ class DiscordBot(val database: DSLContext, val config: Config) {
                     //
                 } finally {
                     user.allowed = true
-                    user.update()
                 }
             } else {
                 user.allowed = true
-                user.update()
             }
         }
     }
 
-    private fun unbanUsers() {
+    private fun unbanUsers() = transaction {
         val currentTime = System.currentTimeMillis() / 1000
 
-        val usersToBeUnbanned = database.selectFrom(Tables.BANLIST)
-                .where(Tables.BANLIST.UNBANNED.eq(false))
-                .and(Tables.BANLIST.EXPIRES.eq(true))
-                .and(Tables.BANLIST.EXPIRETIME.lt(currentTime))
-                .fetch()
+        val usersToBeUnbanned = JimBan.find {
+            (JimBanTable.unbanned eq false) and (JimBanTable.expires eq true) and (JimBanTable.expiretime less currentTime)
+        }
 
         for (user in usersToBeUnbanned) {
             val guildId = user.guildid
@@ -230,7 +219,6 @@ class DiscordBot(val database: DSLContext, val config: Config) {
 
             if (guild == null) {
                 user.unbanned = true
-                user.update()
                 continue
             }
 
@@ -239,7 +227,6 @@ class DiscordBot(val database: DSLContext, val config: Config) {
 
             if (!guild.selfMember.hasPermission(Permission.BAN_MEMBERS)) {
                 user.unbanned = true
-                user.update()
                 continue
             }
 
@@ -249,7 +236,6 @@ class DiscordBot(val database: DSLContext, val config: Config) {
 
             if (banRecord == null) {
                 user.unbanned = true
-                user.update()
             }
 
             try {
@@ -258,19 +244,16 @@ class DiscordBot(val database: DSLContext, val config: Config) {
                 //
             } finally {
                 user.unbanned = true
-                user.update()
             }
         }
     }
 
-    private fun unmuteUsers() {
+    private fun unmuteUsers() = transaction {
         val currentTime = System.currentTimeMillis() / 1000
 
-        val usersToBeUnmuted = database.selectFrom(Tables.MUTELIST)
-                .where(Tables.MUTELIST.UNMUTED.eq(false))
-                .and(Tables.MUTELIST.EXPIRES.eq(true))
-                .and(Tables.MUTELIST.EXPIRETIME.lt(currentTime))
-                .fetch()
+        val usersToBeUnmuted = JimMute.find {
+            (JimMuteTable.unmuted eq false) and (JimMuteTable.expires eq true) and (JimMuteTable.expiretime less currentTime)
+        }
 
         for (user in usersToBeUnmuted) {
             val guildId = user.guildid
@@ -281,8 +264,7 @@ class DiscordBot(val database: DSLContext, val config: Config) {
             val guild = shardClient.getGuildById(guildId)
 
             if (guild == null) {
-                user.unmuted = true
-                user.update()
+                transaction { user.unmuted = true }
                 continue
             }
 
@@ -290,7 +272,6 @@ class DiscordBot(val database: DSLContext, val config: Config) {
             val member = guild.getMember(guildUser)
             if (member == null) {
                 user.unmuted = true
-                user.update()
                 continue
             }
 
@@ -307,7 +288,6 @@ class DiscordBot(val database: DSLContext, val config: Config) {
 
             if (role == null) {
                 user.unmuted = true
-                user.update()
                 continue
             }
 
@@ -317,18 +297,16 @@ class DiscordBot(val database: DSLContext, val config: Config) {
                 controller.removeSingleRoleFromMember(member, role).complete()
             } finally {
                 user.unmuted = true
-                user.update()
             }
         }
     }
 
-    private fun remindReminders() {
+    private fun remindReminders() = transaction {
         val now = Date().time / 1000
 
-        val reminders = database.selectFrom(Tables.REMINDERLIST)
-                .where(Tables.REMINDERLIST.REMINDED.eq(false))
-                .and(Tables.REMINDERLIST.REMINDTIME.lt(now))
-                .fetch()
+        val reminders = JimReminder.find {
+            (JimReminderTable.reminded eq false) and (JimReminderTable.remindtime less now)
+        }
 
         for (reminder in reminders) {
             val guildId = reminder.guildid
@@ -342,7 +320,6 @@ class DiscordBot(val database: DSLContext, val config: Config) {
 
             if (guild == null) {
                 reminder.reminded = true
-                reminder.update()
                 continue
             }
 
@@ -354,7 +331,7 @@ class DiscordBot(val database: DSLContext, val config: Config) {
             embed.setDescription(reminder.message)
             embed.setAuthor("Safety Jim", null, shard.selfUser.avatarUrl)
             embed.setFooter("Reminder set on", null)
-            embed.setTimestamp(Date(reminder.remindtime!! * 1000).toInstant())
+            embed.setTimestamp(Date(reminder.remindtime * 1000).toInstant())
             embed.setColor(Color(0x4286F4))
 
             if (channel == null || member == null) {
@@ -369,11 +346,9 @@ class DiscordBot(val database: DSLContext, val config: Config) {
                 } catch (e: Exception) {
                     DiscordUtils.sendDM(user, embed.build())
                 }
-
             }
 
             reminder.reminded = true
-            reminder.update()
         }
     }
 

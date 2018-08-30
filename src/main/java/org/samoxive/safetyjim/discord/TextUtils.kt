@@ -1,9 +1,7 @@
 package org.samoxive.safetyjim.discord
 
 import com.joestelmach.natty.Parser
-
-import java.util.Date
-import java.util.Scanner
+import java.util.*
 import java.util.regex.Pattern
 
 object TextUtils {

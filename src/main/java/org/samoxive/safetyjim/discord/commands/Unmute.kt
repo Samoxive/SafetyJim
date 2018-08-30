@@ -2,7 +2,10 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.jooq.generated.Tables
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimMute
+import org.samoxive.safetyjim.database.JimMuteTable
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
@@ -16,8 +19,6 @@ class Unmute : Command() {
         val guild = event.guild
         val controller = guild.controller
         val mentions = message.mentionedUsers
-
-        val database = bot.database
 
         if (!member.hasPermission(Permission.MANAGE_ROLES)) {
             DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Manage Roles")
@@ -51,18 +52,10 @@ class Unmute : Command() {
                 return false
             }
 
-            val records = database.selectFrom(Tables.MUTELIST)
-                    .where(Tables.MUTELIST.USERID.eq(unmuteUser.id))
-                    .and(Tables.MUTELIST.GUILDID.eq(guild.id))
-                    .fetch()
-
-            if (records.isEmpty()) {
-                continue
-            }
-
-            for (record in records) {
-                record.unmuted = true
-                record.update()
+            transaction {
+                JimMute.find {
+                    (JimMuteTable.guildid eq guild.id) and (JimMuteTable.userid eq unmuteUser.id)
+                }.forUpdate().forEach { it.unmuted = true }
             }
         }
 

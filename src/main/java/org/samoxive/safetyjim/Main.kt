@@ -4,9 +4,8 @@ import com.uchuhimo.konf.Config
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.apache.log4j.*
-import org.jooq.SQLDialect
-import org.jooq.impl.DSL
 import org.samoxive.safetyjim.config.*
+import org.samoxive.safetyjim.database.setupDatabase
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.slf4j.LoggerFactory
 
@@ -29,9 +28,8 @@ fun main(args: Array<String>) {
     hikariConfig.password = config[DatabaseConfig.pass]
     hikariConfig.connectionTestQuery = "SELECT 1;"
     val ds = HikariDataSource(hikariConfig)
-    val database = DSL.using(ds, SQLDialect.POSTGRES)
-
-    val bot = DiscordBot(database, config)
+    setupDatabase(ds)
+    val bot = DiscordBot(config)
 }
 
 fun setupLoggers() {

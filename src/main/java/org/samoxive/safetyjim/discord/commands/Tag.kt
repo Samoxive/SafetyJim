@@ -3,15 +3,16 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.jooq.generated.Tables
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimTag
+import org.samoxive.safetyjim.database.JimTagTable
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.TextUtils
-
-import java.awt.*
-import java.util.Scanner
-import java.util.StringJoiner
+import java.awt.Color
+import java.util.*
 
 class Tag : Command() {
     override val usages = arrayOf("tag list - Shows all tags and responses to user", "tag <name> - Responds with reponse of the given tag", "tag add <name> <response> - Adds a tag with the given name and response", "tag edit <name> <response> - Changes response of tag with given name", "tag remove <name> - Deletes tag with the given name")
@@ -28,17 +29,14 @@ class Tag : Command() {
     }
 
     private fun displayTags(bot: DiscordBot, event: GuildMessageReceivedEvent) {
-        val database = bot.database
         val shard = event.jda
         val guild = event.guild
         val channel = event.channel
         val message = event.message
 
-        val records = database.selectFrom(Tables.TAGLIST)
-                .where(Tables.TAGLIST.GUILDID.eq(guild.id))
-                .fetch()
+        val records = transaction { JimTag.find { JimTagTable.guildid eq guild.id } }
 
-        if (records.isEmpty()) {
+        if (transaction { records.empty() }) {
             DiscordUtils.successReact(bot, message)
             DiscordUtils.sendMessage(channel, "No tags have been added yet!")
             return
@@ -60,7 +58,6 @@ class Tag : Command() {
     }
 
     private fun addTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
-        val database = bot.database
         val guild = event.guild
         val message = event.message
         val member = event.member
@@ -89,23 +86,21 @@ class Tag : Command() {
             return
         }
 
-        val record = database.newRecord(Tables.TAGLIST)
-
-        record.guildid = guild.id
-        record.name = tagName
-        record.response = response
-
         try {
-            record.store()
+            transaction {
+                JimTag.new {
+                    guildid = guild.id
+                    name = tagName
+                    this.response = response
+                }
+            }
             DiscordUtils.successReact(bot, message)
         } catch (e: Exception) {
             DiscordUtils.failMessage(bot, message, "Tag `$tagName` already exists!")
         }
-
     }
 
     private fun editTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
-        val database = bot.database
         val guild = event.guild
         val message = event.message
         val member = event.member
@@ -128,24 +123,23 @@ class Tag : Command() {
             return
         }
 
-        val record = database.selectFrom(Tables.TAGLIST)
-                .where(Tables.TAGLIST.GUILDID.eq(guild.id))
-                .and(Tables.TAGLIST.NAME.eq(tagName))
-                .fetchOne()
+        val record = transaction {
+            JimTag.find {
+                (JimTagTable.guildid eq guild.id) and (JimTagTable.name eq tagName)
+            }.firstOrNull()
+        }
 
         if (record == null) {
             DiscordUtils.failMessage(bot, message, "Tag `$tagName` does not exist!")
             return
         }
 
-        record.response = response
-        record.update()
+        transaction { record.response = response }
 
         DiscordUtils.successReact(bot, message)
     }
 
     private fun deleteTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
-        val database = bot.database
         val guild = event.guild
         val message = event.message
         val member = event.member
@@ -162,23 +156,23 @@ class Tag : Command() {
 
         val tagName = messageIterator.next()
 
-        val record = database.selectFrom(Tables.TAGLIST)
-                .where(Tables.TAGLIST.GUILDID.eq(guild.id))
-                .and(Tables.TAGLIST.NAME.eq(tagName))
-                .fetchOne()
+        val record = transaction {
+            JimTag.find {
+                (JimTagTable.guildid eq guild.id) and (JimTagTable.name eq tagName)
+            }.firstOrNull()
+        }
 
         if (record == null) {
             DiscordUtils.failMessage(bot, message, "Tag `$tagName` does not exist!")
             return
         }
 
-        record.delete()
+        transaction { record.delete() }
         DiscordUtils.successReact(bot, message)
     }
 
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
         val messageIterator = Scanner(args)
-        val database = bot.database
         val guild = event.guild
         val message = event.message
         val channel = event.channel
@@ -195,10 +189,11 @@ class Tag : Command() {
             "edit" -> editTag(bot, event, messageIterator)
             "remove" -> deleteTag(bot, event, messageIterator)
             else -> {
-                val record = database.selectFrom(Tables.TAGLIST)
-                        .where(Tables.TAGLIST.GUILDID.eq(guild.id))
-                        .and(Tables.TAGLIST.NAME.eq(commandOrTag))
-                        .fetchAny()
+                val record = transaction {
+                    JimTag.find {
+                        (JimTagTable.guildid eq guild.id) and (JimTagTable.name eq commandOrTag)
+                    }.firstOrNull()
+                }
 
                 if (record == null) {
                     DiscordUtils.failMessage(bot, message, "Could not find a tag with that name!")
@@ -210,8 +205,6 @@ class Tag : Command() {
             }
         }
 
-
         return false
     }
 }
-

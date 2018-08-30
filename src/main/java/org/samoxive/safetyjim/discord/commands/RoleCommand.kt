@@ -2,20 +2,21 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.jooq.generated.Tables
-import org.samoxive.jooq.generated.tables.records.RolelistRecord
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimRole
+import org.samoxive.safetyjim.database.JimRoleTable
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.TextUtils
-import java.util.Scanner
+import java.util.*
 
 class RoleCommand : Command() {
     override val usages = arrayOf("role add <roleName> - adds a new self-assignable role", "role remove <roleName> - removes a self-assignable role")
 
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
         val messageIterator = Scanner(args)
-        val database = bot.database
 
         val member = event.member
         val message = event.message
@@ -53,33 +54,30 @@ class RoleCommand : Command() {
 
         val matchedRole = matchingRoles[0]
 
+        val record = transaction {
+            JimRole.find {
+                (JimRoleTable.guildid eq guild.id) and (JimRoleTable.roleid eq matchedRole.id)
+            }.firstOrNull()
+        }
         if (subcommand == "add") {
-            var record: RolelistRecord? = database.selectFrom(Tables.ROLELIST)
-                    .where(Tables.ROLELIST.GUILDID.eq(guild.id))
-                    .and(Tables.ROLELIST.ROLEID.eq(matchedRole.id))
-                    .fetchAny()
-
             if (record == null) {
-                record = database.newRecord(Tables.ROLELIST)
-                record!!.guildid = guild.id
-                record.roleid = matchedRole.id
-                record.store()
+                transaction {
+                    JimRole.new {
+                        guildid = guild.id
+                        roleid = matchedRole.id
+                    }
+                }
                 DiscordUtils.successReact(bot, message)
             } else {
                 DiscordUtils.failMessage(bot, message, "Specified role is already in self-assignable roles list!")
                 return false
             }
         } else {
-            val record = database.selectFrom(Tables.ROLELIST)
-                    .where(Tables.ROLELIST.GUILDID.eq(guild.id))
-                    .and(Tables.ROLELIST.ROLEID.eq(matchedRole.id))
-                    .fetchAny()
-
             if (record == null) {
                 DiscordUtils.failMessage(bot, message, "Specified role is not in self-assignable roles list!")
                 return false
             } else {
-                record.delete()
+                transaction { record.delete() }
                 DiscordUtils.successReact(bot, message)
             }
         }

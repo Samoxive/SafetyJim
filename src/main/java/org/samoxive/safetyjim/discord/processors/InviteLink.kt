@@ -3,7 +3,7 @@ package org.samoxive.safetyjim.discord.processors
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.core.exceptions.InsufficientPermissionException
-import org.samoxive.safetyjim.database.DatabaseUtils
+import org.samoxive.safetyjim.database.getGuildSettings
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordShard
 import org.samoxive.safetyjim.discord.DiscordUtils
@@ -23,7 +23,7 @@ class InviteLink : MessageProcessor() {
             }
         }
 
-        val processorEnabled = DatabaseUtils.getGuildSettings(bot, bot.database, event.guild).invitelinkremover!!
+        val processorEnabled = getGuildSettings(event.guild, bot.config).invitelinkremover
         if (!processorEnabled) {
             return false
         }

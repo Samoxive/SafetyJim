@@ -2,15 +2,17 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.ocpsoft.prettytime.PrettyTime
-import org.samoxive.jooq.generated.Tables
 import org.samoxive.safetyjim.config.JimConfig
+import org.samoxive.safetyjim.database.JimBanTable
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
-
-import java.awt.*
-import java.util.Date
+import java.awt.Color
+import java.util.*
 
 class Info : Command() {
     override val usages = arrayOf("info - displays some information about the bot")
@@ -20,7 +22,6 @@ class Info : Command() {
     private val prettyTime = PrettyTime()
 
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
-        val database = bot.database
         val config = bot.config
         val currentShard = event.jda
         val shards = bot.shards.map { shard -> shard.shard }
@@ -51,28 +52,30 @@ class Info : Command() {
         val ramTotal = runtime.totalMemory() / (1024 * 1024)
         val ramUsed = ramTotal - runtime.freeMemory() / (1024 * 1024)
 
-        val lastBanRecord = database.selectFrom(Tables.BANLIST)
-                .where(Tables.BANLIST.GUILDID.eq(guild.id))
-                .orderBy(Tables.BANLIST.BANTIME.desc())
-                .fetchAny()
+        val lastBanRecord = transaction {
+            JimBanTable.select { JimBanTable.guildid eq guild.id }
+                    .orderBy(JimBanTable.bantime to SortOrder.DESC)
+                    .limit(1)
+                    .firstOrNull()
+        }
 
         var daysSince = "\u221E" // Infinity symbol
 
         if (lastBanRecord != null) {
             val now = Date()
-            val dayCount = (now.time / 1000 - lastBanRecord.bantime!!) / (60 * 60 * 24)
-            daysSince = java.lang.Long.toString(dayCount)
+            val dayCount = (now.time / 1000 - lastBanRecord[JimBanTable.bantime]) / (60 * 60 * 24)
+            daysSince = dayCount.toString()
         }
 
         val embed = EmbedBuilder()
-        embed.setAuthor(String.format("Safety Jim - v%s - Shard %s", config[JimConfig.version], shardString), null, selfUser.avatarUrl)
+        embed.setAuthor("Safety Jim - v${config[JimConfig.version]} - Shard $shardString", null, selfUser.avatarUrl)
         embed.setDescription("Lifting the :hammer: since $uptimeString")
-        embed.addField("Server Count", java.lang.Long.toString(guildCount), true)
-        embed.addField("User Count", Integer.toString(userCount), true)
-        embed.addField("Channel Count", Integer.toString(channelCount), true)
-        embed.addField("Websocket Ping", String.format("Shard %s: %dms\nAverage: %dms", shardString, pingShard, pingAverage), true)
-        embed.addField("RAM usage", String.format("%dMB / %dMB", ramUsed, ramTotal), true)
-        embed.addField("Links", String.format("[Support](%s) | [Github](%s) | [Invite](%s)", supportServer, githubLink, botInviteLink), true)
+        embed.addField("Server Count", guildCount.toString(), true)
+        embed.addField("User Count", userCount.toString(), true)
+        embed.addField("Channel Count", channelCount.toString(), true)
+        embed.addField("Websocket Ping", "Shard $shardString: ${pingShard}ms\nAverage: ${pingAverage}ms", true)
+        embed.addField("RAM usage", "${ramUsed}MB / ${ramTotal}MB", true)
+        embed.addField("Links", "[Support]($supportServer) | [Github]($githubLink) | [Invite]($botInviteLink)", true)
         embed.setFooter("Made by Safety Jim team. | Days since last incident: $daysSince", null)
         embed.setColor(Color(0x4286F4))
 

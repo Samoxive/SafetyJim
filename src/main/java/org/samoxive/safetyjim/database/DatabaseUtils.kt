@@ -1,66 +1,71 @@
 package org.samoxive.safetyjim.database
 
+import com.uchuhimo.konf.Config
 import net.dv8tion.jda.core.entities.Guild
-import org.jooq.DSLContext
-import org.samoxive.jooq.generated.Tables
-import org.samoxive.jooq.generated.tables.records.SettingsRecord
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.Index
+import org.jetbrains.exposed.sql.SchemaUtils.createIndex
+import org.jetbrains.exposed.sql.SchemaUtils.createMissingTablesAndColumns
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.config.JimConfig
-import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
+import javax.sql.DataSource
 
-import java.util.HashMap
+fun setupDatabase(dataSource: DataSource) {
+    Database.connect(dataSource)
 
-object DatabaseUtils {
-    val DEFAULT_WELCOME_MESSAGE = "Welcome to \$guild \$user!"
+    transaction {
+        createMissingTablesAndColumns(
+                JimBanTable,
+                JimCommandLogTable,
+                JimJoinTable,
+                JimKickTable,
+                JimMemberCountTable,
+                JimMessageTable,
+                JimMuteTable,
+                JimReminderTable,
+                JimRoleTable,
+                JimSettingsTable,
+                JimSoftbanTable,
+                JimTagTable,
+                JimWarnTable
+        )
 
-    fun getGuildSettings(bot: DiscordBot, database: DSLContext, guild: Guild): SettingsRecord {
-        val record = database.selectFrom(Tables.SETTINGS)
-                .where(Tables.SETTINGS.GUILDID.eq(guild.id))
-                .fetchAny()
+        createIndex(Index(listOf(JimRoleTable.guildid, JimRoleTable.roleid), true))
+        createIndex(Index(listOf(JimTagTable.guildid, JimTagTable.name), true))
+    }
+}
 
-        if (record == null) {
-            createGuildSettings(bot, database, guild)
-        }
+const val DEFAULT_WELCOME_MESSAGE = "Welcome to \$guild \$user!"
 
+fun getGuildSettings(guild: Guild, config: Config): JimSettings = transaction {
+    val setting = JimSettings.findById(guild.id)
 
-        return database.selectFrom(Tables.SETTINGS)
-                .where(Tables.SETTINGS.GUILDID.eq(guild.id))
-                .fetchAny()
+    if (setting == null) {
+        createGuildSettings(guild, config)
     }
 
-    fun getAllGuildSettings(database: DSLContext): Map<String, SettingsRecord> {
-        val map = HashMap<String, SettingsRecord>()
-        val records = database.selectFrom(Tables.SETTINGS).fetch()
+    JimSettings[guild.id]
+}
 
-        for (record in records) {
-            map[record.guildid] = record
-        }
+fun getAllGuildSettings() = transaction { JimSettings.all().associateBy { it -> it.id.value } }
 
-        return map
-    }
+fun deleteGuildSettings(guild: Guild) = transaction { JimSettings.findById(guild.id)?.delete() }
 
-    fun deleteGuildSettings(database: DSLContext, guild: Guild) {
-        database.deleteFrom(Tables.SETTINGS).where(Tables.SETTINGS.GUILDID.eq(guild.id)).execute()
-    }
-
-    fun createGuildSettings(bot: DiscordBot, database: DSLContext, guild: Guild) {
-        val record = database.newRecord(Tables.SETTINGS)
-
-        record.guildid = guild.id
-        record.silentcommands = false
-        record.invitelinkremover = false
-        record.modlog = false
-        record.modlogchannelid = DiscordUtils.getDefaultChannel(guild).id
-        record.holdingroom = false
-        record.holdingroomroleid = null
-        record.holdingroomminutes = 3
-        record.prefix = bot.config[JimConfig.default_prefix]
-        record.welcomemessage = false
-        record.message = DEFAULT_WELCOME_MESSAGE
-        record.welcomemessagechannelid = DiscordUtils.getDefaultChannel(guild).id
-        record.nospaceprefix = false
-        record.statistics = false
-
-        record.store()
+fun createGuildSettings(guild: Guild, config: Config) = transaction {
+    JimSettings.new(guild.id) {
+        silentcommands = false
+        invitelinkremover = false
+        modlog = false
+        modlogchannelid = DiscordUtils.getDefaultChannel(guild).id
+        holdingroom = false
+        holdingroomroleid = null
+        holdingroomminutes = 3
+        prefix = config[JimConfig.default_prefix]
+        welcomemessage = false
+        message = DEFAULT_WELCOME_MESSAGE
+        welcomemessagechannelid = DiscordUtils.getDefaultChannel(guild).id
+        nospaceprefix = false
+        statistics = false
     }
 }

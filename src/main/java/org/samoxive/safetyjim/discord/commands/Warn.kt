@@ -3,15 +3,14 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.jooq.generated.Tables
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimWarn
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.TextUtils
-
-import java.awt.*
-import java.util.Date
-import java.util.Scanner
+import java.awt.Color
+import java.util.*
 
 class Warn : Command() {
     override val usages = arrayOf("warn @user [reason] - warn the user with the specified reason")
@@ -72,23 +71,17 @@ class Warn : Command() {
 
         DiscordUtils.successReact(bot, message)
 
-        val database = bot.database
+        val record = transaction {
+            JimWarn.new {
+                userid = warnUser.id
+                moderatoruserid = user.id
+                guildid = guild.id
+                warntime = now.time / 1000
+                this.reason = reason
+            }
+        }
 
-        val record = database.insertInto(Tables.WARNLIST,
-                Tables.WARNLIST.USERID,
-                Tables.WARNLIST.MODERATORUSERID,
-                Tables.WARNLIST.GUILDID,
-                Tables.WARNLIST.WARNTIME,
-                Tables.WARNLIST.REASON)
-                .values(warnUser.id,
-                        user.id,
-                        guild.id,
-                        now.time / 1000,
-                        reason)
-                .returning(Tables.WARNLIST.ID)
-                .fetchOne()
-
-        DiscordUtils.createModLogEntry(bot, shard, message, warnMember, reason, "warn", record.id!!, null, false)
+        DiscordUtils.createModLogEntry(bot, shard, message, warnMember, reason, "warn", record.id.value, null, false)
         DiscordUtils.sendMessage(channel, "Warned " + DiscordUtils.getUserTagAndId(warnUser))
 
         return false

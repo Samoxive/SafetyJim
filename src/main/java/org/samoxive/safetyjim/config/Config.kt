@@ -20,7 +20,7 @@ object BotListConfig : ConfigSpec("botlist") {
     val list by required<List<list>>()
 }
 
-data class list (
+data class list(
         val name: String,
         val url: String,
         val token: String,

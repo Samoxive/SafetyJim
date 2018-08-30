@@ -1,16 +1,15 @@
 package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.*
+import net.dv8tion.jda.core.entities.Message
+import net.dv8tion.jda.core.entities.TextChannel
+import net.dv8tion.jda.core.entities.User
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.core.requests.restaction.AuditableRestAction
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
-
-import java.util.ArrayList
-import java.util.Date
-import java.util.Scanner
+import java.util.*
 
 class Clean : Command() {
     override val usages = arrayOf("clean <number> - deletes last number of messages", "clean <number> @user - deletes number of messages from specified user", "clean <number> bot - deletes number of messages sent from bots")
@@ -31,7 +30,6 @@ class Clean : Command() {
             } catch (e: IndexOutOfBoundsException) {
                 // we just want to remove first element, ignore if list is empty
             }
-
         }
 
         if (filterBotMessages) {

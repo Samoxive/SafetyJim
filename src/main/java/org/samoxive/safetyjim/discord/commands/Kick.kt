@@ -3,15 +3,14 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.jooq.generated.Tables
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimKick
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.TextUtils
-
-import java.awt.*
-import java.util.Date
-import java.util.Scanner
+import java.awt.Color
+import java.util.*
 
 class Kick : Command() {
     override val usages = arrayOf("kick @user [reason] - kicks the user with the specified reason")
@@ -83,23 +82,17 @@ class Kick : Command() {
             controller.kick(kickMember, auditLogReason).complete()
             DiscordUtils.successReact(bot, message)
 
-            val database = bot.database
+            val record = transaction {
+                JimKick.new {
+                    userid = kickUser.id
+                    moderatoruserid = user.id
+                    guildid = guild.id
+                    kicktime = now.time / 1000
+                    this.reason = reason
+                }
+            }
 
-            val record = database.insertInto(Tables.KICKLIST,
-                    Tables.KICKLIST.USERID,
-                    Tables.KICKLIST.MODERATORUSERID,
-                    Tables.KICKLIST.GUILDID,
-                    Tables.KICKLIST.KICKTIME,
-                    Tables.KICKLIST.REASON)
-                    .values(kickUser.id,
-                            user.id,
-                            guild.id,
-                            now.time / 1000,
-                            reason)
-                    .returning(Tables.KICKLIST.ID)
-                    .fetchOne()
-
-            DiscordUtils.createModLogEntry(bot, shard, message, kickMember, reason, "kick", record.id!!, null, false)
+            DiscordUtils.createModLogEntry(bot, shard, message, kickMember, reason, "kick", record.id.value, null, false)
             DiscordUtils.sendMessage(channel, "Kicked " + DiscordUtils.getUserTagAndId(kickUser))
         } catch (e: Exception) {
             DiscordUtils.failMessage(bot, message, "Could not kick the specified user. Do I have enough permissions?")

@@ -2,12 +2,15 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.jooq.generated.Tables
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimBan
+import org.samoxive.safetyjim.database.JimBanTable
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.TextUtils
-import java.util.Scanner
+import java.util.*
 
 class Unban : Command() {
     override val usages = arrayOf("unban <tag> - unbans user with specified user tag (example#1998)")
@@ -20,7 +23,6 @@ class Unban : Command() {
         val guild = event.guild
         val selfMember = guild.selfMember
         val controller = guild.controller
-
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
             DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Ban Members")
@@ -55,16 +57,11 @@ class Unban : Command() {
         }
 
         controller.unban(targetUser).complete()
-        val database = bot.database
 
-        val records = database.selectFrom(Tables.BANLIST)
-                .where(Tables.BANLIST.GUILDID.eq(guild.id))
-                .and(Tables.BANLIST.USERID.eq(targetUser.id))
-                .fetch()
-
-        for (record in records) {
-            record.unbanned = true
-            record.update()
+        transaction {
+            JimBan.find {
+                (JimBanTable.guildid eq guild.id) and (JimBanTable.userid eq targetUser.id)
+            }.forUpdate().forEach { it.unbanned = true }
         }
 
         DiscordUtils.successReact(bot, message)

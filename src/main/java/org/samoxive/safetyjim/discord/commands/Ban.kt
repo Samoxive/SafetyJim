@@ -3,15 +3,14 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.jooq.generated.Tables
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimBan
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.TextUtils
-
-import java.awt.*
-import java.util.Date
-import java.util.Scanner
+import java.awt.Color
+import java.util.*
 
 class Ban : Command() {
     override val usages = arrayOf("ban @user [reason] | [time] - bans the user with specific arguments. Both arguments can be omitted")
@@ -94,29 +93,21 @@ class Ban : Command() {
             DiscordUtils.successReact(bot, message)
 
             val expires = expirationDate != null
-            val database = bot.database
 
-            val record = database.insertInto(Tables.BANLIST,
-                    Tables.BANLIST.USERID,
-                    Tables.BANLIST.MODERATORUSERID,
-                    Tables.BANLIST.GUILDID,
-                    Tables.BANLIST.BANTIME,
-                    Tables.BANLIST.EXPIRETIME,
-                    Tables.BANLIST.REASON,
-                    Tables.BANLIST.EXPIRES,
-                    Tables.BANLIST.UNBANNED)
-                    .values(banUser.id,
-                            user.id,
-                            guild.id,
-                            now.time / 1000,
-                            if (expirationDate != null) expirationDate.time / 1000 else 0,
-                            reason,
-                            expires,
-                            false)
-                    .returning(Tables.BANLIST.ID)
-                    .fetchOne()
+            val record = transaction {
+                JimBan.new {
+                    userid = banUser.id
+                    moderatoruserid = user.id
+                    guildid = guild.id
+                    bantime = now.time / 1000
+                    expiretime = if (expirationDate != null) expirationDate.time / 1000 else 0
+                    this.reason = reason
+                    this.expires = expires
+                    unbanned = false
+                }
+            }
 
-            val banId = record.id
+            val banId = record.id.value
             DiscordUtils.createModLogEntry(bot, shard, message, banMember, reason, "ban", banId, expirationDate, true)
             DiscordUtils.sendMessage(channel, "Banned " + DiscordUtils.getUserTagAndId(banUser))
         } catch (e: Exception) {

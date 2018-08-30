@@ -6,31 +6,27 @@ import net.dv8tion.jda.core.JDA
 import net.dv8tion.jda.core.OnlineStatus
 import net.dv8tion.jda.core.entities.*
 import org.samoxive.safetyjim.config.JimConfig
-import org.samoxive.safetyjim.database.DatabaseUtils
-import org.slf4j.LoggerFactory
-
-import java.awt.*
+import org.samoxive.safetyjim.database.getGuildSettings
+import java.awt.Color
 import java.util.*
 import java.util.regex.Pattern
 
 object DiscordUtils {
-    private val log = LoggerFactory.getLogger(DiscordUtils::class.java)
-    private val SUCCESS_EMOTE_ID = "322698554294534144"
-    private val SUCCESS_EMOTE_NAME = "jimsuccess"
-    private val FAIL_EMOTE_ID = "322698553980092417"
-    private val FAIL_EMOTE_NAME = "jimfail"
-    private val SUCCESS_EMOTE: Emote? = null
-    private val FAIL_EMOTE: Emote? = null
+    private const val SUCCESS_EMOTE_ID = "322698554294534144"
+    private const val SUCCESS_EMOTE_NAME = "jimsuccess"
+    private const val FAIL_EMOTE_ID = "322698553980092417"
+    private const val FAIL_EMOTE_NAME = "jimfail"
+    private const val API_REACTION_URL = "https://discordapp.com/api/channels/%s/messages/%s/reactions/%s:%s/@me"
 
-    val DISCORD_EPOCH = 1420070400000L
-    val TIMESTAMP_OFFSET = 22
-    val USER_MENTION_PATTERN = Pattern.compile("<@!?([0-9]+)>")
-    val CHANNEL_MENTION_PATTERN = Pattern.compile("<#!?([0-9]+)>")
-    val ROLE_MENTION_PATTERN = Pattern.compile("<@&!?([0-9]+)>")
+    private const val DISCORD_EPOCH = 1420070400000L
+    private const val TIMESTAMP_OFFSET = 22
+    val USER_MENTION_PATTERN: Pattern = Pattern.compile("<@!?([0-9]+)>")
+    val CHANNEL_MENTION_PATTERN: Pattern = Pattern.compile("<#!?([0-9]+)>")
+    val ROLE_MENTION_PATTERN: Pattern = Pattern.compile("<@&!?([0-9]+)>")
 
-    val modLogColors: MutableMap<String, Color> = HashMap()
+    private val modLogColors: MutableMap<String, Color> = HashMap()
 
-    val modLogActionTexts: MutableMap<String, String> = HashMap()
+    private val modLogActionTexts: MutableMap<String, String> = HashMap()
 
     init {
         modLogColors["ban"] = Color(0xFF2900)
@@ -49,10 +45,10 @@ object DiscordUtils {
     }
 
     fun createModLogEntry(bot: DiscordBot, shard: JDA, message: Message, member: Member, reason: String, action: String, id: Int, expirationDate: Date?, expires: Boolean) {
-        val guildSettings = DatabaseUtils.getGuildSettings(bot, bot.database, member.guild)
+        val guildSettings = getGuildSettings(member.guild, bot.config)
         val now = Date()
 
-        val modLogActive = guildSettings.modlog!!
+        val modLogActive = guildSettings.modlog
         val prefix = guildSettings.prefix
 
         if (!modLogActive) {
@@ -95,7 +91,7 @@ object DiscordUtils {
     }
 
     fun deleteCommandMessage(bot: DiscordBot, message: Message) {
-        val silentCommandsActive = DatabaseUtils.getGuildSettings(bot, bot.database, message.guild).silentcommands!!
+        val silentCommandsActive = getGuildSettings(message.guild, bot.config).silentcommands
 
         if (!silentCommandsActive) {
             return
@@ -106,7 +102,6 @@ object DiscordUtils {
         } catch (e: Exception) {
             //
         }
-
     }
 
     fun isKickable(toKick: Member, kicker: Member): Boolean {
@@ -140,7 +135,6 @@ object DiscordUtils {
         return if (highestRoleToBan == null || highestRoleBanner == null) {
             highestRoleBanner != null
         } else highestRoleToBan.position < highestRoleBanner.position
-
     }
 
     fun isOnline(member: Member): Boolean {
@@ -175,8 +169,7 @@ object DiscordUtils {
         reactToMessage(bot, message, FAIL_EMOTE_NAME, FAIL_EMOTE_ID)
     }
 
-    fun reactToMessage(bot: DiscordBot, message: Message, emoteName: String, emoteId: String) {
-        val API_REACTION_URL = "https://discordapp.com/api/channels/%s/messages/%s/reactions/%s:%s/@me"
+    private fun reactToMessage(bot: DiscordBot, message: Message, emoteName: String, emoteId: String) {
         val channelId = message.textChannel.id
         val messageId = message.id
         val token = bot.config[JimConfig.token]
@@ -190,7 +183,6 @@ object DiscordUtils {
         } catch (e: Exception) {
             //
         }
-
     }
 
     fun sendMessage(channel: MessageChannel, message: String) {
@@ -199,7 +191,6 @@ object DiscordUtils {
         } catch (e: Exception) {
             //
         }
-
     }
 
     fun sendMessage(channel: MessageChannel, embed: MessageEmbed) {
@@ -208,7 +199,6 @@ object DiscordUtils {
         } catch (e: Exception) {
             //
         }
-
     }
 
     fun sendDM(user: User, message: String) {
@@ -218,7 +208,6 @@ object DiscordUtils {
         } catch (e: Exception) {
             //
         }
-
     }
 
     fun sendDM(user: User, embed: MessageEmbed) {
@@ -228,7 +217,6 @@ object DiscordUtils {
         } catch (e: Exception) {
             //
         }
-
     }
 
     fun getUserById(shard: JDA, userId: String): User {
@@ -303,7 +291,7 @@ object DiscordUtils {
         return idLong.ushr(TIMESTAMP_OFFSET) + DISCORD_EPOCH
     }
 
-    fun getChannelMention(channel: MessageChannel): String {
+    private fun getChannelMention(channel: MessageChannel): String {
         return "<#" + channel.id + ">"
     }
 
@@ -311,7 +299,7 @@ object DiscordUtils {
         return getTag(user) + " (" + user.id + ")"
     }
 
-    fun getHighestRole(member: Member): Role? {
+    private fun getHighestRole(member: Member): Role? {
         val roles = member.roles
 
         return if (roles.size == 0) {

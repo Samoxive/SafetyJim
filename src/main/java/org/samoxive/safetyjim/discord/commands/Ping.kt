@@ -5,8 +5,7 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
-
-import java.awt.*
+import java.awt.Color
 
 class Ping : Command() {
     override val usages = arrayOf("ping - pong")
@@ -15,7 +14,7 @@ class Ping : Command() {
         val shard = event.jda
         val embed = EmbedBuilder()
         embed.setAuthor("Safety Jim " + DiscordUtils.getShardString(shard.shardInfo), null, shard.selfUser.avatarUrl)
-        embed.setDescription(":ping_pong: Ping: " + shard.ping + "ms")
+        embed.setDescription(":ping_pong: Ping: ${shard.ping}ms")
         embed.setColor(Color(0x4286F4))
         DiscordUtils.successReact(bot, event.message)
         DiscordUtils.sendMessage(event.channel, embed.build())

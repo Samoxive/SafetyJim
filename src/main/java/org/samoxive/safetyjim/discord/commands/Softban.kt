@@ -3,15 +3,14 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.jooq.generated.Tables
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimSoftban
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.TextUtils
-
-import java.awt.*
-import java.util.Date
-import java.util.Scanner
+import java.awt.Color
+import java.util.*
 
 class Softban : Command() {
     override val usages = arrayOf("softban @user [reason] | [messages to delete (days)] - softbans the user with the specified args.")
@@ -82,7 +81,6 @@ class Softban : Command() {
                 DiscordUtils.failMessage(bot, message, "Invalid day count, please try again.")
                 return false
             }
-
         } else {
             1
         }
@@ -109,25 +107,18 @@ class Softban : Command() {
             controller.ban(softbanMember, days, auditLogReason).complete()
             controller.unban(softbanUser).complete()
 
-            val database = bot.database
+            val record = transaction {
+                JimSoftban.new {
+                    userid = softbanUser.id
+                    moderatoruserid = user.id
+                    guildid = guild.id
+                    softbantime = now.time / 1000
+                    deletedays = days
+                    this.reason = reason
+                }
+            }
 
-            val record = database.insertInto(Tables.SOFTBANLIST,
-                    Tables.SOFTBANLIST.USERID,
-                    Tables.SOFTBANLIST.MODERATORUSERID,
-                    Tables.SOFTBANLIST.GUILDID,
-                    Tables.SOFTBANLIST.SOFTBANTIME,
-                    Tables.SOFTBANLIST.DELETEDAYS,
-                    Tables.SOFTBANLIST.REASON)
-                    .values(softbanUser.id,
-                            user.id,
-                            guild.id,
-                            now.time / 1000,
-                            days,
-                            reason)
-                    .returning(Tables.SOFTBANLIST.ID)
-                    .fetchOne()
-
-            DiscordUtils.createModLogEntry(bot, shard, message, softbanMember, reason, "softban", record.id!!, null, false)
+            DiscordUtils.createModLogEntry(bot, shard, message, softbanMember, reason, "softban", record.id.value, null, false)
             DiscordUtils.sendMessage(channel, "Softbanned " + DiscordUtils.getUserTagAndId(softbanUser))
         } catch (e: Exception) {
             DiscordUtils.failMessage(bot, message, "Could not softban the specified user. Do I have enough permissions?")

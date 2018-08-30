@@ -1,19 +1,21 @@
 package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.jooq.generated.Tables
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimRole
+import org.samoxive.safetyjim.database.JimRoleTable
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.TextUtils
-import java.util.Scanner
+import java.util.*
 
 class Iam : Command() {
     override val usages = arrayOf("iam <roleName> - self assigns specified role")
 
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
         val messageIterator = Scanner(args)
-        val database = bot.database
 
         val member = event.member
         val message = event.message
@@ -35,15 +37,14 @@ class Iam : Command() {
         }
 
         val matchedRole = matchingRoles[0]
-        val assignableRoles = database.selectFrom(Tables.ROLELIST)
-                .where(Tables.ROLELIST.GUILDID.eq(guild.id))
-                .and(Tables.ROLELIST.ROLEID.eq(matchedRole.id))
-                .fetch()
-
         var roleExists = false
-        for (record in assignableRoles) {
-            if (record.roleid == matchedRole.id) {
-                roleExists = true
+        transaction {
+            JimRole.find {
+                (JimRoleTable.guildid eq guild.id) and (JimRoleTable.roleid eq matchedRole.id)
+            }.forEach {
+                if (it.roleid == matchedRole.id) {
+                    roleExists = true
+                }
             }
         }
 
