@@ -76,7 +76,7 @@ class Info : Command() {
         embed.addField("Websocket Ping", "Shard $shardString: ${pingShard}ms\nAverage: ${pingAverage}ms", true)
         embed.addField("RAM usage", "${ramUsed}MB / ${ramTotal}MB", true)
         embed.addField("Links", "[Support]($supportServer) | [Github]($githubLink) | [Invite]($botInviteLink)", true)
-        embed.setFooter("Made by Safety Jim team. | Days since last incident: $daysSince", null)
+        embed.setFooter("Made by Samoxive#8634. | Days since last incident: $daysSince", null)
         embed.setColor(Color(0x4286F4))
 
         DiscordUtils.successReact(bot, message)
