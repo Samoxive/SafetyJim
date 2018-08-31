@@ -358,7 +358,7 @@ object DiscordUtils {
         val shards = bot.shards
         val guildIdLong: Long
         try {
-            guildIdLong = java.lang.Long.parseLong(guildId)
+            guildIdLong = guildId.toLong()
         } catch (e: NumberFormatException) {
             return null
         }

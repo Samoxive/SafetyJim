@@ -163,7 +163,7 @@ class DiscordBot(val config: Config) {
 
         for (user in usersToBeAllowed) {
             val guildId = user.guildid
-            val guildIdLong = java.lang.Long.parseLong(guildId)
+            val guildIdLong = guildId.toLong()
             val shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
             val shard = shards[shardId]
             val shardClient = shard.shard
@@ -211,7 +211,7 @@ class DiscordBot(val config: Config) {
 
         for (user in usersToBeUnbanned) {
             val guildId = user.guildid
-            val guildIdLong = java.lang.Long.parseLong(guildId)
+            val guildIdLong = guildId.toLong()
             val shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
             val shard = shards[shardId]
             val shardClient = shard.shard
@@ -257,7 +257,7 @@ class DiscordBot(val config: Config) {
 
         for (user in usersToBeUnmuted) {
             val guildId = user.guildid
-            val guildIdLong = java.lang.Long.parseLong(guildId)
+            val guildIdLong = guildId.toLong()
             val shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
             val shard = shards[shardId]
             val shardClient = shard.shard
@@ -310,7 +310,7 @@ class DiscordBot(val config: Config) {
 
         for (reminder in reminders) {
             val guildId = reminder.guildid
-            val guildIdLong = java.lang.Long.parseLong(guildId)
+            val guildIdLong = guildId.toLong()
             val channelId = reminder.channelid
             val userId = reminder.userid
             val shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
