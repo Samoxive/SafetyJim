@@ -9,7 +9,6 @@ import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.getGuildSettings
 import java.awt.Color
 import java.util.*
-import java.util.regex.Pattern
 
 object DiscordUtils {
     private const val SUCCESS_EMOTE_ID = "322698554294534144"
@@ -20,9 +19,6 @@ object DiscordUtils {
 
     private const val DISCORD_EPOCH = 1420070400000L
     private const val TIMESTAMP_OFFSET = 22
-    val USER_MENTION_PATTERN: Pattern = Pattern.compile("<@!?([0-9]+)>")
-    val CHANNEL_MENTION_PATTERN: Pattern = Pattern.compile("<#!?([0-9]+)>")
-    val ROLE_MENTION_PATTERN: Pattern = Pattern.compile("<@&!?([0-9]+)>")
 
     private val modLogColors: MutableMap<String, Color> = HashMap()
 
@@ -44,8 +40,8 @@ object DiscordUtils {
         modLogActionTexts["mute"] = "Mute"
     }
 
-    fun createModLogEntry(bot: DiscordBot, shard: JDA, message: Message, member: Member, reason: String, action: String, id: Int, expirationDate: Date?, expires: Boolean) {
-        val guildSettings = getGuildSettings(member.guild, bot.config)
+    fun createModLogEntry(bot: DiscordBot, shard: JDA, message: Message, user: User, reason: String, action: String, id: Int, expirationDate: Date?, expires: Boolean) {
+        val guildSettings = getGuildSettings(message.guild, bot.config)
         val now = Date()
 
         val modLogActive = guildSettings.modlog
@@ -63,25 +59,21 @@ object DiscordUtils {
         }
 
         val embed = EmbedBuilder()
-        val user = member.user
         val channel = message.textChannel
         embed.setColor(modLogColors[action])
         embed.addField("Action ", modLogActionTexts[action] + " - #" + id, false)
         embed.addField("User:", getUserTagAndId(user), false)
-        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false)
+        embed.addField("Reason:", truncateForEmbed(reason), false)
         embed.addField("Responsible Moderator:", getUserTagAndId(message.author), false)
         embed.addField("Channel", getChannelMention(channel), false)
         embed.setTimestamp(now.toInstant())
 
         if (expires) {
             val dateText = expirationDate?.toString() ?: "Indefinitely"
-            var untilText: String? = null
-
-            when (action) {
-                "ban" -> untilText = "Banned until"
-                "mute" -> untilText = "Muted until"
-                else -> {
-                }
+            val untilText = when (action) {
+                "ban" -> "Banned until"
+                "mute" -> "Muted until"
+                else -> null
             }
 
             embed.addField(untilText, dateText, false)
@@ -143,10 +135,6 @@ object DiscordUtils {
         return status == OnlineStatus.ONLINE ||
                 status == OnlineStatus.DO_NOT_DISTURB ||
                 status == OnlineStatus.IDLE
-    }
-
-    fun isUserInGuild(guild: Guild, userId: String): Boolean {
-        return guild.getMemberById(userId) != null
     }
 
     fun isGuildTalkable(guild: Guild): Boolean {
