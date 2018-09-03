@@ -15,7 +15,7 @@ class Server : Command() {
         val owner = guild.owner.user
         val channel = event.channel
         val message = event.message
-        val memberCount = guild.memberCache.size().toLong()
+        val memberCount = guild.memberCache.size()
         val creationDate = guild.creationTime.toLocalDate().toString()
         val emojis = StringBuilder()
 
@@ -35,7 +35,7 @@ class Server : Command() {
         embed.setAuthor(guild.name, null, guild.iconUrl)
         embed.setColor(Color(0x4286F4))
         embed.addField("Server Owner", DiscordUtils.getTag(owner), true)
-        embed.addField("Member Count", memberCount, true)
+        embed.addField("Member Count", memberCount.toString(), true)
         embed.addField("Creation Date", creationDate, true)
         embed.addField("Emojis", emojiString, false)
 
