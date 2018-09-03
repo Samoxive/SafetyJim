@@ -26,15 +26,18 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.Color
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import javax.security.auth.login.LoginException
 import kotlin.system.exitProcess
 
 class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController) : ListenerAdapter() {
     private val log: Logger
     val shard: JDA
-    val threadPool: ExecutorService
+    val threadPool: ExecutorService = Executors.newCachedThreadPool()
+    val confirmationListener = ConfirmationListener(threadPool)
 
     init {
         val config = bot.config
@@ -43,12 +46,12 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val shardCount = config[JimConfig.shard_count]
         val version = config[JimConfig.version]
 
-        threadPool = Executors.newCachedThreadPool()
         val builder = JDABuilder(AccountType.BOT)
         this.shard = try {
             builder.setToken(config[JimConfig.token])
                     .setAudioEnabled(false) // jim doesn't have any audio functionality
                     .addEventListener(this)
+                    .addEventListener(confirmationListener)
                     .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
                     .setEnableShutdownHook(true)
                     .useSharding(shardId, config[JimConfig.shard_count])
