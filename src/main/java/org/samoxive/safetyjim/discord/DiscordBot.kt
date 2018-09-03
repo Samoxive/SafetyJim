@@ -36,9 +36,6 @@ class DiscordBot(val config: Config) {
                 .map { shard -> shard.guildCache.size() }
                 .sum()
 
-    val guilds: List<Guild>
-        get() = shards.flatMap { shard -> shard.shard.guilds }
-
     init {
         loadCommands()
         loadProcessors()
@@ -352,7 +349,7 @@ class DiscordBot(val config: Config) {
         }
     }
 
-    fun updateBotLists() {
+    private fun updateBotLists() {
         if (!config[BotListConfig.enabled]) {
             return
         }
