@@ -399,14 +399,14 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         }
     }
 
-    private fun executeCommand(event: GuildMessageReceivedEvent, command: Command?, commandName: String, args: String) {
+    private fun executeCommand(event: GuildMessageReceivedEvent, command: Command, commandName: String, args: String) {
         val shard = event.jda
 
         val date = Date()
         val startTime = System.currentTimeMillis()
         var showUsage = false
         try {
-            showUsage = command!!.run(bot, event, args)
+            showUsage = command.run(bot, event, args)
         } catch (e: Exception) {
             DiscordUtils.failReact(bot, event.message)
             DiscordUtils.sendMessage(event.channel, "There was an error running your command, this incident has been logged.")
@@ -417,7 +417,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         }
 
         if (showUsage) {
-            val usages = command!!.usages
+            val usages = command.usages
             val guildSettings = getGuildSettings(event.guild, bot.config)
             val prefix = guildSettings.prefix
 
@@ -429,7 +429,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             DiscordUtils.failReact(bot, event.message)
             event.channel.sendMessage(embed.build()).queue()
         } else {
-            val deleteCommands = arrayOf("ban", "kick", "mute", "softban", "warn")
+            val deleteCommands = arrayOf("ban", "kick", "mute", "softban", "warn", "hardban")
 
             for (deleteCommand in deleteCommands) {
                 if (commandName == deleteCommand) {
