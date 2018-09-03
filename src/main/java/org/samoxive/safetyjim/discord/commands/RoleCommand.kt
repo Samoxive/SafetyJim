@@ -9,7 +9,7 @@ import org.samoxive.safetyjim.database.JimRoleTable
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.seekToEnd
 import java.util.*
 
 class RoleCommand : Command() {
@@ -38,7 +38,7 @@ class RoleCommand : Command() {
             return false
         }
 
-        val roleName = TextUtils.seekScannerToEnd(messageIterator).toLowerCase()
+        val roleName = messageIterator.seekToEnd().toLowerCase()
 
         if (roleName == "") {
             return true

@@ -7,10 +7,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimTag
 import org.samoxive.safetyjim.database.JimTagTable
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
@@ -50,7 +47,7 @@ class Tag : Command() {
 
         val embed = EmbedBuilder()
         embed.setAuthor("Safety Jim", null, shard.selfUser.avatarUrl)
-        embed.addField("List of tags", TextUtils.truncateForEmbed(tagString.toString()), false)
+        embed.addField("List of tags", truncateForEmbed(tagString.toString()), false)
         embed.setColor(Color(0x4286F4))
 
         DiscordUtils.successReact(bot, message)
@@ -79,7 +76,7 @@ class Tag : Command() {
             return
         }
 
-        val response = TextUtils.seekScannerToEnd(messageIterator)
+        val response = messageIterator.seekToEnd()
 
         if (response == "") {
             DiscordUtils.failMessage(bot, message, "Empty responses aren't allowed!")
@@ -116,7 +113,7 @@ class Tag : Command() {
         }
 
         val tagName = messageIterator.next()
-        val response = TextUtils.seekScannerToEnd(messageIterator)
+        val response = messageIterator.seekToEnd()
 
         if (response == "") {
             DiscordUtils.failMessage(bot, message, "Empty responses aren't allowed!")

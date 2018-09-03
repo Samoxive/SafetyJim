@@ -6,10 +6,7 @@ import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.*
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
@@ -171,7 +168,7 @@ class Settings : Command() {
         }
 
         val key = messageIterator.next().toLowerCase()
-        var argument = TextUtils.seekScannerToEnd(messageIterator)
+        var argument = messageIterator.seekToEnd()
         val argumentSplit = argument.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 
         if (argument == "") {
@@ -202,7 +199,7 @@ class Settings : Command() {
                     "welcomemessagechannel" -> {
                         argument = argumentSplit[0]
 
-                        if (!DiscordUtils.CHANNEL_MENTION_PATTERN.matcher(argument).matches()) {
+                        if (!CHANNEL_MENTION_PATTERN.matcher(argument).matches()) {
                             return@transaction true
                         }
 
@@ -212,7 +209,7 @@ class Settings : Command() {
                     "modlogchannel" -> {
                         argument = argumentSplit[0]
 
-                        if (!DiscordUtils.CHANNEL_MENTION_PATTERN.matcher(argument).matches()) {
+                        if (!CHANNEL_MENTION_PATTERN.matcher(argument).matches()) {
                             return@transaction true
                         }
 

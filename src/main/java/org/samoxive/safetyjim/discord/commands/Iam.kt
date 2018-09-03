@@ -8,7 +8,7 @@ import org.samoxive.safetyjim.database.JimRoleTable
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.seekToEnd
 import java.util.*
 
 class Iam : Command() {
@@ -21,7 +21,7 @@ class Iam : Command() {
         val message = event.message
         val guild = event.guild
 
-        val roleName = TextUtils.seekScannerToEnd(messageIterator)
+        val roleName = messageIterator.seekToEnd()
                 .toLowerCase()
 
         if (roleName == "") {

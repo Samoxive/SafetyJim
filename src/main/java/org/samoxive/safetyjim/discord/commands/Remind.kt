@@ -3,10 +3,7 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimReminder
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Remind : Command() {
@@ -21,11 +18,11 @@ class Remind : Command() {
         val guild = event.guild
 
         val parsedReminderAndTime = try {
-            TextUtils.getTextAndTime(messageIterator)
-        } catch (e: TextUtils.InvalidTimeInputException) {
+            messageIterator.getTextAndTime()
+        } catch (e: InvalidTimeInputException) {
             DiscordUtils.failMessage(bot, message, "Invalid time argument. Please try again.")
             return false
-        } catch (e: TextUtils.TimeInputInPastException) {
+        } catch (e: TimeInputInPastException) {
             DiscordUtils.failMessage(bot, message, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
