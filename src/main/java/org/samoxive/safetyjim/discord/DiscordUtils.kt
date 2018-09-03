@@ -52,6 +52,7 @@ object DiscordUtils {
         modLogColors["warn"] = Color(0xFFEB00)
         modLogColors["mute"] = Color(0xFFFFFF)
         modLogColors["softban"] = Color(0xFF55DD)
+        modLogColors["hardban"] = Color(0x700000)
     }
 
     init {
@@ -60,6 +61,7 @@ object DiscordUtils {
         modLogActionTexts["kick"] = "Kick"
         modLogActionTexts["warn"] = "Warn"
         modLogActionTexts["mute"] = "Mute"
+        modLogActionTexts["hardban"] = "Hardban"
     }
 
     fun createModLogEntry(bot: DiscordBot, shard: JDA, message: Message, user: User, reason: String, action: String, id: Int, expirationDate: Date?, expires: Boolean) {
