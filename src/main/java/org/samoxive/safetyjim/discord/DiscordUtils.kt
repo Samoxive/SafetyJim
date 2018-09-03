@@ -10,6 +10,28 @@ import org.samoxive.safetyjim.database.getGuildSettings
 import java.awt.Color
 import java.util.*
 
+fun askConfirmation(bot: DiscordBot, message: Message, banUser: User): Message? {
+    val channel = message.textChannel
+    val user = message.author
+    val guild = message.guild
+    val jimMessage = try {
+        channel.sendMessage("You selected user ${DiscordUtils.getUserTagAndId(banUser)}. Confirm?").complete()
+    } catch (e: Exception) {
+        null
+    }
+    val discordShard = bot.shards[DiscordUtils.getShardIdFromGuildId(guild.idLong, bot.config[JimConfig.shard_count])]
+    val confirmationMessage = discordShard.confirmationListener.submitConfirmation(channel, user).get()
+    if (confirmationMessage == null) {
+        DiscordUtils.failReact(bot, message)
+    }
+    try {
+        jimMessage?.delete()?.complete()
+    } catch (e: Exception) {
+        //
+    }
+    return confirmationMessage
+}
+
 object DiscordUtils {
     private const val SUCCESS_EMOTE_ID = "322698554294534144"
     private const val SUCCESS_EMOTE_NAME = "jimsuccess"
@@ -175,7 +197,7 @@ object DiscordUtils {
 
     fun sendMessage(channel: MessageChannel, message: String) {
         try {
-            channel.sendMessage(message).queue()
+            channel.sendMessage(message).complete()
         } catch (e: Exception) {
             //
         }
