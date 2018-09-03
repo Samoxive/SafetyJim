@@ -5,7 +5,6 @@ import com.uchuhimo.konf.Config
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.MessageBuilder
 import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.utils.SessionControllerAdapter
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -128,6 +127,7 @@ class DiscordBot(val config: Config) {
         commands["server"] = Server()
         commands["iam"] = Iam()
         commands["role"] = RoleCommand()
+        commands["hardban"] = Hardban()
     }
 
     private fun loadProcessors() {
