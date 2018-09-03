@@ -10,12 +10,12 @@ import org.samoxive.safetyjim.database.getGuildSettings
 import java.awt.Color
 import java.util.*
 
-fun askConfirmation(bot: DiscordBot, message: Message, banUser: User): Message? {
+fun askConfirmation(bot: DiscordBot, message: Message, targetUser: User): Message? {
     val channel = message.textChannel
     val user = message.author
     val guild = message.guild
     val jimMessage = try {
-        channel.sendMessage("You selected user ${DiscordUtils.getUserTagAndId(banUser)}. Confirm?").complete()
+        channel.sendMessage("You selected user ${DiscordUtils.getUserTagAndId(targetUser)}. Confirm?").complete()
     } catch (e: Exception) {
         null
     }
