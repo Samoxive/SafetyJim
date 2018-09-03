@@ -31,7 +31,7 @@ fun Scanner.seekToEnd(): String {
         data.append("\n")
     }
 
-    return data.toString().trim { it <= ' ' }
+    return data.toString().trim()
 }
 
 /**
@@ -47,7 +47,7 @@ fun Scanner.getTextAndTime(): Pair<String, Date?> {
     var text: String
     var timeArgument: String? = null
 
-    val splitArgumentsRaw = this.seekToEnd().split("\\|")
+    val splitArgumentsRaw = this.seekToEnd().split("|")
 
     if (splitArgumentsRaw.size == 1) {
         text = splitArgumentsRaw[0]
@@ -56,8 +56,8 @@ fun Scanner.getTextAndTime(): Pair<String, Date?> {
         timeArgument = splitArgumentsRaw[1]
     }
 
-    text = text.trim { it <= ' ' }
-    timeArgument = timeArgument?.trim { it <= ' ' }
+    text = text.trim()
+    timeArgument = timeArgument?.trim()
 
     var time: Date? = null
     val now = Date()
