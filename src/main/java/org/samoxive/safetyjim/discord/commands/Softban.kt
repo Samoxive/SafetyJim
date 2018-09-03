@@ -5,10 +5,7 @@ import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimSoftban
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
@@ -31,19 +28,16 @@ class Softban : Command() {
             return false
         }
 
-        if (!messageIterator.hasNext(DiscordUtils.USER_MENTION_PATTERN)) {
-            return true
-        } else {
-            // advance the scanner one step to get rid of user mention
-            messageIterator.next()
-        }
-
-        val mentionedUsers = message.mentionedUsers
-        if (mentionedUsers.isEmpty()) {
+        val (searchResult, softbanUser) = messageIterator.findUser(message, isForBan = true)
+        if (searchResult == SearchUserResult.NOT_FOUND || (softbanUser == null)) {
             DiscordUtils.failMessage(bot, message, "Could not find the user to softban!")
             return false
         }
-        val softbanUser = mentionedUsers[0]
+
+        if (searchResult == SearchUserResult.GUESSED) {
+            askConfirmation(bot, message, softbanUser)?: return false
+        }
+
         val softbanMember = guild.getMember(softbanUser)
         val controller = guild.controller
 
@@ -52,20 +46,20 @@ class Softban : Command() {
             return false
         }
 
-        if (user.id == softbanUser.id) {
+        if (user == softbanUser) {
             DiscordUtils.failMessage(bot, message, "You can't softban yourself, dummy!")
             return false
         }
 
-        if (!DiscordUtils.isBannable(softbanMember, selfMember)) {
+        if (softbanMember != null && !DiscordUtils.isBannable(softbanMember, selfMember)) {
             DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
             return false
         }
 
-        val arguments = TextUtils.seekScannerToEnd(messageIterator)
-        val argumentsSplit = arguments.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        val arguments = messageIterator.seekToEnd()
+        val argumentsSplit = arguments.split("\\|").toTypedArray()
         var reason = argumentsSplit[0]
-        reason = if (reason == "") "No reason specified" else reason.trim { it <= ' ' }
+        reason = if (reason == "") "No reason specified" else reason.trim()
         var timeArgument: String? = null
 
         if (argumentsSplit.size > 1) {
@@ -76,7 +70,7 @@ class Softban : Command() {
 
         days = if (timeArgument != null) {
             try {
-                Integer.parseInt(timeArgument.trim { it <= ' ' })
+                Integer.parseInt(timeArgument.trim())
             } catch (e: NumberFormatException) {
                 DiscordUtils.failMessage(bot, message, "Invalid day count, please try again.")
                 return false
@@ -96,7 +90,7 @@ class Softban : Command() {
         embed.setTitle("Softbanned from " + guild.name)
         embed.setColor(Color(0x4286F4))
         embed.setDescription("You were softbanned from " + guild.name)
-        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false)
+        embed.addField("Reason:", truncateForEmbed(reason), false)
         embed.setFooter("Softbanned by " + DiscordUtils.getUserTagAndId(user), null)
         embed.setTimestamp(now.toInstant())
 
@@ -104,7 +98,7 @@ class Softban : Command() {
 
         try {
             val auditLogReason = String.format("Softbanned by %s - %s", DiscordUtils.getUserTagAndId(user), reason)
-            controller.ban(softbanMember, days, auditLogReason).complete()
+            controller.ban(softbanUser, days, auditLogReason).complete()
             controller.unban(softbanUser).complete()
 
             val record = transaction {
@@ -118,7 +112,7 @@ class Softban : Command() {
                 }
             }
 
-            DiscordUtils.createModLogEntry(bot, shard, message, softbanMember, reason, "softban", record.id.value, null, false)
+            DiscordUtils.createModLogEntry(bot, shard, message, softbanUser, reason, "softban", record.id.value, null, false)
             DiscordUtils.sendMessage(channel, "Softbanned " + DiscordUtils.getUserTagAndId(softbanUser))
         } catch (e: Exception) {
             DiscordUtils.failMessage(bot, message, "Could not softban the specified user. Do I have enough permissions?")

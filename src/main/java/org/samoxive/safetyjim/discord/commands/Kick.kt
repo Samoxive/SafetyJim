@@ -5,10 +5,7 @@ import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimKick
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
@@ -31,19 +28,16 @@ class Kick : Command() {
             return false
         }
 
-        if (!messageIterator.hasNext(DiscordUtils.USER_MENTION_PATTERN)) {
-            return true
-        } else {
-            // advance the scanner one step to get rid of user mention
-            messageIterator.next()
-        }
-
-        val mentionedUsers = message.mentionedUsers
-        if (mentionedUsers.isEmpty()) {
+        val (searchResult, kickUser) = messageIterator.findUser(message)
+        if (searchResult == SearchUserResult.NOT_FOUND || (kickUser == null)) {
             DiscordUtils.failMessage(bot, message, "Could not find the user to kick!")
             return false
         }
-        val kickUser = mentionedUsers[0]
+
+        if (searchResult == SearchUserResult.GUESSED) {
+            askConfirmation(bot, message, kickUser)?: return false
+        }
+
         val kickMember = guild.getMember(kickUser)
         val controller = guild.controller
 
@@ -52,17 +46,17 @@ class Kick : Command() {
             return false
         }
 
-        if (user.id == kickUser.id) {
+        if (user == kickUser) {
             DiscordUtils.failMessage(bot, message, "You can't kick yourself, dummy!")
             return false
         }
 
-        if (!DiscordUtils.isKickable(kickMember, selfMember)) {
+        if (kickMember != null && !DiscordUtils.isKickable(kickMember, selfMember)) {
             DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
             return false
         }
 
-        var reason = TextUtils.seekScannerToEnd(messageIterator)
+        var reason = messageIterator.seekToEnd()
         reason = if (reason == "") "No reason specified" else reason
 
         val now = Date()
@@ -71,7 +65,7 @@ class Kick : Command() {
         embed.setTitle("Kicked from " + guild.name)
         embed.setColor(Color(0x4286F4))
         embed.setDescription("You were kicked from " + guild.name)
-        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false)
+        embed.addField("Reason:", truncateForEmbed(reason), false)
         embed.setFooter("Kicked by " + DiscordUtils.getUserTagAndId(user), null)
         embed.setTimestamp(now.toInstant())
 
@@ -79,7 +73,7 @@ class Kick : Command() {
 
         try {
             val auditLogReason = String.format("Kicked by %s - %s", DiscordUtils.getUserTagAndId(user), reason)
-            controller.kick(kickMember, auditLogReason).complete()
+            controller.kick(kickUser.id, auditLogReason).complete()
             DiscordUtils.successReact(bot, message)
 
             val record = transaction {
@@ -92,7 +86,7 @@ class Kick : Command() {
                 }
             }
 
-            DiscordUtils.createModLogEntry(bot, shard, message, kickMember, reason, "kick", record.id.value, null, false)
+            DiscordUtils.createModLogEntry(bot, shard, message, kickUser, reason, "kick", record.id.value, null, false)
             DiscordUtils.sendMessage(channel, "Kicked " + DiscordUtils.getUserTagAndId(kickUser))
         } catch (e: Exception) {
             DiscordUtils.failMessage(bot, message, "Could not kick the specified user. Do I have enough permissions?")

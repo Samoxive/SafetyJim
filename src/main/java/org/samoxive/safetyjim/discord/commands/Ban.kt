@@ -4,11 +4,9 @@ import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.JimBan
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
@@ -31,19 +29,16 @@ class Ban : Command() {
             return false
         }
 
-        if (!messageIterator.hasNext(DiscordUtils.USER_MENTION_PATTERN)) {
-            return true
-        } else {
-            // advance the scanner one step to get rid of user mention
-            messageIterator.next()
-        }
-
-        val mentionedUsers = message.mentionedUsers
-        if (mentionedUsers.isEmpty()) {
+        val (searchResult, banUser) = messageIterator.findUser(message, true)
+        if (searchResult == SearchUserResult.NOT_FOUND || (banUser == null)) {
             DiscordUtils.failMessage(bot, message, "Could not find the user to ban!")
             return false
         }
-        val banUser = mentionedUsers[0]
+
+        if (searchResult == SearchUserResult.GUESSED) {
+            askConfirmation(bot, message, banUser)?: return false
+        }
+
         val banMember = guild.getMember(banUser)
         val controller = guild.controller
 
@@ -52,22 +47,22 @@ class Ban : Command() {
             return false
         }
 
-        if (user.id == banUser.id) {
+        if (user == banUser) {
             DiscordUtils.failMessage(bot, message, "You can't ban yourself, dummy!")
             return false
         }
 
-        if (!DiscordUtils.isBannable(banMember, selfMember)) {
+        if (banMember != null && !DiscordUtils.isBannable(banMember, selfMember)) {
             DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
             return false
         }
 
         val parsedReasonAndTime = try {
-            TextUtils.getTextAndTime(messageIterator)
-        } catch (e: TextUtils.InvalidTimeInputException) {
+            messageIterator.getTextAndTime()
+        } catch (e: InvalidTimeInputException) {
             DiscordUtils.failMessage(bot, message, "Invalid time argument. Please try again.")
             return false
-        } catch (e: TextUtils.TimeInputInPastException) {
+        } catch (e: TimeInputInPastException) {
             DiscordUtils.failMessage(bot, message, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
@@ -80,7 +75,7 @@ class Ban : Command() {
         embed.setTitle("Banned from " + guild.name)
         embed.setColor(Color(0x4286F4))
         embed.setDescription("You were banned from " + guild.name)
-        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false)
+        embed.addField("Reason:", truncateForEmbed(reason), false)
         embed.addField("Banned until", expirationDate?.toString() ?: "Indefinitely", false)
         embed.setFooter("Banned by " + DiscordUtils.getUserTagAndId(user), null)
         embed.setTimestamp(now.toInstant())
@@ -89,7 +84,7 @@ class Ban : Command() {
 
         try {
             val auditLogReason = String.format("Banned by %s - %s", DiscordUtils.getUserTagAndId(user), reason)
-            controller.ban(banMember, 0, auditLogReason).complete()
+            controller.ban(banUser, 0, auditLogReason).complete()
             DiscordUtils.successReact(bot, message)
 
             val expires = expirationDate != null
@@ -108,7 +103,7 @@ class Ban : Command() {
             }
 
             val banId = record.id.value
-            DiscordUtils.createModLogEntry(bot, shard, message, banMember, reason, "ban", banId, expirationDate, true)
+            DiscordUtils.createModLogEntry(bot, shard, message, banUser, reason, "ban", banId, expirationDate, true)
             DiscordUtils.sendMessage(channel, "Banned " + DiscordUtils.getUserTagAndId(banUser))
         } catch (e: Exception) {
             DiscordUtils.failMessage(bot, message, "Could not ban the specified user. Do I have enough permissions?")

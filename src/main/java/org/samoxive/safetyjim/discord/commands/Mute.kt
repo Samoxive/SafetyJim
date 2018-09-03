@@ -10,10 +10,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimMute
 import org.samoxive.safetyjim.database.JimMuteTable
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
@@ -36,19 +33,16 @@ class Mute : Command() {
             return false
         }
 
-        if (!messageIterator.hasNext(DiscordUtils.USER_MENTION_PATTERN)) {
-            return true
-        } else {
-            // advance the scanner one step to get rid of user mention
-            messageIterator.next()
-        }
-
-        val mentionedUsers = message.mentionedUsers
-        if (mentionedUsers.isEmpty()) {
+        val (searchResult, muteUser) = messageIterator.findUser(message)
+        if (searchResult == SearchUserResult.NOT_FOUND || (muteUser == null)) {
             DiscordUtils.failMessage(bot, message, "Could not find the user to mute!")
             return false
         }
-        val muteUser = mentionedUsers[0]
+
+        if (searchResult == SearchUserResult.GUESSED) {
+            askConfirmation(bot, message, muteUser)?: return false
+        }
+
         val muteMember = guild.getMember(muteUser)
         val controller = guild.controller
 
@@ -57,12 +51,12 @@ class Mute : Command() {
             return false
         }
 
-        if (user.id == muteUser.id) {
+        if (user == muteUser) {
             DiscordUtils.failMessage(bot, message, "You can't mute yourself, dummy!")
             return false
         }
 
-        if (user.id == selfMember.user.id) {
+        if (user == selfMember.user) {
             DiscordUtils.failMessage(bot, message, "Now that's just rude. (I can't mute myself)")
             return false
         }
@@ -75,11 +69,11 @@ class Mute : Command() {
         }
 
         val parsedReasonAndTime = try {
-            TextUtils.getTextAndTime(messageIterator)
-        } catch (e: TextUtils.InvalidTimeInputException) {
+            messageIterator.getTextAndTime()
+        } catch (e: InvalidTimeInputException) {
             DiscordUtils.failMessage(bot, message, "Invalid time argument. Please try again.")
             return false
-        } catch (e: TextUtils.TimeInputInPastException) {
+        } catch (e: TimeInputInPastException) {
             DiscordUtils.failMessage(bot, message, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
@@ -92,7 +86,7 @@ class Mute : Command() {
         embed.setTitle("Muted in " + guild.name)
         embed.setColor(Color(0x4286F4))
         embed.setDescription("You were muted in " + guild.name)
-        embed.addField("Reason:", TextUtils.truncateForEmbed(reason), false)
+        embed.addField("Reason:", truncateForEmbed(reason), false)
         embed.addField("Muted until", expirationDate?.toString() ?: "Indefinitely", false)
         embed.setFooter("Muted by " + DiscordUtils.getUserTagAndId(user), null)
         embed.setTimestamp(now.toInstant())
@@ -100,7 +94,7 @@ class Mute : Command() {
         DiscordUtils.sendDM(muteUser, embed.build())
 
         try {
-            controller.addSingleRoleToMember(muteMember, mutedRole!!).complete()
+            controller.addSingleRoleToMember(muteMember, mutedRole).complete()
             DiscordUtils.successReact(bot, message)
 
             val expires = expirationDate != null
@@ -121,7 +115,7 @@ class Mute : Command() {
                 }
             }
 
-            DiscordUtils.createModLogEntry(bot, shard, message, muteMember, reason, "mute", record.id.value, expirationDate, true)
+            DiscordUtils.createModLogEntry(bot, shard, message, muteUser, reason, "mute", record.id.value, expirationDate, true)
             DiscordUtils.sendMessage(channel, "Muted " + DiscordUtils.getUserTagAndId(muteUser))
         } catch (e: Exception) {
             DiscordUtils.failMessage(bot, message, "Could not mute the specified user. Do I have enough permissions?")

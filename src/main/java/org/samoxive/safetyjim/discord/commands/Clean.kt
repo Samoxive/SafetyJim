@@ -6,9 +6,7 @@ import net.dv8tion.jda.core.entities.TextChannel
 import net.dv8tion.jda.core.entities.User
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.core.requests.restaction.AuditableRestAction
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
+import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Clean : Command() {
@@ -143,37 +141,24 @@ class Clean : Command() {
             return false
         }
 
-        val targetArgument: String
-        var targetUser: User? = null
-
-        if (!messageIterator.hasNext()) {
-            targetArgument = ""
-        } else if (messageIterator.hasNext(DiscordUtils.USER_MENTION_PATTERN)) {
-            val mentionedUsers = message.mentionedUsers
-            if (mentionedUsers.isEmpty()) {
-                DiscordUtils.failMessage(bot, message, "Could not find the user to clean messages of!")
-                return false
-            }
-            targetUser = mentionedUsers[0]
-            targetArgument = "user"
+        val messages = if (!messageIterator.hasNext()) {
+            fetchMessages(channel, messageCount, true, false, false, null)
         } else {
-            targetArgument = messageIterator.next()
-        }
-
-        val messages = when (targetArgument) {
-            "" -> fetchMessages(channel, messageCount, true, false, false, null)
-            "bot" -> fetchMessages(channel, messageCount, false, true, false, null)
-            "user" -> {
-                if (targetUser != null) {
-                    fetchMessages(channel, messageCount, true, false, true, targetUser)
-                } else {
+            if (messageIterator.hasNext("bot")) {
+                fetchMessages(channel, messageCount, false, true, false, null)
+            } else {
+                val (searchResult, user) = messageIterator.findUser(message, true)
+                val messages = fetchMessages(channel, messageCount, true, false, true, user)
+                if (searchResult == SearchUserResult.NOT_FOUND || user == null) {
                     DiscordUtils.failMessage(bot, message, "Invalid target, please try mentioning a user or writing `bot`.")
                     return false
                 }
-            }
-            else -> {
-                DiscordUtils.failMessage(bot, message, "Invalid target, please try mentioning a user or writing `bot`.")
-                return false
+
+                if (searchResult == SearchUserResult.GUESSED) {
+                    askConfirmation(bot, message, user)?: return false
+                }
+
+                messages
             }
         }
 

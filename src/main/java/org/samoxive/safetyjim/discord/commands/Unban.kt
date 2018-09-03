@@ -6,10 +6,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimBan
 import org.samoxive.safetyjim.database.JimBanTable
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.TextUtils
+import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Unban : Command() {
@@ -34,26 +31,14 @@ class Unban : Command() {
             return false
         }
 
-        val unbanArgument = TextUtils.seekScannerToEnd(messageIterator)
-
-        if (unbanArgument == "") {
-            return true
+        val (searchResult, targetUser) = messageIterator.findBannedUser(message)
+        if (searchResult == SearchUserResult.NOT_FOUND || (targetUser == null)) {
+            DiscordUtils.failMessage(bot, message, "Could not find the user to unban!")
+            return false
         }
 
-        val bans = guild.banList.complete()
-
-        val targetUser = bans.stream()
-                .filter { ban ->
-                    val tag = DiscordUtils.getTag(ban.user)
-                    tag == unbanArgument
-                }
-                .map { ban -> ban.user }
-                .findAny()
-                .orElse(null)
-
-        if (targetUser == null) {
-            DiscordUtils.failMessage(bot, message, "Could not find a banned user called `$unbanArgument`!")
-            return false
+        if (searchResult == SearchUserResult.GUESSED) {
+            askConfirmation(bot, message, targetUser)?: return false
         }
 
         controller.unban(targetUser).complete()
