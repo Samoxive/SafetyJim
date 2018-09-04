@@ -328,7 +328,7 @@ object DiscordUtils {
     fun getUsageString(prefix: String, usages: Array<String>): String {
         val joiner = StringJoiner("\n")
 
-        Arrays.stream(usages).map { usage -> usage.split(" - ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray() }
+        Arrays.stream(usages).map { usage -> usage.split(" - ").dropLastWhile { it.isEmpty() }.toTypedArray() }
                 .map { splitUsage -> String.format("`%s %s` - %s", prefix, splitUsage[0], splitUsage[1]) }
                 .forEach { usage -> joiner.add(usage) }
 

@@ -169,7 +169,7 @@ class Settings : Command() {
 
         val key = messageIterator.next().toLowerCase()
         var argument = messageIterator.seekToEnd()
-        val argumentSplit = argument.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        val argumentSplit = argument.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray()
 
         if (argument == "") {
             return true

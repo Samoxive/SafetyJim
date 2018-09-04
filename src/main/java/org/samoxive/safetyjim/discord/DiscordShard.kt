@@ -141,7 +141,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 JimMessage.new(message.id) {
                     val user = message.author
                     val content = message.contentRaw
-                    val wordCount = content.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray().size
+                    val wordCount = content.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray().size
                     userid = user.id
                     channelid = channel.id
                     guildid = channel.guild.id
@@ -217,7 +217,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val prefix = guildSettings.prefix.toLowerCase()
 
         // 0 = prefix, 1 = command, rest are accepted as arguments
-        val splitContent = content.trim { it <= ' ' }.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        val splitContent = content.trim().split(" ").dropLastWhile { it.isEmpty() }.toTypedArray()
         val firstWord = splitContent[0].toLowerCase()
         val command: Command?
         val commandName: String
@@ -266,7 +266,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         // Command executions are likely to be io dependant, better send them in a seperate thread to not block
         // discord client
-        threadPool.execute { executeCommand(event, command, commandName, args.toString().trim { it <= ' ' }) }
+        threadPool.execute { executeCommand(event, command, commandName, args.toString().trim()) }
     }
 
     override fun onException(event: ExceptionEvent) {

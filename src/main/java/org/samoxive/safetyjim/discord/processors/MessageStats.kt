@@ -23,7 +23,7 @@ class MessageStats : MessageProcessor() {
             val channel = event.channel
             val content = message.contentRaw
             val user = event.member.user
-            val wordCount = content.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray().size
+            val wordCount = content.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray().size
             transaction {
                 JimMessage.new(message.id) {
                     userid = user.id
