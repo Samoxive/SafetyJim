@@ -19,6 +19,7 @@ class Info : Command() {
     private val supportServer = "https://discord.io/safetyjim"
     private val githubLink = "https://github.com/samoxive/safetyjim"
     private val botInviteLink = "https://discordapp.com/oauth2/authorize?client_id=313749262687141888&permissions=268446790&scope=bot"
+    private val patreonLink = "https://www.patreon.com/safetyjim"
     private val prettyTime = PrettyTime()
 
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
@@ -72,10 +73,11 @@ class Info : Command() {
         embed.setDescription("Lifting the :hammer: since $uptimeString")
         embed.addField("Server Count", guildCount.toString(), true)
         embed.addField("User Count", userCount.toString(), true)
-        embed.addField("Channel Count", channelCount.toString(), true)
+        embed.addBlankField(true)
         embed.addField("Websocket Ping", "Shard $shardString: ${pingShard}ms\nAverage: ${pingAverage}ms", true)
         embed.addField("RAM usage", "${ramUsed}MB / ${ramTotal}MB", true)
-        embed.addField("Links", "[Support]($supportServer) | [Github]($githubLink) | [Invite]($botInviteLink)", true)
+        embed.addBlankField(true)
+        embed.addField("Links", "[Support]($supportServer) | [Github]($githubLink) | [Invite]($botInviteLink) | [Patreon]($patreonLink)", true)
         embed.setFooter("Made by Samoxive#8634. | Days since last incident: $daysSince", null)
         embed.setColor(Color(0x4286F4))
 
