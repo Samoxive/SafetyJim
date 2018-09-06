@@ -34,7 +34,7 @@ class Warn : Command() {
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, warnUser)?: return false
+            askConfirmation(bot, message, warnUser) ?: return false
         }
 
         if (user == warnUser) {

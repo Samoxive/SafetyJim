@@ -18,7 +18,6 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.joda.time.DateTime
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.commands.Mute
@@ -26,10 +25,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.Color
 import java.util.*
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import javax.security.auth.login.LoginException
 import kotlin.system.exitProcess
 
@@ -383,27 +380,9 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         }.forEach { it.delete() }
     }
 
-    private fun createCommandLog(event: GuildMessageReceivedEvent, commandName: String, args: String, time: Date, from: Long, to: Long) {
-        val author = event.author
-        transaction {
-            JimCommandLog.new {
-                command = commandName
-                arguments = args
-                this.time = DateTime(time.toInstant())
-                username = DiscordUtils.getTag(author)
-                userid = author.id
-                guildname = event.guild.name
-                guildid = event.guild.id
-                executiontime = (to - from).toInt()
-            }
-        }
-    }
-
     private fun executeCommand(event: GuildMessageReceivedEvent, command: Command, commandName: String, args: String) {
         val shard = event.jda
 
-        val date = Date()
-        val startTime = System.currentTimeMillis()
         var showUsage = false
         try {
             showUsage = command.run(bot, event, args)
@@ -411,9 +390,6 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             DiscordUtils.failReact(bot, event.message)
             DiscordUtils.sendMessage(event.channel, "There was an error running your command, this incident has been logged.")
             log.error(String.format("%s failed with arguments %s in guild %s - %s", commandName, args, event.guild.name, event.guild.id), e)
-        } finally {
-            val endTime = System.currentTimeMillis()
-            threadPool.submit { createCommandLog(event, commandName, args, date, startTime, endTime) }
         }
 
         if (showUsage) {

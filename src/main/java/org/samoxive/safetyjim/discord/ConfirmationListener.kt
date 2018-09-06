@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
-class ConfirmationListener(private val threadPool: ExecutorService): ListenerAdapter() {
+class ConfirmationListener(private val threadPool: ExecutorService) : ListenerAdapter() {
     private val confirmations: MutableMap<Pair<TextChannel, User>, CompletableFuture<Message?>> = mutableMapOf()
 
     fun submitConfirmation(channel: TextChannel, user: User): Future<Message?> {

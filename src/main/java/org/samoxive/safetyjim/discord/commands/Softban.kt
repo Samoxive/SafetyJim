@@ -35,7 +35,7 @@ class Softban : Command() {
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, softbanUser)?: return false
+            askConfirmation(bot, message, softbanUser) ?: return false
         }
 
         val softbanMember = guild.getMember(softbanUser)

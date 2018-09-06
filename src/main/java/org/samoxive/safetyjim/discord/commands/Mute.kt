@@ -40,7 +40,7 @@ class Mute : Command() {
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, muteUser)?: return false
+            askConfirmation(bot, message, muteUser) ?: return false
         }
 
         val muteMember = guild.getMember(muteUser)

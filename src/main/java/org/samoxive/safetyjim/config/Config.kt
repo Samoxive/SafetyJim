@@ -21,10 +21,10 @@ object BotListConfig : ConfigSpec("botlist") {
 }
 
 data class list(
-        val name: String,
-        val url: String,
-        val token: String,
-        val ignore_errors: Boolean
+    val name: String,
+    val url: String,
+    val token: String,
+    val ignore_errors: Boolean
 )
 
 object OauthConfig : ConfigSpec("oauth") {

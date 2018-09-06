@@ -76,7 +76,6 @@ class Hardban : Command() {
             controller.ban(hardbanUser, 7, auditLogReason).complete()
             DiscordUtils.successReact(bot, message)
 
-
             val record = transaction {
                 JimHardban.new {
                     userid = hardbanUser.id

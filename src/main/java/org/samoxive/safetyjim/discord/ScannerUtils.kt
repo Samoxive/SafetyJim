@@ -14,7 +14,6 @@ val USER_MENTION_PATTERN: Pattern = USER_MENTION_REGEX.toPattern()
 val CHANNEL_MENTION_PATTERN: Pattern = CHANNEL_MENTION_REGEX.toPattern()
 val ROLE_MENTION_PATTERN: Pattern = ROLE_MENTION_REGEX.toPattern()
 
-
 fun truncateForEmbed(s: String): String {
     return if (s.length < 1024) {
         s
@@ -175,4 +174,3 @@ fun Scanner.findBannedUser(message: Message): Pair<SearchUserResult, User?> {
 
 class InvalidTimeInputException : Exception()
 class TimeInputInPastException : Exception()
-

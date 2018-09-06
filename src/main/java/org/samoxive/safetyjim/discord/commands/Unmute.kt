@@ -60,7 +60,6 @@ class Unmute : Command() {
             }.forUpdate().forEach { it.unmuted = true }
         }
 
-
         DiscordUtils.successReact(bot, message)
         return false
     }

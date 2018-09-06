@@ -35,7 +35,7 @@ class Kick : Command() {
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, kickUser)?: return false
+            askConfirmation(bot, message, kickUser) ?: return false
         }
 
         val kickMember = guild.getMember(kickUser)

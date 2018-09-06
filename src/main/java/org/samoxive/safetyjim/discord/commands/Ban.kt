@@ -4,7 +4,6 @@ import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.JimBan
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
@@ -36,7 +35,7 @@ class Ban : Command() {
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, banUser)?: return false
+            askConfirmation(bot, message, banUser) ?: return false
         }
 
         val banMember = guild.getMember(banUser)

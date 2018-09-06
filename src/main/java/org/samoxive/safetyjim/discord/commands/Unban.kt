@@ -38,7 +38,7 @@ class Unban : Command() {
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, targetUser)?: return false
+            askConfirmation(bot, message, targetUser) ?: return false
         }
 
         controller.unban(targetUser).complete()
