@@ -87,7 +87,7 @@ class Clean : Command() {
     }
 
     private fun bulkDelete(messages: Pair<List<Message>, List<Message>>, channel: TextChannel) {
-        val (newMessages, oldMessage) = messages
+        val (oldMessages, newMessages) = messages
         val futures = ArrayList<AuditableRestAction<Void>>()
 
         if (newMessages.size in 2..100) {
@@ -98,7 +98,7 @@ class Clean : Command() {
             }
         }
 
-        for (message in oldMessage) {
+        for (message in oldMessages) {
             futures.add(message.delete())
         }
 
@@ -155,7 +155,7 @@ class Clean : Command() {
                 }
 
                 if (searchResult == SearchUserResult.GUESSED) {
-                    askConfirmation(bot, message, user)?: return false
+                    askConfirmation(bot, message, user) ?: return false
                 }
 
                 messages
