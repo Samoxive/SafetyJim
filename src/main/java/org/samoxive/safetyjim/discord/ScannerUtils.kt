@@ -108,7 +108,11 @@ fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<SearchUs
             SearchUserResult.EXACT to member.user
         } else {
             if (isForBan) {
-                val user = try { jda.retrieveUserById(userId).complete() } catch (e: Exception) { null }
+                val user = try {
+                    jda.retrieveUserById(userId).complete()
+                } catch (e: Exception) {
+                    null
+                }
                 (if (user != null) SearchUserResult.EXACT else SearchUserResult.NOT_FOUND) to user
             } else {
                 SearchUserResult.NOT_FOUND to null
@@ -123,7 +127,11 @@ fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<SearchUs
             return SearchUserResult.EXACT to member.user
         } else {
             if (isForBan) {
-                val user = try { jda.retrieveUserById(userId).complete() } catch (e: Exception) { null }
+                val user = try {
+                    jda.retrieveUserById(userId).complete()
+                } catch (e: Exception) {
+                    null
+                }
                 if (user != null) {
                     return SearchUserResult.EXACT to user
                 }

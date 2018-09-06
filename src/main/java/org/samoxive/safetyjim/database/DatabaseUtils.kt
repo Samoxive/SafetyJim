@@ -37,7 +37,7 @@ fun setupDatabase(dataSource: DataSource) {
         createIndex(Index(listOf(JimRoleTable.guildid, JimRoleTable.roleid), true))
         createIndex(Index(listOf(JimTagTable.guildid, JimTagTable.name), true))
         createIndex(Index(listOf(JimMessageTable.guildid), false))
-                createIndex(Index(listOf(JimMessageTable.guildid, JimMessageTable.channelid), false))
+        createIndex(Index(listOf(JimMessageTable.guildid, JimMessageTable.channelid), false))
     }
 }
 
