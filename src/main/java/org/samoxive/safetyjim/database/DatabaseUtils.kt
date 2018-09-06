@@ -6,6 +6,8 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Index
 import org.jetbrains.exposed.sql.SchemaUtils.createIndex
 import org.jetbrains.exposed.sql.SchemaUtils.createMissingTablesAndColumns
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.discord.DiscordUtils
@@ -15,9 +17,10 @@ fun setupDatabase(dataSource: DataSource) {
     Database.connect(dataSource)
 
     transaction {
+        addLogger(StdOutSqlLogger)
         createMissingTablesAndColumns(
                 JimBanTable,
-                JimCommandLogTable,
+                JimHardbanTable,
                 JimJoinTable,
                 JimKickTable,
                 JimMemberCountTable,
@@ -33,6 +36,8 @@ fun setupDatabase(dataSource: DataSource) {
 
         createIndex(Index(listOf(JimRoleTable.guildid, JimRoleTable.roleid), true))
         createIndex(Index(listOf(JimTagTable.guildid, JimTagTable.name), true))
+        createIndex(Index(listOf(JimMessageTable.guildid), false))
+                createIndex(Index(listOf(JimMessageTable.guildid, JimMessageTable.channelid), false))
     }
 }
 
