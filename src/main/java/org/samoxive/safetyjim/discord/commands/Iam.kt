@@ -12,7 +12,7 @@ import org.samoxive.safetyjim.discord.seekToEnd
 import java.util.*
 
 class Iam : Command() {
-    override val usages = arrayOf("iam <roleName> - self assigns specified role")
+    override val usages = arrayOf("iam <roleName> - self assigns specified role, removes role if it is already assigned")
 
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
         val messageIterator = Scanner(args)
@@ -54,12 +54,20 @@ class Iam : Command() {
         }
 
         val controller = guild.controller
-
-        try {
-            controller.addSingleRoleToMember(member, matchedRole).complete()
-            DiscordUtils.successReact(bot, message)
-        } catch (e: Exception) {
-            DiscordUtils.failMessage(bot, message, "Could not assign specified role. Do I have enough permissions?")
+        if (member.roles.find { it == matchedRole } != null) {
+            try {
+                controller.removeSingleRoleFromMember(member, matchedRole).complete()
+                DiscordUtils.successReact(bot, message)
+            } catch (e: Exception) {
+                DiscordUtils.failMessage(bot, message, "Could not remove specified role. Do I have enough permissions?")
+            }
+        } else {
+            try {
+                controller.addSingleRoleToMember(member, matchedRole).complete()
+                DiscordUtils.successReact(bot, message)
+            } catch (e: Exception) {
+                DiscordUtils.failMessage(bot, message, "Could not assign specified role. Do I have enough permissions?")
+            }
         }
 
         return false
