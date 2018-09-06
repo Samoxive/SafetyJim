@@ -34,7 +34,7 @@ class ConfirmationListener(private val threadPool: ExecutorService) : ListenerAd
         val message = event.message
         val confirmation = confirmations[channel to author] ?: return
 
-        val completed = when (message.contentRaw) {
+        val completed = when (message.contentRaw.toLowerCase()) {
             "y", "ye", "yep", "yes", "yeah", "yea" -> {
                 confirmation.complete(message)
                 true
