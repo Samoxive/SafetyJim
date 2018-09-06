@@ -1,7 +1,6 @@
 package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.entities.MessageEmbed
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.getGuildSettings
 import org.samoxive.safetyjim.discord.Command
@@ -12,7 +11,6 @@ import java.util.*
 
 class Help : Command() {
     override val usages = arrayOf("help - lists all the available commands and their usage")
-    private var embed: MessageEmbed? = null
 
     private fun getUsageTexts(bot: DiscordBot, prefix: String): String {
         val joiner = StringJoiner("\n")
@@ -26,19 +24,26 @@ class Help : Command() {
     }
 
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
-        if (embed == null) {
-            val shard = event.jda
-            val guild = event.guild
+        val shard = event.jda
+        val guild = event.guild
+        val text = getUsageTexts(bot, getGuildSettings(guild, bot.config).prefix)
+        val texts = text.split("\n").sorted()
+        val embedTexts = texts.chunked(texts.size / 2).map { it.joinToString("\n") }
+        val embeds = embedTexts.mapIndexed { i, elem ->
             val builder = EmbedBuilder()
-            builder.setAuthor("Safety Jim - Commands", null, shard.selfUser.avatarUrl)
-            builder.setDescription(getUsageTexts(bot, getGuildSettings(guild, bot.config).prefix))
-            builder.setColor(Color(0x4286F4))
+            if (i == 0) {
+                builder.setAuthor("Safety Jim - Commands", null, shard.selfUser.avatarUrl)
+            }
 
-            embed = builder.build()
+            builder.setDescription(elem)
+            builder.setColor(Color(0x4286F4))
+            builder.build()
         }
 
         DiscordUtils.successReact(bot, event.message)
-        DiscordUtils.sendMessage(event.channel, embed!!)
+        embeds.forEach {
+            DiscordUtils.sendMessage(event.channel, it)
+        }
         return false
     }
 }
