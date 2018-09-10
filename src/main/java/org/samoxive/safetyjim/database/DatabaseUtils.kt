@@ -10,7 +10,7 @@ import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.config.JimConfig
-import org.samoxive.safetyjim.discord.DiscordUtils
+import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
 import javax.sql.DataSource
 
 fun setupDatabase(dataSource: DataSource) {
@@ -58,18 +58,19 @@ fun getAllGuildSettings() = transaction { JimSettings.all().associateBy { it -> 
 fun deleteGuildSettings(guild: Guild) = transaction { JimSettings.findById(guild.id)?.delete() }
 
 fun createGuildSettings(guild: Guild, config: Config) = transaction {
+    val defaultChannel = guild.getDefaultChannelTalkable()
     JimSettings.new(guild.id) {
         silentcommands = false
         invitelinkremover = false
         modlog = false
-        modlogchannelid = DiscordUtils.getDefaultChannel(guild).id
+        modlogchannelid = defaultChannel.id
         holdingroom = false
         holdingroomroleid = null
         holdingroomminutes = 3
         prefix = config[JimConfig.default_prefix]
         welcomemessage = false
         message = DEFAULT_WELCOME_MESSAGE
-        welcomemessagechannelid = DiscordUtils.getDefaultChannel(guild).id
+        welcomemessagechannelid = defaultChannel.id
         nospaceprefix = false
         statistics = false
     }

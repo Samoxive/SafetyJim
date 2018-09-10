@@ -29,7 +29,7 @@ fun main(args: Array<String>) {
     hikariConfig.connectionTestQuery = "SELECT 1;"
     val ds = HikariDataSource(hikariConfig)
     setupDatabase(ds)
-    val bot = DiscordBot(config)
+    DiscordBot(config)
 }
 
 fun setupLoggers() {

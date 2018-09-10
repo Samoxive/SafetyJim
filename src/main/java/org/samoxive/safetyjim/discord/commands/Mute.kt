@@ -29,52 +29,52 @@ class Mute : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.MANAGE_ROLES)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Manage Roles")
+            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Manage Roles")
             return false
         }
 
         val (searchResult, muteUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (muteUser == null)) {
-            DiscordUtils.failMessage(bot, message, "Could not find the user to mute!")
+            message.failMessage(bot, "Could not find the user to mute!")
             return false
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, muteUser) ?: return false
+            message.askConfirmation(bot, muteUser) ?: return false
         }
 
         val muteMember = guild.getMember(muteUser)
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.MANAGE_ROLES, Permission.MANAGE_PERMISSIONS)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
+            message.failMessage(bot, "I don't have enough permissions to do that!")
             return false
         }
 
         if (user == muteUser) {
-            DiscordUtils.failMessage(bot, message, "You can't mute yourself, dummy!")
+            message.failMessage(bot, "You can't mute yourself, dummy!")
             return false
         }
 
         if (user == selfMember.user) {
-            DiscordUtils.failMessage(bot, message, "Now that's just rude. (I can't mute myself)")
+            message.failMessage(bot, "Now that's just rude. (I can't mute myself)")
             return false
         }
 
         val mutedRole = try {
             setupMutedRole(guild)
         } catch (e: Exception) {
-            DiscordUtils.failMessage(bot, message, "Could not create a Muted role, do I have enough permissions?")
+            message.failMessage(bot, "Could not create a Muted role, do I have enough permissions?")
             return false
         }
 
         val parsedReasonAndTime = try {
             messageIterator.getTextAndTime()
         } catch (e: InvalidTimeInputException) {
-            DiscordUtils.failMessage(bot, message, "Invalid time argument. Please try again.")
+            message.failMessage(bot, "Invalid time argument. Please try again.")
             return false
         } catch (e: TimeInputInPastException) {
-            DiscordUtils.failMessage(bot, message, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
+            message.failMessage(bot, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
 
@@ -88,14 +88,14 @@ class Mute : Command() {
         embed.setDescription("You were muted in " + guild.name)
         embed.addField("Reason:", truncateForEmbed(reason), false)
         embed.addField("Muted until", expirationDate?.toString() ?: "Indefinitely", false)
-        embed.setFooter("Muted by " + DiscordUtils.getUserTagAndId(user), null)
+        embed.setFooter("Muted by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
-        DiscordUtils.sendDM(muteUser, embed.build())
+        muteUser.sendDM(embed.build())
 
         try {
             controller.addSingleRoleToMember(muteMember, mutedRole).complete()
-            DiscordUtils.successReact(bot, message)
+            message.successReact(bot)
 
             val expires = expirationDate != null
             val record = transaction {
@@ -115,10 +115,10 @@ class Mute : Command() {
                 }
             }
 
-            DiscordUtils.createModLogEntry(bot, shard, message, muteUser, reason, "mute", record.id.value, expirationDate, true)
-            DiscordUtils.sendMessage(channel, "Muted " + DiscordUtils.getUserTagAndId(muteUser))
+            message.createModLogEntry(bot, shard, muteUser, reason, "mute", record.id.value, expirationDate, true)
+            channel.sendMessage("Muted " + muteUser.getUserTagAndId())
         } catch (e: Exception) {
-            DiscordUtils.failMessage(bot, message, "Could not mute the specified user. Do I have enough permissions?")
+            message.failMessage(bot, "Could not mute the specified user. Do I have enough permissions?")
         }
 
         return false

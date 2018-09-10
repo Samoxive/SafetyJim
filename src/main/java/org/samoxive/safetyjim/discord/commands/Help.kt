@@ -5,23 +5,16 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.getGuildSettings
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
+import org.samoxive.safetyjim.discord.getUsageString
+import org.samoxive.safetyjim.discord.successReact
 import java.awt.Color
 import java.util.*
 
 class Help : Command() {
     override val usages = arrayOf("help - lists all the available commands and their usage")
 
-    private fun getUsageTexts(bot: DiscordBot, prefix: String): String {
-        val joiner = StringJoiner("\n")
-        val commandList = bot.commands
-
-        for (command in commandList.values) {
-            joiner.add(DiscordUtils.getUsageString(prefix, command.usages))
-        }
-
-        return joiner.toString()
-    }
+    private fun getUsageTexts(bot: DiscordBot, prefix: String) =
+            bot.commands.values.joinToString("\n") { getUsageString(prefix, it.usages) }
 
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
         val shard = event.jda
@@ -40,9 +33,9 @@ class Help : Command() {
             builder.build()
         }
 
-        DiscordUtils.successReact(bot, event.message)
+        event.message.successReact(bot)
         embeds.forEach {
-            DiscordUtils.sendMessage(event.channel, it)
+            event.channel.sendMessage(it)
         }
         return false
     }

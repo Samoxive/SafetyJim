@@ -6,10 +6,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimRole
 import org.samoxive.safetyjim.database.JimRoleTable
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.seekToEnd
+import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class RoleCommand : Command() {
@@ -34,7 +31,7 @@ class RoleCommand : Command() {
         }
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Administrator")
+            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Administrator")
             return false
         }
 
@@ -48,7 +45,7 @@ class RoleCommand : Command() {
                 .filter { role -> role.name.toLowerCase() == roleName }
 
         if (matchingRoles.isEmpty()) {
-            DiscordUtils.failMessage(bot, message, "Could not find a role with specified name!")
+            message.failMessage(bot, "Could not find a role with specified name!")
             return false
         }
 
@@ -67,18 +64,18 @@ class RoleCommand : Command() {
                         roleid = matchedRole.id
                     }
                 }
-                DiscordUtils.successReact(bot, message)
+                message.successReact(bot)
             } else {
-                DiscordUtils.failMessage(bot, message, "Specified role is already in self-assignable roles list!")
+                message.failMessage(bot, "Specified role is already in self-assignable roles list!")
                 return false
             }
         } else {
             if (record == null) {
-                DiscordUtils.failMessage(bot, message, "Specified role is not in self-assignable roles list!")
+                message.failMessage(bot, "Specified role is not in self-assignable roles list!")
                 return false
             } else {
                 transaction { record.delete() }
-                DiscordUtils.successReact(bot, message)
+                message.successReact(bot)
             }
         }
 

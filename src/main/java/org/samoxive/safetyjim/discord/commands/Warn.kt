@@ -23,22 +23,22 @@ class Warn : Command() {
         val guild = event.guild
 
         if (!member.hasPermission(Permission.KICK_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command!")
+            message.failMessage(bot, "You don't have enough permissions to execute this command!")
             return false
         }
 
         val (searchResult, warnUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (warnUser == null)) {
-            DiscordUtils.failMessage(bot, message, "Could not find the user to warn!")
+            message.failMessage(bot, "Could not find the user to warn!")
             return false
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, warnUser) ?: return false
+            message.askConfirmation(bot, warnUser) ?: return false
         }
 
         if (user == warnUser) {
-            DiscordUtils.failMessage(bot, message, "You can't warn yourself, dummy!")
+            message.failMessage(bot, "You can't warn yourself, dummy!")
             return false
         }
 
@@ -52,16 +52,16 @@ class Warn : Command() {
         embed.setColor(Color(0x4286F4))
         embed.setDescription("You were warned in " + guild.name)
         embed.addField("Reason:", truncateForEmbed(reason), false)
-        embed.setFooter("Warned by " + DiscordUtils.getUserTagAndId(user), null)
+        embed.setFooter("Warned by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
         try {
-            DiscordUtils.sendDM(warnUser, embed.build())
+            warnUser.sendDM(embed.build())
         } catch (e: Exception) {
-            DiscordUtils.sendMessage(channel, "Could not send a warning to the specified user via private message!")
+            channel.sendMessage("Could not send a warning to the specified user via private message!")
         }
 
-        DiscordUtils.successReact(bot, message)
+        message.successReact(bot)
 
         val record = transaction {
             JimWarn.new {
@@ -73,8 +73,8 @@ class Warn : Command() {
             }
         }
 
-        DiscordUtils.createModLogEntry(bot, shard, message, warnUser, reason, "warn", record.id.value, null, false)
-        DiscordUtils.sendMessage(channel, "Warned " + DiscordUtils.getUserTagAndId(warnUser))
+        message.createModLogEntry(bot, shard, warnUser, reason, "warn", record.id.value, null, false)
+        channel.sendMessage("Warned " + warnUser.getUserTagAndId())
 
         return false
     }

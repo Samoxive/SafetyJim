@@ -21,6 +21,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.commands.Mute
+import org.samoxive.safetyjim.tryhard
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.Color
@@ -32,19 +33,19 @@ import kotlin.system.exitProcess
 
 class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController) : ListenerAdapter() {
     private val log: Logger
-    val shard: JDA
+    val jda: JDA
     val threadPool: ExecutorService = Executors.newCachedThreadPool()
     val confirmationListener = ConfirmationListener(threadPool)
 
     init {
         val config = bot.config
-        log = LoggerFactory.getLogger("DiscordShard " + DiscordUtils.getShardString(shardId, config[JimConfig.shard_count]))
+        log = LoggerFactory.getLogger("DiscordShard " + getShardString(shardId, config[JimConfig.shard_count]))
 
         val shardCount = config[JimConfig.shard_count]
         val version = config[JimConfig.version]
 
         val builder = JDABuilder(AccountType.BOT)
-        this.shard = try {
+        this.jda = try {
             builder.setToken(config[JimConfig.token])
                     .setAudioEnabled(false) // jim doesn't have any audio functionality
                     .addEventListener(this)
@@ -52,7 +53,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
                     .setEnableShutdownHook(true)
                     .useSharding(shardId, config[JimConfig.shard_count])
-                    .setGame(Game.playing(String.format("-mod help | %s | %s", version, DiscordUtils.getShardString(shardId, shardCount))))
+                    .setGame(Game.playing("-mod help | $version | ${getShardString(shardId, shardCount)}"))
                     .build()
                     .awaitReady()
         } catch (e: LoginException) {
@@ -75,12 +76,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         guild.textChannels
                 .filter { channel -> self.hasPermission(channel, Permission.MESSAGE_HISTORY, Permission.MESSAGE_READ) }
                 .map { channel -> threadPool.submit { populateChannelStatistics(channel) } }
-                .forEach { future ->
-                    try {
-                        future.get()
-                    } catch (e: Exception) {
-                    }
-                }
+                .forEach { future -> tryhard { future.get() } }
     }
 
     private fun populateChannelStatistics(channel: TextChannel) {
@@ -105,7 +101,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         var fetchedMessages: List<Message>?
         if (oldestRecord == null || newestRecord == null) {
-            fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel)
+            fetchedMessages = channel.fetchHistoryFromScratch()
         } else {
             val oldestMessageStored: Message?
             val newestMessageStored: Message?
@@ -117,15 +113,15 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     throw Exception()
                 }
 
-                fetchedMessages = DiscordUtils.fetchFullHistoryBeforeMessage(channel, oldestMessageStored)
-                fetchedMessages.addAll(DiscordUtils.fetchFullHistoryAfterMessage(channel, newestMessageStored))
+                fetchedMessages = channel.fetchFullHistoryBeforeMessage(oldestMessageStored)
+                fetchedMessages.addAll(channel.fetchFullHistoryAfterMessage(newestMessageStored))
             } catch (e: Exception) {
                 transaction {
                     JimMessage.find {
                         (JimMessageTable.channelid eq channel.id) and (JimMessageTable.guildid eq guild.id)
                     }.forEach { it.delete() }
                 }
-                fetchedMessages = DiscordUtils.fetchHistoryFromScratch(channel)
+                fetchedMessages = channel.fetchHistoryFromScratch()
             }
         }
 
@@ -142,7 +138,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     userid = user.id
                     channelid = channel.id
                     guildid = channel.guild.id
-                    date = DiscordUtils.getCreationTime(message.id)
+                    date = message.id.getCreationTime()
                     wordcount = wordCount
                     size = content.length
                 }
@@ -155,7 +151,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val shard = event.jda
 
         for (guild in shard.guilds) {
-            if (!DiscordUtils.isGuildTalkable(guild)) {
+            if (!guild.isTalkable()) {
                 guild.leave().complete()
             }
         }
@@ -185,14 +181,14 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         if (message.isMentioned(self) && content.contains("prefix")) {
             val guildSettings = getGuildSettings(guild, bot.config)
             val prefix = guildSettings.prefix
-            DiscordUtils.successReact(bot, message)
+            message.successReact(bot)
 
             val embed = EmbedBuilder()
             embed.setAuthor("Safety Jim - Prefix", null, self.avatarUrl)
                     .setDescription("This guild's prefix is: $prefix")
                     .setColor(Color(0x4286F4))
 
-            DiscordUtils.sendMessage(message.textChannel, embed.build())
+            message.textChannel.sendMessage(embed.build())
             return
         }
 
@@ -226,7 +222,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
             // This means the user only entered the prefix
             if (splitContent.size == 1) {
-                DiscordUtils.failReact(bot, message)
+                message.failReact(bot)
                 return
             }
 
@@ -239,7 +235,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             }
 
             if (firstWord.length == prefix.length) {
-                DiscordUtils.failReact(bot, message)
+                message.failReact(bot)
                 return
             }
 
@@ -249,7 +245,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         // Command not found
         if (command == null) {
-            DiscordUtils.failReact(bot, message)
+            message.failReact(bot)
             return
         }
 
@@ -297,14 +293,14 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     override fun onGuildJoin(event: GuildJoinEvent) {
         val guild = event.guild
-        if (!DiscordUtils.isGuildTalkable(guild)) {
+        if (!guild.isTalkable()) {
             guild.leave().complete()
             return
         }
 
         val defaultPrefix = bot.config[JimConfig.default_prefix]
         val message = "Hello! I am Safety Jim, `$defaultPrefix` is my default prefix! Try typing `$defaultPrefix help` to see available commands.\nYou can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help."
-        DiscordUtils.sendMessage(DiscordUtils.getDefaultChannel(guild), message)
+        guild.getDefaultChannelTalkable().sendMessage(message)
         createGuildSettings(guild, bot.config)
     }
 
@@ -332,7 +328,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     message = message.replace("\$minute", waitTime)
                 }
 
-                DiscordUtils.sendMessage(channel, message)
+                channel.sendMessage(message)
             }
         }
 
@@ -361,17 +357,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             return
         }
 
-        val mutedRole: Role = try {
-            Mute.setupMutedRole(guild)
-        } catch (e: Exception) {
-            return
-        }
-
-        try {
-            controller.addSingleRoleToMember(member, mutedRole).complete()
-        } catch (e: Exception) {
-            // Maybe actually do something if this fails?
-        }
+        val mutedRole: Role = tryhard { Mute.setupMutedRole(guild) } ?: return
+        tryhard { controller.addSingleRoleToMember(member, mutedRole).complete() }
     }
 
     override fun onGuildMemberLeave(event: GuildMemberLeaveEvent) = transaction {
@@ -382,13 +369,15 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     private fun executeCommand(event: GuildMessageReceivedEvent, command: Command, commandName: String, args: String) {
         val shard = event.jda
+        val message = event.message
+        val channel = event.channel
 
         var showUsage = false
         try {
             showUsage = command.run(bot, event, args)
         } catch (e: Exception) {
-            DiscordUtils.failReact(bot, event.message)
-            DiscordUtils.sendMessage(event.channel, "There was an error running your command, this incident has been logged.")
+            message.failReact(bot)
+            channel.sendMessage("There was an error running your command, this incident has been logged.")
             log.error(String.format("%s failed with arguments %s in guild %s - %s", commandName, args, event.guild.name, event.guild.id), e)
         }
 
@@ -399,17 +388,15 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
             val embed = EmbedBuilder()
             embed.setAuthor("Safety Jim - \"$commandName\" Syntax", null, shard.selfUser.avatarUrl)
-                    .setDescription(DiscordUtils.getUsageString(prefix, usages))
+                    .setDescription(getUsageString(prefix, usages))
                     .setColor(Color(0x4286F4))
 
-            DiscordUtils.failReact(bot, event.message)
-            event.channel.sendMessage(embed.build()).queue()
+            message.failReact(bot)
+            channel.sendMessage(embed.build()).queue()
         } else {
-            val deleteCommands = arrayOf("ban", "kick", "mute", "softban", "warn", "hardban")
-
-            for (deleteCommand in deleteCommands) {
+            for (deleteCommand in bot.deleteCommands) {
                 if (commandName == deleteCommand) {
-                    DiscordUtils.deleteCommandMessage(bot, event.message)
+                    message.deleteCommandMessage(bot)
                     return
                 }
             }

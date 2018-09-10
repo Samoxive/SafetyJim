@@ -34,8 +34,8 @@ class Tag : Command() {
         val records = transaction { JimTag.find { JimTagTable.guildid eq guild.id } }
 
         if (transaction { records.empty() }) {
-            DiscordUtils.successReact(bot, message)
-            DiscordUtils.sendMessage(channel, "No tags have been added yet!")
+            message.successReact(bot)
+            channel.sendMessage("No tags have been added yet!")
             return
         }
 
@@ -50,8 +50,8 @@ class Tag : Command() {
         embed.addField("List of tags", truncateForEmbed(tagString.toString()), false)
         embed.setColor(Color(0x4286F4))
 
-        DiscordUtils.successReact(bot, message)
-        DiscordUtils.sendMessage(channel, embed.build())
+        message.successReact(bot)
+        channel.sendMessage(embed.build())
     }
 
     private fun addTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
@@ -60,26 +60,26 @@ class Tag : Command() {
         val member = event.member
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to use this command!")
+            message.failMessage(bot, "You don't have enough permissions to use this command!")
             return
         }
 
         if (!messageIterator.hasNext()) {
-            DiscordUtils.failMessage(bot, message, "Please provide a tag name and a response to create a new tag!")
+            message.failMessage(bot, "Please provide a tag name and a response to create a new tag!")
             return
         }
 
         val tagName = messageIterator.next()
 
         if (isSubcommand(tagName)) {
-            DiscordUtils.failMessage(bot, message, "You can't create a tag with the same name as a subcommand!")
+            message.failMessage(bot, "You can't create a tag with the same name as a subcommand!")
             return
         }
 
         val response = messageIterator.seekToEnd()
 
         if (response == "") {
-            DiscordUtils.failMessage(bot, message, "Empty responses aren't allowed!")
+            message.failMessage(bot, "Empty responses aren't allowed!")
             return
         }
 
@@ -91,9 +91,9 @@ class Tag : Command() {
                     this.response = response
                 }
             }
-            DiscordUtils.successReact(bot, message)
+            message.successReact(bot)
         } catch (e: Exception) {
-            DiscordUtils.failMessage(bot, message, "Tag `$tagName` already exists!")
+            message.failMessage(bot, "Tag `$tagName` already exists!")
         }
     }
 
@@ -103,12 +103,12 @@ class Tag : Command() {
         val member = event.member
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to use this command!")
+            message.failMessage(bot, "You don't have enough permissions to use this command!")
             return
         }
 
         if (!messageIterator.hasNext()) {
-            DiscordUtils.failMessage(bot, message, "Please provide a tag name and a response to edit tags!")
+            message.failMessage(bot, "Please provide a tag name and a response to edit tags!")
             return
         }
 
@@ -116,7 +116,7 @@ class Tag : Command() {
         val response = messageIterator.seekToEnd()
 
         if (response == "") {
-            DiscordUtils.failMessage(bot, message, "Empty responses aren't allowed!")
+            message.failMessage(bot, "Empty responses aren't allowed!")
             return
         }
 
@@ -127,13 +127,13 @@ class Tag : Command() {
         }
 
         if (record == null) {
-            DiscordUtils.failMessage(bot, message, "Tag `$tagName` does not exist!")
+            message.failMessage(bot, "Tag `$tagName` does not exist!")
             return
         }
 
         transaction { record.response = response }
 
-        DiscordUtils.successReact(bot, message)
+        message.successReact(bot)
     }
 
     private fun deleteTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
@@ -142,12 +142,12 @@ class Tag : Command() {
         val member = event.member
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to use this command!")
+            message.failMessage(bot, "You don't have enough permissions to use this command!")
             return
         }
 
         if (!messageIterator.hasNext()) {
-            DiscordUtils.failMessage(bot, message, "Please provide a tag name and a response to delete tags!")
+            message.failMessage(bot, "Please provide a tag name and a response to delete tags!")
             return
         }
 
@@ -160,12 +160,12 @@ class Tag : Command() {
         }
 
         if (record == null) {
-            DiscordUtils.failMessage(bot, message, "Tag `$tagName` does not exist!")
+            message.failMessage(bot, "Tag `$tagName` does not exist!")
             return
         }
 
         transaction { record.delete() }
-        DiscordUtils.successReact(bot, message)
+        message.successReact(bot)
     }
 
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
@@ -193,12 +193,12 @@ class Tag : Command() {
                 }
 
                 if (record == null) {
-                    DiscordUtils.failMessage(bot, message, "Could not find a tag with that name!")
+                    message.failMessage(bot, "Could not find a tag with that name!")
                     return false
                 }
 
-                DiscordUtils.successReact(bot, message)
-                DiscordUtils.sendMessage(channel, record.response)
+                message.successReact(bot)
+                channel.sendMessage(record.response)
             }
         }
 

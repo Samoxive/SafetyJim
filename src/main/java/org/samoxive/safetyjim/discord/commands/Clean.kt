@@ -7,6 +7,7 @@ import net.dv8tion.jda.core.entities.User
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.core.requests.restaction.AuditableRestAction
 import org.samoxive.safetyjim.discord.*
+import org.samoxive.safetyjim.tryhard
 import java.util.*
 
 class Clean : Command() {
@@ -23,11 +24,7 @@ class Clean : Command() {
         var messages: MutableList<Message> = channel.history.retrievePast(if (filterBotMessages || filterUserMessages) 100 else messageCount).complete()
 
         if (skipOneMessage) {
-            try {
-                messages.removeAt(0)
-            } catch (e: IndexOutOfBoundsException) {
-                // we just want to remove first element, ignore if list is empty
-            }
+            tryhard { messages.removeAt(0) }
         }
 
         if (filterBotMessages) {
@@ -117,27 +114,27 @@ class Clean : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(channel, Permission.MESSAGE_MANAGE)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Manage Messages")
+            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Manage Messages")
             return false
         }
 
         if (!selfMember.hasPermission(channel, Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that! Required permission: Manage Messages, Read Message History")
+            message.failMessage(bot, "I don't have enough permissions to do that! Required permission: Manage Messages, Read Message History")
             return false
         }
 
         if (!messageIterator.hasNextInt()) {
-            DiscordUtils.failReact(bot, message)
+            message.failReact(bot)
             return true
         }
 
         val messageCount = messageIterator.nextInt()
 
         if (messageCount < 1) {
-            DiscordUtils.failMessage(bot, message, "You can't delete zero or negative messages.")
+            message.failMessage(bot, "You can't delete zero or negative messages.")
             return false
         } else if (messageCount > 100) {
-            DiscordUtils.failMessage(bot, message, "You can't delete more than 100 messages at once.")
+            message.failMessage(bot, "You can't delete more than 100 messages at once.")
             return false
         }
 
@@ -150,12 +147,12 @@ class Clean : Command() {
                 val (searchResult, user) = messageIterator.findUser(message, true)
                 val messages = fetchMessages(channel, messageCount, true, false, true, user)
                 if (searchResult == SearchUserResult.NOT_FOUND || user == null) {
-                    DiscordUtils.failMessage(bot, message, "Invalid target, please try mentioning a user or writing `bot`.")
+                    message.failMessage(bot, "Invalid target, please try mentioning a user or writing `bot`.")
                     return false
                 }
 
                 if (searchResult == SearchUserResult.GUESSED) {
-                    askConfirmation(bot, message, user) ?: return false
+                    message.askConfirmation(bot, user) ?: return false
                 }
 
                 messages
@@ -163,13 +160,9 @@ class Clean : Command() {
         }
 
         val seperatedMessages = seperateMessages(messages)
-        try {
-            bulkDelete(seperatedMessages, channel)
-        } catch (e: Exception) {
-            //
-        }
+        tryhard { bulkDelete(seperatedMessages, channel) }
 
-        DiscordUtils.successReact(bot, message)
+        message.successReact(bot)
 
         return false
     }

@@ -5,6 +5,7 @@ import com.uchuhimo.konf.Config
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.MessageBuilder
 import net.dv8tion.jda.core.Permission
+import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.utils.SessionControllerAdapter
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -15,6 +16,8 @@ import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.discord.processors.InviteLink
 import org.samoxive.safetyjim.discord.processors.MessageStats
+import org.samoxive.safetyjim.tryAndLog
+import org.samoxive.safetyjim.tryhard
 import org.slf4j.LoggerFactory
 import java.awt.Color
 import java.util.*
@@ -25,77 +28,55 @@ import kotlin.collections.ArrayList
 class DiscordBot(val config: Config) {
     private val log = LoggerFactory.getLogger(DiscordBot::class.java)
     val shards = ArrayList<DiscordShard>()
-    val commands = HashMap<String, Command>()
-    val processors = ArrayList<MessageProcessor>()
+    val commands = mapOf(
+            "ping" to Ping(),
+            "unmute" to Unmute(),
+            "invite" to Invite(),
+            "ban" to Ban(),
+            "kick" to Kick(),
+            "mute" to Mute(),
+            "warn" to Warn(),
+            "help" to Help(),
+            "clean" to Clean(),
+            "tag" to Tag(),
+            "remind" to Remind(),
+            "info" to Info(),
+            "settings" to Settings(),
+            "softban" to Softban(),
+            "unban" to Unban(),
+            "server" to Server(),
+            "iam" to Iam(),
+            "role" to RoleCommand(),
+            "hardban" to Hardban()
+    )
+    val deleteCommands = arrayOf("ban", "kick", "mute", "softban", "warn", "hardban")
+    val processors = listOf(InviteLink(), MessageStats())
     private val scheduler = Executors.newScheduledThreadPool(8)
     val startTime = Date()
 
     val guildCount: Long
-        get() = shards.map { shard -> shard.shard }
+        get() = shards.map { shard -> shard.jda }
                 .map { shard -> shard.guildCache.size() }
                 .sum()
 
     init {
-        loadCommands()
-        loadProcessors()
-
         val sessionController = SessionControllerAdapter()
         for (i in 0 until config[JimConfig.shard_count]) {
             val shard = DiscordShard(this, i, sessionController)
             shards.add(shard)
 
             // Discord API rate limits login requests to once per 5 seconds
-            try {
-                Thread.sleep(5000)
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
+            Thread.sleep(5000)
         }
 
-        scheduler.scheduleAtFixedRate({
-            try {
-                allowUsers()
-            } catch (e: Exception) {
-                log.error("Exception occured in allowUsers", e)
-            }
-        }, 10, 5, TimeUnit.SECONDS)
-        scheduler.scheduleAtFixedRate({
-            try {
-                unmuteUsers()
-            } catch (e: Exception) {
-                log.error("Exception occured in unmuteUsers", e)
-            }
-        }, 10, 10, TimeUnit.SECONDS)
-        scheduler.scheduleAtFixedRate({
-            try {
-                unbanUsers()
-            } catch (e: Exception) {
-                log.error("Exception occured in unbanUsers", e)
-            }
-        }, 10, 30, TimeUnit.SECONDS)
-        scheduler.scheduleAtFixedRate({
-            try {
-                remindReminders()
-            } catch (e: Exception) {
-                log.error("Exception occured in remindReminders", e)
-            }
-        }, 10, 5, TimeUnit.SECONDS)
-        scheduler.scheduleAtFixedRate({
-            try {
-                saveMemberCounts()
-            } catch (e: Exception) {
-                log.error("Exception occured in saveMemberCounts", e)
-            }
-        }, 1, 10, TimeUnit.MINUTES)
-        scheduler.scheduleAtFixedRate({
-            try {
-                updateBotLists()
-            } catch (e: Exception) {
-                log.error("Exception occured in updateBotLists", e)
-            }
-        }, 10, 1, TimeUnit.MINUTES)
+        scheduler.scheduleAtFixedRate({ tryAndLog(log, "allowUsers") { allowUsers() } }, 10, 5, TimeUnit.SECONDS)
+        scheduler.scheduleAtFixedRate({ tryAndLog(log, "unmuteUsers") { unmuteUsers() } }, 10, 10, TimeUnit.SECONDS)
+        scheduler.scheduleAtFixedRate({ tryAndLog(log, "unbanUsers") { unbanUsers() } }, 10, 30, TimeUnit.SECONDS)
+        scheduler.scheduleAtFixedRate({ tryAndLog(log, "remindReminders") { remindReminders() } }, 10, 5, TimeUnit.SECONDS)
+        scheduler.scheduleAtFixedRate({ tryAndLog(log, "saveMemberCounts") { saveMemberCounts() } }, 1, 10, TimeUnit.MINUTES)
+        scheduler.scheduleAtFixedRate({ tryAndLog(log, "updateBotLists") { updateBotLists() } }, 10, 1, TimeUnit.MINUTES)
 
-        val inviteLink = shards[0].shard.asBot().getInviteUrl(
+        val inviteLink = shards[0].jda.asBot().getInviteUrl(
                 Permission.KICK_MEMBERS,
                 Permission.BAN_MEMBERS,
                 Permission.MESSAGE_ADD_REACTION,
@@ -108,40 +89,19 @@ class DiscordBot(val config: Config) {
         log.info("Bot invite link: $inviteLink")
     }
 
-    private fun loadCommands() {
-        commands["ping"] = Ping()
-        commands["unmute"] = Unmute()
-        commands["invite"] = Invite()
-        commands["ban"] = Ban()
-        commands["kick"] = Kick()
-        commands["mute"] = Mute()
-        commands["warn"] = Warn()
-        commands["help"] = Help()
-        commands["clean"] = Clean()
-        commands["tag"] = Tag()
-        commands["remind"] = Remind()
-        commands["info"] = Info()
-        commands["settings"] = Settings()
-        commands["softban"] = Softban()
-        commands["unban"] = Unban()
-        commands["server"] = Server()
-        commands["iam"] = Iam()
-        commands["role"] = RoleCommand()
-        commands["hardban"] = Hardban()
-    }
-
-    private fun loadProcessors() {
-        processors.add(InviteLink())
-        processors.add(MessageStats())
+    fun getGuildFromBot(guildId: String): Guild? {
+        val guildIdLong = tryhard { guildId.toLong() } ?: return null
+        val shardId = getShardIdFromGuildId(guildIdLong, shards.size)
+        return shards[shardId].jda.getGuildById(guildId)
     }
 
     private fun saveMemberCounts() = transaction {
         val settings = getAllGuildSettings()
-        shards.map { shard -> shard.shard.guilds }
+        shards.map { shard -> shard.jda.guilds }
                 .flatMap { it }
                 .filter { guild -> settings[guild.id]!!.statistics }
                 .forEach { guild ->
-                    val onlineCount = guild.members.filter { member -> DiscordUtils.isOnline(member) }.count()
+                    val onlineCount = guild.members.filter { member -> member.isOnline() }.count()
                     JimMemberCount.new {
                         guildid = guild.id
                         date = Date().time
@@ -161,9 +121,9 @@ class DiscordBot(val config: Config) {
         for (user in usersToBeAllowed) {
             val guildId = user.guildid
             val guildIdLong = guildId.toLong()
-            val shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
+            val shardId = getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
             val shard = shards[shardId]
-            val shardClient = shard.shard
+            val shardClient = shard.jda
             val guild = shardClient.getGuildById(guildId)
 
             if (guild == null) {
@@ -175,7 +135,7 @@ class DiscordBot(val config: Config) {
             val enabled = guildSettings.holdingroom
 
             if (enabled) {
-                val guildUser = DiscordUtils.getUserById(shard.shard, user.userid)
+                val guildUser = shard.jda.retrieveUserById(user.userid).complete()
                 val member = guild.getMember(guildUser)
                 val roleId = guildSettings.holdingroomroleid
                 val role = guild.getRoleById(roleId)
@@ -186,13 +146,10 @@ class DiscordBot(val config: Config) {
                     continue
                 }
 
-                try {
+                tryhard {
                     controller.addSingleRoleToMember(member, role).complete()
-                } catch (e: Exception) {
-                    //
-                } finally {
-                    user.allowed = true
                 }
+                user.allowed = true
             } else {
                 user.allowed = true
             }
@@ -209,9 +166,9 @@ class DiscordBot(val config: Config) {
         for (user in usersToBeUnbanned) {
             val guildId = user.guildid
             val guildIdLong = guildId.toLong()
-            val shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
+            val shardId = getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
             val shard = shards[shardId]
-            val shardClient = shard.shard
+            val shardClient = shard.jda
             val guild = shardClient.getGuildById(guildId)
 
             if (guild == null) {
@@ -219,7 +176,7 @@ class DiscordBot(val config: Config) {
                 continue
             }
 
-            val guildUser = DiscordUtils.getUserById(shard.shard, user.userid)
+            val guildUser = shard.jda.retrieveUserById(user.userid).complete()
             val controller = guild.controller
 
             if (!guild.selfMember.hasPermission(Permission.BAN_MEMBERS)) {
@@ -235,13 +192,10 @@ class DiscordBot(val config: Config) {
                 user.unbanned = true
             }
 
-            try {
+            tryhard {
                 controller.unban(guildUser).complete()
-            } catch (e: Exception) {
-                //
-            } finally {
-                user.unbanned = true
             }
+            user.unbanned = true
         }
     }
 
@@ -255,9 +209,9 @@ class DiscordBot(val config: Config) {
         for (user in usersToBeUnmuted) {
             val guildId = user.guildid
             val guildIdLong = guildId.toLong()
-            val shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
+            val shardId = getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
             val shard = shards[shardId]
-            val shardClient = shard.shard
+            val shardClient = shard.jda
             val guild = shardClient.getGuildById(guildId)
 
             if (guild == null) {
@@ -265,7 +219,7 @@ class DiscordBot(val config: Config) {
                 continue
             }
 
-            val guildUser = DiscordUtils.getUserById(shard.shard, user.userid)
+            val guildUser = shard.jda.retrieveUserById(user.userid).complete()
             val member = guild.getMember(guildUser)
             if (member == null) {
                 user.unmuted = true
@@ -274,11 +228,7 @@ class DiscordBot(val config: Config) {
 
             val mutedRoles = guild.getRolesByName("Muted", false)
             val role = if (mutedRoles.isEmpty()) {
-                try {
-                    Mute.setupMutedRole(guild)
-                } catch (e: Exception) {
-                    null
-                }
+                tryhard { Mute.setupMutedRole(guild) }
             } else {
                 mutedRoles[0]
             }
@@ -290,11 +240,10 @@ class DiscordBot(val config: Config) {
 
             val controller = guild.controller
 
-            try {
+            tryhard {
                 controller.removeSingleRoleFromMember(member, role).complete()
-            } finally {
-                user.unmuted = true
             }
+            user.unmuted = true
         }
     }
 
@@ -310,10 +259,10 @@ class DiscordBot(val config: Config) {
             val guildIdLong = guildId.toLong()
             val channelId = reminder.channelid
             val userId = reminder.userid
-            val shardId = DiscordUtils.getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
-            val shard = shards[shardId].shard
+            val shardId = getShardIdFromGuildId(guildIdLong, config[JimConfig.shard_count])
+            val shard = shards[shardId].jda
             val guild = shard.getGuildById(guildId)
-            val user = DiscordUtils.getUserById(shard, userId)
+            val user = shard.retrieveUserById(userId).complete()
 
             if (guild == null) {
                 reminder.reminded = true
@@ -332,7 +281,7 @@ class DiscordBot(val config: Config) {
             embed.setColor(Color(0x4286F4))
 
             if (channel == null || member == null) {
-                DiscordUtils.sendDM(user, embed.build())
+                user.sendDM(embed.build())
             } else {
                 try {
                     val builder = MessageBuilder()
@@ -341,7 +290,7 @@ class DiscordBot(val config: Config) {
 
                     channel.sendMessage(builder.build()).complete()
                 } catch (e: Exception) {
-                    DiscordUtils.sendDM(user, embed.build())
+                    user.sendDM(embed.build())
                 }
             }
 
@@ -355,7 +304,7 @@ class DiscordBot(val config: Config) {
         }
 
         val guildCount = guildCount
-        val clientId = shards[0].shard.selfUser.id
+        val clientId = shards[0].jda.selfUser.id
         for (list in config[BotListConfig.list]) {
             val body = JSONObject().put("server_count", guildCount)
             Unirest.post(list.url.replace("\$id", clientId))

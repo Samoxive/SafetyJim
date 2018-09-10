@@ -4,7 +4,8 @@ import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
+import org.samoxive.safetyjim.discord.getTag
+import org.samoxive.safetyjim.discord.successReact
 import java.awt.Color
 
 class Server : Command() {
@@ -34,13 +35,13 @@ class Server : Command() {
         val embed = EmbedBuilder()
         embed.setAuthor(guild.name, null, guild.iconUrl)
         embed.setColor(Color(0x4286F4))
-        embed.addField("Server Owner", DiscordUtils.getTag(owner), true)
+        embed.addField("Server Owner", owner.getTag(), true)
         embed.addField("Member Count", memberCount.toString(), true)
         embed.addField("Creation Date", creationDate, true)
         embed.addField("Emojis", emojiString, false)
 
-        DiscordUtils.successReact(bot, message)
-        DiscordUtils.sendMessage(channel, embed.build())
+        message.successReact(bot)
+        channel.sendMessage(embed.build())
 
         return false
     }

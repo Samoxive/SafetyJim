@@ -6,7 +6,6 @@ import net.dv8tion.jda.core.exceptions.InsufficientPermissionException
 import org.samoxive.safetyjim.database.getGuildSettings
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordShard
-import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.MessageProcessor
 
 class InviteLink : MessageProcessor() {
@@ -43,7 +42,7 @@ class InviteLink : MessageProcessor() {
 
         try {
             message.delete().complete()
-            DiscordUtils.sendMessage(event.channel, "I'm sorry " + member.asMention + ", you can't send invite links here.")
+            event.channel.sendMessage("I'm sorry " + member.asMention + ", you can't send invite links here.")
         } catch (e: InsufficientPermissionException) {
             return false
         } catch (e: Exception) {

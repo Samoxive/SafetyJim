@@ -7,8 +7,8 @@ import org.samoxive.safetyjim.database.JimMessage
 import org.samoxive.safetyjim.database.getGuildSettings
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordShard
-import org.samoxive.safetyjim.discord.DiscordUtils
 import org.samoxive.safetyjim.discord.MessageProcessor
+import org.samoxive.safetyjim.discord.getCreationTime
 
 class MessageStats : MessageProcessor() {
     override fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent): Boolean {
@@ -29,7 +29,7 @@ class MessageStats : MessageProcessor() {
                     userid = user.id
                     channelid = channel.id
                     guildid = guild.id
-                    date = DiscordUtils.getCreationTime(message.id)
+                    date = message.id.getCreationTime()
                     wordcount = wordCount
                     size = content.length
                 }

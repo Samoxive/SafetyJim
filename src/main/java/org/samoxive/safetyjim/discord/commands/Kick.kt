@@ -24,35 +24,35 @@ class Kick : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.KICK_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Kick Members")
+            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Kick Members")
             return false
         }
 
         val (searchResult, kickUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (kickUser == null)) {
-            DiscordUtils.failMessage(bot, message, "Could not find the user to kick!")
+            message.failMessage(bot, "Could not find the user to kick!")
             return false
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, kickUser) ?: return false
+            message.askConfirmation(bot, kickUser) ?: return false
         }
 
         val kickMember = guild.getMember(kickUser)
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.KICK_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
+            message.failMessage(bot, "I don't have enough permissions to do that!")
             return false
         }
 
         if (user == kickUser) {
-            DiscordUtils.failMessage(bot, message, "You can't kick yourself, dummy!")
+            message.failMessage(bot, "You can't kick yourself, dummy!")
             return false
         }
 
-        if (kickMember != null && !DiscordUtils.isKickable(kickMember, selfMember)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
+        if (kickMember != null && !kickMember.isKickableBy(selfMember)) {
+            message.failMessage(bot, "I don't have enough permissions to do that!")
             return false
         }
 
@@ -66,15 +66,15 @@ class Kick : Command() {
         embed.setColor(Color(0x4286F4))
         embed.setDescription("You were kicked from " + guild.name)
         embed.addField("Reason:", truncateForEmbed(reason), false)
-        embed.setFooter("Kicked by " + DiscordUtils.getUserTagAndId(user), null)
+        embed.setFooter("Kicked by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
-        DiscordUtils.sendDM(kickUser, embed.build())
+        kickUser.sendDM(embed.build())
 
         try {
-            val auditLogReason = String.format("Kicked by %s - %s", DiscordUtils.getUserTagAndId(user), reason)
+            val auditLogReason = String.format("Kicked by %s - %s", user.getUserTagAndId(), reason)
             controller.kick(kickUser.id, auditLogReason).complete()
-            DiscordUtils.successReact(bot, message)
+            message.successReact(bot)
 
             val record = transaction {
                 JimKick.new {
@@ -86,10 +86,10 @@ class Kick : Command() {
                 }
             }
 
-            DiscordUtils.createModLogEntry(bot, shard, message, kickUser, reason, "kick", record.id.value, null, false)
-            DiscordUtils.sendMessage(channel, "Kicked " + DiscordUtils.getUserTagAndId(kickUser))
+            message.createModLogEntry(bot, shard, kickUser, reason, "kick", record.id.value, null, false)
+            channel.sendMessage("Kicked " + kickUser.getUserTagAndId())
         } catch (e: Exception) {
-            DiscordUtils.failMessage(bot, message, "Could not kick the specified user. Do I have enough permissions?")
+            message.failMessage(bot, "Could not kick the specified user. Do I have enough permissions?")
         }
 
         return false

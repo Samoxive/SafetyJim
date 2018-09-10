@@ -7,6 +7,7 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.*
+import org.samoxive.safetyjim.tryhard
 import java.awt.Color
 import java.util.*
 
@@ -42,8 +43,8 @@ class Settings : Command() {
         embed.addField("Guild Settings", output, false)
         embed.setColor(Color(0x4286F4))
 
-        DiscordUtils.successReact(bot, message)
-        DiscordUtils.sendMessage(channel, embed.build())
+        message.successReact(bot)
+        channel.sendMessage(embed.build())
     }
 
     private fun getSettingsString(bot: DiscordBot, event: GuildMessageReceivedEvent): String {
@@ -132,13 +133,13 @@ class Settings : Command() {
         val subCommand = messageIterator.next()
 
         if (subCommand == "list") {
-            val defaultChannelMention = DiscordUtils.getDefaultChannel(guild).asMention
+            val defaultChannelMention = guild.getDefaultChannelTalkable().asMention
             val embed = EmbedBuilder()
             embed.setAuthor("Safety Jim", null, selfUser.avatarUrl)
             embed.addField("List of settings", String.format(settingsListString, defaultChannelMention, defaultChannelMention), false)
             embed.setColor(Color(0x4286F4))
-            DiscordUtils.successReact(bot, message)
-            DiscordUtils.sendMessage(channel, embed.build())
+            message.successReact(bot)
+            channel.sendMessage(embed.build())
             return false
         }
 
@@ -148,14 +149,15 @@ class Settings : Command() {
         }
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to modify guild settings! Required permission: Administrator")
+            message.failMessage(bot, "You don't have enough permissions to modify guild settings! Required permission: Administrator")
             return false
         }
 
         if (subCommand == "reset") {
             deleteGuildSettings(guild)
             createGuildSettings(guild, bot.config)
-            DiscordUtils.successReact(bot, message)
+
+            message.successReact(bot)
             return false
         }
 
@@ -183,7 +185,7 @@ class Settings : Command() {
         }
 
         if (!isKeyOkay) {
-            DiscordUtils.failMessage(bot, message, "Please enter a valid setting key!")
+            message.failMessage(bot, "Please enter a valid setting key!")
             return false
         }
 
@@ -217,12 +219,7 @@ class Settings : Command() {
                         guildSettings.modlogchannelid = argumentChannel.id
                     }
                     "holdingroomminutes" -> {
-                        val minutes = try {
-                            Integer.parseInt(argumentSplit[0])
-                        } catch (e: NumberFormatException) {
-                            return@transaction true
-                        }
-
+                        val minutes = tryhard { Integer.parseInt(argumentSplit[0]) } ?: return@transaction true
                         guildSettings.holdingroomminutes = minutes
                     }
                     "prefix" -> guildSettings.prefix = argumentSplit[0]
@@ -232,7 +229,7 @@ class Settings : Command() {
                         val roleId = guildSettings.holdingroomroleid
 
                         if (roleId == null) {
-                            DiscordUtils.failMessage(bot, message, "You can't enable holding room before setting a role for it first.")
+                            message.failMessage(bot, "You can't enable holding room before setting a role for it first.")
                             return@transaction false
                         }
 
@@ -241,7 +238,7 @@ class Settings : Command() {
                     "holdingroomrole" -> {
                         val foundRoles = guild.getRolesByName(argument, true)
                         if (foundRoles.size == 0) {
-                            DiscordUtils.failMessage(bot, message, "Couldn't find the role by name!")
+                            message.failMessage(bot, "Couldn't find the role by name!")
                             return@transaction false
                         }
 
@@ -252,7 +249,7 @@ class Settings : Command() {
                     "statistics" -> {
                         guildSettings.statistics = isEnabledInput(argument)
                         val discordShard = bot.shards
-                                .find { discordShard -> discordShard.shard === shard }
+                                .find { discordShard -> discordShard.jda === shard }
                         discordShard?.threadPool?.submit { discordShard.populateGuildStatistics(guild) }
                         kickstartStatistics(guild)
                     }
@@ -267,7 +264,7 @@ class Settings : Command() {
             return failedSyntax
         }
 
-        DiscordUtils.successReact(bot, message)
+        message.successReact(bot)
         return false
     }
 
@@ -278,7 +275,7 @@ class Settings : Command() {
         fun kickstartStatistics(guild: Guild) {
             JimMemberCount.new {
                 val members = guild.members
-                val onlineCount = members.stream().filter { member -> DiscordUtils.isOnline(member) }.count()
+                val onlineCount = members.stream().filter { member -> member.isOnline() }.count()
                 guildid = guild.id
                 date = Date().time
                 onlinecount = onlineCount.toInt()

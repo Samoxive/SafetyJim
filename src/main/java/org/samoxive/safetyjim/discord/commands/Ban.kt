@@ -24,45 +24,45 @@ class Ban : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Ban Members")
+            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Ban Members")
             return false
         }
 
         val (searchResult, banUser) = messageIterator.findUser(message, true)
         if (searchResult == SearchUserResult.NOT_FOUND || (banUser == null)) {
-            DiscordUtils.failMessage(bot, message, "Could not find the user to ban!")
+            message.failMessage(bot, "Could not find the user to ban!")
             return false
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, banUser) ?: return false
+            message.askConfirmation(bot, banUser) ?: return false
         }
 
         val banMember = guild.getMember(banUser)
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
+            message.failMessage(bot, "I don't have enough permissions to do that!")
             return false
         }
 
         if (user == banUser) {
-            DiscordUtils.failMessage(bot, message, "You can't ban yourself, dummy!")
+            message.failMessage(bot, "You can't ban yourself, dummy!")
             return false
         }
 
-        if (banMember != null && !DiscordUtils.isBannable(banMember, selfMember)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
+        if (banMember != null && !banMember.isBannableBy(selfMember)) {
+            message.failMessage(bot, "I don't have enough permissions to do that!")
             return false
         }
 
         val parsedReasonAndTime = try {
             messageIterator.getTextAndTime()
         } catch (e: InvalidTimeInputException) {
-            DiscordUtils.failMessage(bot, message, "Invalid time argument. Please try again.")
+            message.failMessage(bot, "Invalid time argument. Please try again.")
             return false
         } catch (e: TimeInputInPastException) {
-            DiscordUtils.failMessage(bot, message, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
+            message.failMessage(bot, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
 
@@ -76,15 +76,15 @@ class Ban : Command() {
         embed.setDescription("You were banned from " + guild.name)
         embed.addField("Reason:", truncateForEmbed(reason), false)
         embed.addField("Banned until", expirationDate?.toString() ?: "Indefinitely", false)
-        embed.setFooter("Banned by " + DiscordUtils.getUserTagAndId(user), null)
+        embed.setFooter("Banned by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
-        DiscordUtils.sendDM(banUser, embed.build())
+        banUser.sendDM(embed.build())
 
         try {
-            val auditLogReason = String.format("Banned by %s - %s", DiscordUtils.getUserTagAndId(user), reason)
+            val auditLogReason = String.format("Banned by %s - %s", user.getUserTagAndId(), reason)
             controller.ban(banUser, 0, auditLogReason).complete()
-            DiscordUtils.successReact(bot, message)
+            message.successReact(bot)
 
             val expires = expirationDate != null
 
@@ -102,10 +102,10 @@ class Ban : Command() {
             }
 
             val banId = record.id.value
-            DiscordUtils.createModLogEntry(bot, shard, message, banUser, reason, "ban", banId, expirationDate, true)
-            DiscordUtils.sendMessage(channel, "Banned " + DiscordUtils.getUserTagAndId(banUser))
+            message.createModLogEntry(bot, shard, banUser, reason, "ban", banId, expirationDate, true)
+            channel.sendMessage("Banned " + banUser.getUserTagAndId())
         } catch (e: Exception) {
-            DiscordUtils.failMessage(bot, message, "Could not ban the specified user. Do I have enough permissions?")
+            message.failMessage(bot, "Could not ban the specified user. Do I have enough permissions?")
         }
 
         return false

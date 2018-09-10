@@ -5,7 +5,7 @@ import net.dv8tion.jda.core.entities.MessageEmbed
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
+import org.samoxive.safetyjim.discord.successReact
 import java.awt.Color
 
 class Invite : Command() {
@@ -46,8 +46,8 @@ class Invite : Command() {
             embedHasAvatarURL = true
         }
 
-        DiscordUtils.successReact(bot, message)
-        DiscordUtils.sendMessage(channel, embed!!)
+        message.successReact(bot)
+        channel.sendMessage(embed!!)
 
         return false
     }

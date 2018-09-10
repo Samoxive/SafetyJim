@@ -24,35 +24,35 @@ class Softban : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Ban Members")
+            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Ban Members")
             return false
         }
 
         val (searchResult, softbanUser) = messageIterator.findUser(message, isForBan = true)
         if (searchResult == SearchUserResult.NOT_FOUND || (softbanUser == null)) {
-            DiscordUtils.failMessage(bot, message, "Could not find the user to softban!")
+            message.failMessage(bot, "Could not find the user to softban!")
             return false
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, softbanUser) ?: return false
+            message.askConfirmation(bot, softbanUser) ?: return false
         }
 
         val softbanMember = guild.getMember(softbanUser)
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
+            message.failMessage(bot, "I don't have enough permissions to do that!")
             return false
         }
 
         if (user == softbanUser) {
-            DiscordUtils.failMessage(bot, message, "You can't softban yourself, dummy!")
+            message.failMessage(bot, "You can't softban yourself, dummy!")
             return false
         }
 
-        if (softbanMember != null && !DiscordUtils.isBannable(softbanMember, selfMember)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
+        if (softbanMember != null && !softbanMember.isBannableBy(selfMember)) {
+            message.failMessage(bot, "I don't have enough permissions to do that!")
             return false
         }
 
@@ -72,7 +72,7 @@ class Softban : Command() {
             try {
                 Integer.parseInt(timeArgument.trim())
             } catch (e: NumberFormatException) {
-                DiscordUtils.failMessage(bot, message, "Invalid day count, please try again.")
+                message.failMessage(bot, "Invalid day count, please try again.")
                 return false
             }
         } else {
@@ -80,7 +80,7 @@ class Softban : Command() {
         }
 
         if (days < 1 || days > 7) {
-            DiscordUtils.failMessage(bot, message, "The amount of days must be between 1 and 7.")
+            message.failMessage(bot, "The amount of days must be between 1 and 7.")
             return false
         }
 
@@ -91,13 +91,13 @@ class Softban : Command() {
         embed.setColor(Color(0x4286F4))
         embed.setDescription("You were softbanned from " + guild.name)
         embed.addField("Reason:", truncateForEmbed(reason), false)
-        embed.setFooter("Softbanned by " + DiscordUtils.getUserTagAndId(user), null)
+        embed.setFooter("Softbanned by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
-        DiscordUtils.sendDM(softbanUser, embed.build())
+        softbanUser.sendDM(embed.build())
 
         try {
-            val auditLogReason = String.format("Softbanned by %s - %s", DiscordUtils.getUserTagAndId(user), reason)
+            val auditLogReason = String.format("Softbanned by %s - %s", user.getUserTagAndId(), reason)
             controller.ban(softbanUser, days, auditLogReason).complete()
             controller.unban(softbanUser).complete()
 
@@ -112,10 +112,10 @@ class Softban : Command() {
                 }
             }
 
-            DiscordUtils.createModLogEntry(bot, shard, message, softbanUser, reason, "softban", record.id.value, null, false)
-            DiscordUtils.sendMessage(channel, "Softbanned " + DiscordUtils.getUserTagAndId(softbanUser))
+            message.createModLogEntry(bot, shard, softbanUser, reason, "softban", record.id.value, null, false)
+            channel.sendMessage("Softbanned " + softbanUser.getUserTagAndId())
         } catch (e: Exception) {
-            DiscordUtils.failMessage(bot, message, "Could not softban the specified user. Do I have enough permissions?")
+            message.failMessage(bot, "Could not softban the specified user. Do I have enough permissions?")
         }
 
         return false

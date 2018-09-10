@@ -24,35 +24,35 @@ class Hardban : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "You don't have enough permissions to execute this command! Required permission: Ban Members")
+            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Ban Members")
             return false
         }
 
         val (searchResult, hardbanUser) = messageIterator.findUser(message, true)
         if (searchResult == SearchUserResult.NOT_FOUND || (hardbanUser == null)) {
-            DiscordUtils.failMessage(bot, message, "Could not find the user to hardban!")
+            message.failMessage(bot, "Could not find the user to hardban!")
             return false
         }
 
         if (searchResult == SearchUserResult.GUESSED) {
-            askConfirmation(bot, message, hardbanUser) ?: return false
+            message.askConfirmation(bot, hardbanUser) ?: return false
         }
 
         val hardbanMember = guild.getMember(hardbanUser)
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
+            message.failMessage(bot, "I don't have enough permissions to do that!")
             return false
         }
 
         if (user == hardbanUser) {
-            DiscordUtils.failMessage(bot, message, "You can't hardban yourself, dummy!")
+            message.failMessage(bot, "You can't hardban yourself, dummy!")
             return false
         }
 
-        if (hardbanMember != null && !DiscordUtils.isBannable(hardbanMember, selfMember)) {
-            DiscordUtils.failMessage(bot, message, "I don't have enough permissions to do that!")
+        if (hardbanMember != null && !hardbanMember.isBannableBy(selfMember)) {
+            message.failMessage(bot, "I don't have enough permissions to do that!")
             return false
         }
 
@@ -66,15 +66,15 @@ class Hardban : Command() {
         embed.setColor(Color(0x4286F4))
         embed.setDescription("You were hardbanned from " + guild.name)
         embed.addField("Reason:", truncateForEmbed(reason), false)
-        embed.setFooter("Hardbanned by " + DiscordUtils.getUserTagAndId(user), null)
+        embed.setFooter("Hardbanned by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
-        DiscordUtils.sendDM(hardbanUser, embed.build())
+        hardbanUser.sendDM(embed.build())
 
         try {
-            val auditLogReason = String.format("Hardbanned by %s - %s", DiscordUtils.getUserTagAndId(user), reason)
+            val auditLogReason = String.format("Hardbanned by %s - %s", user.getUserTagAndId(), reason)
             controller.ban(hardbanUser, 7, auditLogReason).complete()
-            DiscordUtils.successReact(bot, message)
+            message.successReact(bot)
 
             val record = transaction {
                 JimHardban.new {
@@ -87,10 +87,10 @@ class Hardban : Command() {
             }
 
             val banId = record.id.value
-            DiscordUtils.createModLogEntry(bot, shard, message, hardbanUser, reason, "hardban", banId, null, false)
-            DiscordUtils.sendMessage(channel, "Hardbanned " + DiscordUtils.getUserTagAndId(hardbanUser))
+            message.createModLogEntry(bot, shard, hardbanUser, reason, "hardban", banId, null, false)
+            channel.sendMessage("Hardbanned " + hardbanUser.getUserTagAndId())
         } catch (e: Exception) {
-            DiscordUtils.failMessage(bot, message, "Could not hardban the specified user. Do I have enough permissions?")
+            message.failMessage(bot, "Could not hardban the specified user. Do I have enough permissions?")
         }
 
         return false

@@ -5,10 +5,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimRole
 import org.samoxive.safetyjim.database.JimRoleTable
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
-import org.samoxive.safetyjim.discord.seekToEnd
+import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Iam : Command() {
@@ -32,7 +29,7 @@ class Iam : Command() {
                 .filter { role -> role.name.toLowerCase() == roleName }
 
         if (matchingRoles.isEmpty()) {
-            DiscordUtils.failMessage(bot, message, "Could not find a role with specified name!")
+            message.failMessage(bot, "Could not find a role with specified name!")
             return false
         }
 
@@ -49,7 +46,7 @@ class Iam : Command() {
         }
 
         if (!roleExists) {
-            DiscordUtils.failMessage(bot, message, "This role is not self-assignable!")
+            message.failMessage(bot, "This role is not self-assignable!")
             return false
         }
 
@@ -57,16 +54,16 @@ class Iam : Command() {
         if (member.roles.find { it == matchedRole } != null) {
             try {
                 controller.removeSingleRoleFromMember(member, matchedRole).complete()
-                DiscordUtils.successReact(bot, message)
+                message.successReact(bot)
             } catch (e: Exception) {
-                DiscordUtils.failMessage(bot, message, "Could not remove specified role. Do I have enough permissions?")
+                message.failMessage(bot, "Could not remove specified role. Do I have enough permissions?")
             }
         } else {
             try {
                 controller.addSingleRoleToMember(member, matchedRole).complete()
-                DiscordUtils.successReact(bot, message)
+                message.successReact(bot)
             } catch (e: Exception) {
-                DiscordUtils.failMessage(bot, message, "Could not assign specified role. Do I have enough permissions?")
+                message.failMessage(bot, "Could not assign specified role. Do I have enough permissions?")
             }
         }
 

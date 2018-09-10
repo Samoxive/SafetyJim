@@ -8,9 +8,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.ocpsoft.prettytime.PrettyTime
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.JimBanTable
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordUtils
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
@@ -25,22 +23,19 @@ class Info : Command() {
     override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
         val config = bot.config
         val currentShard = event.jda
-        val shards = bot.shards.map { shard -> shard.shard }
+        val shards = bot.shards.map { shard -> shard.jda }
         val guild = event.guild
         val selfUser = currentShard.selfUser
         val message = event.message
         val channel = event.channel
 
         val shardCount = shards.size
-        val shardId = DiscordUtils.getShardIdFromGuildId(guild.idLong, shardCount)
-        val shardString = DiscordUtils.getShardString(shardId, shardCount)
+        val shardId = getShardIdFromGuildId(guild.idLong, shardCount)
+        val shardString = getShardString(shardId, shardCount)
 
         val uptimeString = prettyTime.format(bot.startTime)
 
         val guildCount = bot.guildCount
-        val channelCount = shards
-                .map { shard -> shard.textChannels.size }
-                .sum()
         val userCount = shards
                 .map { shard -> shard.users.size }
                 .sum()
@@ -81,8 +76,8 @@ class Info : Command() {
         embed.setFooter("Made by Samoxive#8634. | Days since last incident: $daysSince", null)
         embed.setColor(Color(0x4286F4))
 
-        DiscordUtils.successReact(bot, message)
-        DiscordUtils.sendMessage(channel, embed.build())
+        message.successReact(bot)
+        channel.sendMessage(embed.build())
 
         return false
     }
