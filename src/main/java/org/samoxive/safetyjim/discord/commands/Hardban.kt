@@ -88,7 +88,7 @@ class Hardban : Command() {
 
             val banId = record.id.value
             message.createModLogEntry(bot, shard, hardbanUser, reason, "hardban", banId, null, false)
-            channel.sendMessage("Hardbanned " + hardbanUser.getUserTagAndId())
+            channel.trySendMessage("Hardbanned " + hardbanUser.getUserTagAndId())
         } catch (e: Exception) {
             message.failMessage(bot, "Could not hardban the specified user. Do I have enough permissions?")
         }

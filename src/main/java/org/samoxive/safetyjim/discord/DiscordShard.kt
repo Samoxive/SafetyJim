@@ -188,7 +188,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     .setDescription("This guild's prefix is: $prefix")
                     .setColor(Color(0x4286F4))
 
-            message.textChannel.sendMessage(embed.build())
+            message.textChannel.trySendMessage(embed.build())
             return
         }
 
@@ -210,7 +210,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val prefix = guildSettings.prefix.toLowerCase()
 
         // 0 = prefix, 1 = command, rest are accepted as arguments
-        val splitContent = content.trim().split(" ").dropLastWhile { it.isEmpty() }.toTypedArray()
+        val splitContent = content.trim().split(" ").toTypedArray()
         val firstWord = splitContent[0].toLowerCase()
         val command: Command?
         val commandName: String
@@ -300,7 +300,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         val defaultPrefix = bot.config[JimConfig.default_prefix]
         val message = "Hello! I am Safety Jim, `$defaultPrefix` is my default prefix! Try typing `$defaultPrefix help` to see available commands.\nYou can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help."
-        guild.getDefaultChannelTalkable().sendMessage(message)
+        guild.getDefaultChannelTalkable().trySendMessage(message)
         createGuildSettings(guild, bot.config)
     }
 
@@ -328,7 +328,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     message = message.replace("\$minute", waitTime)
                 }
 
-                channel.sendMessage(message)
+                channel.trySendMessage(message)
             }
         }
 
@@ -377,7 +377,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             showUsage = command.run(bot, event, args)
         } catch (e: Exception) {
             message.failReact(bot)
-            channel.sendMessage("There was an error running your command, this incident has been logged.")
+            channel.trySendMessage("There was an error running your command, this incident has been logged.")
             log.error(String.format("%s failed with arguments %s in guild %s - %s", commandName, args, event.guild.name, event.guild.id), e)
         }
 
@@ -392,7 +392,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     .setColor(Color(0x4286F4))
 
             message.failReact(bot)
-            channel.sendMessage(embed.build()).queue()
+            channel.trySendMessage(embed.build())
         } else {
             for (deleteCommand in bot.deleteCommands) {
                 if (commandName == deleteCommand) {

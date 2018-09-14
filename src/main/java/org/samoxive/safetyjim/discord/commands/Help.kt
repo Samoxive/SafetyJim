@@ -3,12 +3,8 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.getGuildSettings
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.getUsageString
-import org.samoxive.safetyjim.discord.successReact
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
-import java.util.*
 
 class Help : Command() {
     override val usages = arrayOf("help - lists all the available commands and their usage")
@@ -35,7 +31,7 @@ class Help : Command() {
 
         event.message.successReact(bot)
         embeds.forEach {
-            event.channel.sendMessage(it)
+            event.channel.trySendMessage(it)
         }
         return false
     }

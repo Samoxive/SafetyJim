@@ -2,10 +2,7 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.getHumanReadableShardString
-import org.samoxive.safetyjim.discord.successReact
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 
 class Ping : Command() {
@@ -18,7 +15,7 @@ class Ping : Command() {
         embed.setDescription(":ping_pong: Ping: ${shard.ping}ms")
         embed.setColor(Color(0x4286F4))
         event.message.successReact(bot)
-        event.channel.sendMessage(embed.build())
+        event.channel.trySendMessage(embed.build())
         return false
     }
 }

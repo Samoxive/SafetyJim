@@ -7,6 +7,7 @@ import org.samoxive.safetyjim.database.getGuildSettings
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordShard
 import org.samoxive.safetyjim.discord.MessageProcessor
+import org.samoxive.safetyjim.discord.trySendMessage
 
 class InviteLink : MessageProcessor() {
     private val blacklistedHosts = arrayOf("discord.gg/")
@@ -42,7 +43,7 @@ class InviteLink : MessageProcessor() {
 
         try {
             message.delete().complete()
-            event.channel.sendMessage("I'm sorry " + member.asMention + ", you can't send invite links here.")
+            event.channel.trySendMessage("I'm sorry ${member.asMention}, you can't send invite links here.")
         } catch (e: InsufficientPermissionException) {
             return false
         } catch (e: Exception) {

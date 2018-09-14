@@ -58,7 +58,7 @@ class Warn : Command() {
         try {
             warnUser.sendDM(embed.build())
         } catch (e: Exception) {
-            channel.sendMessage("Could not send a warning to the specified user via private message!")
+            channel.trySendMessage("Could not send a warning to the specified user via private message!")
         }
 
         message.successReact(bot)
@@ -74,7 +74,7 @@ class Warn : Command() {
         }
 
         message.createModLogEntry(bot, shard, warnUser, reason, "warn", record.id.value, null, false)
-        channel.sendMessage("Warned " + warnUser.getUserTagAndId())
+        channel.trySendMessage("Warned " + warnUser.getUserTagAndId())
 
         return false
     }

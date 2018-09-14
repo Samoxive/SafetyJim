@@ -30,9 +30,7 @@ private val modLogColors = mapOf(
 )
 
 fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message? {
-    val jimMessage = tryhard {
-        channel.sendMessage("You selected user ${targetUser.getUserTagAndId()}. Confirm?").complete()
-    }
+    val jimMessage = channel.trySendMessage("You selected user ${targetUser.getUserTagAndId()}. Confirm?")
     val discordShard = bot.shards[getShardIdFromGuildId(guild.idLong, bot.config[JimConfig.shard_count])]
     val confirmationMessage = discordShard.confirmationListener.submitConfirmation(textChannel, author).get()
     if (confirmationMessage == null) {
@@ -59,7 +57,7 @@ fun Message.createModLogEntry(bot: DiscordBot, shard: JDA, user: User, reason: S
     val modLogChannel = shard.getTextChannelById(guildSettings.modlogchannelid)
 
     if (modLogChannel == null) {
-        channel.sendMessage("Invalid moderator log channel in guild configuration, set a proper one via `$prefix settings` command.")
+        channel.trySendMessage("Invalid moderator log channel in guild configuration, set a proper one via `$prefix settings` command.")
         return
     }
 
@@ -164,7 +162,7 @@ fun MessageChannel.trySendMessage(embed: MessageEmbed) = tryhard {
     sendMessage(embed).queue()
 }
 
-fun User.sendDM(embed: MessageEmbed) = {
+fun User.sendDM(embed: MessageEmbed) {
     val channel = openPrivateChannel().complete()
     channel.trySendMessage(embed)
 }

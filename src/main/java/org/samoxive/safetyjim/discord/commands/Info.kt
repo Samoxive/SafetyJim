@@ -77,7 +77,7 @@ class Info : Command() {
         embed.setColor(Color(0x4286F4))
 
         message.successReact(bot)
-        channel.sendMessage(embed.build())
+        channel.trySendMessage(embed.build())
 
         return false
     }

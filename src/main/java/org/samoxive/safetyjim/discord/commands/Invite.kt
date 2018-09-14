@@ -6,6 +6,7 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.successReact
+import org.samoxive.safetyjim.discord.trySendMessage
 import java.awt.Color
 
 class Invite : Command() {
@@ -47,7 +48,7 @@ class Invite : Command() {
         }
 
         message.successReact(bot)
-        channel.sendMessage(embed!!)
+        channel.trySendMessage(embed!!)
 
         return false
     }

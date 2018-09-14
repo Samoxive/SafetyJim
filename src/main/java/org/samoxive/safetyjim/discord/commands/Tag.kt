@@ -35,7 +35,7 @@ class Tag : Command() {
 
         if (transaction { records.empty() }) {
             message.successReact(bot)
-            channel.sendMessage("No tags have been added yet!")
+            channel.trySendMessage("No tags have been added yet!")
             return
         }
 
@@ -51,7 +51,7 @@ class Tag : Command() {
         embed.setColor(Color(0x4286F4))
 
         message.successReact(bot)
-        channel.sendMessage(embed.build())
+        channel.trySendMessage(embed.build())
     }
 
     private fun addTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
@@ -198,7 +198,7 @@ class Tag : Command() {
                 }
 
                 message.successReact(bot)
-                channel.sendMessage(record.response)
+                channel.trySendMessage(record.response)
             }
         }
 

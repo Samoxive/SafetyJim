@@ -44,7 +44,7 @@ class Settings : Command() {
         embed.setColor(Color(0x4286F4))
 
         message.successReact(bot)
-        channel.sendMessage(embed.build())
+        channel.trySendMessage(embed.build())
     }
 
     private fun getSettingsString(bot: DiscordBot, event: GuildMessageReceivedEvent): String {
@@ -139,7 +139,7 @@ class Settings : Command() {
             embed.addField("List of settings", String.format(settingsListString, defaultChannelMention, defaultChannelMention), false)
             embed.setColor(Color(0x4286F4))
             message.successReact(bot)
-            channel.sendMessage(embed.build())
+            channel.trySendMessage(embed.build())
             return false
         }
 

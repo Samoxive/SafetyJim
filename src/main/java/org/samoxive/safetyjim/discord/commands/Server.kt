@@ -2,10 +2,7 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.safetyjim.discord.Command
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.getTag
-import org.samoxive.safetyjim.discord.successReact
+import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 
 class Server : Command() {
@@ -41,7 +38,7 @@ class Server : Command() {
         embed.addField("Emojis", emojiString, false)
 
         message.successReact(bot)
-        channel.sendMessage(embed.build())
+        channel.trySendMessage(embed.build())
 
         return false
     }
