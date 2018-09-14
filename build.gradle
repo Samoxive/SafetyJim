@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.2.60'
+    ext.kotlin_version = '1.2.61'
     ext.serialization_version = '0.6.1'
     repositories {
         jcenter()
@@ -7,8 +7,8 @@ buildscript {
     }
 
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jetbrains.kotlinx:kotlinx-gradle-serialization-plugin:$serialization_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.61"
+        classpath "org.jetbrains.kotlinx:kotlinx-gradle-serialization-plugin:0.6.1"
     }
 }
 
@@ -34,7 +34,7 @@ repositories {
     mavenCentral()
     jcenter()
     maven {
-        url  "https://dl.bintray.com/kotlin/exposed"
+        url "https://dl.bintray.com/kotlin/exposed"
     }
     maven { url "https://kotlin.bintray.com/kotlinx" }
 }
@@ -51,13 +51,14 @@ dependencies {
     compile 'com.auth0:java-jwt:3.4.0'
     compile 'com.google.code.gson:gson:2.8.5'
     compile 'log4j:log4j:1.2.17'
-    compile ('net.dv8tion:JDA:3.7.1_405') {
+    compile('net.dv8tion:JDA:3.7.1_405') {
         exclude module: 'opus-java'
     }
     compile 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.61'
     compile 'com.uchuhimo:konf:0.11'
     compile 'org.jetbrains.exposed:exposed:0.10.4'
     compile 'me.xdrop:fuzzywuzzy:1.1.10'
+    compile 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.6.1'
 }
 
 jar {
@@ -80,3 +81,5 @@ compileTestKotlin {
         jvmTarget = "1.8"
     }
 }
+
+kotlin { experimental { coroutines 'enable' } }
