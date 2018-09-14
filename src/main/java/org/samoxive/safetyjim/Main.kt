@@ -7,6 +7,7 @@ import org.apache.log4j.*
 import org.samoxive.safetyjim.config.*
 import org.samoxive.safetyjim.database.setupDatabase
 import org.samoxive.safetyjim.discord.DiscordBot
+import org.samoxive.safetyjim.server.Server
 import org.slf4j.LoggerFactory
 
 import java.io.OutputStreamWriter
@@ -29,7 +30,8 @@ fun main(args: Array<String>) {
     hikariConfig.connectionTestQuery = "SELECT 1;"
     val ds = HikariDataSource(hikariConfig)
     setupDatabase(ds)
-    DiscordBot(config)
+    val bot = DiscordBot(config)
+    Server(bot)
 }
 
 fun setupLoggers() {
