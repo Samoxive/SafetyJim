@@ -215,7 +215,7 @@ class DiscordBot(val config: Config) {
             val guild = shardClient.getGuildById(guildId)
 
             if (guild == null) {
-                transaction { user.unmuted = true }
+                user.unmuted = true
                 continue
             }
 
