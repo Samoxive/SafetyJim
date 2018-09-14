@@ -31,7 +31,8 @@ fun setupDatabase(dataSource: DataSource) {
                 JimSettingsTable,
                 JimSoftbanTable,
                 JimTagTable,
-                JimWarnTable
+                JimWarnTable,
+                OauthSecretTable
         )
 
         createIndex(Index(listOf(JimRoleTable.guildid, JimRoleTable.roleid), true))
