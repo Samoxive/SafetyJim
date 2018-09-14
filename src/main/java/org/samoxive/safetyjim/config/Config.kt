@@ -35,6 +35,5 @@ object OauthConfig : ConfigSpec("oauth") {
 
 object ServerConfig : ConfigSpec("server") {
     val secret by required<String>()
-    val base_url by required<String>()
     val port by required<Int>()
 }
