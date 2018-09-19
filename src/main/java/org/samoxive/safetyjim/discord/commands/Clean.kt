@@ -145,12 +145,12 @@ class Clean : Command() {
                 fetchMessages(channel, messageCount, false, true, false, null)
             } else {
                 val (searchResult, user) = messageIterator.findUser(message, true)
-                val messages = fetchMessages(channel, messageCount, true, false, true, user)
                 if (searchResult == SearchUserResult.NOT_FOUND || user == null) {
                     message.failMessage(bot, "Invalid target, please try mentioning a user or writing `bot`.")
                     return false
                 }
 
+                val messages = fetchMessages(channel, messageCount, true, false, true, user)
                 if (searchResult == SearchUserResult.GUESSED) {
                     message.askConfirmation(bot, user) ?: return false
                 }
