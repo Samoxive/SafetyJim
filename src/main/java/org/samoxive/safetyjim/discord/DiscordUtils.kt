@@ -163,8 +163,8 @@ fun MessageChannel.trySendMessage(embed: MessageEmbed) = tryhard {
 }
 
 fun User.sendDM(embed: MessageEmbed) {
-    val channel = openPrivateChannel().complete()
-    channel.trySendMessage(embed)
+    val channel = tryhard { openPrivateChannel().complete() }
+    channel?.trySendMessage(embed)
 }
 
 fun TextChannel.fetchHistoryFromScratch(): List<Message> {
