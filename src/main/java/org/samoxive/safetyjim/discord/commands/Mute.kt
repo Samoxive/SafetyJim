@@ -56,7 +56,7 @@ class Mute : Command() {
             return false
         }
 
-        if (user == selfMember.user) {
+        if (muteUser == selfMember.user) {
             message.failMessage(bot, "Now that's just rude. (I can't mute myself)")
             return false
         }
