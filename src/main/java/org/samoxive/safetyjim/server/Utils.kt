@@ -8,6 +8,7 @@ import kotlinx.coroutines.experimental.DefaultDispatcher
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.withContext
+import kotlinx.serialization.json.JSON
 import okhttp3.Call
 import org.samoxive.safetyjim.await
 import org.samoxive.safetyjim.config.ServerConfig
@@ -31,4 +32,9 @@ suspend fun Call.asyncExecute() = await { execute() }
 fun HttpServerResponse.endJson(string: String) {
     putHeader("Content-Type", "application/json")
     end("\"$string\"")
+}
+
+suspend inline fun <reified T: Any> HttpServerResponse.endJson(obj: T) = await {
+    putHeader("Content-Type", "application/json")
+    end(JSON.stringify(obj))
 }
