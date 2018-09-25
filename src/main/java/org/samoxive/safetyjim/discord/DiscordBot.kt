@@ -99,7 +99,7 @@ class DiscordBot(val config: Config) {
         val settings = getAllGuildSettings()
         shards.map { shard -> shard.jda.guilds }
                 .flatMap { it }
-                .filter { guild -> settings[guild.id]!!.statistics }
+                .filter { guild -> settings[guild.id]?.statistics ?: false }
                 .forEach { guild ->
                     val onlineCount = guild.members.filter { member -> member.isOnline() }.count()
                     JimMemberCount.new {
