@@ -247,11 +247,14 @@ class Settings : Command() {
                     }
                     "nospaceprefix" -> guildSettings.nospaceprefix = isEnabledInput(argument)
                     "statistics" -> {
+                        message.failMessage(bot, "Statistics is a work in progress feature, you can't enable it!")
+                        /*
                         guildSettings.statistics = isEnabledInput(argument)
                         val discordShard = bot.shards
                                 .find { discordShard -> discordShard.jda === shard }
                         discordShard?.threadPool?.submit { discordShard.populateGuildStatistics(guild) }
                         kickstartStatistics(guild)
+                        */
                     }
                     else -> return@transaction true
                 }
