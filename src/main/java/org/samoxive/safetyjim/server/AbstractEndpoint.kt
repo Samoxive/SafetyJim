@@ -8,20 +8,18 @@ import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.launch
 import org.samoxive.safetyjim.discord.DiscordBot
 
+enum class Status(val code: Int) {
+    OK(200),
+    BAD_REQUEST(400),
+    UNAUTHORIZED(401),
+    FORBIDDEN(403),
+    NOT_FOUND(404),
+    SERVER_ERROR(500)
+}
+
+data class Result(val status: Status, val message: String = "")
+
 abstract class AbstractEndpoint(val bot: DiscordBot): Handler<RoutingContext> {
-    companion object {
-        enum class Status(val code: Int) {
-            OK(200),
-            BAD_REQUEST(400),
-            UNAUTHORIZED(401),
-            FORBIDDEN(403),
-            NOT_FOUND(404),
-            SERVER_ERROR(500)
-        }
-
-        data class Result(val status: Status, val message: String = "")
-    }
-
     override fun handle(event: RoutingContext) {
         launch {
             val request = event.request()
