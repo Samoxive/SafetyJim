@@ -30,15 +30,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.security.auth.login.LoginException
 import kotlin.system.exitProcess
-import java.nio.file.Files.delete
-import com.sun.xml.internal.bind.v2.model.core.ID
-import jdk.nashorn.internal.objects.NativeDate.getTime
-import com.sun.deploy.net.HttpRequest.EXPIRES
-import sun.security.x509.CRLReasonCodeExtension.REASON
-
-
-
-
 
 class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController) : ListenerAdapter() {
     private val log: Logger
