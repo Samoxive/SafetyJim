@@ -30,10 +30,12 @@ class GetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot)
         val guildSettingsDb = getGuildSettings(guild, bot.config)
         val settings = GuildSettingsEntity(
             guild.toGuildEntity(),
+            guild.textChannels.map { it.toChannelEntity() },
+            guild.roles.map { it.toRoleEntity() },
             guildSettingsDb.modlog,
             guild.getTextChannelById(guildSettingsDb.modlogchannelid)?.toChannelEntity() ?: return Result(Status.SERVER_ERROR),
             guildSettingsDb.holdingroom,
-            guild.getRoleById(guildSettingsDb.holdingroomroleid)?.toRoleEntity(),
+            if (guildSettingsDb.holdingroomroleid != null) guild.getRoleById(guildSettingsDb.holdingroomroleid)?.toRoleEntity() else null,
             guildSettingsDb.holdingroomminutes,
             guildSettingsDb.invitelinkremover,
             guildSettingsDb.welcomemessage,

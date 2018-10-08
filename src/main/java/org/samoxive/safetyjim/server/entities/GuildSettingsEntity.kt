@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GuildSettingsEntity(
         val guild: GuildEntity,
+        val channels: List<ChannelEntity>,
+        val roles: List<RoleEntity>,
         val modLog: Boolean,
         val modLogChannel: ChannelEntity,
         val holdingRoom: Boolean,
