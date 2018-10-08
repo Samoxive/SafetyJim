@@ -71,7 +71,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 .forEach { guild -> populateGuildStatistics(guild) }
     }
 
-    fun populateGuildStatistics(guild: Guild) {
+    private fun populateGuildStatistics(guild: Guild) {
         val self = guild.getMember(guild.jda.selfUser)
         guild.textChannels
                 .filter { channel -> self.hasPermission(channel, Permission.MESSAGE_HISTORY, Permission.MESSAGE_READ) }
@@ -153,6 +153,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         for (guild in shard.guilds) {
             if (!guild.isTalkable()) {
                 guild.leave().complete()
+                continue
             }
         }
 
