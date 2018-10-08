@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
+import org.samoxive.safetyjim.tryhard
 import javax.sql.DataSource
 
 fun setupDatabase(dataSource: DataSource) {
@@ -46,10 +47,11 @@ const val DEFAULT_WELCOME_MESSAGE = "Welcome to \$guild \$user!"
 fun getGuildSettings(guild: Guild, config: Config): JimSettings = transaction {
     val setting = JimSettings.findById(guild.id)
 
-    if (setting == null) {
-        createGuildSettings(guild, config)
+    if (setting != null) {
+        return@transaction setting
     }
 
+    tryhard { createGuildSettings(guild, config) }
     JimSettings[guild.id]
 }
 
