@@ -71,7 +71,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
 
         val message = newSettings.message
         val prefix = newSettings.prefix
-        if (message.isBlank() || prefix.isBlank()) {
+        if (message.isEmpty() || prefix.isEmpty()) {
             return Result(Status.BAD_REQUEST)
         } else {
             if (prefix.split(" ").size != 1) {
