@@ -47,7 +47,8 @@ class DiscordBot(val config: Config) {
             "server" to Server(),
             "iam" to Iam(),
             "role" to RoleCommand(),
-            "hardban" to Hardban()
+            "hardban" to Hardban(),
+            "melo" to Melo()
     )
     val deleteCommands = arrayOf("ban", "kick", "mute", "softban", "warn", "hardban")
     val processors = listOf(InviteLink(), MessageStats())
@@ -55,7 +56,7 @@ class DiscordBot(val config: Config) {
     val startTime = Date()
 
     val guildCount: Long
-        get() = shards.map { shard -> shard.jda }
+        get() = shards.asSequence().map { shard -> shard.jda }
                 .map { shard -> shard.guildCache.size() }
                 .sum()
 
@@ -101,7 +102,7 @@ class DiscordBot(val config: Config) {
                 .flatMap { it }
                 .filter { guild -> settings[guild.id]?.statistics ?: false }
                 .forEach { guild ->
-                    val onlineCount = guild.members.filter { member -> member.isOnline() }.count()
+                    val onlineCount = guild.members.asSequence().filter { member -> member.isOnline() }.count()
                     JimMemberCount.new {
                         guildid = guild.id
                         date = Date().time

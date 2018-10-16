@@ -37,10 +37,12 @@ class Info : Command() {
 
         val guildCount = bot.guildCount
         val userCount = shards
+                .asSequence()
                 .map { shard -> shard.users.size }
                 .sum()
         val pingShard = currentShard.ping
         val pingAverage = shards
+                .asSequence()
                 .map { shard -> shard.ping }
                 .sum() / shardCount
 

@@ -17,7 +17,7 @@ class Help : Command() {
         val guild = event.guild
         val text = getUsageTexts(bot, getGuildSettings(guild, bot.config).prefix)
         val texts = text.split("\n").sorted()
-        val embedTexts = texts.chunked(texts.size / 2).map { it.joinToString("\n") }
+        val embedTexts = texts.asSequence().chunked(texts.size / 2).map { it.joinToString("\n") }.toList()
         val embeds = embedTexts.mapIndexed { i, elem ->
             val builder = EmbedBuilder()
             if (i == 0) {

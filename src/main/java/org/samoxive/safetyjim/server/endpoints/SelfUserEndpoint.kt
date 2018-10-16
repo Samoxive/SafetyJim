@@ -17,8 +17,10 @@ import org.samoxive.safetyjim.server.entities.toGuildEntity
 class SelfUserEndpoint(bot: DiscordBot) : AuthenticatedEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User): Result {
         val guilds = bot.shards.flatMap { it.jda.guilds }
+                .asSequence()
                 .filter { it.isMember(user) }
                 .map { it.toGuildEntity() }
+                .toList()
         response.endJson(SelfUserEntity(user.id, user.getTag(), user.avatarUrl, guilds))
         return Result(Status.OK)
     }

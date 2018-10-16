@@ -74,8 +74,10 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     private fun populateGuildStatistics(guild: Guild) {
         val self = guild.getMember(guild.jda.selfUser)
         guild.textChannels
+                .asSequence()
                 .filter { channel -> self.hasPermission(channel, Permission.MESSAGE_HISTORY, Permission.MESSAGE_READ) }
                 .map { channel -> threadPool.submit { populateChannelStatistics(channel) } }
+                .toList()
                 .forEach { future -> tryhard { future.get() } }
     }
 
