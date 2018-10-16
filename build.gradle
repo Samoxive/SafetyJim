@@ -13,7 +13,6 @@ buildscript {
 }
 
 plugins {
-    id 'com.sedmelluq.jdaction' version '1.0.2'
     id "com.github.johnrengelman.shadow" version "2.0.4"
     id 'com.github.ben-manes.versions' version '0.20.0'
     id 'org.jetbrains.kotlin.jvm' version '1.2.61'
@@ -47,16 +46,16 @@ dependencies {
     compile 'com.joestelmach:natty:0.13'
     compile 'org.ocpsoft.prettytime:prettytime:4.0.2.Final'
     compile 'com.mashape.unirest:unirest-java:1.4.9'
-    compile 'io.vertx:vertx-web:3.5.3'
+    compile 'io.vertx:vertx-web:3.5.4'
     compile 'com.auth0:java-jwt:3.4.0'
     compile 'com.google.code.gson:gson:2.8.5'
     compile 'log4j:log4j:1.2.17'
-    compile('net.dv8tion:JDA:3.7.1_405') {
+    compile('net.dv8tion:JDA:3.8.1_438') {
         exclude module: 'opus-java'
     }
     compile 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.61'
     compile 'com.uchuhimo:konf:0.11'
-    compile 'org.jetbrains.exposed:exposed:0.10.4'
+    compile 'org.jetbrains.exposed:exposed:0.10.5'
     compile 'me.xdrop:fuzzywuzzy:1.1.10'
     compile 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.6.1'
 }
