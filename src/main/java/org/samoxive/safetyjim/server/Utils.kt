@@ -4,10 +4,6 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.uchuhimo.konf.Config
 import io.vertx.core.http.HttpServerResponse
-import kotlinx.coroutines.experimental.DefaultDispatcher
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.withContext
 import kotlinx.serialization.json.JSON
 import okhttp3.Call
 import org.samoxive.safetyjim.await

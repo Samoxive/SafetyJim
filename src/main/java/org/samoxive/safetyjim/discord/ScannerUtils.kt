@@ -10,10 +10,7 @@ import java.util.regex.Pattern
 
 val USER_MENTION_REGEX = Regex("<@!?([0-9]+)>")
 val CHANNEL_MENTION_REGEX = Regex("<#!?([0-9]+)>")
-val ROLE_MENTION_REGEX = Regex("<@&!?([0-9]+)>")
-val USER_MENTION_PATTERN: Pattern = USER_MENTION_REGEX.toPattern()
 val CHANNEL_MENTION_PATTERN: Pattern = CHANNEL_MENTION_REGEX.toPattern()
-val ROLE_MENTION_PATTERN: Pattern = ROLE_MENTION_REGEX.toPattern()
 
 fun truncateForEmbed(s: String): String {
     return if (s.length < 1024) {
@@ -80,14 +77,6 @@ fun Scanner.getTextAndTime(): Pair<String, Date?> {
     return text to time
 }
 
-private fun Scanner.nextPattern(pattern: Pattern): String? {
-    return if (this.hasNext(pattern)) {
-        this.next(pattern)
-    } else {
-        null
-    }
-}
-
 enum class SearchUserResult {
     NOT_FOUND, EXACT, GUESSED
 }
@@ -133,7 +122,7 @@ fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<SearchUs
     }
 
     val members = guild.members
-    val usernamesAndNicknames = members.map { it.effectiveName }.plus(members.map { it.user.name })
+    val usernamesAndNicknames = members.asSequence().map { it.effectiveName }.plus(members.map { it.user.name }).toList()
     val search = FuzzySearch.extractOne(input, usernamesAndNicknames)
     val user = members[search.index % members.size].user
 
