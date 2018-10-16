@@ -142,6 +142,12 @@ fun Message.failReact(bot: DiscordBot) {
     react(bot, FAIL_EMOTE_NAME, FAIL_EMOTE_ID)
 }
 
+fun Message.meloReact() {
+    tryhard {
+        this.addReaction("\uD83C\uDF48").complete()
+    }
+}
+
 private fun Message.react(bot: DiscordBot, emoteName: String, emoteId: String) {
     val token = bot.config[JimConfig.token]
     val requestUrl = String.format(API_REACTION_URL, textChannel.id, id, emoteName, emoteId)
