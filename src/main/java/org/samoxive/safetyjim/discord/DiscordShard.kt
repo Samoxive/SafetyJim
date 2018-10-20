@@ -22,6 +22,7 @@ import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.commands.Mute
 import org.samoxive.safetyjim.tryhard
+import org.samoxive.safetyjim.DiscordUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.Color
@@ -351,13 +352,44 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             val blacklistedHosts = arrayOf("discord.gg/")
             for (blacklistedHost in blacklistedHosts) {
                 if (member.contains(blacklistedHost)) {
-                    tryhard {
-                        val auditLogReason = "For username that contains an invite link"
-                        controller.kick(member, auditLogReason).complete()
+
+                    val kickUser = member;
+
+                    val embed = EmbedBuilder()
+                    embed.setTitle("Kicked from " + guild.name)
+                    embed.setColor(Color(0x4286F4))
+                    embed.setDescription("You were kicked from " + guild.name)
+                    embed.addField("Reason: For username that contains an invite link" , false)
+                    embed.setFooter("Kicked by " + bot, null)
+                    embed.setTimestamp(now.toInstant())
+
+                    kickUser.sendDM(embed.build())
+
+                    try {
+                        val auditLogReason = String.format("Kicked by %s - %s", user.getUserTagAndId(), reason)
+                        controller.kick(kickUser.id, auditLogReason).complete()
+                        message.successReact(bot)
+
+                        val record = transaction {
+                            JimKick.new {
+                                userid = kickUser.id
+                                moderatoruserid = user.id
+                                guildid = guild.id
+                                kicktime = now.time / 1000
+                                this.reason = reason
+                            }
+                        }
+
+                        message.createModLogEntry(bot, shard, kickUser, "For username that contains an invite link", "kick", record.id.value, null, false)
+                        channel.trySendMessage("Kicked " + kickUser.getUserTagAndId())
+                    } catch (e: Exception) {
+                        message.failMessage(bot, "Could not kick the specified user. Do I have enough permissions?")
                     }
                 }
             }
         }
+
+
 
         val records = transaction {
             JimMute.find {
