@@ -352,28 +352,29 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             val blacklistedHosts = arrayOf("discord.gg/")
             for (blacklistedHost in blacklistedHosts) {
                 if (member.contains(blacklistedHost)) {
-
-                    val kickUser = member;
+                    val message = event.message
+                    val channel = event.channel
+                    val kickUser = member
 
                     val embed = EmbedBuilder()
                     embed.setTitle("Kicked from " + guild.name)
                     embed.setColor(Color(0x4286F4))
                     embed.setDescription("You were kicked from " + guild.name)
                     embed.addField("Reason: For username that contains an invite link" , false)
-                    embed.setFooter("Kicked by " + bot, null)
+                    embed.setFooter("Kicked by " + guild.selfMember, null)
                     embed.setTimestamp(now.toInstant())
 
                     kickUser.sendDM(embed.build())
 
                     try {
-                        val auditLogReason = String.format("Kicked by %s - %s", user.getUserTagAndId(), reason)
+                        val auditLogReason = String.format("Kicked by %s - %s", guild.selfMember, reason)
                         controller.kick(kickUser.id, auditLogReason).complete()
                         message.successReact(bot)
 
                         val record = transaction {
                             JimKick.new {
                                 userid = kickUser.id
-                                moderatoruserid = user.id
+                                moderatoruserid = guild.selfMember
                                 guildid = guild.id
                                 kicktime = now.time / 1000
                                 this.reason = reason
