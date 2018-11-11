@@ -4,6 +4,7 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
+import kotlinx.serialization.json.JSON
 import net.dv8tion.jda.core.entities.User
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.getTag
@@ -21,7 +22,7 @@ class SelfUserEndpoint(bot: DiscordBot) : AuthenticatedEndpoint(bot) {
                 .filter { it.isMember(user) }
                 .map { it.toGuildEntity() }
                 .toList()
-        response.endJson(SelfUserEntity(user.id, user.getTag(), user.avatarUrl, guilds))
+        response.endJson(JSON.stringify(SelfUserEntity.serializer(), SelfUserEntity(user.id, user.getTag(), user.avatarUrl, guilds)))
         return Result(Status.OK)
     }
 

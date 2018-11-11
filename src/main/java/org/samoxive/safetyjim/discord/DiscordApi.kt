@@ -22,7 +22,7 @@ object DiscordApi {
                 .header("User-Agent", "Safety Jim")
                 .awaitAsString()
 
-        JSON.nonstrict.parse<DiscordSelfUser>(response.body)
+        JSON.nonstrict.parse(DiscordSelfUser.serializer(), response.body)
     }
 
     suspend fun getUserSecrets(config: Config, code: String): AccessTokenResponse? = tryhardAsync {
@@ -51,7 +51,7 @@ object DiscordApi {
             return@tryhardAsync null
         }
 
-        val tokenResponse = JSON.parse<AccessTokenResponse>(responseString)
+        val tokenResponse = JSON.parse(AccessTokenResponse.serializer(), responseString)
         if (tokenResponse.scope != "identify") {
             null
         } else {

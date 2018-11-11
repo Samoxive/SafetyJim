@@ -25,12 +25,12 @@ fun getJWTFromUserId(config: Config, userId: String): String {
 }
 
 suspend fun Call.asyncExecute() = await { execute() }
-fun HttpServerResponse.endJson(string: String) {
+fun HttpServerResponse.endJsonString(string: String) {
     putHeader("Content-Type", "application/json")
     end("\"$string\"")
 }
 
-suspend inline fun <reified T: Any> HttpServerResponse.endJson(obj: T) = await {
+suspend fun HttpServerResponse.endJson(json: String) = await {
     putHeader("Content-Type", "application/json")
-    end(JSON.stringify(obj))
+    end(json)
 }

@@ -5,6 +5,7 @@ import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
 import kotlinx.serialization.json.JSON
+import kotlinx.serialization.parse
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.entities.Member
@@ -47,7 +48,7 @@ class GetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot)
             guildSettingsDb.statistics
         )
 
-        response.endJson(settings)
+        response.endJson(JSON.stringify(GuildSettingsEntity.serializer(), settings))
         return Result(Status.OK)
     }
 }
@@ -61,7 +62,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
             return Result(Status.FORBIDDEN)
         }
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val newSettings = tryhard { JSON.parse<GuildSettingsEntity>(bodyString) } ?: return Result(Status.BAD_REQUEST)
+        val newSettings = tryhard { JSON.parse(GuildSettingsEntity.serializer(),bodyString) } ?: return Result(Status.BAD_REQUEST)
 
         guild.textChannels.find { it.id == newSettings.modLogChannel.id } ?: return Result(Status.BAD_REQUEST)
         guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id } ?: return Result(Status.BAD_REQUEST)

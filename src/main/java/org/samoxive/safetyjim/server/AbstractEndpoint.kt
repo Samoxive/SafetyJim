@@ -5,8 +5,10 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.samoxive.safetyjim.discord.DiscordBot
+
 
 enum class Status(val code: Int) {
     OK(200),
@@ -21,7 +23,7 @@ data class Result(val status: Status, val message: String = "")
 
 abstract class AbstractEndpoint(val bot: DiscordBot): Handler<RoutingContext> {
     override fun handle(event: RoutingContext) {
-        launch {
+         GlobalScope.launch {
             val request = event.request()
             val response = event.response()
 
