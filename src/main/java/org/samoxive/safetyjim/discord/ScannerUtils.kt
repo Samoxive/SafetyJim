@@ -138,6 +138,10 @@ fun Scanner.findBannedUser(message: Message): Pair<SearchUserResult, User?> {
     }
 
     val banList = guild.banList.complete().map { it.user }
+    if (banList.isEmpty()) {
+        return SearchUserResult.NOT_FOUND to null
+    }
+
     val mentionMatch = USER_MENTION_REGEX.matchEntire(input)
     if (mentionMatch != null) {
         val userId = mentionMatch.groupValues[1].toLong()
