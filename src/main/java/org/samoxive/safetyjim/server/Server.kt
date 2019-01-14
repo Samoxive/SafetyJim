@@ -27,6 +27,6 @@ class Server(val bot: DiscordBot) {
             router.route(endpoint.method, endpoint.route).handler(endpoint)
         }
         val server = vertx.createHttpServer()
-        server.requestHandler { router.accept(it) }.listen(bot.config[ServerConfig.port])
+        server.requestHandler(router).listen(bot.config[ServerConfig.port])
     }
 }
