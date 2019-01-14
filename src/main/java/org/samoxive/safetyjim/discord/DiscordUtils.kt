@@ -269,3 +269,8 @@ fun getShardString(shardId: Int, shardCount: Int): String = "[${shardId + 1} / $
 
 fun JDA.ShardInfo.getHumanReadableShardString(): String = "[${shardId + 1} / $shardTotal]"
 
+fun getExpirationTextInChannel(date: Date?): String = if (date != null) {
+    "(Expires on $date)"
+} else {
+    "(Indefinitely)"
+}
