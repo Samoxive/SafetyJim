@@ -100,11 +100,11 @@ class DiscordBot(val config: Config) {
         val settings = getAllGuildSettings()
         shards.map { shard -> shard.jda.guilds }
                 .flatMap { it }
-                .filter { guild -> settings[guild.id]?.statistics ?: false }
+                .filter { guild -> settings[guild.idLong]?.statistics ?: false }
                 .forEach { guild ->
                     val onlineCount = guild.members.asSequence().filter { member -> member.isOnline() }.count()
                     JimMemberCount.new {
-                        guildid = guild.id
+                        guildid = guild.idLong
                         date = Date().time
                         onlinecount = onlineCount
                         count = guild.members.size
@@ -139,7 +139,7 @@ class DiscordBot(val config: Config) {
                 val guildUser = shard.jda.retrieveUserById(user.userid).complete()
                 val member = guild.getMember(guildUser)
                 val roleId = guildSettings.holdingroomroleid
-                val role = guild.getRoleById(roleId)
+                val role = if (roleId != null) guild.getRoleById(roleId) else null
                 val controller = guild.controller
 
                 if (role == null) {

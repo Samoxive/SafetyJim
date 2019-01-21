@@ -6,9 +6,9 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.IntIdTable
 
 object JimReminderTable : IntIdTable(name = "reminderlist") {
-    val userid = text("userid")
-    val channelid = text("channelid")
-    val guildid = text("guildid")
+    val userid = long("userid")
+    val channelid = long("channelid")
+    val guildid = long("guildid")
     val createtime = long("createtime")
     val remindtime = long("remindtime")
     val reminded = bool("reminded")

@@ -53,15 +53,15 @@ class RoleCommand : Command() {
 
         val record = transaction {
             JimRole.find {
-                (JimRoleTable.guildid eq guild.id) and (JimRoleTable.roleid eq matchedRole.id)
+                (JimRoleTable.guildid eq guild.idLong) and (JimRoleTable.roleid eq matchedRole.idLong)
             }.firstOrNull()
         }
         if (subcommand == "add") {
             if (record == null) {
                 transaction {
                     JimRole.new {
-                        guildid = guild.id
-                        roleid = matchedRole.id
+                        guildid = guild.idLong
+                        roleid = matchedRole.idLong
                     }
                 }
                 message.successReact(bot)

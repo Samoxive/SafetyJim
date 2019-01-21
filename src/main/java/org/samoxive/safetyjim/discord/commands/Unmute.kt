@@ -56,7 +56,7 @@ class Unmute : Command() {
 
         transaction {
             JimMute.find {
-                (JimMuteTable.guildid eq guild.id) and (JimMuteTable.userid eq unmuteUser.id)
+                (JimMuteTable.guildid eq guild.idLong) and (JimMuteTable.userid eq unmuteUser.idLong)
             }.forUpdate().forEach { it.unmuted = true }
         }
 

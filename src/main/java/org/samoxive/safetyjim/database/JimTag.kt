@@ -6,7 +6,7 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.IntIdTable
 
 object JimTagTable : IntIdTable(name = "taglist") {
-    val guildid = text("guildid")
+    val guildid = long("guildid")
     val name = text("name")
     val response = text("response")
 }

@@ -74,7 +74,7 @@ class Settings : Command() {
         } else {
             val holdingRoomMinutes = config.holdingroomminutes
             val holdingRoomRoleId = config.holdingroomroleid
-            val holdingRoomRole = guild.getRoleById(holdingRoomRoleId)
+            val holdingRoomRole = if (holdingRoomRoleId != null) guild.getRoleById(holdingRoomRoleId) else null
             output.add("**Holding Room:** Enabled")
             output.add("\t**Holding Room Role:** " + if (holdingRoomRole == null) "null" else holdingRoomRole.name)
             output.add("\t**Holding Room Delay:** $holdingRoomMinutes minute(s)")
@@ -206,7 +206,7 @@ class Settings : Command() {
                         }
 
                         val argumentChannel = message.mentionedChannels[0]
-                        guildSettings.welcomemessagechannelid = argumentChannel.id
+                        guildSettings.welcomemessagechannelid = argumentChannel.idLong
                     }
                     "modlogchannel" -> {
                         argument = argumentSplit[0]
@@ -216,7 +216,7 @@ class Settings : Command() {
                         }
 
                         val argumentChannel = message.mentionedChannels[0]
-                        guildSettings.modlogchannelid = argumentChannel.id
+                        guildSettings.modlogchannelid = argumentChannel.idLong
                     }
                     "holdingroomminutes" -> {
                         val minutes = tryhard { Integer.parseInt(argumentSplit[0]) } ?: return@transaction true
@@ -243,7 +243,7 @@ class Settings : Command() {
                         }
 
                         val role = foundRoles[0]
-                        guildSettings.holdingroomroleid = role.id
+                        guildSettings.holdingroomroleid = role.idLong
                     }
                     "nospaceprefix" -> guildSettings.nospaceprefix = isEnabledInput(argument)
                     "statistics" -> {
@@ -274,12 +274,11 @@ class Settings : Command() {
     private class BadInputException : Exception()
 
     companion object {
-
         fun kickstartStatistics(guild: Guild) {
             JimMemberCount.new {
                 val members = guild.members
                 val onlineCount = members.stream().filter { member -> member.isOnline() }.count()
-                guildid = guild.id
+                guildid = guild.idLong
                 date = Date().time
                 onlinecount = onlineCount.toInt()
                 count = members.size

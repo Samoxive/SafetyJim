@@ -45,35 +45,35 @@ fun setupDatabase(dataSource: DataSource) {
 const val DEFAULT_WELCOME_MESSAGE = "Welcome to \$guild \$user!"
 
 fun getGuildSettings(guild: Guild, config: Config): JimSettings = transaction {
-    val setting = JimSettings.findById(guild.id)
+    val setting = JimSettings.findById(guild.idLong)
 
     if (setting != null) {
         return@transaction setting
     }
 
     tryhard { createGuildSettings(guild, config) }
-    JimSettings[guild.id]
+    JimSettings[guild.idLong]
 }
 
 fun getAllGuildSettings() = transaction { JimSettings.all().associateBy { it -> it.id.value } }
 
-fun deleteGuildSettings(guild: Guild) = transaction { JimSettings.findById(guild.id)?.delete() }
+fun deleteGuildSettings(guild: Guild) = transaction { JimSettings.findById(guild.idLong)?.delete() }
 
 fun createGuildSettings(guild: Guild, config: Config) = tryhard {
     transaction {
         val defaultChannel = guild.getDefaultChannelTalkable()
-        JimSettings.new(guild.id) {
+        JimSettings.new(guild.idLong) {
             silentcommands = false
             invitelinkremover = false
             modlog = false
-            modlogchannelid = defaultChannel.id
+            modlogchannelid = defaultChannel.idLong
             holdingroom = false
             holdingroomroleid = null
             holdingroomminutes = 3
             prefix = config[JimConfig.default_prefix]
             welcomemessage = false
             message = DEFAULT_WELCOME_MESSAGE
-            welcomemessagechannelid = defaultChannel.id
+            welcomemessagechannelid = defaultChannel.idLong
             nospaceprefix = false
             statistics = false
         }

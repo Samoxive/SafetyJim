@@ -26,9 +26,9 @@ class MessageStats : MessageProcessor() {
             val wordCount = content.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray().size
             transaction {
                 JimMessage.new(message.id) {
-                    userid = user.id
-                    channelid = channel.id
-                    guildid = guild.id
+                    userid = user.idLong
+                    channelid = channel.idLong
+                    guildid = guild.idLong
                     date = message.id.getCreationTime()
                     wordcount = wordCount
                     size = content.length

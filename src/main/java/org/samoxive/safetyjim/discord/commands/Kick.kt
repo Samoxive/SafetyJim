@@ -78,9 +78,9 @@ class Kick : Command() {
 
             val record = transaction {
                 JimKick.new {
-                    userid = kickUser.id
-                    moderatoruserid = user.id
-                    guildid = guild.id
+                    userid = kickUser.idLong
+                    moderatoruserid = user.idLong
+                    guildid = guild.idLong
                     kicktime = now.time / 1000
                     this.reason = reason
                 }

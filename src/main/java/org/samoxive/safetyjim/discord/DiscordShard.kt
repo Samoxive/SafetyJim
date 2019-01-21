@@ -85,7 +85,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val guild = channel.guild
         val oldestRecord = transaction {
             JimMessageTable.select {
-                (JimMessageTable.guildid eq guild.id) and (JimMessageTable.channelid eq channel.id)
+                (JimMessageTable.guildid eq guild.idLong) and (JimMessageTable.channelid eq channel.idLong)
             }
                     .orderBy(JimMessageTable.date to SortOrder.ASC)
                     .limit(1)
@@ -94,7 +94,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         val newestRecord = transaction {
             JimMessageTable.select {
-                (JimMessageTable.guildid eq guild.id) and (JimMessageTable.channelid eq channel.id)
+                (JimMessageTable.guildid eq guild.idLong) and (JimMessageTable.channelid eq channel.idLong)
             }
                     .orderBy(JimMessageTable.date to SortOrder.DESC)
                     .limit(1)
@@ -120,7 +120,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             } catch (e: Exception) {
                 transaction {
                     JimMessage.find {
-                        (JimMessageTable.channelid eq channel.id) and (JimMessageTable.guildid eq guild.id)
+                        (JimMessageTable.channelid eq channel.idLong) and (JimMessageTable.guildid eq guild.idLong)
                     }.forEach { it.delete() }
                 }
                 fetchedMessages = channel.fetchHistoryFromScratch()
@@ -137,9 +137,9 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     val user = message.author
                     val content = message.contentRaw
                     val wordCount = content.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray().size
-                    userid = user.id
-                    channelid = channel.id
-                    guildid = channel.guild.id
+                    userid = user.idLong
+                    channelid = channel.idLong
+                    guildid = channel.guild.idLong
                     date = message.id.getCreationTime()
                     wordcount = wordCount
                     size = content.length
@@ -341,8 +341,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
             transaction {
                 JimJoin.new {
-                    userid = member.user.id
-                    guildid = guild.id
+                    userid = member.user.idLong
+                    guildid = guild.idLong
                     jointime = currentTime
                     allowtime = currentTime + waitTime * 60
                     allowed = false
@@ -352,7 +352,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         val records = transaction {
             JimMute.find {
-                (JimMuteTable.guildid eq guild.id) and (JimMuteTable.userid eq user.id) and (JimMuteTable.unmuted eq false)
+                (JimMuteTable.guildid eq guild.idLong) and (JimMuteTable.userid eq user.idLong) and (JimMuteTable.unmuted eq false)
             }
         }
 
@@ -366,7 +366,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     override fun onGuildMemberLeave(event: GuildMemberLeaveEvent) = transaction {
         JimJoin.find {
-            (JimJoinTable.userid eq event.user.id) and (JimJoinTable.guildid eq event.guild.id)
+            (JimJoinTable.userid eq event.user.idLong) and (JimJoinTable.guildid eq event.guild.idLong)
         }.forEach { it.delete() }
     }
 

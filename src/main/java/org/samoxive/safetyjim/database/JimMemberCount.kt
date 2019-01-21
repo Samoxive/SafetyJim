@@ -6,7 +6,7 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.IntIdTable
 
 object JimMemberCountTable : IntIdTable(name = "membercounts") {
-    val guildid = text("guildid")
+    val guildid = long("guildid")
     val date = long("date")
     val onlinecount = integer("onlinecount")
     val count = integer("count")

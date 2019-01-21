@@ -103,9 +103,9 @@ class Softban : Command() {
 
             val record = transaction {
                 JimSoftban.new {
-                    userid = softbanUser.id
-                    moderatoruserid = user.id
-                    guildid = guild.id
+                    userid = softbanUser.idLong
+                    moderatoruserid = user.idLong
+                    guildid = guild.idLong
                     softbantime = now.time / 1000
                     deletedays = days
                     this.reason = reason

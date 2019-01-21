@@ -37,9 +37,9 @@ class Iam : Command() {
         var roleExists = false
         transaction {
             JimRole.find {
-                (JimRoleTable.guildid eq guild.id) and (JimRoleTable.roleid eq matchedRole.id)
+                (JimRoleTable.guildid eq guild.idLong) and (JimRoleTable.roleid eq matchedRole.idLong)
             }.forEach {
-                if (it.roleid == matchedRole.id) {
+                if (it.roleid == matchedRole.idLong) {
                     roleExists = true
                 }
             }

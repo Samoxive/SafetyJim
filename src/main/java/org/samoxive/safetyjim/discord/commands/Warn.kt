@@ -65,9 +65,9 @@ class Warn : Command() {
 
         val record = transaction {
             JimWarn.new {
-                userid = warnUser.id
-                moderatoruserid = user.id
-                guildid = guild.id
+                userid = warnUser.idLong
+                moderatoruserid = user.idLong
+                guildid = guild.idLong
                 warntime = now.time / 1000
                 this.reason = reason
             }

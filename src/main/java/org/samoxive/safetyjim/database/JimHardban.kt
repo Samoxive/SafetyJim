@@ -6,9 +6,9 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.IntIdTable
 
 object JimHardbanTable : IntIdTable(name = "hardbanlist") {
-    val userid = text("userid")
-    val moderatoruserid = text("moderatoruserid")
-    val guildid = text("guildid")
+    val userid = long("userid")
+    val moderatoruserid = long("moderatoruserid")
+    val guildid = long("guildid")
     val hardbantime = long("hardbantime")
     val reason = text("reason")
 }

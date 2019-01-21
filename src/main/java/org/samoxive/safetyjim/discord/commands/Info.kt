@@ -51,7 +51,7 @@ class Info : Command() {
         val ramUsed = ramTotal - runtime.freeMemory() / (1024 * 1024)
 
         val lastBanRecord = transaction {
-            JimBanTable.select { JimBanTable.guildid eq guild.id }
+            JimBanTable.select { JimBanTable.guildid eq guild.idLong }
                     .orderBy(JimBanTable.bantime to SortOrder.DESC)
                     .limit(1)
                     .firstOrNull()

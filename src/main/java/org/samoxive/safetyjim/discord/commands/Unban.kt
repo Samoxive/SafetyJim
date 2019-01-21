@@ -45,7 +45,7 @@ class Unban : Command() {
 
         transaction {
             JimBan.find {
-                (JimBanTable.guildid eq guild.id) and (JimBanTable.userid eq targetUser.id)
+                (JimBanTable.guildid eq guild.idLong) and (JimBanTable.userid eq targetUser.idLong)
             }.forUpdate().forEach { it.unbanned = true }
         }
 

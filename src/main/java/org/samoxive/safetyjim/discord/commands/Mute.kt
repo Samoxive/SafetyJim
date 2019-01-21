@@ -100,13 +100,13 @@ class Mute : Command() {
             val expires = expirationDate != null
             val record = transaction {
                 JimMute.find {
-                    (JimMuteTable.guildid eq guild.id) and (JimMuteTable.userid eq muteUser.id)
+                    (JimMuteTable.guildid eq guild.idLong) and (JimMuteTable.userid eq muteUser.idLong)
                 }.forUpdate().forEach { it.unmuted = true }
 
                 JimMute.new {
-                    userid = muteUser.id
-                    moderatoruserid = user.id
-                    guildid = guild.id
+                    userid = muteUser.idLong
+                    moderatoruserid = user.idLong
+                    guildid = guild.idLong
                     mutetime = now.time / 1000
                     expiretime = if (expirationDate == null) 0 else expirationDate.time / 1000
                     this.reason = reason

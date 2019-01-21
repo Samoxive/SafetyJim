@@ -90,9 +90,9 @@ class Ban : Command() {
 
             val record = transaction {
                 JimBan.new {
-                    userid = banUser.id
-                    moderatoruserid = user.id
-                    guildid = guild.id
+                    userid = banUser.idLong
+                    moderatoruserid = user.idLong
+                    guildid = guild.idLong
                     bantime = now.time / 1000
                     expiretime = if (expirationDate != null) expirationDate.time / 1000 else 0
                     this.reason = reason

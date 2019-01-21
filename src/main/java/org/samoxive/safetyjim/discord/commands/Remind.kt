@@ -38,9 +38,9 @@ class Remind : Command() {
 
         transaction {
             JimReminder.new {
-                userid = user.id
-                channelid = channel.id
-                guildid = guild.id
+                userid = user.idLong
+                channelid = channel.idLong
+                guildid = guild.idLong
                 createtime = now / 1000
                 remindtime = remindTime.time / 1000
                 this.message = reminder

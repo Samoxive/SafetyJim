@@ -7,9 +7,9 @@ import org.jetbrains.exposed.dao.IdTable
 
 object JimMessageTable : IdTable<String>(name = "messages") {
     override val id = text("messageid").primaryKey().entityId()
-    val userid = text("userid")
-    val guildid = text("guildid")
-    val channelid = text("channelid")
+    val userid = long("userid")
+    val guildid = long("guildid")
+    val channelid = long("channelid")
     val date = long("date")
     val wordcount = integer("wordcount")
     val size = integer("size")

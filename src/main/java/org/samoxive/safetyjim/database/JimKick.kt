@@ -6,9 +6,9 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.IntIdTable
 
 object JimKickTable : IntIdTable(name = "kicklist") {
-    val userid = text("userid")
-    val moderatoruserid = text("moderatoruserid")
-    val guildid = text("guildid")
+    val userid = long("userid")
+    val moderatoruserid = long("moderatoruserid")
+    val guildid = long("guildid")
     val kicktime = long("kicktime")
     val reason = text("reason")
 }

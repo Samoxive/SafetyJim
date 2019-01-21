@@ -78,9 +78,9 @@ class Hardban : Command() {
 
             val record = transaction {
                 JimHardban.new {
-                    userid = hardbanUser.id
-                    moderatoruserid = user.id
-                    guildid = guild.id
+                    userid = hardbanUser.idLong
+                    moderatoruserid = user.idLong
+                    guildid = guild.idLong
                     hardbantime = now.time / 1000
                     this.reason = reason
                 }

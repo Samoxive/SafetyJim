@@ -29,6 +29,7 @@ class GetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot)
 
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
         val guildSettingsDb = getGuildSettings(guild, bot.config)
+        val holdingRoomRole = if (guildSettingsDb.holdingroomroleid != null) guild.getRoleById(guildSettingsDb.holdingroomroleid!!) else null // kotlin pls
         val settings = GuildSettingsEntity(
             guild.toGuildEntity(),
             guild.textChannels.map { it.toChannelEntity() },
@@ -36,7 +37,7 @@ class GetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot)
             guildSettingsDb.modlog,
             guild.getTextChannelById(guildSettingsDb.modlogchannelid)?.toChannelEntity() ?: return Result(Status.SERVER_ERROR),
             guildSettingsDb.holdingroom,
-            if (guildSettingsDb.holdingroomroleid != null) guild.getRoleById(guildSettingsDb.holdingroomroleid)?.toRoleEntity() else null,
+            holdingRoomRole?.toRoleEntity(),
             guildSettingsDb.holdingroomminutes,
             guildSettingsDb.invitelinkremover,
             guildSettingsDb.welcomemessage,
@@ -92,14 +93,14 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
         tryhardAsync {
             transaction {
                 guildSettingsDb.modlog = newSettings.modLog
-                guildSettingsDb.modlogchannelid = newSettings.modLogChannel.id
+                guildSettingsDb.modlogchannelid = newSettings.modLogChannel.id.toLong()
                 guildSettingsDb.holdingroom = newSettings.holdingRoom
-                guildSettingsDb.holdingroomroleid = newSettings.holdingRoomRole?.id
+                guildSettingsDb.holdingroomroleid = newSettings.holdingRoomRole?.id?.toLong()
                 guildSettingsDb.holdingroomminutes = newSettings.holdingRoomMinutes
                 guildSettingsDb.invitelinkremover = newSettings.inviteLinkRemover
                 guildSettingsDb.welcomemessage = newSettings.welcomeMessage
                 guildSettingsDb.message = newSettings.message
-                guildSettingsDb.welcomemessagechannelid = newSettings.welcomeMessageChannel.id
+                guildSettingsDb.welcomemessagechannelid = newSettings.welcomeMessageChannel.id.toLong()
                 guildSettingsDb.prefix = newSettings.prefix
                 guildSettingsDb.silentcommands = newSettings.silentCommands
                 guildSettingsDb.nospaceprefix = newSettings.noSpacePrefix

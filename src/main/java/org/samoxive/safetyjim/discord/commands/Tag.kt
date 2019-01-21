@@ -31,7 +31,7 @@ class Tag : Command() {
         val channel = event.channel
         val message = event.message
 
-        val records = transaction { JimTag.find { JimTagTable.guildid eq guild.id } }
+        val records = transaction { JimTag.find { JimTagTable.guildid eq guild.idLong } }
 
         if (transaction { records.empty() }) {
             message.successReact(bot)
@@ -88,7 +88,7 @@ class Tag : Command() {
         try {
             transaction {
                 JimTag.new {
-                    guildid = guild.id
+                    guildid = guild.idLong
                     name = tagName
                     this.response = response
                 }
@@ -124,7 +124,7 @@ class Tag : Command() {
 
         val record = transaction {
             JimTag.find {
-                (JimTagTable.guildid eq guild.id) and (JimTagTable.name eq tagName)
+                (JimTagTable.guildid eq guild.idLong) and (JimTagTable.name eq tagName)
             }.firstOrNull()
         }
 
@@ -157,7 +157,7 @@ class Tag : Command() {
 
         val record = transaction {
             JimTag.find {
-                (JimTagTable.guildid eq guild.id) and (JimTagTable.name eq tagName)
+                (JimTagTable.guildid eq guild.idLong) and (JimTagTable.name eq tagName)
             }.firstOrNull()
         }
 
@@ -190,7 +190,7 @@ class Tag : Command() {
             else -> {
                 val record = transaction {
                     JimTag.find {
-                        (JimTagTable.guildid eq guild.id) and (JimTagTable.name eq commandOrTag)
+                        (JimTagTable.guildid eq guild.idLong) and (JimTagTable.name eq commandOrTag)
                     }.firstOrNull()
                 }
 

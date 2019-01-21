@@ -6,8 +6,8 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.IntIdTable
 
 object JimJoinTable : IntIdTable(name = "joinlist") {
-    val userid = text("userid")
-    val guildid = text("guildid")
+    val userid = long("userid")
+    val guildid = long("guildid")
     val jointime = long("jointime")
     val allowtime = long("allowtime")
     val allowed = bool("allowed")

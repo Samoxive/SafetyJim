@@ -6,9 +6,9 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.IntIdTable
 
 object JimWarnTable : IntIdTable(name = "warnlist") {
-    val userid = text("userid")
-    val moderatoruserid = text("moderatoruserid")
-    val guildid = text("guildid")
+    val userid = long("userid")
+    val moderatoruserid = long("moderatoruserid")
+    val guildid = long("guildid")
     val warntime = long("warntime")
     val reason = text("reason")
 }

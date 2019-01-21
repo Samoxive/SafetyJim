@@ -5,25 +5,25 @@ import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.dao.IdTable
 
-object JimSettingsTable : IdTable<String>(name = "settings") {
-    override val id = text("guildid").primaryKey().entityId()
+object JimSettingsTable : IdTable<Long>(name = "settings") {
+    override val id = long("guildid").primaryKey().entityId()
     val modlog = bool("modlog")
-    val modlogchannelid = text("modlogchannelid")
+    val modlogchannelid = long("modlogchannelid")
     val holdingroom = bool("holdingroom")
-    val holdingroomroleid = text("holdingroomroleid").nullable()
+    val holdingroomroleid = long("holdingroomroleid").nullable()
     val holdingroomminutes = integer("holdingroomminutes")
     val invitelinkremover = bool("invitelinkremover")
     val welcomemessage = bool("welcomemessage")
     val message = text("message")
-    val welcomemessagechannelid = text("welcomemessagechannelid")
+    val welcomemessagechannelid = long("welcomemessagechannelid")
     val prefix = text("prefix")
     val silentcommands = bool("silentcommands")
     val nospaceprefix = bool("nospaceprefix")
     val statistics = bool("statistics")
 }
 
-class JimSettings(id: EntityID<String>) : Entity<String>(id) {
-    companion object : EntityClass<String, JimSettings>(JimSettingsTable)
+class JimSettings(id: EntityID<Long>) : Entity<Long>(id) {
+    companion object : EntityClass<Long, JimSettings>(JimSettingsTable)
 
     var modlog by JimSettingsTable.modlog
     var modlogchannelid by JimSettingsTable.modlogchannelid
