@@ -21,6 +21,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.commands.Mute
+import org.samoxive.safetyjim.discord.processors.isInviteLinkBlacklisted
 import org.samoxive.safetyjim.tryhard
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -318,6 +319,13 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val member = event.member
         val user = member.user
         val guildSettings = getGuildSettings(guild, bot.config)
+
+        if (guildSettings.invitelinkremover) {
+            if (isInviteLinkBlacklisted(user.name)) {
+                tryhard { controller.kick(member).complete() }
+                return
+            }
+        }
 
         if (guildSettings.welcomemessage) {
             val textChannelId = guildSettings.welcomemessagechannelid

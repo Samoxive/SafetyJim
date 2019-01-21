@@ -9,11 +9,13 @@ import org.samoxive.safetyjim.discord.DiscordShard
 import org.samoxive.safetyjim.discord.MessageProcessor
 import org.samoxive.safetyjim.discord.trySendMessage
 
-class InviteLink : MessageProcessor() {
-    private val blacklistedHosts = arrayOf("discord.gg/")
-    // We don't want to censor users that can issue moderative commands
-    private val whitelistedPermissions = arrayOf(Permission.ADMINISTRATOR, Permission.BAN_MEMBERS, Permission.KICK_MEMBERS, Permission.MANAGE_ROLES, Permission.MESSAGE_MANAGE)
+val blacklistedHosts = arrayOf("discord.gg/")
+// We don't want to censor users that can issue moderative commands
+val whitelistedPermissions = arrayOf(Permission.ADMINISTRATOR, Permission.BAN_MEMBERS, Permission.KICK_MEMBERS, Permission.MANAGE_ROLES, Permission.MESSAGE_MANAGE)
 
+fun isInviteLinkBlacklisted(str: String) = blacklistedHosts.map { str.contains(it) }.filter { it }.any()
+
+class InviteLink : MessageProcessor() {
     override fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent): Boolean {
         val message = event.message
         val member = event.member
@@ -29,15 +31,7 @@ class InviteLink : MessageProcessor() {
         }
 
         val content = message.contentRaw
-
-        var inviteLinkExists = false
-        for (blacklistedHost in blacklistedHosts) {
-            if (content.contains(blacklistedHost)) {
-                inviteLinkExists = true
-            }
-        }
-
-        if (!inviteLinkExists) {
+        if (!isInviteLinkBlacklisted(content)) {
             return false
         }
 
