@@ -11,7 +11,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.github.johnrengelman.shadow' version '4.0.3'
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
     id 'com.github.ben-manes.versions' version '0.20.0'
     id 'org.jetbrains.kotlin.jvm' version '1.3.11'
 }
@@ -51,7 +51,7 @@ dependencies {
         exclude module: 'opus-java'
     }
     compile 'com.uchuhimo:konf:0.12'
-    compile 'org.jetbrains.exposed:exposed:0.11.2'
+    compile 'org.jetbrains.exposed:exposed:0.12.1'
     compile 'me.xdrop:fuzzywuzzy:1.2.0'
     compile 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.9.1'
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0'
