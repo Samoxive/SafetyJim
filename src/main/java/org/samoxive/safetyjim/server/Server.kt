@@ -16,7 +16,9 @@ class Server(val bot: DiscordBot) {
             SelfUserEndpoint(bot),
             GetGuildSettingsEndpoint(bot),
             PostGuildSettingsEndpoint(bot),
-            ResetGuildSettingsEndpoint(bot)
+            ResetGuildSettingsEndpoint(bot),
+            CaptchaPageEndpoint(bot),
+            CaptchaSubmitEndpoint(bot)
     )
 
     init {

@@ -34,6 +34,7 @@ object OauthConfig : ConfigSpec("oauth") {
 }
 
 object ServerConfig : ConfigSpec("server") {
+    val recaptcha_secret by required<String>()
     val secret by required<String>()
     val port by required<Int>()
 }
