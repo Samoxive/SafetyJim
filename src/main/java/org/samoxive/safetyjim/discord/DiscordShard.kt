@@ -360,7 +360,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         }
 
         if (guildSettings.joincaptcha) {
-            val captchaUrl = "${bot.config[ServerConfig.self_url]}captcha/${guild.id}/${user.id}/"
+            val captchaUrl = "${bot.config[ServerConfig.self_url]}captcha/${guild.id}/${user.id}"
             user.sendMessage("Welcome to ${guild.name}! To enter you must complete this captcha.\n$captchaUrl")
         }
 

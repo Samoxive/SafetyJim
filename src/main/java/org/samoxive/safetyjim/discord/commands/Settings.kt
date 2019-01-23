@@ -86,6 +86,7 @@ class Settings : Command() {
         } else {
             val holdingRoomRoleId = config.holdingroomroleid
             val holdingRoomRole = if (holdingRoomRoleId != null) guild.getRoleById(holdingRoomRoleId) else null
+            output.add("**Join Captcha:** Enabled")
             output.add("\t**Holding Room Role:** " + if (holdingRoomRole == null) "null" else holdingRoomRole.name)
         }
 
