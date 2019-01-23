@@ -173,6 +173,11 @@ fun User.sendDM(embed: MessageEmbed) {
     channel?.trySendMessage(embed)
 }
 
+fun User.sendMessage(message: String) {
+    val channel = tryhard { openPrivateChannel().complete() }
+    channel?.trySendMessage(message)
+}
+
 fun TextChannel.fetchHistoryFromScratch(): List<Message> {
     val lastMessageList = history.retrievePast(1).complete()
     if (lastMessageList.size != 1) {

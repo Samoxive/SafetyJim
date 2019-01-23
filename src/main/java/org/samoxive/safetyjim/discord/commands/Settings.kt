@@ -14,10 +14,11 @@ import java.util.*
 class Settings : Command() {
     override val usages = arrayOf("settings display - shows current state of settings", "settings list - lists the keys you can use to customize the bot", "settings reset - resets every setting to their default value", "settings set <key> <value> - changes given key\'s value")
 
-    private val settingKeys = arrayOf("modlog", "modlogchannel", "holdingroomrole", "holdingroom", "holdingroomminutes", "prefix", "welcomemessage", "message", "welcomemessagechannel", "invitelinkremover", "silentcommands", "nospaceprefix", "statistics")
+    private val settingKeys = arrayOf("modlog", "modlogchannel", "holdingroomrole", "holdingroom", "holdingroomminutes", "prefix", "welcomemessage", "message", "welcomemessagechannel", "invitelinkremover", "silentcommands", "nospaceprefix", "statistics", "joincaptcha")
 
     private val settingsListString = """
             |`HoldingRoom <enabled/disabled>` - Default: disabled
+            |`JoinCaptcha <enabled/disabled>` - Default: disabled
             |`HoldingRoomMinutes <number>` - Default: 3
             |`HoldingRoomRole <text>` - Default: None
             |`ModLog <enabled/disabled>` - Default: disabled
@@ -78,6 +79,14 @@ class Settings : Command() {
             output.add("**Holding Room:** Enabled")
             output.add("\t**Holding Room Role:** " + if (holdingRoomRole == null) "null" else holdingRoomRole.name)
             output.add("\t**Holding Room Delay:** $holdingRoomMinutes minute(s)")
+        }
+
+        if (!config.joincaptcha) {
+            output.add("**Join Captcha:** Disabled")
+        } else {
+            val holdingRoomRoleId = config.holdingroomroleid
+            val holdingRoomRole = if (holdingRoomRoleId != null) guild.getRoleById(holdingRoomRoleId) else null
+            output.add("\t**Holding Room Role:** " + if (holdingRoomRole == null) "null" else holdingRoomRole.name)
         }
 
         if (config.invitelinkremover) {
@@ -229,11 +238,32 @@ class Settings : Command() {
                         val roleId = guildSettings.holdingroomroleid
 
                         if (roleId == null) {
-                            message.failMessage(bot, "You can't enable holding room before setting a role for it first.")
+                            message.failMessage(bot, "You can't enable holding room before setting a holding room role first.")
+                            return@transaction false
+                        }
+
+                        if (holdingRoomEnabled && guildSettings.joincaptcha) {
+                            message.failMessage(bot, "You can't enable holding room while join captcha is enabled.")
                             return@transaction false
                         }
 
                         guildSettings.holdingroom = holdingRoomEnabled
+                    }
+                    "joincaptcha" -> {
+                        val captchaEnabled = isEnabledInput(argument)
+                        val roleId = guildSettings.holdingroomroleid
+
+                        if (roleId == null) {
+                            message.failMessage(bot, "You can't enable join captcha before setting a role for it first.")
+                            return@transaction false
+                        }
+
+                        if (captchaEnabled && guildSettings.holdingroom) {
+                            message.failMessage(bot, "You can't enable join captcha while holding room is enabled.")
+                            return@transaction false
+                        }
+
+                        guildSettings.joincaptcha = captchaEnabled
                     }
                     "holdingroomrole" -> {
                         val foundRoles = guild.getRolesByName(argument, true)

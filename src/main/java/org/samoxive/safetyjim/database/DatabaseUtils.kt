@@ -76,6 +76,7 @@ fun createGuildSettings(guild: Guild, config: Config) = tryhard {
             welcomemessagechannelid = defaultChannel.idLong
             nospaceprefix = false
             statistics = false
+            joincaptcha = false
         }
     }
 }

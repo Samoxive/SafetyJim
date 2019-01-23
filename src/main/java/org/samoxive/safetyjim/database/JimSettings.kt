@@ -20,6 +20,7 @@ object JimSettingsTable : IdTable<Long>(name = "settings") {
     val silentcommands = bool("silentcommands")
     val nospaceprefix = bool("nospaceprefix")
     val statistics = bool("statistics")
+    val joincaptcha = bool("joincaptcha")
 }
 
 class JimSettings(id: EntityID<Long>) : Entity<Long>(id) {
@@ -38,4 +39,5 @@ class JimSettings(id: EntityID<Long>) : Entity<Long>(id) {
     var silentcommands by JimSettingsTable.silentcommands
     var nospaceprefix by JimSettingsTable.nospaceprefix
     var statistics by JimSettingsTable.statistics
+    var joincaptcha by JimSettingsTable.joincaptcha
 }

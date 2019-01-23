@@ -24,7 +24,7 @@ client_secret = "" # your client_secret given by discord
 redirect_uri = "" # uri you set in developer panel
 
 [server]
+self_url = "http://localhost:8080/"
 recaptcha_secret = ""
 secret = "" # secret to be used with JWT
-base_url = "http://safetyjim.xyz"
 port = 8080

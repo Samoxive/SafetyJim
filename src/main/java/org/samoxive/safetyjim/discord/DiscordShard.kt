@@ -19,6 +19,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.config.JimConfig
+import org.samoxive.safetyjim.config.ServerConfig
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.commands.Mute
 import org.samoxive.safetyjim.discord.processors.isInviteLinkBlacklisted
@@ -356,6 +357,11 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     allowed = false
                 }
             }
+        }
+
+        if (guildSettings.joincaptcha) {
+            val captchaUrl = "${bot.config[ServerConfig.self_url]}captcha/${guild.id}/${user.id}/"
+            user.sendMessage("Welcome to ${guild.name}! To enter you must complete this captcha.\n$captchaUrl")
         }
 
         val records = transaction {

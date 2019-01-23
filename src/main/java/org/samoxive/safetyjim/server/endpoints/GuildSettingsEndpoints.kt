@@ -46,7 +46,8 @@ class GetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot)
             guildSettingsDb.prefix,
             guildSettingsDb.silentcommands,
             guildSettingsDb.nospaceprefix,
-            guildSettingsDb.statistics
+            guildSettingsDb.statistics,
+            guildSettingsDb.joincaptcha
         )
 
         response.endJson(JSON.stringify(GuildSettingsEntity.serializer(), settings))
@@ -60,28 +61,40 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
 
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            return Result(Status.FORBIDDEN)
+            return Result(Status.FORBIDDEN, "You need to be an administrator to change server settings!")
         }
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
         val newSettings = tryhard { JSON.parse(GuildSettingsEntity.serializer(),bodyString) } ?: return Result(Status.BAD_REQUEST)
 
-        guild.textChannels.find { it.id == newSettings.modLogChannel.id } ?: return Result(Status.BAD_REQUEST)
-        guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id } ?: return Result(Status.BAD_REQUEST)
+        guild.textChannels.find { it.id == newSettings.modLogChannel.id } ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
+        guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id } ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")
         if (newSettings.holdingRoomRole != null) {
-            guild.roles.find { it.id == newSettings.holdingRoomRole.id } ?: return Result(Status.BAD_REQUEST)
+            guild.roles.find { it.id == newSettings.holdingRoomRole.id } ?: return Result(Status.BAD_REQUEST, "Selected holding room role doesn't exist!")
+        } else {
+            if (newSettings.joinCaptcha || newSettings.holdingRoom) {
+                return Result(Status.BAD_REQUEST, "You can't enable join captcha or holding room without setting a holding room role!")
+            }
+        }
+
+        if (newSettings.joinCaptcha && newSettings.holdingRoom) {
+            return Result(Status.BAD_REQUEST, "You can't enable both holding room and join captcha at the same time!")
         }
 
         val message = newSettings.message
         val prefix = newSettings.prefix
         if (message.isEmpty() || prefix.isEmpty()) {
-            return Result(Status.BAD_REQUEST)
+            return Result(Status.BAD_REQUEST, "")
         } else {
             if (prefix.split(" ").size != 1) {
-                return Result(Status.BAD_REQUEST)
+                return Result(Status.BAD_REQUEST, "Prefix can't be multiple words!")
             }
 
-            if (prefix.length >= 1000 || message.length >= 1750) {
-                return Result(Status.BAD_REQUEST)
+            if (prefix.length >= 1000) {
+                return Result(Status.BAD_REQUEST, "Prefix can't be too long!")
+            }
+
+            if (message.length >= 1750) {
+                return Result(Status.BAD_REQUEST, "Welcome message can't be too long!")
             }
         }
 
@@ -105,6 +118,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
                 guildSettingsDb.silentcommands = newSettings.silentCommands
                 guildSettingsDb.nospaceprefix = newSettings.noSpacePrefix
                 guildSettingsDb.statistics = newSettings.statistics
+                guildSettingsDb.joincaptcha = newSettings.joinCaptcha
             }
         } ?: return Result(Status.SERVER_ERROR)
 
