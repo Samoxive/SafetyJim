@@ -5,8 +5,8 @@ import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.dao.IdTable
 
-object JimMessageTable : IdTable<String>(name = "messages") {
-    override val id = text("messageid").primaryKey().entityId()
+object JimMessageTable : IdTable<Long>(name = "messages") {
+    override val id = long("messageid").primaryKey().entityId()
     val userid = long("userid")
     val guildid = long("guildid")
     val channelid = long("channelid")
@@ -15,8 +15,8 @@ object JimMessageTable : IdTable<String>(name = "messages") {
     val size = integer("size")
 }
 
-class JimMessage(id: EntityID<String>) : Entity<String>(id) {
-    companion object : EntityClass<String, JimMessage>(JimMessageTable)
+class JimMessage(id: EntityID<Long>) : Entity<Long>(id) {
+    companion object : EntityClass<Long, JimMessage>(JimMessageTable)
 
     var userid by JimMessageTable.userid
     var guildid by JimMessageTable.guildid

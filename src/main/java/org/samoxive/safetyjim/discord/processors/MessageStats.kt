@@ -25,7 +25,7 @@ class MessageStats : MessageProcessor() {
             val user = event.member.user
             val wordCount = content.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray().size
             transaction {
-                JimMessage.new(message.id) {
+                JimMessage.new(message.idLong) {
                     userid = user.idLong
                     channelid = channel.idLong
                     guildid = guild.idLong
@@ -41,7 +41,7 @@ class MessageStats : MessageProcessor() {
 
     override fun onMessageDelete(bot: DiscordBot, shard: DiscordShard, event: GuildMessageDeleteEvent) {
         transaction {
-            JimMessage.findById(event.messageId)?.delete()
+            JimMessage.findById(event.messageIdLong)?.delete()
         }
     }
 }

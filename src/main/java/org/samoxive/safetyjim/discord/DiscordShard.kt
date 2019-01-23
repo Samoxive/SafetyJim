@@ -134,7 +134,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         transaction {
             fetchedMessages.forEach { message ->
-                JimMessage.new(message.id) {
+                JimMessage.new(message.idLong) {
                     val user = message.author
                     val content = message.contentRaw
                     val wordCount = content.split(" ").dropLastWhile { it.isEmpty() }.toTypedArray().size
