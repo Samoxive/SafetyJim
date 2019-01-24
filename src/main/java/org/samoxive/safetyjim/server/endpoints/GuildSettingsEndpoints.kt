@@ -98,6 +98,10 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
             }
         }
 
+        if (newSettings.statistics) {
+            return Result(Status.BAD_REQUEST, "Statistics option isn't open to public yet!")
+        }
+
         if (newSettings.guild.id != guild.id) {
             return Result(Status.BAD_REQUEST)
         }
