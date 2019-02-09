@@ -15,18 +15,6 @@ object DatabaseConfig : ConfigSpec("database") {
     val jdbc_url by required<String>()
 }
 
-object BotListConfig : ConfigSpec("botlist") {
-    val enabled by required<Boolean>()
-    val list by required<List<list>>()
-}
-
-data class list(
-        val name: String,
-        val url: String,
-        val token: String,
-        val ignore_errors: Boolean
-)
-
 object OauthConfig : ConfigSpec("oauth") {
     val client_id by required<String>()
     val client_secret by required<String>()

@@ -18,7 +18,6 @@ fun main(args: Array<String>) {
     val config = Config {
         addSpec(JimConfig)
         addSpec(DatabaseConfig)
-        addSpec(BotListConfig)
         addSpec(OauthConfig)
         addSpec(ServerConfig)
     }.from.toml.file("config.toml")
