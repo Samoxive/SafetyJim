@@ -8,6 +8,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.ocpsoft.prettytime.PrettyTime
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.JimBanTable
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -20,7 +22,7 @@ class Info : Command() {
     private val patreonLink = "https://www.patreon.com/safetyjim"
     private val prettyTime = PrettyTime()
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val config = bot.config
         val currentShard = event.jda
         val shards = bot.shards.map { shard -> shard.jda }
@@ -50,7 +52,7 @@ class Info : Command() {
         val ramTotal = runtime.totalMemory() / (1024 * 1024)
         val ramUsed = ramTotal - runtime.freeMemory() / (1024 * 1024)
 
-        val lastBanRecord = transaction {
+        val lastBanRecord = awaitTransaction {
             JimBanTable.select { JimBanTable.guildid eq guild.idLong }
                     .orderBy(JimBanTable.bantime to SortOrder.DESC)
                     .limit(1)

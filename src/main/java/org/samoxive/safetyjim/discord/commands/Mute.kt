@@ -10,6 +10,8 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimMute
 import org.samoxive.safetyjim.database.JimMuteTable
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -17,7 +19,7 @@ import java.util.*
 class Mute : Command() {
     override val usages = arrayOf("mute @user [reason] | [time] - mutes the user with specific args. Both arguments can be omitted.")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -91,14 +93,14 @@ class Mute : Command() {
         embed.setFooter("Muted by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
-        muteUser.sendDM(embed.build())
+        muteUser.trySendMessage(embed.build())
 
         try {
-            controller.addSingleRoleToMember(muteMember, mutedRole).complete()
+            controller.addSingleRoleToMember(muteMember, mutedRole).await()
             message.successReact(bot)
 
             val expires = expirationDate != null
-            val record = transaction {
+            val record = awaitTransaction {
                 JimMute.find {
                     (JimMuteTable.guildid eq guild.idLong) and (JimMuteTable.userid eq muteUser.idLong)
                 }.forUpdate().forEach { it.unmuted = true }
@@ -115,7 +117,7 @@ class Mute : Command() {
                 }
             }
 
-            message.createModLogEntry(bot, shard, muteUser, reason, "mute", record.id.value, expirationDate, true)
+            message.createModLogEntry(shard, settings, muteUser, reason, "mute", record.id.value, expirationDate, true)
             channel.trySendMessage("Muted ${muteUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
         } catch (e: Exception) {
             message.failMessage(bot, "Could not mute the specified user. Do I have enough permissions?")
@@ -126,7 +128,7 @@ class Mute : Command() {
 
     companion object {
 
-        fun setupMutedRole(guild: Guild): Role {
+        suspend fun setupMutedRole(guild: Guild): Role {
             val controller = guild.controller
             val channels = guild.textChannels
             val roleList = guild.roles
@@ -149,7 +151,7 @@ class Mute : Command() {
                                 Permission.MESSAGE_HISTORY,
                                 Permission.VOICE_CONNECT
                         )
-                        .complete()
+                        .await()
 
                 for (channel in channels) {
                     channel.createPermissionOverride(mutedRole)
@@ -158,7 +160,7 @@ class Mute : Command() {
                                     Permission.MESSAGE_ADD_REACTION,
                                     Permission.VOICE_SPEAK
                             )
-                            .complete()
+                            .await()
                 }
             }
 
@@ -180,7 +182,7 @@ class Mute : Command() {
                                     Permission.MESSAGE_ADD_REACTION,
                                     Permission.VOICE_SPEAK
                             )
-                            .complete()
+                            .await()
                 }
             }
 

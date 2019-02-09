@@ -4,7 +4,9 @@ import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimSettings
 import org.samoxive.safetyjim.database.JimWarn
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -12,7 +14,7 @@ import java.util.*
 class Warn : Command() {
     override val usages = arrayOf("warn @user [reason] - warn the user with the specified reason")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -56,14 +58,14 @@ class Warn : Command() {
         embed.setTimestamp(now.toInstant())
 
         try {
-            warnUser.sendDM(embed.build())
+            warnUser.trySendMessage(embed.build())
         } catch (e: Exception) {
             channel.trySendMessage("Could not send a warning to the specified user via private message!")
         }
 
         message.successReact(bot)
 
-        val record = transaction {
+        val record = awaitTransaction {
             JimWarn.new {
                 userid = warnUser.idLong
                 moderatoruserid = user.idLong
@@ -73,7 +75,7 @@ class Warn : Command() {
             }
         }
 
-        message.createModLogEntry(bot, shard, warnUser, reason, "warn", record.id.value, null, false)
+        message.createModLogEntry(shard, settings, warnUser, reason, "warn", record.id.value, null, false)
         channel.trySendMessage("Warned " + warnUser.getUserTagAndId())
 
         return false

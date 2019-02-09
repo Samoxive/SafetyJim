@@ -3,13 +3,15 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimReminder
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Remind : Command() {
     override val usages = arrayOf("remind message - sets a timer to remind you a message in a day", "remind message | time - sets a timer to remind you a message in specified time period")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
 
         val user = event.author
@@ -36,7 +38,7 @@ class Remind : Command() {
         val now = Date().time
         remindTime = remindTime ?: Date(now + 1000 * 60 * 60 * 24)
 
-        transaction {
+        awaitTransaction {
             JimReminder.new {
                 userid = user.idLong
                 channelid = channel.idLong

@@ -5,6 +5,8 @@ import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimKick
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -12,7 +14,7 @@ import java.util.*
 class Kick : Command() {
     override val usages = arrayOf("kick @user [reason] - kicks the user with the specified reason")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -69,14 +71,14 @@ class Kick : Command() {
         embed.setFooter("Kicked by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
-        kickUser.sendDM(embed.build())
+        kickUser.trySendMessage(embed.build())
 
         try {
-            val auditLogReason = String.format("Kicked by %s - %s", user.getUserTagAndId(), reason)
-            controller.kick(kickUser.id, auditLogReason).complete()
+            val auditLogReason = "Kicked by ${user.getUserTagAndId()} - $reason"
+            controller.kick(kickUser.id, auditLogReason).await()
             message.successReact(bot)
 
-            val record = transaction {
+            val record = awaitTransaction {
                 JimKick.new {
                     userid = kickUser.idLong
                     moderatoruserid = user.idLong
@@ -86,7 +88,7 @@ class Kick : Command() {
                 }
             }
 
-            message.createModLogEntry(bot, shard, kickUser, reason, "kick", record.id.value, null, false)
+            message.createModLogEntry(shard, settings, kickUser, reason, "kick", record.id.value, null, false)
             channel.trySendMessage("Kicked " + kickUser.getUserTagAndId())
         } catch (e: Exception) {
             message.failMessage(bot, "Could not kick the specified user. Do I have enough permissions?")

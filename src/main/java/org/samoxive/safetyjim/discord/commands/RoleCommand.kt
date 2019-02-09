@@ -3,16 +3,17 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimRole
 import org.samoxive.safetyjim.database.JimRoleTable
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class RoleCommand : Command() {
     override val usages = arrayOf("role add <roleName> - adds a new self-assignable role", "role remove <roleName> - removes a self-assignable role")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
 
         val member = event.member
@@ -51,14 +52,14 @@ class RoleCommand : Command() {
 
         val matchedRole = matchingRoles[0]
 
-        val record = transaction {
+        val record = awaitTransaction {
             JimRole.find {
                 (JimRoleTable.guildid eq guild.idLong) and (JimRoleTable.roleid eq matchedRole.idLong)
             }.firstOrNull()
         }
         if (subcommand == "add") {
             if (record == null) {
-                transaction {
+                awaitTransaction {
                     JimRole.new {
                         guildid = guild.idLong
                         roleid = matchedRole.idLong
@@ -74,7 +75,7 @@ class RoleCommand : Command() {
                 message.failMessage(bot, "Specified role is not in self-assignable roles list!")
                 return false
             } else {
-                transaction { record.delete() }
+                awaitTransaction { record.delete() }
                 message.successReact(bot)
             }
         }

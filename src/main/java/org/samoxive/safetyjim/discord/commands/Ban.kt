@@ -3,8 +3,9 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimBan
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -12,7 +13,7 @@ import java.util.*
 class Ban : Command() {
     override val usages = arrayOf("ban @user [reason] | [time] - bans the user with specific arguments. Both arguments can be omitted")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -79,16 +80,16 @@ class Ban : Command() {
         embed.setFooter("Banned by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
-        banUser.sendDM(embed.build())
+        banUser.trySendMessage(embed.build())
 
         try {
-            val auditLogReason = String.format("Banned by %s - %s", user.getUserTagAndId(), reason)
-            controller.ban(banUser, 0, auditLogReason).complete()
+            val auditLogReason = "Banned by ${user.getUserTagAndId()} - $reason"
+            controller.ban(banUser, 0, auditLogReason).await()
             message.successReact(bot)
 
             val expires = expirationDate != null
 
-            val record = transaction {
+            val record = awaitTransaction {
                 JimBan.new {
                     userid = banUser.idLong
                     moderatoruserid = user.idLong
@@ -102,7 +103,7 @@ class Ban : Command() {
             }
 
             val banId = record.id.value
-            message.createModLogEntry(bot, shard, banUser, reason, "ban", banId, expirationDate, true)
+            message.createModLogEntry(shard, settings, banUser, reason, "ban", banId, expirationDate, true)
             channel.trySendMessage("Banned ${banUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
         } catch (e: Exception) {
             message.failMessage(bot, "Could not ban the specified user. Do I have enough permissions?")

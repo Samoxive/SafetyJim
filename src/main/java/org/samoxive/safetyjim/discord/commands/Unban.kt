@@ -6,13 +6,15 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimBan
 import org.samoxive.safetyjim.database.JimBanTable
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Unban : Command() {
     override val usages = arrayOf("unban <tag> - unbans user with specified user tag (example#1998)")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
 
         val member = event.member
@@ -41,9 +43,9 @@ class Unban : Command() {
             message.askConfirmation(bot, targetUser) ?: return false
         }
 
-        controller.unban(targetUser).complete()
+        controller.unban(targetUser).await()
 
-        transaction {
+        awaitTransaction {
             JimBan.find {
                 (JimBanTable.guildid eq guild.idLong) and (JimBanTable.userid eq targetUser.idLong)
             }.forUpdate().forEach { it.unbanned = true }

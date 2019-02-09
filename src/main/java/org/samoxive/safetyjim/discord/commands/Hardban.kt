@@ -5,6 +5,8 @@ import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimHardban
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -12,7 +14,7 @@ import java.util.*
 class Hardban : Command() {
     override val usages = arrayOf("hardban @user [reason] - hard bans the user with specific arguments. Both arguments can be omitted.")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -69,14 +71,14 @@ class Hardban : Command() {
         embed.setFooter("Hardbanned by " + user.getUserTagAndId(), null)
         embed.setTimestamp(now.toInstant())
 
-        hardbanUser.sendDM(embed.build())
+        hardbanUser.trySendMessage(embed.build())
 
         try {
-            val auditLogReason = String.format("Hardbanned by %s - %s", user.getUserTagAndId(), reason)
-            controller.ban(hardbanUser, 7, auditLogReason).complete()
+            val auditLogReason = "Hardbanned by ${user.getUserTagAndId()} - $reason"
+            controller.ban(hardbanUser, 7, auditLogReason).await()
             message.successReact(bot)
 
-            val record = transaction {
+            val record = awaitTransaction {
                 JimHardban.new {
                     userid = hardbanUser.idLong
                     moderatoruserid = user.idLong
@@ -87,8 +89,8 @@ class Hardban : Command() {
             }
 
             val banId = record.id.value
-            message.createModLogEntry(bot, shard, hardbanUser, reason, "hardban", banId, null, false)
-            channel.trySendMessage("Hardbanned " + hardbanUser.getUserTagAndId())
+            message.createModLogEntry(shard, settings, hardbanUser, reason, "hardban", banId, null, false)
+            channel.trySendMessage("Hardbanned ${hardbanUser.getUserTagAndId()}")
         } catch (e: Exception) {
             message.failMessage(bot, "Could not hardban the specified user. Do I have enough permissions?")
         }

@@ -5,8 +5,10 @@ import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.JimSettings
 import org.samoxive.safetyjim.database.JimTag
 import org.samoxive.safetyjim.database.JimTagTable
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -25,15 +27,15 @@ class Tag : Command() {
         return false
     }
 
-    private fun displayTags(bot: DiscordBot, event: GuildMessageReceivedEvent) {
+    private suspend fun displayTags(bot: DiscordBot, event: GuildMessageReceivedEvent) {
         val shard = event.jda
         val guild = event.guild
         val channel = event.channel
         val message = event.message
 
-        val records = transaction { JimTag.find { JimTagTable.guildid eq guild.idLong } }
+        val records = awaitTransaction { JimTag.find { JimTagTable.guildid eq guild.idLong } }
 
-        if (transaction { records.empty() }) {
+        if (awaitTransaction { records.empty() }) {
             message.successReact(bot)
             channel.trySendMessage("No tags have been added yet!")
             return
@@ -41,7 +43,7 @@ class Tag : Command() {
 
         val tagString = StringJoiner("\n")
 
-        transaction {
+        awaitTransaction {
             for (record in records) {
                 tagString.add("\u2022 `" + record.name + "`")
             }
@@ -56,7 +58,7 @@ class Tag : Command() {
         channel.trySendMessage(embed.build())
     }
 
-    private fun addTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
+    private suspend fun addTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
         val member = event.member
@@ -86,7 +88,7 @@ class Tag : Command() {
         }
 
         try {
-            transaction {
+            awaitTransaction {
                 JimTag.new {
                     guildid = guild.idLong
                     name = tagName
@@ -99,7 +101,7 @@ class Tag : Command() {
         }
     }
 
-    private fun editTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
+    private suspend fun editTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
         val member = event.member
@@ -122,7 +124,7 @@ class Tag : Command() {
             return
         }
 
-        val record = transaction {
+        val record = awaitTransaction {
             JimTag.find {
                 (JimTagTable.guildid eq guild.idLong) and (JimTagTable.name eq tagName)
             }.firstOrNull()
@@ -133,12 +135,12 @@ class Tag : Command() {
             return
         }
 
-        transaction { record.response = response }
+        awaitTransaction { record.response = response }
 
         message.successReact(bot)
     }
 
-    private fun deleteTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
+    private suspend fun deleteTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
         val member = event.member
@@ -155,7 +157,7 @@ class Tag : Command() {
 
         val tagName = messageIterator.next()
 
-        val record = transaction {
+        val record = awaitTransaction {
             JimTag.find {
                 (JimTagTable.guildid eq guild.idLong) and (JimTagTable.name eq tagName)
             }.firstOrNull()
@@ -166,11 +168,11 @@ class Tag : Command() {
             return
         }
 
-        transaction { record.delete() }
+        awaitTransaction { record.delete() }
         message.successReact(bot)
     }
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
         val guild = event.guild
         val message = event.message
@@ -188,7 +190,7 @@ class Tag : Command() {
             "edit" -> editTag(bot, event, messageIterator)
             "remove" -> deleteTag(bot, event, messageIterator)
             else -> {
-                val record = transaction {
+                val record = awaitTransaction {
                     JimTag.find {
                         (JimTagTable.guildid eq guild.idLong) and (JimTagTable.name eq commandOrTag)
                     }.firstOrNull()

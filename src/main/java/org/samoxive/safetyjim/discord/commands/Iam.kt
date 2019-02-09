@@ -2,16 +2,17 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimRole
 import org.samoxive.safetyjim.database.JimRoleTable
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Iam : Command() {
     override val usages = arrayOf("iam <roleName> - self assigns specified role, removes role if it is already assigned")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
 
         val member = event.member
@@ -35,7 +36,7 @@ class Iam : Command() {
 
         val matchedRole = matchingRoles[0]
         var roleExists = false
-        transaction {
+        awaitTransaction {
             JimRole.find {
                 (JimRoleTable.guildid eq guild.idLong) and (JimRoleTable.roleid eq matchedRole.idLong)
             }.forEach {
@@ -53,14 +54,14 @@ class Iam : Command() {
         val controller = guild.controller
         if (member.roles.find { it == matchedRole } != null) {
             try {
-                controller.removeSingleRoleFromMember(member, matchedRole).complete()
+                controller.removeSingleRoleFromMember(member, matchedRole).await()
                 message.successReact(bot)
             } catch (e: Exception) {
                 message.failMessage(bot, "Could not remove specified role. Do I have enough permissions?")
             }
         } else {
             try {
-                controller.addSingleRoleToMember(member, matchedRole).complete()
+                controller.addSingleRoleToMember(member, matchedRole).await()
                 message.successReact(bot)
             } catch (e: Exception) {
                 message.failMessage(bot, "Could not assign specified role. Do I have enough permissions?")

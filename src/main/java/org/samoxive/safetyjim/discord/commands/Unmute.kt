@@ -6,13 +6,15 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimMute
 import org.samoxive.safetyjim.database.JimMuteTable
+import org.samoxive.safetyjim.database.JimSettings
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Unmute : Command() {
     override val usages = arrayOf("unmute @user1 @user2 ... - unmutes specified user")
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
         val member = event.member
         val message = event.message
@@ -48,13 +50,13 @@ class Unmute : Command() {
         val muteRole = mutedRoles[0]
         val unmuteMember = guild.getMember(unmuteUser)
         try {
-            controller.removeSingleRoleFromMember(unmuteMember, muteRole).complete()
+            controller.removeSingleRoleFromMember(unmuteMember, muteRole).await()
         } catch (e: Exception) {
-            message.failMessage(bot, "Could not unmute the user: \"" + unmuteUser.name + "\". Do I have enough permissions or is Muted role below me?")
+            message.failMessage(bot, "Could not unmute the user: \"${unmuteUser.name}\". Do I have enough permissions or is Muted role below me?")
             return false
         }
 
-        transaction {
+        awaitTransaction {
             JimMute.find {
                 (JimMuteTable.guildid eq guild.idLong) and (JimMuteTable.userid eq unmuteUser.idLong)
             }.forUpdate().forEach { it.unmuted = true }

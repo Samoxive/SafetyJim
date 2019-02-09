@@ -1,19 +1,24 @@
 package org.samoxive.safetyjim.discord.commands
 
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.entities.Message
 import net.dv8tion.jda.core.entities.TextChannel
 import net.dv8tion.jda.core.entities.User
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import net.dv8tion.jda.core.requests.restaction.AuditableRestAction
+import org.samoxive.safetyjim.database.JimSettings
 import org.samoxive.safetyjim.discord.*
 import org.samoxive.safetyjim.tryhard
+import org.samoxive.safetyjim.tryhardAsync
 import java.util.*
 
 class Clean : Command() {
     override val usages = arrayOf("clean <number> - deletes last number of messages", "clean <number> @user - deletes number of messages from specified user", "clean <number> bot - deletes number of messages sent from bots")
 
-    private fun fetchMessages(channel: TextChannel, messageCount: Int, skipOneMessage: Boolean, filterBotMessages: Boolean, filterUserMessages: Boolean, filterUser: User?): List<Message> {
+    private suspend fun fetchMessages(channel: TextChannel, messageCount: Int, skipOneMessage: Boolean, filterBotMessages: Boolean, filterUserMessages: Boolean, filterUser: User?): List<Message> {
         var messageCount = messageCount
         if (skipOneMessage) {
             messageCount = if (messageCount == 100) 100 else messageCount + 1
@@ -21,7 +26,7 @@ class Clean : Command() {
 
         // if we want to delete bot messages, we want to find as much as we can and then only delete the amount we need
         // if not, we just pass the messageCount back, same story with user messages
-        var messages: MutableList<Message> = channel.history.retrievePast(if (filterBotMessages || filterUserMessages) 100 else messageCount).complete()
+        var messages: MutableList<Message> = channel.history.retrievePast(if (filterBotMessages || filterUserMessages) 100 else messageCount).await()
 
         if (skipOneMessage) {
             tryhard { messages.removeAt(0) }
@@ -83,28 +88,26 @@ class Clean : Command() {
         return oldMessages to newMessages
     }
 
-    private fun bulkDelete(messages: Pair<List<Message>, List<Message>>, channel: TextChannel) {
+    private suspend fun bulkDelete(messages: Pair<List<Message>, List<Message>>, channel: TextChannel) {
         val (oldMessages, newMessages) = messages
-        val futures = ArrayList<AuditableRestAction<Void>>()
+        val futures = ArrayList<Deferred<Void>>()
 
         if (newMessages.size in 2..100) {
-            channel.deleteMessages(newMessages).complete()
+            channel.deleteMessages(newMessages).await()
         } else {
             for (message in newMessages) {
-                futures.add(message.delete())
+                futures.add(GlobalScope.async { message.delete().await() })
             }
         }
 
         for (message in oldMessages) {
-            futures.add(message.delete())
+            futures.add(GlobalScope.async { message.delete().await() })
         }
 
-        for (future in futures) {
-            future.complete()
-        }
+        futures.awaitAll()
     }
 
-    override fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
 
         val member = event.member
@@ -160,7 +163,7 @@ class Clean : Command() {
         }
 
         val seperatedMessages = seperateMessages(messages)
-        tryhard { bulkDelete(seperatedMessages, channel) }
+        tryhardAsync { bulkDelete(seperatedMessages, channel) }
 
         message.successReact(bot)
 
