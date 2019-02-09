@@ -5,11 +5,16 @@ import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.JDA
 import net.dv8tion.jda.core.OnlineStatus
 import net.dv8tion.jda.core.entities.*
+import net.dv8tion.jda.core.requests.RestAction
 import org.samoxive.safetyjim.config.JimConfig
+import org.samoxive.safetyjim.database.JimSettings
 import org.samoxive.safetyjim.database.getGuildSettings
-import org.samoxive.safetyjim.tryhard
+import org.samoxive.safetyjim.tryAwaitAsJSON
 import java.awt.Color
 import java.util.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 private const val SUCCESS_EMOTE_ID = "322698554294534144"
 private const val SUCCESS_EMOTE_NAME = "jimsuccess"
@@ -29,32 +34,29 @@ private val modLogColors = mapOf(
         "hardban" to Color(0x700000)
 )
 
-fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message? {
-    val jimMessage = channel.trySendMessage("You selected user ${targetUser.getUserTagAndId()}. Confirm?")
+suspend fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message? {
+    val jimMessage = channel.trySendMessage("You selected user ${targetUser.getUserTagAndId()}. Confirm? (type yes/no)")
     val discordShard = bot.shards[getShardIdFromGuildId(guild.idLong, bot.config[JimConfig.shard_count])]
-    val confirmationMessage = discordShard.confirmationListener.submitConfirmation(textChannel, author).get()
+    val confirmationMessage = discordShard.confirmationListener.submitConfirmation(textChannel, author)
     if (confirmationMessage == null) {
         failReact(bot)
     }
 
-    tryhard {
-        jimMessage?.delete()?.complete()
-    }
+    jimMessage?.delete()?.tryAwait()
     return confirmationMessage
 }
 
-fun Message.createModLogEntry(bot: DiscordBot, shard: JDA, user: User, reason: String, action: String, id: Int, expirationDate: Date?, expires: Boolean) {
-    val guildSettings = getGuildSettings(guild, bot.config)
+suspend fun Message.createModLogEntry(shard: JDA, settings: JimSettings, user: User, reason: String, action: String, id: Int, expirationDate: Date?, expires: Boolean) {
     val now = Date()
 
-    val modLogActive = guildSettings.modlog
-    val prefix = guildSettings.prefix
+    val modLogActive = settings.modlog
+    val prefix = settings.prefix
 
     if (!modLogActive) {
         return
     }
 
-    val modLogChannel = shard.getTextChannelById(guildSettings.modlogchannelid)
+    val modLogChannel = shard.getTextChannelById(settings.modlogchannelid)
 
     if (modLogChannel == null) {
         channel.trySendMessage("Invalid moderator log channel in guild configuration, set a proper one via `$prefix settings` command.")
@@ -84,14 +86,14 @@ fun Message.createModLogEntry(bot: DiscordBot, shard: JDA, user: User, reason: S
     modLogChannel.trySendMessage(embed.build())
 }
 
-fun Message.deleteCommandMessage(bot: DiscordBot) {
+suspend fun Message.deleteCommandMessage(bot: DiscordBot) {
     val silentCommandsActive = getGuildSettings(guild, bot.config).silentcommands
 
     if (!silentCommandsActive) {
         return
     }
 
-    tryhard { delete().complete() }
+    delete().tryAwait()
 }
 
 fun Member.isKickableBy(kicker: Member) = isBannableBy(kicker)
@@ -129,59 +131,55 @@ fun Member.isOnline(): Boolean = onlineStatus == OnlineStatus.ONLINE ||
 
 fun Guild.isTalkable(): Boolean = textChannels.any { channel -> channel.canTalk() }
 
-fun Message.successReact(bot: DiscordBot) {
+suspend fun Message.successReact(bot: DiscordBot) {
     react(bot, SUCCESS_EMOTE_NAME, SUCCESS_EMOTE_ID)
 }
 
-fun Message.failMessage(bot: DiscordBot, errorMessage: String) {
+suspend fun Message.failMessage(bot: DiscordBot, errorMessage: String) {
     failReact(bot)
     textChannel.trySendMessage(errorMessage)
 }
 
-fun Message.failReact(bot: DiscordBot) {
+suspend fun Message.failReact(bot: DiscordBot) {
     react(bot, FAIL_EMOTE_NAME, FAIL_EMOTE_ID)
 }
 
-fun Message.meloReact() {
-    tryhard {
-        this.addReaction("\uD83C\uDF48").complete()
-    }
+suspend fun Message.meloReact() {
+    addReaction("\uD83C\uDF48").tryAwait()
 }
 
-private fun Message.react(bot: DiscordBot, emoteName: String, emoteId: String) {
+private suspend fun Message.react(bot: DiscordBot, emoteName: String, emoteId: String) {
     val token = bot.config[JimConfig.token]
     val requestUrl = String.format(API_REACTION_URL, textChannel.id, id, emoteName, emoteId)
 
-    tryhard {
-        Unirest.put(requestUrl)
-                .header("User-Agent", "Safety Jim")
-                .header("Authorization", "Bot $token")
-                .asJson()
-    }
+    Unirest.put(requestUrl)
+            .header("User-Agent", "Safety Jim")
+            .header("Authorization", "Bot $token")
+            .tryAwaitAsJSON()
 }
 
-fun MessageChannel.trySendMessage(message: String) = tryhard {
-    sendMessage(message).complete()
+suspend fun MessageChannel.trySendMessage(message: String): Message? {
+    return sendMessage(message).tryAwait()
 }
 
-fun MessageChannel.trySendMessage(embed: MessageEmbed) = tryhard {
-    sendMessage(embed).queue()
+suspend fun MessageChannel.trySendMessage(embed: MessageEmbed): Message? {
+    return sendMessage(embed).tryAwait()
 }
 
-fun User.sendDM(embed: MessageEmbed) {
-    val channel = tryhard { openPrivateChannel().complete() }
-    channel?.trySendMessage(embed)
+suspend fun User.trySendMessage(embed: MessageEmbed): Message? {
+    val channel = openPrivateChannel().tryAwait()
+    return channel?.trySendMessage(embed)
 }
 
-fun User.sendMessage(message: String) {
-    val channel = tryhard { openPrivateChannel().complete() }
-    channel?.trySendMessage(message)
+suspend fun User.trySendMessage(message: String): Message? {
+    val channel = openPrivateChannel().tryAwait()
+    return channel?.trySendMessage(message)
 }
 
-fun TextChannel.fetchHistoryFromScratch(): List<Message> {
-    val lastMessageList = history.retrievePast(1).complete()
+suspend fun TextChannel.fetchHistoryFromScratch(): List<Message> {
+    val lastMessageList = history.retrievePast(1).tryAwait() ?: return listOf()
     if (lastMessageList.size != 1) {
-        return ArrayList()
+        return listOf()
     }
 
     val lastMessage = lastMessageList[0]
@@ -191,15 +189,15 @@ fun TextChannel.fetchHistoryFromScratch(): List<Message> {
     return fetchedMessages
 }
 
-fun TextChannel.fetchFullHistoryBeforeMessage(beforeMessage: Message): MutableList<Message> {
+suspend fun TextChannel.fetchFullHistoryBeforeMessage(beforeMessage: Message): MutableList<Message> {
     val messages = ArrayList<Message>()
 
     var lastFetchedMessage = beforeMessage
     var lastMessageReceived = false
     while (!lastMessageReceived) {
         val fetchedMessages = getHistoryBefore(lastFetchedMessage, 100)
-                .complete()
-                .retrievedHistory
+                .tryAwait()
+                ?.retrievedHistory ?: return mutableListOf()
 
         messages.addAll(fetchedMessages)
 
@@ -213,15 +211,15 @@ fun TextChannel.fetchFullHistoryBeforeMessage(beforeMessage: Message): MutableLi
     return messages
 }
 
-fun TextChannel.fetchFullHistoryAfterMessage(afterMessage: Message): List<Message> {
+suspend fun TextChannel.fetchFullHistoryAfterMessage(afterMessage: Message): List<Message> {
     val messages = ArrayList<Message>()
 
     var lastFetchedMessage = afterMessage
     var lastMessageReceived = false
     while (!lastMessageReceived) {
         val fetchedMessages = getHistoryAfter(lastFetchedMessage, 100)
-                .complete()
-                .retrievedHistory
+                .tryAwait()
+                ?.retrievedHistory ?: return listOf()
 
         messages.addAll(fetchedMessages)
 
@@ -278,4 +276,12 @@ fun getExpirationTextInChannel(date: Date?): String = if (date != null) {
     "(Expires on $date)"
 } else {
     "(Indefinitely)"
+}
+
+suspend fun <T> RestAction<T>.await(): T = suspendCoroutine { cont ->
+    queue({ successValue -> cont.resume(successValue) }, { throwable -> cont.resumeWithException(throwable) })
+}
+
+suspend fun <T> RestAction<T>.tryAwait(): T? = suspendCoroutine { cont ->
+    queue({ successValue -> cont.resume(successValue) }, { cont.resume(null) })
 }
