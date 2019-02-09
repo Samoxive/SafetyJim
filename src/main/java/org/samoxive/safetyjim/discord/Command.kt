@@ -1,8 +1,9 @@
 package org.samoxive.safetyjim.discord
 
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import org.samoxive.safetyjim.database.JimSettings
 
 abstract class Command {
     abstract val usages: Array<String>
-    abstract fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, args: String): Boolean
+    abstract suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean
 }
