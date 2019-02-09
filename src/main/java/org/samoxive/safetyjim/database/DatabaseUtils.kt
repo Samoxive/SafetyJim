@@ -1,18 +1,22 @@
 package org.samoxive.safetyjim.database
 
 import com.uchuhimo.konf.Config
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
 import net.dv8tion.jda.core.entities.Guild
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.Index
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SchemaUtils.createIndex
 import org.jetbrains.exposed.sql.SchemaUtils.createMissingTablesAndColumns
-import org.jetbrains.exposed.sql.StdOutSqlLogger
-import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
 import org.samoxive.safetyjim.tryhard
+import org.samoxive.safetyjim.tryhardAsync
+import java.util.concurrent.Executors
 import javax.sql.DataSource
+import kotlin.coroutines.suspendCoroutine
 
 fun setupDatabase(dataSource: DataSource) {
     Database.connect(dataSource)
@@ -44,20 +48,20 @@ fun setupDatabase(dataSource: DataSource) {
 
 const val DEFAULT_WELCOME_MESSAGE = "Welcome to \$guild \$user!"
 
-fun getGuildSettings(guild: Guild, config: Config): JimSettings = transaction {
+suspend fun getGuildSettings(guild: Guild, config: Config): JimSettings = awaitTransaction {
     val setting = JimSettings.findById(guild.idLong)
 
     if (setting != null) {
-        return@transaction setting
+        return@awaitTransaction setting
     }
 
-    tryhard { createGuildSettings(guild, config) }
+    createGuildSettings(guild, config)
     JimSettings[guild.idLong]
 }
 
-fun getAllGuildSettings() = transaction { JimSettings.all().associateBy { it -> it.id.value } }
+suspend fun getAllGuildSettings() = awaitTransaction { JimSettings.all().associateBy { it -> it.id.value } }
 
-fun deleteGuildSettings(guild: Guild) = transaction { JimSettings.findById(guild.idLong)?.delete() }
+suspend fun deleteGuildSettings(guild: Guild) = awaitTransaction { JimSettings.findById(guild.idLong)?.delete() }
 
 fun createGuildSettings(guild: Guild, config: Config) = tryhard {
     transaction {
@@ -79,4 +83,18 @@ fun createGuildSettings(guild: Guild, config: Config) = tryhard {
             joincaptcha = false
         }
     }
+}
+
+suspend fun createGuildSettingsAsync(guild: Guild, config: Config) {
+    GlobalScope.async(TRANSACTION_THREAD_POOL) { createGuildSettings(guild, config) }.await()
+}
+
+val TRANSACTION_THREAD_POOL = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
+
+suspend fun <T> awaitTransaction(statement: Transaction.() -> T): T = GlobalScope.async(TRANSACTION_THREAD_POOL) {
+    transaction(null, statement)
+}.await()
+
+suspend fun <T> tryAwaitTransaction(statement: Transaction.() -> T): T? = tryhardAsync {
+    awaitTransaction(statement)
 }
