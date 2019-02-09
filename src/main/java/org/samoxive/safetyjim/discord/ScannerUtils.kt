@@ -5,6 +5,7 @@ import me.xdrop.fuzzywuzzy.FuzzySearch
 import net.dv8tion.jda.core.entities.Message
 import net.dv8tion.jda.core.entities.User
 import org.samoxive.safetyjim.tryhard
+import org.samoxive.safetyjim.tryhardAsync
 import java.util.*
 import java.util.regex.Pattern
 
@@ -81,7 +82,7 @@ enum class SearchUserResult {
     NOT_FOUND, EXACT, GUESSED
 }
 
-fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<SearchUserResult, User?> {
+suspend fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<SearchUserResult, User?> {
     val jda = message.jda
     val guild = message.guild
     val input = if (this.hasNext()) {
@@ -98,7 +99,7 @@ fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<SearchUs
             SearchUserResult.EXACT to member.user
         } else {
             if (isForBan) {
-                val user = tryhard { jda.retrieveUserById(userId).complete() }
+                val user = jda.retrieveUserById(userId).tryAwait()
                 (if (user != null) SearchUserResult.EXACT else SearchUserResult.NOT_FOUND) to user
             } else {
                 SearchUserResult.NOT_FOUND to null
@@ -113,7 +114,7 @@ fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<SearchUs
             return SearchUserResult.EXACT to member.user
         } else {
             if (isForBan) {
-                val user = tryhard { jda.retrieveUserById(userId).complete() }
+                val user = jda.retrieveUserById(userId).tryAwait()
                 if (user != null) {
                     return SearchUserResult.EXACT to user
                 }
@@ -129,7 +130,7 @@ fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<SearchUs
     return if (search.score >= 75) SearchUserResult.GUESSED to user else SearchUserResult.NOT_FOUND to null
 }
 
-fun Scanner.findBannedUser(message: Message): Pair<SearchUserResult, User?> {
+suspend fun Scanner.findBannedUser(message: Message): Pair<SearchUserResult, User?> {
     val guild = message.guild
     val input = if (this.hasNext()) {
         this.next()
@@ -137,7 +138,7 @@ fun Scanner.findBannedUser(message: Message): Pair<SearchUserResult, User?> {
         return SearchUserResult.NOT_FOUND to null
     }
 
-    val banList = guild.banList.complete().map { it.user }
+    val banList = guild.banList.await().map { it.user }
     if (banList.isEmpty()) {
         return SearchUserResult.NOT_FOUND to null
     }
