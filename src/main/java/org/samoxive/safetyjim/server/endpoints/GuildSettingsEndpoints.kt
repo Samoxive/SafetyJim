@@ -11,6 +11,7 @@ import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.entities.Member
 import net.dv8tion.jda.core.entities.User
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.database.createGuildSettings
 import org.samoxive.safetyjim.database.deleteGuildSettings
 import org.samoxive.safetyjim.database.getGuildSettings
@@ -108,7 +109,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
 
         val guildSettingsDb = getGuildSettings(guild, bot.config)
         tryhardAsync {
-            transaction {
+            awaitTransaction {
                 guildSettingsDb.modlog = newSettings.modLog
                 guildSettingsDb.modlogchannelid = newSettings.modLogChannel.id.toLong()
                 guildSettingsDb.holdingroom = newSettings.holdingRoom
