@@ -4,10 +4,7 @@ import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.core.exceptions.InsufficientPermissionException
 import org.samoxive.safetyjim.database.getGuildSettings
-import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.DiscordShard
-import org.samoxive.safetyjim.discord.MessageProcessor
-import org.samoxive.safetyjim.discord.trySendMessage
+import org.samoxive.safetyjim.discord.*
 
 val blacklistedHosts = arrayOf("discord.gg/")
 // We don't want to censor users that can issue moderative commands
@@ -16,7 +13,7 @@ val whitelistedPermissions = arrayOf(Permission.ADMINISTRATOR, Permission.BAN_ME
 fun isInviteLinkBlacklisted(str: String) = blacklistedHosts.map { str.contains(it) }.filter { it }.any()
 
 class InviteLink : MessageProcessor() {
-    override fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent): Boolean {
+    override suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent): Boolean {
         val message = event.message
         val member = event.member
         for (permission in whitelistedPermissions) {
@@ -36,7 +33,7 @@ class InviteLink : MessageProcessor() {
         }
 
         try {
-            message.delete().complete()
+            message.delete().await()
             event.channel.trySendMessage("I'm sorry ${member.asMention}, you can't send invite links here.")
         } catch (e: InsufficientPermissionException) {
             return false

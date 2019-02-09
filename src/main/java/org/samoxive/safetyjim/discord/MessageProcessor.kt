@@ -6,11 +6,11 @@ import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionAddEv
 import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionRemoveEvent
 
 abstract class MessageProcessor {
-    open fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent): Boolean {
+    open suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent): Boolean {
         return false
     }
 
-    open fun onMessageDelete(bot: DiscordBot, shard: DiscordShard, event: GuildMessageDeleteEvent) {}
-    fun onReactionAdd(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReactionAddEvent) {}
-    fun onReactionRemove(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReactionRemoveEvent) {}
+    open suspend fun onMessageDelete(bot: DiscordBot, shard: DiscordShard, event: GuildMessageDeleteEvent) {}
+    suspend fun onReactionAdd(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReactionAddEvent) {}
+    suspend fun onReactionRemove(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReactionRemoveEvent) {}
 }
