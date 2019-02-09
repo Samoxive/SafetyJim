@@ -1,5 +1,8 @@
 package org.samoxive.safetyjim.discord
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.dv8tion.jda.core.entities.Message
 import net.dv8tion.jda.core.entities.TextChannel
 import net.dv8tion.jda.core.entities.User
@@ -8,24 +11,25 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
-class ConfirmationListener(private val threadPool: ExecutorService) : ListenerAdapter() {
-    private val confirmations: MutableMap<Pair<TextChannel, User>, CompletableFuture<Message?>> = mutableMapOf()
+class ConfirmationListener : ListenerAdapter() {
+    private val confirmations: MutableMap<Pair<TextChannel, User>, Continuation<Message?>> = mutableMapOf()
 
-    fun submitConfirmation(channel: TextChannel, user: User): Future<Message?> {
-        val future = CompletableFuture<Message?>()
+    suspend fun submitConfirmation(channel: TextChannel, user: User): Message? = suspendCoroutine { cont ->
         val pair = channel to user
-        confirmations[pair]?.complete(null)
-        confirmations[pair] = future
-        threadPool.execute {
-            Thread.sleep(30 * 1000)
+        confirmations[pair]?.resume(null)
+        confirmations[pair] = cont
+        GlobalScope.launch {
+            delay(30 * 1000)
             val confirmation = confirmations[pair]
-            if (confirmation === future) {
-                confirmation.complete(null)
+            if (confirmation === cont) {
+                confirmation.resume(null)
             }
             confirmations.remove(pair)
         }
-        return future
     }
 
     override fun onGuildMessageReceived(event: GuildMessageReceivedEvent) {
@@ -36,11 +40,11 @@ class ConfirmationListener(private val threadPool: ExecutorService) : ListenerAd
 
         val completed = when (message.contentRaw.toLowerCase()) {
             "y", "ye", "yep", "yes", "yeah", "yea" -> {
-                confirmation.complete(message)
+                confirmation.resume(message)
                 true
             }
             "n", "nah", "no", "nope" -> {
-                confirmation.complete(null)
+                confirmation.resume(null)
                 true
             }
             else -> false
