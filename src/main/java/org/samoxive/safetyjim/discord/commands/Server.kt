@@ -18,7 +18,7 @@ class Server : Command() {
         val creationDate = guild.creationTime.toLocalDate().toString()
         val emojis = StringBuilder()
 
-        for (emote in guild.emotes) {
+        for (emote in guild.retrieveEmotes().await()) {
             if (emojis.length > 950) {
                 emojis.append("...")
                 break

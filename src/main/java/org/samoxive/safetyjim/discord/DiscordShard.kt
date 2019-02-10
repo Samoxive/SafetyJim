@@ -17,6 +17,7 @@ import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionAddEv
 import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionRemoveEvent
 import net.dv8tion.jda.core.hooks.ListenerAdapter
 import net.dv8tion.jda.core.utils.SessionController
+import net.dv8tion.jda.core.utils.cache.CacheFlag
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
@@ -56,6 +57,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
                     .setEnableShutdownHook(true)
                     .useSharding(shardId, config[JimConfig.shard_count])
+                    .setDisabledCacheFlags(EnumSet.of(CacheFlag.EMOTE, CacheFlag.GAME, CacheFlag.VOICE_STATE))
                     .setGame(Game.playing("patreon.com/safetyjim | -mod help"))
                     .build()
                     .awaitReady()
