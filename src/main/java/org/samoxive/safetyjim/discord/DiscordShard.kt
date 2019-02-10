@@ -56,7 +56,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
                     .setEnableShutdownHook(true)
                     .useSharding(shardId, config[JimConfig.shard_count])
-                    .setGame(Game.playing("-mod help | $version | ${getShardString(shardId, shardCount)}"))
+                    .setGame(Game.playing("patreon.com/safetyjim | -mod help"))
                     .build()
                     .awaitReady()
         } catch (e: LoginException) {
