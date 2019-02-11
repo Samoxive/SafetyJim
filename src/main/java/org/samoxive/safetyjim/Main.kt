@@ -4,15 +4,17 @@ import com.uchuhimo.konf.Config
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.apache.log4j.*
-import org.samoxive.safetyjim.config.*
+import org.samoxive.safetyjim.config.DatabaseConfig
+import org.samoxive.safetyjim.config.JimConfig
+import org.samoxive.safetyjim.config.OauthConfig
+import org.samoxive.safetyjim.config.ServerConfig
 import org.samoxive.safetyjim.database.setupDatabase
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.Server
 import org.slf4j.LoggerFactory
-
 import java.io.OutputStreamWriter
 
-fun main(args: Array<String>) {
+fun main() {
     setupLoggers()
 
     val config = Config {

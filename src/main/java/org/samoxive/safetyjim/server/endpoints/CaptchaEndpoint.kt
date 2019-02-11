@@ -14,7 +14,6 @@ import org.samoxive.safetyjim.discord.tryAwait
 import org.samoxive.safetyjim.server.AbstractEndpoint
 import org.samoxive.safetyjim.server.Result
 import org.samoxive.safetyjim.server.Status
-import org.samoxive.safetyjim.tryhard
 
 const val captcha_template = """
 <html>

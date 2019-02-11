@@ -2,7 +2,7 @@ package org.samoxive.safetyjim.discord
 
 import com.mashape.unirest.http.Unirest
 import com.uchuhimo.konf.Config
-import kotlinx.serialization.json.JSON
+import kotlinx.serialization.json.Json
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import org.samoxive.safetyjim.awaitAsString
@@ -22,7 +22,7 @@ object DiscordApi {
                 .header("User-Agent", "Safety Jim")
                 .awaitAsString()
 
-        JSON.nonstrict.parse(DiscordSelfUser.serializer(), response.body)
+        Json.nonstrict.parse(DiscordSelfUser.serializer(), response.body)
     }
 
     suspend fun getUserSecrets(config: Config, code: String): AccessTokenResponse? = tryhardAsync {
@@ -51,7 +51,7 @@ object DiscordApi {
             return@tryhardAsync null
         }
 
-        val tokenResponse = JSON.parse(AccessTokenResponse.serializer(), responseString)
+        val tokenResponse = Json.parse(AccessTokenResponse.serializer(), responseString)
         if (tokenResponse.scope != "identify") {
             null
         } else {

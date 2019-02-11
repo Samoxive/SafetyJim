@@ -7,7 +7,6 @@ import net.dv8tion.jda.core.entities.PermissionOverride
 import net.dv8tion.jda.core.entities.Role
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.JimMute
 import org.samoxive.safetyjim.database.JimMuteTable
 import org.samoxive.safetyjim.database.JimSettings

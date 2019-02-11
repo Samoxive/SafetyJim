@@ -4,7 +4,6 @@ import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.ocpsoft.prettytime.PrettyTime
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.JimBanTable

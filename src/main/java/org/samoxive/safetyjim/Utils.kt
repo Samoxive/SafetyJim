@@ -5,8 +5,6 @@ import com.mashape.unirest.http.JsonNode
 import com.mashape.unirest.http.async.Callback
 import com.mashape.unirest.http.exceptions.UnirestException
 import com.mashape.unirest.request.BaseRequest
-import org.slf4j.Logger
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -21,12 +19,6 @@ suspend fun <T> tryhardAsync(block: suspend () -> T): T? = try {
     block()
 } catch (e: Throwable) {
     null
-}
-
-fun tryAndLog(log: Logger, functionName: String, block: () -> Any) = try {
-    block()
-} catch (e: Throwable) {
-    log.error("Exception occured in $functionName", e)
 }
 
 suspend fun <T> await(block: suspend () -> T): T = block()

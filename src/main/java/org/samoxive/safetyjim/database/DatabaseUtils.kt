@@ -1,10 +1,8 @@
 package org.samoxive.safetyjim.database
 
 import com.uchuhimo.konf.Config
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import net.dv8tion.jda.core.entities.Guild
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SchemaUtils.createIndex
@@ -13,10 +11,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
 import org.samoxive.safetyjim.tryhard
-import org.samoxive.safetyjim.tryhardAsync
 import java.util.concurrent.Executors
 import javax.sql.DataSource
-import kotlin.coroutines.suspendCoroutine
 
 fun setupDatabase(dataSource: DataSource) {
     Database.connect(dataSource)
@@ -59,7 +55,7 @@ suspend fun getGuildSettings(guild: Guild, config: Config): JimSettings = awaitT
     JimSettings[guild.idLong]
 }
 
-suspend fun getAllGuildSettings() = awaitTransaction { JimSettings.all().associateBy { it -> it.id.value } }
+suspend fun getAllGuildSettings() = awaitTransaction { JimSettings.all().associateBy { it.id.value } }
 
 suspend fun deleteGuildSettings(guild: Guild) = awaitTransaction { JimSettings.findById(guild.idLong)?.delete() }
 
@@ -86,15 +82,12 @@ fun createGuildSettings(guild: Guild, config: Config) = tryhard {
 }
 
 suspend fun createGuildSettingsAsync(guild: Guild, config: Config) {
-    GlobalScope.async(TRANSACTION_THREAD_POOL) { createGuildSettings(guild, config) }.await()
+    withContext(TRANSACTION_THREAD_POOL) { createGuildSettings(guild, config) }
 }
 
 val TRANSACTION_THREAD_POOL = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
 
-suspend fun <T> awaitTransaction(statement: Transaction.() -> T): T = GlobalScope.async(TRANSACTION_THREAD_POOL) {
+suspend fun <T> awaitTransaction(statement: Transaction.() -> T): T = withContext(TRANSACTION_THREAD_POOL) {
     transaction(null, statement)
-}.await()
-
-suspend fun <T> tryAwaitTransaction(statement: Transaction.() -> T): T? = tryhardAsync {
-    awaitTransaction(statement)
 }
+

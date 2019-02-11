@@ -5,9 +5,7 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
 import net.dv8tion.jda.core.entities.User
 import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.await
 import org.samoxive.safetyjim.discord.tryAwait
-import org.samoxive.safetyjim.tryhardAsync
 
 abstract class AuthenticatedEndpoint(bot: DiscordBot): AbstractEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse): Result {

@@ -129,8 +129,6 @@ fun Member.isOnline(): Boolean = onlineStatus == OnlineStatus.ONLINE ||
         onlineStatus == OnlineStatus.DO_NOT_DISTURB ||
         onlineStatus == OnlineStatus.IDLE
 
-fun Guild.isTalkable(): Boolean = textChannels.any { channel -> channel.canTalk() }
-
 suspend fun Message.successReact(bot: DiscordBot) {
     react(bot, SUCCESS_EMOTE_NAME, SUCCESS_EMOTE_ID)
 }

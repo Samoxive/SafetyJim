@@ -4,19 +4,20 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.serialization.json.JSON
-import kotlinx.serialization.parse
+import kotlinx.serialization.json.Json
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.entities.Member
 import net.dv8tion.jda.core.entities.User
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.samoxive.safetyjim.database.awaitTransaction
 import org.samoxive.safetyjim.database.createGuildSettings
 import org.samoxive.safetyjim.database.deleteGuildSettings
 import org.samoxive.safetyjim.database.getGuildSettings
 import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.server.*
+import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
+import org.samoxive.safetyjim.server.Result
+import org.samoxive.safetyjim.server.Status
+import org.samoxive.safetyjim.server.endJson
 import org.samoxive.safetyjim.server.entities.GuildSettingsEntity
 import org.samoxive.safetyjim.server.entities.toChannelEntity
 import org.samoxive.safetyjim.server.entities.toGuildEntity
@@ -51,7 +52,7 @@ class GetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot)
             guildSettingsDb.joincaptcha
         )
 
-        response.endJson(JSON.stringify(GuildSettingsEntity.serializer(), settings))
+        response.endJson(Json.stringify(GuildSettingsEntity.serializer(), settings))
         return Result(Status.OK)
     }
 }
@@ -65,7 +66,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
             return Result(Status.FORBIDDEN, "You need to be an administrator to change server settings!")
         }
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val newSettings = tryhard { JSON.parse(GuildSettingsEntity.serializer(),bodyString) } ?: return Result(Status.BAD_REQUEST)
+        val newSettings = tryhard { Json.parse(GuildSettingsEntity.serializer(),bodyString) } ?: return Result(Status.BAD_REQUEST)
 
         guild.textChannels.find { it.id == newSettings.modLogChannel.id } ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
         guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id } ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")

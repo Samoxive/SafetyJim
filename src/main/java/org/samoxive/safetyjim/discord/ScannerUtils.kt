@@ -4,8 +4,6 @@ import com.joestelmach.natty.Parser
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import net.dv8tion.jda.core.entities.Message
 import net.dv8tion.jda.core.entities.User
-import org.samoxive.safetyjim.tryhard
-import org.samoxive.safetyjim.tryhardAsync
 import java.util.*
 import java.util.regex.Pattern
 
