@@ -10,10 +10,11 @@ import org.samoxive.safetyjim.awaitAsString
 import org.samoxive.safetyjim.config.ServerConfig
 import org.samoxive.safetyjim.database.getGuildSettings
 import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.tryAwait
+import org.samoxive.safetyjim.discord.await
 import org.samoxive.safetyjim.server.AbstractEndpoint
 import org.samoxive.safetyjim.server.Result
 import org.samoxive.safetyjim.server.Status
+import org.samoxive.safetyjim.tryhardAsync
 
 const val captcha_template = """
 <html>
@@ -83,7 +84,7 @@ class CaptchaSubmitEndpoint(bot: DiscordBot): AbstractEndpoint(bot) {
         val settings = getGuildSettings(guild, bot.config)
         val holdingRoomRoleId = settings.holdingroomroleid ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up!")
         val holdingRoomRole = guild.getRoleById(holdingRoomRoleId) ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up correctly!")
-        guild.controller.addRolesToMember(member, holdingRoomRole).tryAwait()
+        tryhardAsync { guild.controller.addRolesToMember(member, holdingRoomRole).await() }
         response.end("You have been approved to join! You can close this window.")
         return Result(Status.OK)
     }

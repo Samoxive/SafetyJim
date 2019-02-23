@@ -110,8 +110,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             channel.fetchHistoryFromScratch()
         } else {
             try {
-                val oldestMessageStored = channel.getMessageById(oldestRecord[JimMessageTable.id].value).tryAwait()
-                val newestMessageStored = channel.getMessageById(newestRecord[JimMessageTable.id].value).tryAwait()
+                val oldestMessageStored = tryhardAsync { channel.getMessageById(oldestRecord[JimMessageTable.id].value).await() }
+                val newestMessageStored = tryhardAsync { channel.getMessageById(newestRecord[JimMessageTable.id].value).await() }
                 if (oldestMessageStored == null || newestMessageStored == null) {
                     throw Exception()
                 }
@@ -161,7 +161,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         for (guild in shard.guilds) {
             if (guild.textChannels.isEmpty()) {
-                guild.leave().tryAwait()
+                tryhardAsync { guild.leave().await() }
                 continue
             }
         }
@@ -336,7 +336,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         if (guildSettings.invitelinkremover) {
             if (isInviteLinkBlacklisted(user.name)) {
-                controller.kick(member).tryAwait()
+                tryhardAsync { controller.kick(member).await() }
                 return
             }
         }
@@ -388,7 +388,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         }
 
         val mutedRole: Role = tryhardAsync { Mute.setupMutedRole(guild) } ?: return
-        controller.addSingleRoleToMember(member, mutedRole).tryAwait()
+        tryhardAsync { controller.addSingleRoleToMember(member, mutedRole).await() }
     }
 
     override fun onGuildMemberLeave(event: GuildMemberLeaveEvent) {

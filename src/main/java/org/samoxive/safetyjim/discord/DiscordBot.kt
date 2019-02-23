@@ -160,7 +160,7 @@ class DiscordBot(val config: Config) {
                     continue
                 }
 
-                controller.addSingleRoleToMember(member, role).tryAwait()
+                tryhardAsync { controller.addSingleRoleToMember(member, role).await() }
             }
 
             awaitTransaction { user.allowed = true }
@@ -196,8 +196,7 @@ class DiscordBot(val config: Config) {
                 continue
             }
 
-            val banRecord = guild.banList
-                    .tryAwait()
+            val banRecord = tryhardAsync { guild.banList.await() }
                     ?.firstOrNull { ban -> ban.user.id == guildUser.id }
 
             if (banRecord == null) {
@@ -205,7 +204,7 @@ class DiscordBot(val config: Config) {
                 continue
             }
 
-            controller.unban(guildUser).tryAwait()
+            tryhardAsync { controller.unban(guildUser).await() }
             awaitTransaction { user.unbanned = true }
         }
     }
@@ -227,7 +226,7 @@ class DiscordBot(val config: Config) {
             val guild = shardClient.getGuildById(guildId)
 
             if (guild == null) {
-                user.unmuted = true
+                awaitTransaction { user.unmuted = true }
                 continue
             }
 
@@ -252,7 +251,7 @@ class DiscordBot(val config: Config) {
 
             val controller = guild.controller
 
-            controller.removeSingleRoleFromMember(member, role).tryAwait()
+            tryhardAsync { controller.removeSingleRoleFromMember(member, role).await() }
             awaitTransaction { user.unmuted = true }
         }
     }

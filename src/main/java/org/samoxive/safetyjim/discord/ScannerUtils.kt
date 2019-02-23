@@ -4,6 +4,7 @@ import com.joestelmach.natty.Parser
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import net.dv8tion.jda.core.entities.Message
 import net.dv8tion.jda.core.entities.User
+import org.samoxive.safetyjim.tryhardAsync
 import java.util.*
 import java.util.regex.Pattern
 
@@ -97,7 +98,7 @@ suspend fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<
             SearchUserResult.EXACT to member.user
         } else {
             if (isForBan) {
-                val user = jda.retrieveUserById(userId).tryAwait()
+                val user = tryhardAsync { jda.retrieveUserById(userId).await() }
                 (if (user != null) SearchUserResult.EXACT else SearchUserResult.NOT_FOUND) to user
             } else {
                 SearchUserResult.NOT_FOUND to null
@@ -112,7 +113,7 @@ suspend fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<
             return SearchUserResult.EXACT to member.user
         } else {
             if (isForBan) {
-                val user = jda.retrieveUserById(userId).tryAwait()
+                val user = tryhardAsync { jda.retrieveUserById(userId).await() }
                 if (user != null) {
                     return SearchUserResult.EXACT to user
                 }

@@ -270,7 +270,7 @@ class Settings : Command() {
                     val role = foundRoles[0]
                     awaitTransaction { settings.holdingroomroleid = role.idLong }
                 }
-                "nospaceprefix" -> settings.nospaceprefix = isEnabledInput(argument)
+                "nospaceprefix" -> awaitTransaction { settings.nospaceprefix = isEnabledInput(argument) }
                 "statistics" -> {
                     message.failMessage(bot, "Statistics is a work in progress feature, you can't enable it!")
                     /*

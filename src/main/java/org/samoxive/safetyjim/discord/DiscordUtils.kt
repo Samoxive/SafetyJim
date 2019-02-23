@@ -10,6 +10,7 @@ import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.JimSettings
 import org.samoxive.safetyjim.database.getGuildSettings
 import org.samoxive.safetyjim.tryAwaitAsJSON
+import org.samoxive.safetyjim.tryhardAsync
 import java.awt.Color
 import java.util.*
 import kotlin.coroutines.resume
@@ -42,7 +43,7 @@ suspend fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message?
         failReact(bot)
     }
 
-    jimMessage?.delete()?.tryAwait()
+    tryhardAsync { jimMessage?.delete()?.await() }
     return confirmationMessage
 }
 
@@ -93,7 +94,7 @@ suspend fun Message.deleteCommandMessage(bot: DiscordBot) {
         return
     }
 
-    delete().tryAwait()
+    tryhardAsync { delete().await() }
 }
 
 fun Member.isKickableBy(kicker: Member) = isBannableBy(kicker)
@@ -143,7 +144,7 @@ suspend fun Message.failReact(bot: DiscordBot) {
 }
 
 suspend fun Message.meloReact() {
-    addReaction("\uD83C\uDF48").tryAwait()
+    tryhardAsync { addReaction("\uD83C\uDF48").await() }
 }
 
 private suspend fun Message.react(bot: DiscordBot, emoteName: String, emoteId: String) {
@@ -157,25 +158,25 @@ private suspend fun Message.react(bot: DiscordBot, emoteName: String, emoteId: S
 }
 
 suspend fun MessageChannel.trySendMessage(message: String): Message? {
-    return sendMessage(message).tryAwait()
+    return tryhardAsync { sendMessage(message).await() }
 }
 
 suspend fun MessageChannel.trySendMessage(embed: MessageEmbed): Message? {
-    return sendMessage(embed).tryAwait()
+    return tryhardAsync { sendMessage(embed).await() }
 }
 
 suspend fun User.trySendMessage(embed: MessageEmbed): Message? {
-    val channel = openPrivateChannel().tryAwait()
+    val channel = tryhardAsync { openPrivateChannel().await() }
     return channel?.trySendMessage(embed)
 }
 
 suspend fun User.trySendMessage(message: String): Message? {
-    val channel = openPrivateChannel().tryAwait()
+    val channel = tryhardAsync { openPrivateChannel().await() }
     return channel?.trySendMessage(message)
 }
 
 suspend fun TextChannel.fetchHistoryFromScratch(): List<Message> {
-    val lastMessageList = history.retrievePast(1).tryAwait() ?: return listOf()
+    val lastMessageList = tryhardAsync { history.retrievePast(1).await() } ?: return listOf()
     if (lastMessageList.size != 1) {
         return listOf()
     }
@@ -193,8 +194,7 @@ suspend fun TextChannel.fetchFullHistoryBeforeMessage(beforeMessage: Message): M
     var lastFetchedMessage = beforeMessage
     var lastMessageReceived = false
     while (!lastMessageReceived) {
-        val fetchedMessages = getHistoryBefore(lastFetchedMessage, 100)
-                .tryAwait()
+        val fetchedMessages = tryhardAsync { getHistoryBefore(lastFetchedMessage, 100).await() }
                 ?.retrievedHistory ?: return mutableListOf()
 
         messages.addAll(fetchedMessages)
@@ -215,8 +215,7 @@ suspend fun TextChannel.fetchFullHistoryAfterMessage(afterMessage: Message): Lis
     var lastFetchedMessage = afterMessage
     var lastMessageReceived = false
     while (!lastMessageReceived) {
-        val fetchedMessages = getHistoryAfter(lastFetchedMessage, 100)
-                .tryAwait()
+        val fetchedMessages = tryhardAsync { getHistoryAfter(lastFetchedMessage, 100).await() }
                 ?.retrievedHistory ?: return listOf()
 
         messages.addAll(fetchedMessages)
@@ -278,8 +277,4 @@ fun getExpirationTextInChannel(date: Date?): String = if (date != null) {
 
 suspend fun <T> RestAction<T>.await(): T = suspendCoroutine { cont ->
     queue({ successValue -> cont.resume(successValue) }, { throwable -> cont.resumeWithException(throwable) })
-}
-
-suspend fun <T> RestAction<T>.tryAwait(): T? = suspendCoroutine { cont ->
-    queue({ successValue -> cont.resume(successValue) }, { cont.resume(null) })
 }
