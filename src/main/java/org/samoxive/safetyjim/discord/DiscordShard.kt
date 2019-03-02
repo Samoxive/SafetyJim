@@ -11,6 +11,7 @@ import net.dv8tion.jda.core.events.guild.GuildJoinEvent
 import net.dv8tion.jda.core.events.guild.GuildLeaveEvent
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent
 import net.dv8tion.jda.core.events.guild.member.GuildMemberLeaveEvent
+import net.dv8tion.jda.core.events.message.guild.GuildMessageDeleteEvent
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.core.hooks.ListenerAdapter
 import net.dv8tion.jda.core.utils.SessionController
@@ -269,6 +270,10 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         // Command executions are likely to be io dependant, better send them in a seperate thread to not block
         // discord client
         executeCommand(event, guildSettings, command, commandName, args.toString().trim())
+    }
+
+    override fun onGuildMessageDelete(event: GuildMessageDeleteEvent) {
+        bot.processors.forEach { processor -> GlobalScope.launch { processor.onMessageDelete(bot, this@DiscordShard, event) } }
     }
 
     override fun onException(event: ExceptionEvent) {
