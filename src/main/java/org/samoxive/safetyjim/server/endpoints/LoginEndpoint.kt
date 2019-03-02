@@ -8,7 +8,7 @@ import org.samoxive.safetyjim.discord.DiscordApi
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.*
 
-class LoginEndpoint(bot: DiscordBot): AbstractEndpoint(bot) {
+class LoginEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
     override val route = "/login"
     override val method = HttpMethod.POST
 

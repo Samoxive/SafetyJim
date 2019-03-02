@@ -25,7 +25,7 @@ import org.samoxive.safetyjim.server.entities.toRoleEntity
 import org.samoxive.safetyjim.tryhard
 import org.samoxive.safetyjim.tryhardAsync
 
-class GetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot) {
+class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
     override val route = "/guilds/:guildId/settings"
     override val method = HttpMethod.GET
 
@@ -33,23 +33,25 @@ class GetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot)
         val guildSettingsDb = getGuildSettings(guild, bot.config)
         val holdingRoomRole = if (guildSettingsDb.holdingroomroleid != null) guild.getRoleById(guildSettingsDb.holdingroomroleid!!) else null // kotlin pls
         val settings = GuildSettingsEntity(
-            guild.toGuildEntity(),
-            guild.textChannels.map { it.toChannelEntity() },
-            guild.roles.map { it.toRoleEntity() },
-            guildSettingsDb.modlog,
-            guild.getTextChannelById(guildSettingsDb.modlogchannelid)?.toChannelEntity() ?: return Result(Status.SERVER_ERROR),
-            guildSettingsDb.holdingroom,
-            holdingRoomRole?.toRoleEntity(),
-            guildSettingsDb.holdingroomminutes,
-            guildSettingsDb.invitelinkremover,
-            guildSettingsDb.welcomemessage,
-            guildSettingsDb.message,
-            guild.getTextChannelById(guildSettingsDb.welcomemessagechannelid)?.toChannelEntity() ?: return Result(Status.SERVER_ERROR),
-            guildSettingsDb.prefix,
-            guildSettingsDb.silentcommands,
-            guildSettingsDb.nospaceprefix,
-            guildSettingsDb.statistics,
-            guildSettingsDb.joincaptcha
+                guild.toGuildEntity(),
+                guild.textChannels.map { it.toChannelEntity() },
+                guild.roles.map { it.toRoleEntity() },
+                guildSettingsDb.modlog,
+                guild.getTextChannelById(guildSettingsDb.modlogchannelid)?.toChannelEntity()
+                        ?: return Result(Status.SERVER_ERROR),
+                guildSettingsDb.holdingroom,
+                holdingRoomRole?.toRoleEntity(),
+                guildSettingsDb.holdingroomminutes,
+                guildSettingsDb.invitelinkremover,
+                guildSettingsDb.welcomemessage,
+                guildSettingsDb.message,
+                guild.getTextChannelById(guildSettingsDb.welcomemessagechannelid)?.toChannelEntity()
+                        ?: return Result(Status.SERVER_ERROR),
+                guildSettingsDb.prefix,
+                guildSettingsDb.silentcommands,
+                guildSettingsDb.nospaceprefix,
+                guildSettingsDb.statistics,
+                guildSettingsDb.joincaptcha
         )
 
         response.endJson(Json.stringify(GuildSettingsEntity.serializer(), settings))
@@ -57,7 +59,7 @@ class GetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot)
     }
 }
 
-class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot) {
+class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
     override val route = "/guilds/:guildId/settings"
     override val method = HttpMethod.POST
 
@@ -66,12 +68,16 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
             return Result(Status.FORBIDDEN, "You need to be an administrator to change server settings!")
         }
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val newSettings = tryhard { Json.parse(GuildSettingsEntity.serializer(),bodyString) } ?: return Result(Status.BAD_REQUEST)
+        val newSettings = tryhard { Json.parse(GuildSettingsEntity.serializer(), bodyString) }
+                ?: return Result(Status.BAD_REQUEST)
 
-        guild.textChannels.find { it.id == newSettings.modLogChannel.id } ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
-        guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id } ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")
+        guild.textChannels.find { it.id == newSettings.modLogChannel.id }
+                ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
+        guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id }
+                ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")
         if (newSettings.holdingRoomRole != null) {
-            guild.roles.find { it.id == newSettings.holdingRoomRole.id } ?: return Result(Status.BAD_REQUEST, "Selected holding room role doesn't exist!")
+            guild.roles.find { it.id == newSettings.holdingRoomRole.id }
+                    ?: return Result(Status.BAD_REQUEST, "Selected holding room role doesn't exist!")
         } else {
             if (newSettings.joinCaptcha || newSettings.holdingRoom) {
                 return Result(Status.BAD_REQUEST, "You can't enable join captcha or holding room without setting a holding room role!")
@@ -133,7 +139,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot
     }
 }
 
-class ResetGuildSettingsEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot) {
+class ResetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
     override val route = "/guilds/:guildId/settings"
     override val method = HttpMethod.DELETE
 

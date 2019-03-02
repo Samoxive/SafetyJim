@@ -8,7 +8,7 @@ import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.samoxive.safetyjim.discord.DiscordBot
-
+import org.slf4j.LoggerFactory
 
 enum class Status(val code: Int) {
     OK(200),
@@ -21,16 +21,18 @@ enum class Status(val code: Int) {
 
 data class Result(val status: Status, val message: String = "")
 
-abstract class AbstractEndpoint(val bot: DiscordBot): Handler<RoutingContext> {
+private val logger = LoggerFactory.getLogger("Jim Endpoint")
+
+abstract class AbstractEndpoint(val bot: DiscordBot) : Handler<RoutingContext> {
     override fun handle(event: RoutingContext) {
-         GlobalScope.launch {
+        GlobalScope.launch {
             val request = event.request()
             val response = event.response()
 
             val result = try {
                 handle(event, request, response)
             } catch (e: Throwable) {
-                e.printStackTrace()
+                logger.error("$method - $route", e)
                 Result(Status.SERVER_ERROR, "Server error, please retry later.")
             }
 

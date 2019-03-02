@@ -11,7 +11,7 @@ import org.samoxive.safetyjim.server.Result
 import org.samoxive.safetyjim.server.Status
 import org.samoxive.safetyjim.server.endJson
 
-class TestEndpoint(bot: DiscordBot): AuthenticatedEndpoint(bot) {
+class TestEndpoint(bot: DiscordBot) : AuthenticatedEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User): Result {
         response.endJson(user.toString())
         return Result(Status.OK)

@@ -43,7 +43,7 @@ const val captcha_template = """
 </html>
 """
 
-class CaptchaPageEndpoint(bot: DiscordBot): AbstractEndpoint(bot) {
+class CaptchaPageEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
     override val route = "/captcha/:guildId/:userId"
     override val method = HttpMethod.GET
 
@@ -59,7 +59,7 @@ class CaptchaPageEndpoint(bot: DiscordBot): AbstractEndpoint(bot) {
     }
 }
 
-class CaptchaSubmitEndpoint(bot: DiscordBot): AbstractEndpoint(bot) {
+class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
     override val route = "/captcha/:guildId/:userId"
     override val method = HttpMethod.POST
 
@@ -82,8 +82,10 @@ class CaptchaSubmitEndpoint(bot: DiscordBot): AbstractEndpoint(bot) {
         }
 
         val settings = getGuildSettings(guild, bot.config)
-        val holdingRoomRoleId = settings.holdingroomroleid ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up!")
-        val holdingRoomRole = guild.getRoleById(holdingRoomRoleId) ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up correctly!")
+        val holdingRoomRoleId = settings.holdingroomroleid
+                ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up!")
+        val holdingRoomRole = guild.getRoleById(holdingRoomRoleId)
+                ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up correctly!")
         tryhardAsync { guild.controller.addRolesToMember(member, holdingRoomRole).await() }
         response.end("You have been approved to join! You can close this window.")
         return Result(Status.OK)

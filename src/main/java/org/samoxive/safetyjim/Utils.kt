@@ -24,7 +24,7 @@ suspend fun <T> tryhardAsync(block: suspend () -> T): T? = try {
 suspend fun <T> await(block: suspend () -> T): T = block()
 
 suspend fun BaseRequest.awaitAsString(): HttpResponse<String> = suspendCoroutine { cont ->
-    asStringAsync(object: Callback<String> {
+    asStringAsync(object : Callback<String> {
         override fun cancelled() {
             throw NotImplementedError("don't cancel requests, we don't need to")
         }
@@ -44,7 +44,7 @@ suspend fun BaseRequest.tryAwaitAsString(): HttpResponse<String>? = tryhardAsync
 }
 
 suspend fun BaseRequest.awaitAsJSON(): HttpResponse<JsonNode> = suspendCoroutine { cont ->
-    asJsonAsync(object: Callback<JsonNode> {
+    asJsonAsync(object : Callback<JsonNode> {
         override fun cancelled() {
             throw NotImplementedError("don't cancel requests, we don't need to")
         }
