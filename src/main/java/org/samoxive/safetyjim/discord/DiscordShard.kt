@@ -11,10 +11,7 @@ import net.dv8tion.jda.core.events.guild.GuildJoinEvent
 import net.dv8tion.jda.core.events.guild.GuildLeaveEvent
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent
 import net.dv8tion.jda.core.events.guild.member.GuildMemberLeaveEvent
-import net.dv8tion.jda.core.events.message.guild.GuildMessageDeleteEvent
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionAddEvent
-import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionRemoveEvent
 import net.dv8tion.jda.core.hooks.ListenerAdapter
 import net.dv8tion.jda.core.utils.SessionController
 import net.dv8tion.jda.core.utils.cache.CacheFlag
@@ -276,31 +273,6 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     override fun onException(event: ExceptionEvent) {
         log.error("An exception occurred.", event.cause)
-    }
-
-    override fun onGuildMessageDelete(event: GuildMessageDeleteEvent) {
-        // TODO(sam): Add message cache and trigger message processors if
-        // deleted message is in the cache
-    }
-
-    override fun onGuildMessageReactionAdd(event: GuildMessageReactionAddEvent) {
-        if (event.member.user.isBot || event.channel.type != ChannelType.TEXT) {
-            return
-        }
-
-        for (processor in bot.processors) {
-            GlobalScope.launch { processor.onReactionAdd(bot, this@DiscordShard, event) }
-        }
-    }
-
-    override fun onGuildMessageReactionRemove(event: GuildMessageReactionRemoveEvent) {
-        if (event.member.user.isBot || event.channel.type != ChannelType.TEXT) {
-            return
-        }
-
-        for (processor in bot.processors) {
-            GlobalScope.launch { processor.onReactionRemove(bot, this@DiscordShard, event) }
-        }
     }
 
     override fun onGuildJoin(event: GuildJoinEvent) {
