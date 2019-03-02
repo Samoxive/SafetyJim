@@ -2,6 +2,7 @@ package org.samoxive.safetyjim.server.entities
 
 import kotlinx.serialization.Serializable
 import net.dv8tion.jda.core.entities.Guild
+import org.samoxive.safetyjim.tryhard
 
 @Serializable
 data class GuildEntity(
@@ -10,4 +11,4 @@ data class GuildEntity(
         val iconUrl: String
 )
 
-fun Guild.toGuildEntity(): GuildEntity = GuildEntity(id, name, iconUrl)
+fun Guild.toGuildEntity(): GuildEntity = GuildEntity(id, name, tryhard { iconUrl } ?: "")
