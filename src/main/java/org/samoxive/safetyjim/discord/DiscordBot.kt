@@ -67,7 +67,6 @@ class DiscordBot(val config: Config) {
         }
 
         scheduleJob(10, 5, "allowUsers") { allowUsers() }
-        scheduleJob(10, 5, "allowUsers") { allowUsers() }
         scheduleJob(10, 10, "unmuteUsers") { unmuteUsers() }
         scheduleJob(10, 30, "unbanUsers") { unbanUsers() }
         scheduleJob(10, 5, "remindReminders") { remindReminders() }
