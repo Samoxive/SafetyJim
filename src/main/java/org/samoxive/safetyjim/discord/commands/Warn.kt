@@ -28,6 +28,10 @@ class Warn : Command() {
             return false
         }
 
+        if (args.isEmpty()) {
+            return true
+        }
+
         val (searchResult, warnUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (warnUser == null)) {
             message.failMessage(bot, "Could not find the user to warn!")

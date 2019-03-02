@@ -31,6 +31,10 @@ class Ban : Command() {
             return false
         }
 
+        if (args.isEmpty()) {
+            return true
+        }
+
         val (searchResult, banUser) = messageIterator.findUser(message, true)
         if (searchResult == SearchUserResult.NOT_FOUND || (banUser == null)) {
             message.failMessage(bot, "Could not find the user to ban!")

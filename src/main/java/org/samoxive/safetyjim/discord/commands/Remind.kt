@@ -18,6 +18,10 @@ class Remind : Command() {
         val channel = event.channel
         val guild = event.guild
 
+        if (args.isEmpty()) {
+            return true
+        }
+
         val parsedReminderAndTime = try {
             messageIterator.getTextAndTime()
         } catch (e: InvalidTimeInputException) {

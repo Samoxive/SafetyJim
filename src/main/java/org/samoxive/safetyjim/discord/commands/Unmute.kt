@@ -11,7 +11,7 @@ import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Unmute : Command() {
-    override val usages = arrayOf("unmute @user1 @user2 ... - unmutes specified user")
+    override val usages = arrayOf("unmute @user - unmutes specified user")
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
@@ -28,6 +28,10 @@ class Unmute : Command() {
         if (!guild.selfMember.hasPermission(Permission.MANAGE_ROLES)) {
             message.failMessage(bot, "I don't have enough permissions do this action!")
             return false
+        }
+
+        if (args.isEmpty()) {
+            return true
         }
 
         val mutedRoles = guild.getRolesByName("Muted", false)

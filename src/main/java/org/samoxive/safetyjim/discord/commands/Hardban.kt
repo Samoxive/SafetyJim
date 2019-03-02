@@ -29,6 +29,10 @@ class Hardban : Command() {
             return false
         }
 
+        if (args.isEmpty()) {
+            return true
+        }
+
         val (searchResult, hardbanUser) = messageIterator.findUser(message, true)
         if (searchResult == SearchUserResult.NOT_FOUND || (hardbanUser == null)) {
             message.failMessage(bot, "Could not find the user to hardban!")

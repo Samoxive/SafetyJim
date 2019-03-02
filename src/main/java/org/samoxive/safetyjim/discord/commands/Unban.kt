@@ -11,7 +11,7 @@ import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Unban : Command() {
-    override val usages = arrayOf("unban <tag> - unbans user with specified user tag (example#1998)")
+    override val usages = arrayOf("unban @user - unbans specified user")
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
         val messageIterator = Scanner(args)
@@ -30,6 +30,10 @@ class Unban : Command() {
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
             message.failMessage(bot, "I do not have enough permissions to do that!")
             return false
+        }
+
+        if (args.isEmpty()) {
+            return true
         }
 
         val (searchResult, targetUser) = messageIterator.findBannedUser(message)

@@ -34,6 +34,10 @@ class Mute : Command() {
             return false
         }
 
+        if (args.isEmpty()) {
+            return true
+        }
+
         val (searchResult, muteUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (muteUser == null)) {
             message.failMessage(bot, "Could not find the user to mute!")

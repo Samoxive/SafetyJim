@@ -29,6 +29,10 @@ class Softban : Command() {
             return false
         }
 
+        if (args.isEmpty()) {
+            return true
+        }
+
         val (searchResult, softbanUser) = messageIterator.findUser(message, isForBan = true)
         if (searchResult == SearchUserResult.NOT_FOUND || (softbanUser == null)) {
             message.failMessage(bot, "Could not find the user to softban!")

@@ -29,6 +29,10 @@ class Kick : Command() {
             return false
         }
 
+        if (args.isEmpty()) {
+            return true
+        }
+
         val (searchResult, kickUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (kickUser == null)) {
             message.failMessage(bot, "Could not find the user to kick!")
