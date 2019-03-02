@@ -32,7 +32,7 @@ abstract class AbstractEndpoint(val bot: DiscordBot) : Handler<RoutingContext> {
             val result = try {
                 handle(event, request, response)
             } catch (e: Throwable) {
-                logger.error("$method - $route", e)
+                logger.error("$method $route", e)
                 Result(Status.SERVER_ERROR, "Server error, please retry later.")
             }
 
