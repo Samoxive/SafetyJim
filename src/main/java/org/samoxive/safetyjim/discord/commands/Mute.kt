@@ -100,11 +100,7 @@ class Mute : Command() {
 
             val expires = expirationDate != null
             val record = awaitTransaction {
-                JimMute.find {
-                    (JimMuteTable.guildid eq guild.idLong) and (JimMuteTable.userid eq muteUser.idLong)
-                }.forUpdate().forEach { it.unmuted = true }
-
-                JimMute.new {
+                val muteRecord = JimMute.new {
                     userid = muteUser.idLong
                     moderatoruserid = user.idLong
                     guildid = guild.idLong
@@ -114,6 +110,10 @@ class Mute : Command() {
                     this.expires = expires
                     unmuted = false
                 }
+                JimMute.find {
+                    (JimMuteTable.unmuted eq false) and (JimMuteTable.guildid eq guild.idLong) and (JimMuteTable.userid eq muteUser.idLong)
+                }.forEach { it.unmuted = true }
+                muteRecord
             }
 
             message.createModLogEntry(shard, settings, muteUser, reason, "mute", record.id.value, expirationDate, true)
