@@ -12,6 +12,9 @@ object JimConfig : ConfigSpec("jim") {
 object DatabaseConfig : ConfigSpec("database") {
     val user by required<String>()
     val pass by required<String>()
+    val host by required<String>()
+    val port by required<Int>()
+    val database by required<String>()
     val jdbc_url by required<String>()
 }
 
