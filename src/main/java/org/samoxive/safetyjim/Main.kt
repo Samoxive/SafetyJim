@@ -8,6 +8,8 @@ import org.samoxive.safetyjim.config.DatabaseConfig
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.config.OauthConfig
 import org.samoxive.safetyjim.config.ServerConfig
+import org.samoxive.safetyjim.database.initPgPool
+import org.samoxive.safetyjim.database.pgPool
 import org.samoxive.safetyjim.database.setupDatabase
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.Server
@@ -31,6 +33,7 @@ fun main() {
     hikariConfig.connectionTestQuery = "SELECT 1;"
     val ds = HikariDataSource(hikariConfig)
     setupDatabase(ds)
+    initPgPool(config)
     val bot = DiscordBot(config)
     Server(bot)
 }
