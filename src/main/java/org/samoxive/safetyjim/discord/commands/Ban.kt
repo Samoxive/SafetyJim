@@ -96,7 +96,8 @@ class Ban : Command() {
             val expires = expirationDate != null
 
             val record = awaitTransaction {
-                val banRecord = JimBan.new {
+                JimBan.find { (JimBanTable.unbanned eq false) and (JimBanTable.guildid eq guild.idLong) and (JimBanTable.userid eq banUser.idLong) }.forEach { it.unbanned = true }
+                JimBan.new {
                     userid = banUser.idLong
                     moderatoruserid = user.idLong
                     guildid = guild.idLong
@@ -106,8 +107,6 @@ class Ban : Command() {
                     this.expires = expires
                     unbanned = false
                 }
-                JimBan.find { (JimBanTable.unbanned eq false) and (JimBanTable.guildid eq guild.idLong) and (JimBanTable.userid eq banUser.idLong) }.forEach { it.unbanned = true }
-                banRecord
             }
 
             val banId = record.id.value
