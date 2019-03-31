@@ -42,7 +42,7 @@ fun setupDatabase(dataSource: DataSource) {
     }
 }
 
-const val DEFAULT_WELCOME_MESSAGE = "Welcome to \$guild \$user!"
+private const val DEFAULT_WELCOME_MESSAGE = "Welcome to \$guild \$user!"
 
 suspend fun getGuildSettings(guild: Guild, config: Config): JimSettings = awaitTransaction {
     val setting = JimSettings.findById(guild.idLong)

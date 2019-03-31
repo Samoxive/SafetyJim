@@ -9,6 +9,8 @@ import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
+private const val DEFAULT_WELCOME_MESSAGE = "Welcome to \$guild \$user!"
+
 class Settings : Command() {
     override val usages = arrayOf("settings display - shows current state of settings", "settings list - lists the keys you can use to customize the bot", "settings reset - resets every setting to their default value", "settings set <key> <value> - changes given key\'s value")
 

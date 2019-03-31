@@ -3,20 +3,23 @@ package org.samoxive.safetyjim
 import com.uchuhimo.konf.Config
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.reactiverse.kotlin.pgclient.queryAwait
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.apache.log4j.*
 import org.samoxive.safetyjim.config.DatabaseConfig
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.config.OauthConfig
 import org.samoxive.safetyjim.config.ServerConfig
-import org.samoxive.safetyjim.database.initPgPool
-import org.samoxive.safetyjim.database.pgPool
-import org.samoxive.safetyjim.database.setupDatabase
+import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.Server
 import org.slf4j.LoggerFactory
 import java.io.OutputStreamWriter
 
 fun main() {
+    System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory")
     setupLoggers()
 
     val config = Config {
@@ -26,14 +29,18 @@ fun main() {
         addSpec(ServerConfig)
     }.from.toml.file("config.toml")
 
-    val hikariConfig = HikariConfig()
-    hikariConfig.jdbcUrl = config[DatabaseConfig.jdbc_url]
-    hikariConfig.username = config[DatabaseConfig.user]
-    hikariConfig.password = config[DatabaseConfig.pass]
-    hikariConfig.connectionTestQuery = "SELECT 1;"
-    val ds = HikariDataSource(hikariConfig)
-    setupDatabase(ds)
     initPgPool(config)
+    runBlocking { print(BansTable.insertBan(BanEntity(
+            userId = -10,
+            moderatorUserId = 10,
+            guildId = 10,
+            banTime = 0,
+            reason = "",
+            expireTime = null,
+            expires = true,
+            unbanned = false
+    )))
+    }
     val bot = DiscordBot(config)
     Server(bot)
 }
