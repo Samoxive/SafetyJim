@@ -42,6 +42,11 @@ object RolesTable : AbstractTable {
                 .firstOrNull()
     }
 
+    suspend fun fetchGuildRoles(guild: Guild): List<RoleEntity> {
+        return pgPool.preparedQueryAwait("select * from rolelist where guildid = $1;", Tuple.of(guild.idLong))
+                .toRoleEntities()
+    }
+
     suspend fun isSelfAssignable(guild: Guild, role: Role): Boolean = fetchRole(guild, role) != null
 
     suspend fun insertRole(role: RoleEntity) {
