@@ -4,6 +4,7 @@ import io.reactiverse.kotlin.pgclient.preparedQueryAwait
 import io.reactiverse.pgclient.PgRowSet
 import io.reactiverse.pgclient.Tuple
 import net.dv8tion.jda.core.entities.Guild
+import net.dv8tion.jda.core.entities.User
 
 private const val createSQL = """
 create table if not exists banlist (
@@ -30,8 +31,21 @@ insert into banlist (
     expires,
     unbanned
 )
-VALUES ($2, $3, $4, $5, $6, $7, $8, $9)
+values ($1, $2, $3, $4, $5, $6, $7, $8)
 returning *;
+"""
+
+private const val updateSQL = """
+update banlist set
+    userid = $2,
+    moderatoruserid = $3,
+    guildid = $4,
+    bantime = $5,
+    expiretime = $6,
+    reason = $7,
+    expires = $8,
+    unbanned = $9
+where id = $1;
 """
 
 object BansTable : AbstractTable {
@@ -57,10 +71,30 @@ object BansTable : AbstractTable {
                 .toBanEntities()
     }
 
+    suspend fun fetchExpiredBans(): List<BanEntity> {
+        val time = System.currentTimeMillis() / 1000
+        return pgPool.preparedQueryAwait("select * from banlist where unbanned = false and expires = true and expiretime < $1;", Tuple.of(time))
+                .toBanEntities()
+    }
+
+    suspend fun fetchGuildLastBan(guild: Guild): BanEntity? {
+        return pgPool.preparedQueryAwait("select * from banlist where guildid = $1 order by bantime desc limit 1;", Tuple.of(guild.idLong))
+                .toBanEntities()
+                .firstOrNull()
+    }
+
     suspend fun insertBan(ban: BanEntity): BanEntity {
         return pgPool.preparedQueryAwait(insertSQL, ban.toTuple())
                 .toBanEntities()
                 .first()
+    }
+
+    suspend fun updateBan(newBan: BanEntity) {
+        pgPool.preparedQueryAwait(updateSQL, newBan.toTupleWithId())
+    }
+
+    suspend fun invalidatePreviousUserBans(guild: Guild, user: User) {
+        pgPool.preparedQueryAwait("update banlist set unbanned = true where guildid = $1 and userid = $2;", Tuple.of(guild.idLong, user.idLong))
     }
 }
 
@@ -76,6 +110,19 @@ data class BanEntity(
         val unbanned: Boolean
 ) {
     fun toTuple(): Tuple {
+        return Tuple.of(
+                userId,
+                moderatorUserId,
+                guildId,
+                banTime,
+                expireTime,
+                reason,
+                expires,
+                unbanned
+        )
+    }
+
+    fun toTupleWithId(): Tuple {
         return Tuple.of(
                 id,
                 userId,

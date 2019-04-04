@@ -1,5 +1,10 @@
 package org.samoxive.safetyjim.database
 
+import io.reactiverse.kotlin.pgclient.preparedQueryAwait
+import io.reactiverse.pgclient.PgRowSet
+import io.reactiverse.pgclient.Tuple
+import net.dv8tion.jda.core.entities.Guild
+
 private const val createSQL = """
 create table if not exists softbanlist (
     id serial not null primary key,
@@ -12,9 +17,60 @@ create table if not exists softbanlist (
 );
 """
 
+private const val insertSQL = """
+insert into softbanlist (
+    userid,
+    moderatoruserid,
+    guildid,
+    softbantime,
+    deletedays,
+    reason
+)
+values ($1, $2, $3, $4, $5, $6)
+returning *;
+"""
+
+private const val updateSQL = """
+update softbanlist set
+    userid = $2,
+    moderatoruserid = $3,
+    guildid = $4,
+    softbantime = $5,
+    deletedays = $6,
+    reason = $7
+where id = $1;
+"""
+
 object SoftbansTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf<String>()
+
+    private fun PgRowSet.toSoftbanEntities(): List<SoftbanEntity> = this.map {
+        SoftbanEntity(
+                id = it.getInteger(0),
+                userId = it.getLong(1),
+                moderatorUserId = it.getLong(2),
+                guildId = it.getLong(3),
+                softbanTime = it.getLong(4),
+                deleteDays = it.getInteger(5),
+                reason = it.getString(6)
+        )
+    }
+
+    suspend fun fetchGuildSoftbans(guild: Guild): List<SoftbanEntity> {
+        return pgPool.preparedQueryAwait("select * from softbanlist where guildid = $1;", Tuple.of(guild.idLong))
+                .toSoftbanEntities()
+    }
+
+    suspend fun insertSoftban(softban: SoftbanEntity): SoftbanEntity {
+        return pgPool.preparedQueryAwait(insertSQL, softban.toTuple())
+                .toSoftbanEntities()
+                .first()
+    }
+
+    suspend fun updateSoftban(newSoftban: SoftbanEntity) {
+        pgPool.preparedQueryAwait(updateSQL, newSoftban.toTupleWithId())
+    }
 }
 
 data class SoftbanEntity(
@@ -25,4 +81,27 @@ data class SoftbanEntity(
         val softbanTime: Long,
         val deleteDays: Int,
         val reason: String
-)
+) {
+    fun toTuple(): Tuple {
+        return Tuple.of(
+                userId,
+                moderatorUserId,
+                guildId,
+                softbanTime,
+                deleteDays,
+                reason
+        )
+    }
+
+    fun toTupleWithId(): Tuple {
+        return Tuple.of(
+                id,
+                userId,
+                moderatorUserId,
+                guildId,
+                softbanTime,
+                deleteDays,
+                reason
+        )
+    }
+}

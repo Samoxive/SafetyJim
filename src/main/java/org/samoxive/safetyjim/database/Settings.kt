@@ -47,7 +47,7 @@ insert into settings (
     "statistics",
     joincaptcha
 )
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15);
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 returning *;
 """
 
@@ -94,7 +94,7 @@ object SettingsTable : AbstractTable {
         )
     }
 
-    suspend fun getGuildSettings(config: Config, guild: Guild): SettingsEntity {
+    suspend fun getGuildSettings(guild: Guild, config: Config): SettingsEntity {
         val existingSetting = fetchGuildSettings(guild)
         if (existingSetting != null) {
             return existingSetting
@@ -105,13 +105,14 @@ object SettingsTable : AbstractTable {
         return newSetting
     }
 
-    suspend fun getAllGuildSettings(): List<SettingsEntity> {
+    suspend fun getAllGuildSettings(): Map<Long, SettingsEntity> {
         return pgPool.preparedQueryAwait("select * from settings;")
                 .toSettingsEntities()
+                .associateBy { it.guildId }
     }
 
     private suspend fun fetchGuildSettings(guild: Guild): SettingsEntity? {
-        return pgPool.preparedQueryAwait("select * from settings where guilid = $1;", Tuple.of(guild.idLong))
+        return pgPool.preparedQueryAwait("select * from settings where guildid = $1;", Tuple.of(guild.idLong))
                 .toSettingsEntities()
                 .firstOrNull()
     }
@@ -139,6 +140,15 @@ object SettingsTable : AbstractTable {
 
     suspend fun updateSettings(newSettings: SettingsEntity) {
         pgPool.preparedQueryAwait(updateSQL, newSettings.toTuple())
+    }
+
+    suspend fun deleteSettings(guild: Guild) {
+        pgPool.preparedQueryAwait("delete from settings where guildid = $1;", Tuple.of(guild.idLong))
+    }
+
+    suspend fun resetSettings(guild: Guild, config: Config) {
+        deleteSettings(guild)
+        insertDefaultGuildSettings(config, guild)
     }
 }
 
