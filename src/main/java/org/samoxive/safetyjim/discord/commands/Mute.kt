@@ -6,11 +6,9 @@ import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.entities.PermissionOverride
 import net.dv8tion.jda.core.entities.Role
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.jetbrains.exposed.sql.and
-import org.samoxive.safetyjim.database.JimMute
-import org.samoxive.safetyjim.database.JimMuteTable
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.MuteEntity
+import org.samoxive.safetyjim.database.MutesTable
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -18,7 +16,7 @@ import java.util.*
 class Mute : Command() {
     override val usages = arrayOf("mute @user [reason] | [time] - mutes the user with specific args. Both arguments can be omitted.")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -103,23 +101,21 @@ class Mute : Command() {
             message.successReact(bot)
 
             val expires = expirationDate != null
-            val record = awaitTransaction {
-                JimMute.find {
-                    (JimMuteTable.unmuted eq false) and (JimMuteTable.guildid eq guild.idLong) and (JimMuteTable.userid eq muteUser.idLong)
-                }.forEach { it.unmuted = true }
-                JimMute.new {
-                    userid = muteUser.idLong
-                    moderatoruserid = user.idLong
-                    guildid = guild.idLong
-                    mutetime = now.time / 1000
-                    expiretime = if (expirationDate == null) 0 else expirationDate.time / 1000
-                    this.reason = reason
-                    this.expires = expires
-                    unmuted = false
-                }
-            }
+            MutesTable.invalidatePreviousUserMutes(guild, muteUser)
+            val record = MutesTable.insertMute(
+                    MuteEntity(
+                            userId = muteUser.idLong,
+                            moderatorUserId = user.idLong,
+                            guildId = guild.idLong,
+                            muteTime = now.time / 1000,
+                            expireTime = if (expirationDate == null) 0 else expirationDate.time / 1000,
+                            reason = reason,
+                            expires = expires,
+                            unmuted = false
+                    )
+            )
 
-            message.createModLogEntry(shard, settings, muteUser, reason, "mute", record.id.value, expirationDate, true)
+            message.createModLogEntry(shard, settings, muteUser, reason, "mute", record.id, expirationDate, true)
             channel.trySendMessage("Muted ${muteUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
         } catch (e: Exception) {
             message.failMessage(bot, "Could not mute the specified user. Do I have enough permissions?")

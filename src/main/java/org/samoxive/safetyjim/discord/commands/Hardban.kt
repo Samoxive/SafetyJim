@@ -3,9 +3,9 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.safetyjim.database.JimHardban
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.HardbanEntity
+import org.samoxive.safetyjim.database.HardbansTable
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -13,7 +13,7 @@ import java.util.*
 class Hardban : Command() {
     override val usages = arrayOf("hardban @user [reason] - hard bans the user with specific arguments. Both arguments can be omitted.")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -81,17 +81,17 @@ class Hardban : Command() {
             controller.ban(hardbanUser, 7, auditLogReason).await()
             message.successReact(bot)
 
-            val record = awaitTransaction {
-                JimHardban.new {
-                    userid = hardbanUser.idLong
-                    moderatoruserid = user.idLong
-                    guildid = guild.idLong
-                    hardbantime = now.time / 1000
-                    this.reason = reason
-                }
-            }
+            val record = HardbansTable.insertHardban(
+                    HardbanEntity(
+                            userId = hardbanUser.idLong,
+                            moderatorUserId = user.idLong,
+                            guildId = guild.idLong,
+                            hardbanTime = now.time / 1000,
+                            reason = reason
+                    )
+            )
 
-            val banId = record.id.value
+            val banId = record.id
             message.createModLogEntry(shard, settings, hardbanUser, reason, "hardban", banId, null, false)
             channel.trySendMessage("Hardbanned ${hardbanUser.getUserTagAndId()}")
         } catch (e: Exception) {

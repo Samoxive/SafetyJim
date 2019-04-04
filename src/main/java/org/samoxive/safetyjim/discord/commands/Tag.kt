@@ -3,11 +3,9 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.jetbrains.exposed.sql.and
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.JimTag
-import org.samoxive.safetyjim.database.JimTagTable
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.SettingsEntity
+import org.samoxive.safetyjim.database.TagEntity
+import org.samoxive.safetyjim.database.TagsTable
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -32,9 +30,9 @@ class Tag : Command() {
         val channel = event.channel
         val message = event.message
 
-        val records = awaitTransaction { JimTag.find { JimTagTable.guildid eq guild.idLong } }
+        val records = TagsTable.fetchGuildTags(guild)
 
-        if (awaitTransaction { records.empty() }) {
+        if (records.isEmpty()) {
             message.successReact(bot)
             channel.trySendMessage("No tags have been added yet!")
             return
@@ -42,10 +40,8 @@ class Tag : Command() {
 
         val tagString = StringJoiner("\n")
 
-        awaitTransaction {
-            for (record in records) {
-                tagString.add("\u2022 `" + record.name + "`")
-            }
+        for (record in records) {
+            tagString.add("\u2022 `" + record.name + "`")
         }
 
         val embed = EmbedBuilder()
@@ -87,13 +83,13 @@ class Tag : Command() {
         }
 
         try {
-            awaitTransaction {
-                JimTag.new {
-                    guildid = guild.idLong
-                    name = tagName
-                    this.response = response
-                }
-            }
+            TagsTable.insertTag(
+                    TagEntity(
+                            guildId = guild.idLong,
+                            name = tagName,
+                            response = response
+                    )
+            )
             message.successReact(bot)
         } catch (e: Exception) {
             message.failMessage(bot, "Tag `$tagName` already exists!")
@@ -123,19 +119,13 @@ class Tag : Command() {
             return
         }
 
-        val record = awaitTransaction {
-            JimTag.find {
-                (JimTagTable.guildid eq guild.idLong) and (JimTagTable.name eq tagName)
-            }.firstOrNull()
-        }
-
+        val record = TagsTable.fetchTagByName(guild, tagName)
         if (record == null) {
             message.failMessage(bot, "Tag `$tagName` does not exist!")
             return
         }
 
-        awaitTransaction { record.response = response }
-
+        TagsTable.updateTag(record.copy(response = response))
         message.successReact(bot)
     }
 
@@ -156,22 +146,17 @@ class Tag : Command() {
 
         val tagName = messageIterator.next()
 
-        val record = awaitTransaction {
-            JimTag.find {
-                (JimTagTable.guildid eq guild.idLong) and (JimTagTable.name eq tagName)
-            }.firstOrNull()
-        }
-
+        val record = TagsTable.fetchTagByName(guild, tagName)
         if (record == null) {
             message.failMessage(bot, "Tag `$tagName` does not exist!")
             return
         }
 
-        awaitTransaction { record.delete() }
+        TagsTable.deleteTag(record)
         message.successReact(bot)
     }
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
         val guild = event.guild
         val message = event.message
@@ -189,12 +174,7 @@ class Tag : Command() {
             "edit" -> editTag(bot, event, messageIterator)
             "remove" -> deleteTag(bot, event, messageIterator)
             else -> {
-                val record = awaitTransaction {
-                    JimTag.find {
-                        (JimTagTable.guildid eq guild.idLong) and (JimTagTable.name eq commandOrTag)
-                    }.firstOrNull()
-                }
-
+                val record = TagsTable.fetchTagByName(guild, commandOrTag)
                 if (record == null) {
                     message.failMessage(bot, "Could not find a tag with that name!")
                     return false

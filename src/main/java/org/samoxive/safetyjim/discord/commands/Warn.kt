@@ -3,9 +3,9 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.JimWarn
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.SettingsEntity
+import org.samoxive.safetyjim.database.WarnEntity
+import org.samoxive.safetyjim.database.WarnsTable
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -13,7 +13,7 @@ import java.util.*
 class Warn : Command() {
     override val usages = arrayOf("warn @user [reason] - warn the user with the specified reason")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -68,17 +68,17 @@ class Warn : Command() {
 
         message.successReact(bot)
 
-        val record = awaitTransaction {
-            JimWarn.new {
-                userid = warnUser.idLong
-                moderatoruserid = user.idLong
-                guildid = guild.idLong
-                warntime = now.time / 1000
-                this.reason = reason
-            }
-        }
+        val record = WarnsTable.insertWarn(
+                WarnEntity(
+                        userId = warnUser.idLong,
+                        moderatorUserId = user.idLong,
+                        guildId = guild.idLong,
+                        warnTime = now.time / 1000,
+                        reason = reason
+                )
+        )
 
-        message.createModLogEntry(shard, settings, warnUser, reason, "warn", record.id.value, null, false)
+        message.createModLogEntry(shard, settings, warnUser, reason, "warn", record.id, null, false)
         channel.trySendMessage("Warned " + warnUser.getUserTagAndId())
 
         return false

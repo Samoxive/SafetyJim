@@ -3,9 +3,9 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.JimSoftban
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.SettingsEntity
+import org.samoxive.safetyjim.database.SoftbanEntity
+import org.samoxive.safetyjim.database.SoftbansTable
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -13,7 +13,7 @@ import java.util.*
 class Softban : Command() {
     override val usages = arrayOf("softban @user [reason] | [messages to delete (days)] - softbans the user with the specified args.")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -62,7 +62,7 @@ class Softban : Command() {
         }
 
         val arguments = messageIterator.seekToEnd()
-        val argumentsSplit = arguments.split("\\|").toTypedArray()
+        val argumentsSplit = arguments.split("|").toTypedArray()
         var reason = argumentsSplit[0]
         reason = if (reason == "") "No reason specified" else reason.trim()
         var timeArgument: String? = null
@@ -104,18 +104,18 @@ class Softban : Command() {
             controller.ban(softbanUser, days, auditLogReason).await()
             controller.unban(softbanUser).await()
 
-            val record = awaitTransaction {
-                JimSoftban.new {
-                    userid = softbanUser.idLong
-                    moderatoruserid = user.idLong
-                    guildid = guild.idLong
-                    softbantime = now.time / 1000
-                    deletedays = days
-                    this.reason = reason
-                }
-            }
+            val record = SoftbansTable.insertSoftban(
+                    SoftbanEntity(
+                            userId = softbanUser.idLong,
+                            moderatorUserId = user.idLong,
+                            guildId = guild.idLong,
+                            softbanTime = now.time / 1000,
+                            deleteDays = days,
+                            reason = reason
+                    )
+            )
 
-            message.createModLogEntry(shard, settings, softbanUser, reason, "softban", record.id.value, null, false)
+            message.createModLogEntry(shard, settings, softbanUser, reason, "softban", record.id, null, false)
             channel.trySendMessage("Softbanned " + softbanUser.getUserTagAndId())
         } catch (e: Exception) {
             message.failMessage(bot, "Could not softban the specified user. Do I have enough permissions?")

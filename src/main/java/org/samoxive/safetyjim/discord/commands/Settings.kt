@@ -2,9 +2,9 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.safetyjim.database.*
+import org.samoxive.safetyjim.database.SettingsEntity
+import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -32,7 +32,7 @@ class Settings : Command() {
             |`NoSpacePrefix <enabled/disabled>` - Default: disabled
             |`Statistics <enabled/disabled>` - Default: disabled""".trimMargin()
 
-    private suspend fun handleSettingsDisplay(bot: DiscordBot, settings: JimSettings, event: GuildMessageReceivedEvent) {
+    private suspend fun handleSettingsDisplay(bot: DiscordBot, settings: SettingsEntity, event: GuildMessageReceivedEvent) {
         val shard = event.jda
         val channel = event.channel
         val message = event.message
@@ -48,60 +48,60 @@ class Settings : Command() {
         channel.trySendMessage(embed.build())
     }
 
-    private fun getSettingsString(settings: JimSettings, event: GuildMessageReceivedEvent): String {
+    private fun getSettingsString(settings: SettingsEntity, event: GuildMessageReceivedEvent): String {
         val guild = event.guild
 
         val output = StringJoiner("\n")
 
-        if (!settings.modlog) {
+        if (!settings.modLog) {
             output.add("**Mod Log:** Disabled")
         } else {
-            val modLogChannel = guild.getTextChannelById(settings.modlogchannelid)
+            val modLogChannel = guild.getTextChannelById(settings.modLogChannelId)
             output.add("**Mod Log:** Enabled")
             output.add("\t**Mod Log Channel:** " + if (modLogChannel == null) "null" else modLogChannel.asMention)
         }
 
-        if (!settings.welcomemessage) {
+        if (!settings.welcomeMessage) {
             output.add("**Welcome Messages:** Disabled")
         } else {
-            val welcomeMessageChannel = guild.getTextChannelById(settings.welcomemessagechannelid)
+            val welcomeMessageChannel = guild.getTextChannelById(settings.welcomeMessageChannelId)
             output.add("**Welcome Messages:** Enabled")
             output.add("\t**Welcome Message Channel:** " + if (welcomeMessageChannel == null) "null" else welcomeMessageChannel.asMention)
         }
 
-        if (!settings.holdingroom) {
+        if (!settings.holdingRoom) {
             output.add("**Holding Room:** Disabled")
         } else {
-            val holdingRoomMinutes = settings.holdingroomminutes
-            val holdingRoomRoleId = settings.holdingroomroleid
+            val holdingRoomMinutes = settings.holdingRoomMinutes
+            val holdingRoomRoleId = settings.holdingRoomRoleId
             val holdingRoomRole = if (holdingRoomRoleId != null) guild.getRoleById(holdingRoomRoleId) else null
             output.add("**Holding Room:** Enabled")
             output.add("\t**Holding Room Role:** " + if (holdingRoomRole == null) "null" else holdingRoomRole.name)
             output.add("\t**Holding Room Delay:** $holdingRoomMinutes minute(s)")
         }
 
-        if (!settings.joincaptcha) {
+        if (!settings.joinCaptcha) {
             output.add("**Join Captcha:** Disabled")
         } else {
-            val holdingRoomRoleId = settings.holdingroomroleid
+            val holdingRoomRoleId = settings.holdingRoomRoleId
             val holdingRoomRole = if (holdingRoomRoleId != null) guild.getRoleById(holdingRoomRoleId) else null
             output.add("**Join Captcha:** Enabled")
             output.add("\t**Holding Room Role:** " + if (holdingRoomRole == null) "null" else holdingRoomRole.name)
         }
 
-        if (settings.invitelinkremover) {
+        if (settings.inviteLinkRemover) {
             output.add("**Invite Link Remover:** Enabled")
         } else {
             output.add("**Invite Link Remover:** Disabled")
         }
 
-        if (settings.silentcommands) {
+        if (settings.silentCommands) {
             output.add("**Silent Commands:** Enabled")
         } else {
             output.add("**Silent Commands:** Disabled")
         }
 
-        if (settings.nospaceprefix) {
+        if (settings.noSpacePrefix) {
             output.add("**No Space Prefix:** Enabled")
         } else {
             output.add("**No Space Prefix:** Disabled")
@@ -124,7 +124,7 @@ class Settings : Command() {
         }
     }
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
         val shard = event.jda
@@ -163,9 +163,7 @@ class Settings : Command() {
         }
 
         if (subCommand == "reset") {
-            deleteGuildSettings(guild)
-            createGuildSettings(guild, bot.config)
-
+            SettingsTable.resetSettings(guild, bot.config)
             message.successReact(bot)
             return false
         }
@@ -198,12 +196,12 @@ class Settings : Command() {
             return false
         }
 
-        try {
+        val newSettings = try {
             when (key) {
-                "silentcommands" -> awaitTransaction { settings.silentcommands = isEnabledInput(argument) }
-                "invitelinkremover" -> awaitTransaction { settings.invitelinkremover = isEnabledInput(argument) }
-                "welcomemessage" -> awaitTransaction { settings.welcomemessage = isEnabledInput(argument) }
-                "modlog" -> awaitTransaction { settings.modlog = isEnabledInput(argument) }
+                "silentcommands" -> settings.copy(silentCommands = isEnabledInput(argument))
+                "invitelinkremover" -> settings.copy(inviteLinkRemover = isEnabledInput(argument))
+                "welcomemessage" -> settings.copy(welcomeMessage = isEnabledInput(argument))
+                "modlog" -> settings.copy(modLog = isEnabledInput(argument))
                 "welcomemessagechannel" -> {
                     argument = argumentSplit[0]
 
@@ -212,7 +210,7 @@ class Settings : Command() {
                     }
 
                     val argumentChannel = message.mentionedChannels[0]
-                    awaitTransaction { settings.welcomemessagechannelid = argumentChannel.idLong }
+                    settings.copy(welcomeMessageChannelId = argumentChannel.idLong)
                 }
                 "modlogchannel" -> {
                     argument = argumentSplit[0]
@@ -222,45 +220,45 @@ class Settings : Command() {
                     }
 
                     val argumentChannel = message.mentionedChannels[0]
-                    awaitTransaction { settings.modlogchannelid = argumentChannel.idLong }
+                    settings.copy(modLogChannelId = argumentChannel.idLong)
                 }
                 "holdingroomminutes" -> {
                     val minutes = argumentSplit[0].toIntOrNull() ?: return true
-                    awaitTransaction { settings.holdingroomminutes = minutes }
+                    settings.copy(holdingRoomMinutes = minutes)
                 }
-                "prefix" -> awaitTransaction { settings.prefix = argumentSplit[0] }
-                "message" -> awaitTransaction { settings.message = argument }
+                "prefix" -> settings.copy(prefix = argumentSplit[0])
+                "message" -> settings.copy(message = argument)
                 "holdingroom" -> {
                     val holdingRoomEnabled = isEnabledInput(argument)
-                    val roleId = settings.holdingroomroleid
+                    val roleId = settings.holdingRoomRoleId
 
                     if (roleId == null) {
                         message.failMessage(bot, "You can't enable holding room before setting a holding room role first.")
                         return false
                     }
 
-                    if (holdingRoomEnabled && settings.joincaptcha) {
+                    if (holdingRoomEnabled && settings.joinCaptcha) {
                         message.failMessage(bot, "You can't enable holding room while join captcha is enabled.")
                         return false
                     }
 
-                    awaitTransaction { settings.holdingroom = holdingRoomEnabled }
+                    settings.copy(holdingRoom = holdingRoomEnabled)
                 }
                 "joincaptcha" -> {
                     val captchaEnabled = isEnabledInput(argument)
-                    val roleId = settings.holdingroomroleid
+                    val roleId = settings.holdingRoomRoleId
 
                     if (roleId == null) {
                         message.failMessage(bot, "You can't enable join captcha before setting a role for it first.")
                         return false
                     }
 
-                    if (captchaEnabled && settings.holdingroom) {
+                    if (captchaEnabled && settings.holdingRoom) {
                         message.failMessage(bot, "You can't enable join captcha while holding room is enabled.")
                         return false
                     }
 
-                    awaitTransaction { settings.joincaptcha = captchaEnabled }
+                    settings.copy(joinCaptcha = captchaEnabled)
                 }
                 "holdingroomrole" -> {
                     val foundRoles = guild.getRolesByName(argument, true)
@@ -270,11 +268,12 @@ class Settings : Command() {
                     }
 
                     val role = foundRoles[0]
-                    awaitTransaction { settings.holdingroomroleid = role.idLong }
+                    settings.copy(holdingRoomRoleId = role.idLong)
                 }
-                "nospaceprefix" -> awaitTransaction { settings.nospaceprefix = isEnabledInput(argument) }
+                "nospaceprefix" -> settings.copy(noSpacePrefix = isEnabledInput(argument))
                 "statistics" -> {
                     message.failMessage(bot, "Statistics is a work in progress feature, you can't enable it!")
+                    return false
                     /*
                     guildSettings.statistics = isEnabledInput(argument)
                     val discordShard = bot.shards
@@ -289,22 +288,10 @@ class Settings : Command() {
             return true
         }
 
+        SettingsTable.updateSettings(newSettings)
         message.successReact(bot)
         return false
     }
 
     private class BadInputException : Exception()
-
-    companion object {
-        fun kickstartStatistics(guild: Guild) {
-            JimMemberCount.new {
-                val members = guild.members
-                val onlineCount = members.stream().filter { member -> member.isOnline() }.count()
-                guildid = guild.idLong
-                date = Date().time
-                onlinecount = onlineCount.toInt()
-                count = members.size
-            }
-        }
-    }
 }

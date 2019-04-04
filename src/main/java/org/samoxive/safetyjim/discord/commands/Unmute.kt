@@ -2,18 +2,15 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.jetbrains.exposed.sql.and
-import org.samoxive.safetyjim.database.JimMute
-import org.samoxive.safetyjim.database.JimMuteTable
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.MutesTable
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Unmute : Command() {
     override val usages = arrayOf("unmute @user - unmutes specified user")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
         val member = event.member
         val message = event.message
@@ -59,12 +56,7 @@ class Unmute : Command() {
             return false
         }
 
-        awaitTransaction {
-            JimMute.find {
-                (JimMuteTable.guildid eq guild.idLong) and (JimMuteTable.userid eq unmuteUser.idLong)
-            }.forUpdate().forEach { it.unmuted = true }
-        }
-
+        MutesTable.invalidatePreviousUserMutes(guild, unmuteUser)
         message.successReact(bot)
         return false
     }

@@ -2,18 +2,15 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.jetbrains.exposed.sql.and
-import org.samoxive.safetyjim.database.JimBan
-import org.samoxive.safetyjim.database.JimBanTable
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.BansTable
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Unban : Command() {
     override val usages = arrayOf("unban @user - unbans specified user")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
         val member = event.member
@@ -47,13 +44,7 @@ class Unban : Command() {
         }
 
         controller.unban(targetUser).await()
-
-        awaitTransaction {
-            JimBan.find {
-                (JimBanTable.guildid eq guild.idLong) and (JimBanTable.userid eq targetUser.idLong)
-            }.forUpdate().forEach { it.unbanned = true }
-        }
-
+        BansTable.invalidatePreviousUserBans(guild, targetUser)
         message.successReact(bot)
 
         return false

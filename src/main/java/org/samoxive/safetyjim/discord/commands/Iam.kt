@@ -1,18 +1,15 @@
 package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.jetbrains.exposed.sql.and
-import org.samoxive.safetyjim.database.JimRole
-import org.samoxive.safetyjim.database.JimRoleTable
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.RolesTable
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class Iam : Command() {
     override val usages = arrayOf("iam <roleName> - self assigns specified role, removes role if it is already assigned")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
         val member = event.member
@@ -35,18 +32,7 @@ class Iam : Command() {
         }
 
         val matchedRole = matchingRoles[0]
-        var roleExists = false
-        awaitTransaction {
-            JimRole.find {
-                (JimRoleTable.guildid eq guild.idLong) and (JimRoleTable.roleid eq matchedRole.idLong)
-            }.forEach {
-                if (it.roleid == matchedRole.idLong) {
-                    roleExists = true
-                }
-            }
-        }
-
-        if (!roleExists) {
+        if (!RolesTable.isSelfAssignable(guild, matchedRole)) {
             message.failMessage(bot, "This role is not self-assignable!")
             return false
         }

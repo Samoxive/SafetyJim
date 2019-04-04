@@ -3,9 +3,9 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.samoxive.safetyjim.database.JimKick
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.KickEntity
+import org.samoxive.safetyjim.database.KicksTable
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -13,7 +13,7 @@ import java.util.*
 class Kick : Command() {
     override val usages = arrayOf("kick @user [reason] - kicks the user with the specified reason")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -81,17 +81,17 @@ class Kick : Command() {
             controller.kick(kickUser.id, auditLogReason).await()
             message.successReact(bot)
 
-            val record = awaitTransaction {
-                JimKick.new {
-                    userid = kickUser.idLong
-                    moderatoruserid = user.idLong
-                    guildid = guild.idLong
-                    kicktime = now.time / 1000
-                    this.reason = reason
-                }
-            }
+            val record = KicksTable.insertKick(
+                    KickEntity(
+                            userId = kickUser.idLong,
+                            moderatorUserId = user.idLong,
+                            guildId = guild.idLong,
+                            kickTime = now.time / 1000,
+                            reason = reason
+                    )
+            )
 
-            message.createModLogEntry(shard, settings, kickUser, reason, "kick", record.id.value, null, false)
+            message.createModLogEntry(shard, settings, kickUser, reason, "kick", record.id, null, false)
             channel.trySendMessage("Kicked " + kickUser.getUserTagAndId())
         } catch (e: Exception) {
             message.failMessage(bot, "Could not kick the specified user. Do I have enough permissions?")

@@ -2,18 +2,16 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.jetbrains.exposed.sql.and
-import org.samoxive.safetyjim.database.JimRole
-import org.samoxive.safetyjim.database.JimRoleTable
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.RoleEntity
+import org.samoxive.safetyjim.database.RolesTable
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import java.util.*
 
 class RoleCommand : Command() {
     override val usages = arrayOf("role add <roleName> - adds a new self-assignable role", "role remove <roleName> - removes a self-assignable role")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
         val member = event.member
@@ -52,19 +50,15 @@ class RoleCommand : Command() {
 
         val matchedRole = matchingRoles[0]
 
-        val record = awaitTransaction {
-            JimRole.find {
-                (JimRoleTable.guildid eq guild.idLong) and (JimRoleTable.roleid eq matchedRole.idLong)
-            }.firstOrNull()
-        }
+        val record = RolesTable.fetchRole(guild, matchedRole)
         if (subcommand == "add") {
             if (record == null) {
-                awaitTransaction {
-                    JimRole.new {
-                        guildid = guild.idLong
-                        roleid = matchedRole.idLong
-                    }
-                }
+                RolesTable.insertRole(
+                        RoleEntity(
+                                guildId = guild.idLong,
+                                roleId = matchedRole.idLong
+                        )
+                )
                 message.successReact(bot)
             } else {
                 message.failMessage(bot, "Specified role is already in self-assignable roles list!")
@@ -75,7 +69,7 @@ class RoleCommand : Command() {
                 message.failMessage(bot, "Specified role is not in self-assignable roles list!")
                 return false
             } else {
-                awaitTransaction { record.delete() }
+                RolesTable.deleteRole(record)
                 message.successReact(bot)
             }
         }

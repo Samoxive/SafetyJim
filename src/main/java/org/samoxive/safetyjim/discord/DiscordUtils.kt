@@ -7,8 +7,7 @@ import net.dv8tion.jda.core.OnlineStatus
 import net.dv8tion.jda.core.entities.*
 import net.dv8tion.jda.core.requests.RestAction
 import org.samoxive.safetyjim.config.JimConfig
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.getGuildSettings
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.tryAwaitAsJSON
 import org.samoxive.safetyjim.tryhardAsync
 import java.awt.Color
@@ -47,17 +46,17 @@ suspend fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message?
     return confirmationMessage
 }
 
-suspend fun Message.createModLogEntry(shard: JDA, settings: JimSettings, user: User, reason: String, action: String, id: Int, expirationDate: Date?, expires: Boolean) {
+suspend fun Message.createModLogEntry(shard: JDA, settings: SettingsEntity, user: User, reason: String, action: String, id: Int, expirationDate: Date?, expires: Boolean) {
     val now = Date()
 
-    val modLogActive = settings.modlog
+    val modLogActive = settings.modLog
     val prefix = settings.prefix
 
     if (!modLogActive) {
         return
     }
 
-    val modLogChannel = shard.getTextChannelById(settings.modlogchannelid)
+    val modLogChannel = shard.getTextChannelById(settings.modLogChannelId)
 
     if (modLogChannel == null) {
         channel.trySendMessage("Invalid moderator log channel in guild configuration, set a proper one via `$prefix settings` command.")
@@ -87,10 +86,8 @@ suspend fun Message.createModLogEntry(shard: JDA, settings: JimSettings, user: U
     modLogChannel.trySendMessage(embed.build())
 }
 
-suspend fun Message.deleteCommandMessage(bot: DiscordBot) {
-    val silentCommandsActive = getGuildSettings(guild, bot.config).silentcommands
-
-    if (!silentCommandsActive) {
+suspend fun Message.deleteCommandMessage(settings: SettingsEntity) {
+    if (!settings.silentCommands) {
         return
     }
 

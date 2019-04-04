@@ -8,7 +8,7 @@ import io.vertx.ext.web.RoutingContext
 import org.json.JSONObject
 import org.samoxive.safetyjim.awaitAsString
 import org.samoxive.safetyjim.config.ServerConfig
-import org.samoxive.safetyjim.database.getGuildSettings
+import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.await
 import org.samoxive.safetyjim.server.AbstractEndpoint
@@ -81,8 +81,8 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
             return Result(Status.SERVER_ERROR, "Google be trippin.")
         }
 
-        val settings = getGuildSettings(guild, bot.config)
-        val holdingRoomRoleId = settings.holdingroomroleid
+        val settings = SettingsTable.getGuildSettings(guild, bot.config)
+        val holdingRoomRoleId = settings.holdingRoomRoleId
                 ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up!")
         val holdingRoomRole = guild.getRoleById(holdingRoomRoleId)
                 ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up correctly!")

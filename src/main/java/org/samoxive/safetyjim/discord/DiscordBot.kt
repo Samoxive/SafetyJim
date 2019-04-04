@@ -9,9 +9,9 @@ import net.dv8tion.jda.core.MessageBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.utils.SessionControllerAdapter
-import org.jetbrains.exposed.sql.and
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.*
+import org.samoxive.safetyjim.database.SettingsTable.getGuildSettings
 import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.discord.processors.InviteLink
 import org.samoxive.safetyjim.discord.processors.MessageStats
@@ -70,7 +70,6 @@ class DiscordBot(val config: Config) {
         scheduleJob(10, 10, "unmuteUsers") { unmuteUsers() }
         scheduleJob(10, 30, "unbanUsers") { unbanUsers() }
         scheduleJob(10, 5, "remindReminders") { remindReminders() }
-        scheduleJob(10, 10 * 60, "saveMemberCounts") { saveMemberCounts() }
 
         val inviteLink = shards[0].jda.asBot().getInviteUrl(
                 Permission.KICK_MEMBERS,
@@ -105,93 +104,63 @@ class DiscordBot(val config: Config) {
         return shards[shardId].jda.getGuildById(guildId)
     }
 
-    private suspend fun saveMemberCounts() {
-        val settings = getAllGuildSettings()
-        shards.map { shard -> shard.jda.guilds }
-                .flatten()
-                .filter { guild -> settings[guild.idLong]?.statistics ?: false }
-                .forEach { guild ->
-                    val onlineCount = guild.members.asSequence().filter { member -> member.isOnline() }.count()
-                    awaitTransaction {
-                        JimMemberCount.new {
-                            guildid = guild.idLong
-                            date = Date().time
-                            onlinecount = onlineCount
-                            count = guild.members.size
-                        }
-                    }
-                }
-    }
-
     private suspend fun allowUsers() {
-        val currentTime = System.currentTimeMillis() / 1000
-
-        val usersToBeAllowed = awaitTransaction {
-            JimJoin.find {
-                (JimJoinTable.allowed eq false) and (JimJoinTable.allowtime less currentTime)
-            }.toList()
-        }
+        val usersToBeAllowed = JoinsTable.fetchExpiredJoins()
 
         for (user in usersToBeAllowed) {
-            val guildId = user.guildid
+            val guildId = user.guildId
             val shardId = getShardIdFromGuildId(guildId, config[JimConfig.shard_count])
             val shard = shards[shardId]
             val shardClient = shard.jda
             val guild = shardClient.getGuildById(guildId)
 
             if (guild == null) {
-                user.allowed = true
+                JoinsTable.updateJoin(user.copy(allowed = true))
                 continue
             }
 
             val guildSettings = getGuildSettings(guild, config)
-            val enabled = guildSettings.holdingroom
+            val enabled = guildSettings.holdingRoom
 
             if (enabled) {
-                val guildUser = shard.jda.retrieveUserById(user.userid).await()
+                val guildUser = shard.jda.retrieveUserById(user.userId).await()
                 val member = guild.getMember(guildUser)
-                val roleId = guildSettings.holdingroomroleid
+                val roleId = guildSettings.holdingRoomRoleId
                 val role = if (roleId != null) guild.getRoleById(roleId) else null
                 val controller = guild.controller
 
                 if (role == null) {
-                    awaitTransaction { guildSettings.holdingroom = false }
+                    SettingsTable.updateSettings(guildSettings.copy(holdingRoom = false))
                     continue
                 }
 
                 tryhardAsync { controller.addSingleRoleToMember(member, role).await() }
             }
 
-            awaitTransaction { user.allowed = true }
+            JoinsTable.updateJoin(user.copy(allowed = true))
         }
     }
 
     private suspend fun unbanUsers() {
-        val currentTime = System.currentTimeMillis() / 1000
-
-        val usersToBeUnbanned = awaitTransaction {
-            JimBan.find {
-                (JimBanTable.unbanned eq false) and (JimBanTable.expires eq true) and (JimBanTable.expiretime less currentTime)
-            }.toList()
-        }
+        val usersToBeUnbanned = BansTable.fetchExpiredBans()
 
         for (user in usersToBeUnbanned) {
-            val guildId = user.guildid
+            val guildId = user.guildId
             val shardId = getShardIdFromGuildId(guildId, config[JimConfig.shard_count])
             val shard = shards[shardId]
             val shardClient = shard.jda
             val guild = shardClient.getGuildById(guildId)
 
             if (guild == null) {
-                awaitTransaction { user.unbanned = true }
+                BansTable.updateBan(user.copy(unbanned = true))
                 continue
             }
 
-            val guildUser = shard.jda.retrieveUserById(user.userid).await()
+            val guildUser = shard.jda.retrieveUserById(user.userId).await()
             val controller = guild.controller
 
             if (!guild.selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-                awaitTransaction { user.unbanned = true }
+                BansTable.updateBan(user.copy(unbanned = true))
                 continue
             }
 
@@ -199,40 +168,34 @@ class DiscordBot(val config: Config) {
                     ?.firstOrNull { ban -> ban.user.id == guildUser.id }
 
             if (banRecord == null) {
-                awaitTransaction { user.unbanned = true }
+                BansTable.updateBan(user.copy(unbanned = true))
                 continue
             }
 
             tryhardAsync { controller.unban(guildUser).await() }
-            awaitTransaction { user.unbanned = true }
+            BansTable.updateBan(user.copy(unbanned = true))
         }
     }
 
     private suspend fun unmuteUsers() {
-        val currentTime = System.currentTimeMillis() / 1000
-
-        val usersToBeUnmuted = awaitTransaction {
-            JimMute.find {
-                (JimMuteTable.unmuted eq false) and (JimMuteTable.expires eq true) and (JimMuteTable.expiretime less currentTime)
-            }.toList()
-        }
+        val usersToBeUnmuted = MutesTable.fetchExpiredMutes()
 
         for (user in usersToBeUnmuted) {
-            val guildId = user.guildid
+            val guildId = user.guildId
             val shardId = getShardIdFromGuildId(guildId, config[JimConfig.shard_count])
             val shard = shards[shardId]
             val shardClient = shard.jda
             val guild = shardClient.getGuildById(guildId)
 
             if (guild == null) {
-                awaitTransaction { user.unmuted = true }
+                MutesTable.updateMute(user.copy(unmuted = true))
                 continue
             }
 
-            val guildUser = shard.jda.retrieveUserById(user.userid).await()
+            val guildUser = shard.jda.retrieveUserById(user.userId).await()
             val member = guild.getMember(guildUser)
             if (member == null) {
-                awaitTransaction { user.unmuted = true }
+                MutesTable.updateMute(user.copy(unmuted = true))
                 continue
             }
 
@@ -244,37 +207,31 @@ class DiscordBot(val config: Config) {
             }
 
             if (role == null) {
-                awaitTransaction { user.unmuted = true }
+                MutesTable.updateMute(user.copy(unmuted = true))
                 continue
             }
 
             val controller = guild.controller
 
             tryhardAsync { controller.removeSingleRoleFromMember(member, role).await() }
-            awaitTransaction { user.unmuted = true }
+            MutesTable.updateMute(user.copy(unmuted = true))
         }
     }
 
     private suspend fun remindReminders() {
-        val now = Date().time / 1000
-
-        val reminders = awaitTransaction {
-            JimReminder.find {
-                (JimReminderTable.reminded eq false) and (JimReminderTable.remindtime less now)
-            }.toList()
-        }
+        val reminders = RemindersTable.fetchExpiredReminders()
 
         for (reminder in reminders) {
-            val guildId = reminder.guildid
-            val channelId = reminder.channelid
-            val userId = reminder.userid
+            val guildId = reminder.guildId
+            val channelId = reminder.channelId
+            val userId = reminder.userId
             val shardId = getShardIdFromGuildId(guildId, config[JimConfig.shard_count])
             val shard = shards[shardId].jda
             val guild = shard.getGuildById(guildId)
             val user = shard.retrieveUserById(userId).await()
 
             if (guild == null) {
-                awaitTransaction { reminder.reminded = true }
+                RemindersTable.updateReminder(reminder.copy(reminded = true))
                 continue
             }
 
@@ -286,7 +243,7 @@ class DiscordBot(val config: Config) {
             embed.setDescription(reminder.message)
             embed.setAuthor("Safety Jim", null, shard.selfUser.avatarUrl)
             embed.setFooter("Reminder set on", null)
-            embed.setTimestamp(Date(reminder.remindtime * 1000).toInstant())
+            embed.setTimestamp(Date(reminder.remindTime * 1000).toInstant())
             embed.setColor(Color(0x4286F4))
 
             if (channel == null || member == null) {
@@ -303,7 +260,7 @@ class DiscordBot(val config: Config) {
                 }
             }
 
-            awaitTransaction { reminder.reminded = true }
+            RemindersTable.updateReminder(reminder.copy(reminded = true))
         }
     }
 }

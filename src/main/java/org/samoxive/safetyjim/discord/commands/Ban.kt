@@ -3,11 +3,9 @@ package org.samoxive.safetyjim.discord.commands
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import org.jetbrains.exposed.sql.and
-import org.samoxive.safetyjim.database.JimBan
-import org.samoxive.safetyjim.database.JimBanTable
-import org.samoxive.safetyjim.database.JimSettings
-import org.samoxive.safetyjim.database.awaitTransaction
+import org.samoxive.safetyjim.database.BanEntity
+import org.samoxive.safetyjim.database.BansTable
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
@@ -15,7 +13,7 @@ import java.util.*
 class Ban : Command() {
     override val usages = arrayOf("ban @user [reason] | [time] - bans the user with specific arguments. Both arguments can be omitted")
 
-    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: JimSettings, args: String): Boolean {
+    override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
         val shard = event.jda
 
@@ -95,21 +93,21 @@ class Ban : Command() {
 
             val expires = expirationDate != null
 
-            val record = awaitTransaction {
-                JimBan.find { (JimBanTable.unbanned eq false) and (JimBanTable.guildid eq guild.idLong) and (JimBanTable.userid eq banUser.idLong) }.forEach { it.unbanned = true }
-                JimBan.new {
-                    userid = banUser.idLong
-                    moderatoruserid = user.idLong
-                    guildid = guild.idLong
-                    bantime = now.time / 1000
-                    expiretime = if (expirationDate != null) expirationDate.time / 1000 else 0
-                    this.reason = reason
-                    this.expires = expires
-                    unbanned = false
-                }
-            }
+            BansTable.invalidatePreviousUserBans(guild, banUser)
+            val record = BansTable.insertBan(
+                    BanEntity(
+                            userId = banUser.idLong,
+                            moderatorUserId = user.idLong,
+                            guildId = guild.idLong,
+                            banTime = now.time / 1000,
+                            expireTime = if (expirationDate != null) expirationDate.time / 1000 else 0,
+                            reason = reason,
+                            expires = expires,
+                            unbanned = false
+                    )
+            )
 
-            val banId = record.id.value
+            val banId = record.id
             message.createModLogEntry(shard, settings, banUser, reason, "ban", banId, expirationDate, true)
             channel.trySendMessage("Banned ${banUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
         } catch (e: Exception) {

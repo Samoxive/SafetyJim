@@ -9,10 +9,8 @@ import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.entities.Guild
 import net.dv8tion.jda.core.entities.Member
 import net.dv8tion.jda.core.entities.User
-import org.samoxive.safetyjim.database.awaitTransaction
-import org.samoxive.safetyjim.database.createGuildSettings
-import org.samoxive.safetyjim.database.deleteGuildSettings
-import org.samoxive.safetyjim.database.getGuildSettings
+import org.samoxive.safetyjim.database.SettingsEntity
+import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
 import org.samoxive.safetyjim.server.Result
@@ -30,28 +28,28 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
     override val method = HttpMethod.GET
 
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
-        val guildSettingsDb = getGuildSettings(guild, bot.config)
-        val holdingRoomRole = if (guildSettingsDb.holdingroomroleid != null) guild.getRoleById(guildSettingsDb.holdingroomroleid!!) else null // kotlin pls
+        val guildSettingsDb = SettingsTable.getGuildSettings(guild, bot.config)
+        val holdingRoomRole = if (guildSettingsDb.holdingRoomRoleId != null) guild.getRoleById(guildSettingsDb.holdingRoomRoleId) else null
         val settings = GuildSettingsEntity(
                 guild.toGuildEntity(),
                 guild.textChannels.map { it.toChannelEntity() },
                 guild.roles.map { it.toRoleEntity() },
-                guildSettingsDb.modlog,
-                guild.getTextChannelById(guildSettingsDb.modlogchannelid)?.toChannelEntity()
+                guildSettingsDb.modLog,
+                guild.getTextChannelById(guildSettingsDb.modLogChannelId)?.toChannelEntity()
                         ?: return Result(Status.SERVER_ERROR),
-                guildSettingsDb.holdingroom,
+                guildSettingsDb.holdingRoom,
                 holdingRoomRole?.toRoleEntity(),
-                guildSettingsDb.holdingroomminutes,
-                guildSettingsDb.invitelinkremover,
-                guildSettingsDb.welcomemessage,
+                guildSettingsDb.holdingRoomMinutes,
+                guildSettingsDb.inviteLinkRemover,
+                guildSettingsDb.welcomeMessage,
                 guildSettingsDb.message,
-                guild.getTextChannelById(guildSettingsDb.welcomemessagechannelid)?.toChannelEntity()
+                guild.getTextChannelById(guildSettingsDb.welcomeMessageChannelId)?.toChannelEntity()
                         ?: return Result(Status.SERVER_ERROR),
                 guildSettingsDb.prefix,
-                guildSettingsDb.silentcommands,
-                guildSettingsDb.nospaceprefix,
+                guildSettingsDb.silentCommands,
+                guildSettingsDb.noSpacePrefix,
                 guildSettingsDb.statistics,
-                guildSettingsDb.joincaptcha
+                guildSettingsDb.joinCaptcha
         )
 
         response.endJson(Json.stringify(GuildSettingsEntity.serializer(), settings))
@@ -114,24 +112,26 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST)
         }
 
-        val guildSettingsDb = getGuildSettings(guild, bot.config)
         tryhardAsync {
-            awaitTransaction {
-                guildSettingsDb.modlog = newSettings.modLog
-                guildSettingsDb.modlogchannelid = newSettings.modLogChannel.id.toLong()
-                guildSettingsDb.holdingroom = newSettings.holdingRoom
-                guildSettingsDb.holdingroomroleid = newSettings.holdingRoomRole?.id?.toLong()
-                guildSettingsDb.holdingroomminutes = newSettings.holdingRoomMinutes
-                guildSettingsDb.invitelinkremover = newSettings.inviteLinkRemover
-                guildSettingsDb.welcomemessage = newSettings.welcomeMessage
-                guildSettingsDb.message = newSettings.message
-                guildSettingsDb.welcomemessagechannelid = newSettings.welcomeMessageChannel.id.toLong()
-                guildSettingsDb.prefix = newSettings.prefix
-                guildSettingsDb.silentcommands = newSettings.silentCommands
-                guildSettingsDb.nospaceprefix = newSettings.noSpacePrefix
-                guildSettingsDb.statistics = newSettings.statistics
-                guildSettingsDb.joincaptcha = newSettings.joinCaptcha
-            }
+            SettingsTable.updateSettings(
+                    SettingsEntity(
+                            guildId = guild.idLong,
+                            modLog = newSettings.modLog,
+                            modLogChannelId = newSettings.modLogChannel.id.toLong(),
+                            holdingRoom = newSettings.holdingRoom,
+                            holdingRoomRoleId = newSettings.holdingRoomRole?.id?.toLong(),
+                            holdingRoomMinutes = newSettings.holdingRoomMinutes,
+                            inviteLinkRemover = newSettings.inviteLinkRemover,
+                            welcomeMessage = newSettings.welcomeMessage,
+                            message = newSettings.message,
+                            welcomeMessageChannelId = newSettings.welcomeMessageChannel.id.toLong(),
+                            prefix = newSettings.prefix,
+                            silentCommands = newSettings.silentCommands,
+                            noSpacePrefix = newSettings.noSpacePrefix,
+                            statistics = newSettings.statistics,
+                            joinCaptcha = newSettings.joinCaptcha
+                    )
+            )
         } ?: return Result(Status.SERVER_ERROR)
 
         response.end()
@@ -148,8 +148,7 @@ class ResetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(b
             return Result(Status.FORBIDDEN)
         }
 
-        deleteGuildSettings(guild)
-        createGuildSettings(guild, bot.config)
+        SettingsTable.resetSettings(guild, bot.config)
         response.end()
         return Result(Status.OK)
     }
