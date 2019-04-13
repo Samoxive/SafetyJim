@@ -243,7 +243,7 @@ class DiscordBot(val config: Config) {
             embed.setDescription(reminder.message)
             embed.setAuthor("Safety Jim", null, shard.selfUser.avatarUrl)
             embed.setFooter("Reminder set on", null)
-            embed.setTimestamp(Date(reminder.remindTime * 1000).toInstant())
+            embed.setTimestamp(Date(reminder.createTime * 1000).toInstant())
             embed.setColor(Color(0x4286F4))
 
             if (channel == null || member == null) {
