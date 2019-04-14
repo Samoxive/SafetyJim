@@ -61,9 +61,6 @@ class DiscordBot(val config: Config) {
         for (i in 0 until config[JimConfig.shard_count]) {
             val shard = DiscordShard(this, i, sessionController)
             shards.add(shard)
-
-            // Discord API rate limits login requests to once per 5 seconds
-            Thread.sleep(5000)
         }
 
         scheduleJob(10, 5, "allowUsers") { allowUsers() }
