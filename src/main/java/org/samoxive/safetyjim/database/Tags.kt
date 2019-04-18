@@ -34,7 +34,7 @@ where id = $1;
 object TagsTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf(
-            "create unique index if not exists taglist_index_1 on taglist (guildid, name);"
+            "create index if not exists taglist_index_1 on taglist (guildid);"
     )
 
     private fun PgRowSet.toTagEntities(): List<TagEntity> = this.map {
