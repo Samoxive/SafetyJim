@@ -203,7 +203,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             }
 
             val defaultPrefix = bot.config[JimConfig.default_prefix]
-            val message = "Hello! I am Safety Jim, `$defaultPrefix` is my default prefix! Try typing `$defaultPrefix help` to see available commands.\nYou can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help."
+            val message = "Hello! I am Safety Jim, `$defaultPrefix` is my default prefix! Visit https://safetyjim.xyz/commands to see available commands.\nYou can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help."
             guild.getDefaultChannelTalkable().trySendMessage(message)
             SettingsTable.insertDefaultGuildSettings(bot.config, guild)
         }
