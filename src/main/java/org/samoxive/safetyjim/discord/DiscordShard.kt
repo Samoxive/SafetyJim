@@ -105,7 +105,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         if (message.isMentioned(self) && content.contains("prefix")) {
             val guildSettings = getGuildSettings(guild, bot.config)
             val prefix = guildSettings.prefix
-            message.successReact(bot)
+            message.successReact()
 
             val embed = EmbedBuilder()
             embed.setAuthor("Safety Jim - Prefix", null, self.avatarUrl)
@@ -146,7 +146,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
             // This means the user only entered the prefix
             if (splitContent.size == 1) {
-                message.failReact(bot)
+                message.failReact()
                 return
             }
 
@@ -159,7 +159,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             }
 
             if (firstWord.length == prefix.length) {
-                message.failReact(bot)
+                message.failReact()
                 return
             }
 
@@ -169,7 +169,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         // Command not found
         if (command == null) {
-            message.failReact(bot)
+            message.failReact()
             return
         }
 
@@ -293,7 +293,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         try {
             showUsage = command.run(bot, event, settings, args)
         } catch (e: Exception) {
-            message.failReact(bot)
+            message.failReact()
             channel.trySendMessage("There was an error running your command, this incident has been logged.")
             log.error("$commandName failed with arguments $args in guild ${event.guild.name} - ${event.guild.id}", e)
         }
@@ -308,7 +308,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     .setDescription(getUsageString(prefix, usages))
                     .setColor(Color(0x4286F4))
 
-            message.failReact(bot)
+            message.failReact()
             channel.trySendMessage(embed.build())
         } else {
             for (deleteCommand in bot.deleteCommands) {

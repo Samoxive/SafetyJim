@@ -28,7 +28,7 @@ class Mute : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.MANAGE_ROLES)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Manage Roles")
+            message.failMessage("You don't have enough permissions to execute this command! Required permission: Manage Roles")
             return false
         }
 
@@ -38,7 +38,7 @@ class Mute : Command() {
 
         val (searchResult, muteUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (muteUser == null)) {
-            message.failMessage(bot, "Could not find the user to mute!")
+            message.failMessage("Could not find the user to mute!")
             return false
         }
 
@@ -50,34 +50,34 @@ class Mute : Command() {
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.MANAGE_ROLES, Permission.MANAGE_PERMISSIONS)) {
-            message.failMessage(bot, "I don't have enough permissions to do that!")
+            message.failMessage("I don't have enough permissions to do that!")
             return false
         }
 
         if (user == muteUser) {
-            message.failMessage(bot, "You can't mute yourself, dummy!")
+            message.failMessage("You can't mute yourself, dummy!")
             return false
         }
 
         if (muteUser == selfMember.user) {
-            message.failMessage(bot, "Now that's just rude. (I can't mute myself)")
+            message.failMessage("Now that's just rude. (I can't mute myself)")
             return false
         }
 
         val mutedRole = try {
             setupMutedRole(guild)
         } catch (e: Exception) {
-            message.failMessage(bot, "Could not create a Muted role, do I have enough permissions?")
+            message.failMessage("Could not create a Muted role, do I have enough permissions?")
             return false
         }
 
         val parsedReasonAndTime = try {
             messageIterator.getTextAndTime()
         } catch (e: InvalidTimeInputException) {
-            message.failMessage(bot, "Invalid time argument. Please try again.")
+            message.failMessage("Invalid time argument. Please try again.")
             return false
         } catch (e: TimeInputInPastException) {
-            message.failMessage(bot, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
+            message.failMessage("Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
 
@@ -98,7 +98,7 @@ class Mute : Command() {
 
         try {
             controller.addSingleRoleToMember(muteMember, mutedRole).await()
-            message.successReact(bot)
+            message.successReact()
 
             val expires = expirationDate != null
             MutesTable.invalidatePreviousUserMutes(guild, muteUser)
@@ -118,7 +118,7 @@ class Mute : Command() {
             message.createModLogEntry(shard, settings, muteUser, reason, "mute", record.id, expirationDate, true)
             channel.trySendMessage("Muted ${muteUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
         } catch (e: Exception) {
-            message.failMessage(bot, "Could not mute the specified user. Do I have enough permissions?")
+            message.failMessage("Could not mute the specified user. Do I have enough permissions?")
         }
 
         return false

@@ -25,7 +25,7 @@ class Kick : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.KICK_MEMBERS)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Kick Members")
+            message.failMessage("You don't have enough permissions to execute this command! Required permission: Kick Members")
             return false
         }
 
@@ -35,7 +35,7 @@ class Kick : Command() {
 
         val (searchResult, kickUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (kickUser == null)) {
-            message.failMessage(bot, "Could not find the user to kick!")
+            message.failMessage("Could not find the user to kick!")
             return false
         }
 
@@ -47,17 +47,17 @@ class Kick : Command() {
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.KICK_MEMBERS)) {
-            message.failMessage(bot, "I don't have enough permissions to do that!")
+            message.failMessage("I don't have enough permissions to do that!")
             return false
         }
 
         if (user == kickUser) {
-            message.failMessage(bot, "You can't kick yourself, dummy!")
+            message.failMessage("You can't kick yourself, dummy!")
             return false
         }
 
         if (kickMember != null && !kickMember.isKickableBy(selfMember)) {
-            message.failMessage(bot, "I don't have enough permissions to do that!")
+            message.failMessage("I don't have enough permissions to do that!")
             return false
         }
 
@@ -79,7 +79,7 @@ class Kick : Command() {
         try {
             val auditLogReason = "Kicked by ${user.getUserTagAndId()} - $reason"
             controller.kick(kickUser.id, auditLogReason).await()
-            message.successReact(bot)
+            message.successReact()
 
             val record = KicksTable.insertKick(
                     KickEntity(
@@ -94,7 +94,7 @@ class Kick : Command() {
             message.createModLogEntry(shard, settings, kickUser, reason, "kick", record.id, null, false)
             channel.trySendMessage("Kicked " + kickUser.getUserTagAndId())
         } catch (e: Exception) {
-            message.failMessage(bot, "Could not kick the specified user. Do I have enough permissions?")
+            message.failMessage("Could not kick the specified user. Do I have enough permissions?")
         }
 
         return false

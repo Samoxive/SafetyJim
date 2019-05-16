@@ -25,7 +25,7 @@ class Softban : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Ban Members")
+            message.failMessage("You don't have enough permissions to execute this command! Required permission: Ban Members")
             return false
         }
 
@@ -35,7 +35,7 @@ class Softban : Command() {
 
         val (searchResult, softbanUser) = messageIterator.findUser(message, isForBan = true)
         if (searchResult == SearchUserResult.NOT_FOUND || (softbanUser == null)) {
-            message.failMessage(bot, "Could not find the user to softban!")
+            message.failMessage("Could not find the user to softban!")
             return false
         }
 
@@ -47,17 +47,17 @@ class Softban : Command() {
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-            message.failMessage(bot, "I don't have enough permissions to do that!")
+            message.failMessage("I don't have enough permissions to do that!")
             return false
         }
 
         if (user == softbanUser) {
-            message.failMessage(bot, "You can't softban yourself, dummy!")
+            message.failMessage("You can't softban yourself, dummy!")
             return false
         }
 
         if (softbanMember != null && !softbanMember.isBannableBy(selfMember)) {
-            message.failMessage(bot, "I don't have enough permissions to do that!")
+            message.failMessage("I don't have enough permissions to do that!")
             return false
         }
 
@@ -75,7 +75,7 @@ class Softban : Command() {
             try {
                 timeArgument.trim().toInt()
             } catch (e: NumberFormatException) {
-                message.failMessage(bot, "Invalid day count, please try again.")
+                message.failMessage("Invalid day count, please try again.")
                 return false
             }
         } else {
@@ -83,7 +83,7 @@ class Softban : Command() {
         }
 
         if (days < 1 || days > 7) {
-            message.failMessage(bot, "The amount of days must be between 1 and 7.")
+            message.failMessage("The amount of days must be between 1 and 7.")
             return false
         }
 
@@ -118,7 +118,7 @@ class Softban : Command() {
             message.createModLogEntry(shard, settings, softbanUser, reason, "softban", record.id, null, false)
             channel.trySendMessage("Softbanned " + softbanUser.getUserTagAndId())
         } catch (e: Exception) {
-            message.failMessage(bot, "Could not softban the specified user. Do I have enough permissions?")
+            message.failMessage("Could not softban the specified user. Do I have enough permissions?")
         }
 
         return false

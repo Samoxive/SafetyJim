@@ -30,7 +30,7 @@ class RoleCommand : Command() {
         }
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Administrator")
+            message.failMessage("You don't have enough permissions to execute this command! Required permission: Administrator")
             return false
         }
 
@@ -44,7 +44,7 @@ class RoleCommand : Command() {
                 .filter { role -> role.name.toLowerCase() == roleName }
 
         if (matchingRoles.isEmpty()) {
-            message.failMessage(bot, "Could not find a role with specified name!")
+            message.failMessage("Could not find a role with specified name!")
             return false
         }
 
@@ -59,18 +59,18 @@ class RoleCommand : Command() {
                                 roleId = matchedRole.idLong
                         )
                 )
-                message.successReact(bot)
+                message.successReact()
             } else {
-                message.failMessage(bot, "Specified role is already in self-assignable roles list!")
+                message.failMessage("Specified role is already in self-assignable roles list!")
                 return false
             }
         } else {
             if (record == null) {
-                message.failMessage(bot, "Specified role is not in self-assignable roles list!")
+                message.failMessage("Specified role is not in self-assignable roles list!")
                 return false
             } else {
                 RolesTable.deleteRole(record)
-                message.successReact(bot)
+                message.successReact()
             }
         }
 

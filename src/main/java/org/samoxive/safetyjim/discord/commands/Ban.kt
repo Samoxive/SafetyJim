@@ -25,7 +25,7 @@ class Ban : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Ban Members")
+            message.failMessage("You don't have enough permissions to execute this command! Required permission: Ban Members")
             return false
         }
 
@@ -35,7 +35,7 @@ class Ban : Command() {
 
         val (searchResult, banUser) = messageIterator.findUser(message, true)
         if (searchResult == SearchUserResult.NOT_FOUND || (banUser == null)) {
-            message.failMessage(bot, "Could not find the user to ban!")
+            message.failMessage("Could not find the user to ban!")
             return false
         }
 
@@ -47,27 +47,27 @@ class Ban : Command() {
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-            message.failMessage(bot, "I don't have enough permissions to do that!")
+            message.failMessage("I don't have enough permissions to do that!")
             return false
         }
 
         if (user == banUser) {
-            message.failMessage(bot, "You can't ban yourself, dummy!")
+            message.failMessage("You can't ban yourself, dummy!")
             return false
         }
 
         if (banMember != null && !banMember.isBannableBy(selfMember)) {
-            message.failMessage(bot, "I don't have enough permissions to do that!")
+            message.failMessage("I don't have enough permissions to do that!")
             return false
         }
 
         val parsedReasonAndTime = try {
             messageIterator.getTextAndTime()
         } catch (e: InvalidTimeInputException) {
-            message.failMessage(bot, "Invalid time argument. Please try again.")
+            message.failMessage("Invalid time argument. Please try again.")
             return false
         } catch (e: TimeInputInPastException) {
-            message.failMessage(bot, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
+            message.failMessage("Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
 
@@ -89,7 +89,7 @@ class Ban : Command() {
         try {
             val auditLogReason = "Banned by ${user.getUserTagAndId()} - $reason"
             controller.ban(banUser, 0, auditLogReason).await()
-            message.successReact(bot)
+            message.successReact()
 
             val expires = expirationDate != null
 
@@ -111,7 +111,7 @@ class Ban : Command() {
             message.createModLogEntry(shard, settings, banUser, reason, "ban", banId, expirationDate, true)
             channel.trySendMessage("Banned ${banUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
         } catch (e: Exception) {
-            message.failMessage(bot, "Could not ban the specified user. Do I have enough permissions?")
+            message.failMessage("Could not ban the specified user. Do I have enough permissions?")
         }
 
         return false

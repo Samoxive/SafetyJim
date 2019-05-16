@@ -29,7 +29,7 @@ class Iam : Command() {
         if (roleName == "list") {
             val roles = RolesTable.fetchGuildRoles(guild)
             if (roles.isEmpty()) {
-                message.successReact(bot)
+                message.successReact()
                 channel.trySendMessage("No self-assignable roles have been added yet!")
                 return false
             }
@@ -42,7 +42,7 @@ class Iam : Command() {
             embed.addField("List of self-assignable roles", truncateForEmbed(rolesText), false)
             embed.setColor(Color(0x4286F4))
 
-            message.successReact(bot)
+            message.successReact()
             channel.trySendMessage(embed.build())
             return false
         }
@@ -51,13 +51,13 @@ class Iam : Command() {
                 .filter { role -> role.name.toLowerCase() == roleName }
 
         if (matchingRoles.isEmpty()) {
-            message.failMessage(bot, "Could not find a role with specified name!")
+            message.failMessage("Could not find a role with specified name!")
             return false
         }
 
         val matchedRole = matchingRoles[0]
         if (!RolesTable.isSelfAssignable(guild, matchedRole)) {
-            message.failMessage(bot, "This role is not self-assignable!")
+            message.failMessage("This role is not self-assignable!")
             return false
         }
 
@@ -65,16 +65,16 @@ class Iam : Command() {
         if (member.roles.find { it == matchedRole } != null) {
             try {
                 controller.removeSingleRoleFromMember(member, matchedRole).await()
-                message.successReact(bot)
+                message.successReact()
             } catch (e: Exception) {
-                message.failMessage(bot, "Could not remove specified role. Do I have enough permissions?")
+                message.failMessage("Could not remove specified role. Do I have enough permissions?")
             }
         } else {
             try {
                 controller.addSingleRoleToMember(member, matchedRole).await()
-                message.successReact(bot)
+                message.successReact()
             } catch (e: Exception) {
-                message.failMessage(bot, "Could not assign specified role. Do I have enough permissions?")
+                message.failMessage("Could not assign specified role. Do I have enough permissions?")
             }
         }
 

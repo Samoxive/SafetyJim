@@ -44,7 +44,7 @@ class Settings : Command() {
         embed.addField("Guild Settings", output, false)
         embed.setColor(Color(0x4286F4))
 
-        message.successReact(bot)
+        message.successReact()
         channel.trySendMessage(embed.build())
     }
 
@@ -147,7 +147,7 @@ class Settings : Command() {
             embed.setAuthor("Safety Jim", null, selfUser.avatarUrl)
             embed.addField("List of settings", String.format(settingsListString, defaultChannelMention, defaultChannelMention), false)
             embed.setColor(Color(0x4286F4))
-            message.successReact(bot)
+            message.successReact()
             channel.trySendMessage(embed.build())
             return false
         }
@@ -158,13 +158,13 @@ class Settings : Command() {
         }
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            message.failMessage(bot, "You don't have enough permissions to modify guild settings! Required permission: Administrator")
+            message.failMessage("You don't have enough permissions to modify guild settings! Required permission: Administrator")
             return false
         }
 
         if (subCommand == "reset") {
             SettingsTable.resetSettings(guild, bot.config)
-            message.successReact(bot)
+            message.successReact()
             return false
         }
 
@@ -192,7 +192,7 @@ class Settings : Command() {
         }
 
         if (!isKeyOkay) {
-            message.failMessage(bot, "Please enter a valid setting key!")
+            message.failMessage("Please enter a valid setting key!")
             return false
         }
 
@@ -233,12 +233,12 @@ class Settings : Command() {
                     val roleId = settings.holdingRoomRoleId
 
                     if (roleId == null) {
-                        message.failMessage(bot, "You can't enable holding room before setting a holding room role first.")
+                        message.failMessage("You can't enable holding room before setting a holding room role first.")
                         return false
                     }
 
                     if (holdingRoomEnabled && settings.joinCaptcha) {
-                        message.failMessage(bot, "You can't enable holding room while join captcha is enabled.")
+                        message.failMessage("You can't enable holding room while join captcha is enabled.")
                         return false
                     }
 
@@ -249,12 +249,12 @@ class Settings : Command() {
                     val roleId = settings.holdingRoomRoleId
 
                     if (roleId == null) {
-                        message.failMessage(bot, "You can't enable join captcha before setting a role for it first.")
+                        message.failMessage("You can't enable join captcha before setting a role for it first.")
                         return false
                     }
 
                     if (captchaEnabled && settings.holdingRoom) {
-                        message.failMessage(bot, "You can't enable join captcha while holding room is enabled.")
+                        message.failMessage("You can't enable join captcha while holding room is enabled.")
                         return false
                     }
 
@@ -263,7 +263,7 @@ class Settings : Command() {
                 "holdingroomrole" -> {
                     val foundRoles = guild.getRolesByName(argument, true)
                     if (foundRoles.size == 0) {
-                        message.failMessage(bot, "Couldn't find the role by name!")
+                        message.failMessage("Couldn't find the role by name!")
                         return false
                     }
 
@@ -272,7 +272,7 @@ class Settings : Command() {
                 }
                 "nospaceprefix" -> settings.copy(noSpacePrefix = isEnabledInput(argument))
                 "statistics" -> {
-                    message.failMessage(bot, "Statistics is a work in progress feature, you can't enable it!")
+                    message.failMessage("Statistics is a work in progress feature, you can't enable it!")
                     return false
                     /*
                     guildSettings.statistics = isEnabledInput(argument)
@@ -289,7 +289,7 @@ class Settings : Command() {
         }
 
         SettingsTable.updateSettings(newSettings)
-        message.successReact(bot)
+        message.successReact()
         return false
     }
 

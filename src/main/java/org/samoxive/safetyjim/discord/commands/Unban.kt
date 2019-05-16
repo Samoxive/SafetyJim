@@ -20,12 +20,12 @@ class Unban : Command() {
         val controller = guild.controller
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Ban Members")
+            message.failMessage("You don't have enough permissions to execute this command! Required permission: Ban Members")
             return false
         }
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-            message.failMessage(bot, "I do not have enough permissions to do that!")
+            message.failMessage("I do not have enough permissions to do that!")
             return false
         }
 
@@ -35,7 +35,7 @@ class Unban : Command() {
 
         val (searchResult, targetUser) = messageIterator.findBannedUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (targetUser == null)) {
-            message.failMessage(bot, "Could not find the user to unban!")
+            message.failMessage("Could not find the user to unban!")
             return false
         }
 
@@ -45,7 +45,7 @@ class Unban : Command() {
 
         controller.unban(targetUser).await()
         BansTable.invalidatePreviousUserBans(guild, targetUser)
-        message.successReact(bot)
+        message.successReact()
 
         return false
     }

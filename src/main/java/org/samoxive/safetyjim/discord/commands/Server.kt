@@ -38,7 +38,7 @@ class Server : Command() {
         embed.addField("Creation Date", creationDate, true)
         embed.addField("Emojis", emojiString, false)
 
-        message.successReact(bot)
+        message.successReact()
         channel.trySendMessage(embed.build())
 
         return false

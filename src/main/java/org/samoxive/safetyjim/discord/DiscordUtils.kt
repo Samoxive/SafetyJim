@@ -1,14 +1,15 @@
 package org.samoxive.safetyjim.discord
 
-import com.mashape.unirest.http.Unirest
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.JDA
 import net.dv8tion.jda.core.OnlineStatus
 import net.dv8tion.jda.core.entities.*
+import net.dv8tion.jda.core.requests.Request
+import net.dv8tion.jda.core.requests.Response
 import net.dv8tion.jda.core.requests.RestAction
+import net.dv8tion.jda.core.requests.Route
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.SettingsEntity
-import org.samoxive.safetyjim.tryAwaitAsJSON
 import org.samoxive.safetyjim.tryhardAsync
 import java.awt.Color
 import java.util.*
@@ -20,7 +21,6 @@ private const val SUCCESS_EMOTE_ID = "322698554294534144"
 private const val SUCCESS_EMOTE_NAME = "jimsuccess"
 private const val FAIL_EMOTE_ID = "322698553980092417"
 private const val FAIL_EMOTE_NAME = "jimfail"
-private const val API_REACTION_URL = "https://discordapp.com/api/channels/%s/messages/%s/reactions/%s:%s/@me"
 
 private const val DISCORD_EPOCH = 1420070400000L
 private const val TIMESTAMP_OFFSET = 22
@@ -39,7 +39,7 @@ suspend fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message?
     val discordShard = bot.shards[getShardIdFromGuildId(guild.idLong, bot.config[JimConfig.shard_count])]
     val confirmationMessage = discordShard.confirmationListener.submitConfirmation(textChannel, author)
     if (confirmationMessage == null) {
-        failReact(bot)
+        failReact()
     }
 
     tryhardAsync { jimMessage?.delete()?.await() }
@@ -127,31 +127,30 @@ fun Member.isOnline(): Boolean = onlineStatus == OnlineStatus.ONLINE ||
         onlineStatus == OnlineStatus.DO_NOT_DISTURB ||
         onlineStatus == OnlineStatus.IDLE
 
-suspend fun Message.successReact(bot: DiscordBot) {
-    react(bot, SUCCESS_EMOTE_NAME, SUCCESS_EMOTE_ID)
+suspend fun Message.successReact() {
+    react(SUCCESS_EMOTE_NAME, SUCCESS_EMOTE_ID)
 }
 
-suspend fun Message.failMessage(bot: DiscordBot, errorMessage: String) {
-    failReact(bot)
+suspend fun Message.failMessage(errorMessage: String) {
+    failReact()
     textChannel.trySendMessage(errorMessage)
 }
 
-suspend fun Message.failReact(bot: DiscordBot) {
-    react(bot, FAIL_EMOTE_NAME, FAIL_EMOTE_ID)
+suspend fun Message.failReact() {
+    react(FAIL_EMOTE_NAME, FAIL_EMOTE_ID)
 }
 
 suspend fun Message.meloReact() {
     tryhardAsync { addReaction("\uD83C\uDF48").await() }
 }
 
-private suspend fun Message.react(bot: DiscordBot, emoteName: String, emoteId: String) {
-    val token = bot.config[JimConfig.token]
-    val requestUrl = String.format(API_REACTION_URL, textChannel.id, id, emoteName, emoteId)
-
-    Unirest.put(requestUrl)
-            .header("User-Agent", "Safety Jim")
-            .header("Authorization", "Bot $token")
-            .tryAwaitAsJSON()
+private suspend fun Message.react(emoteName: String, emoteId: String) {
+    val route = Route.Messages.ADD_REACTION.compile(textChannel.id, id, "$emoteName:$emoteId")
+    (object: RestAction<Void>(jda, route) {
+        override fun handleResponse(response: Response, request: Request<Void>) {
+            request.onSuccess(null)
+        }
+    }).await()
 }
 
 suspend fun MessageChannel.trySendMessage(message: String): Message? {

@@ -18,12 +18,12 @@ class Unmute : Command() {
         val controller = guild.controller
 
         if (!member.hasPermission(Permission.MANAGE_ROLES)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Manage Roles")
+            message.failMessage("You don't have enough permissions to execute this command! Required permission: Manage Roles")
             return false
         }
 
         if (!guild.selfMember.hasPermission(Permission.MANAGE_ROLES)) {
-            message.failMessage(bot, "I don't have enough permissions do this action!")
+            message.failMessage("I don't have enough permissions do this action!")
             return false
         }
 
@@ -33,13 +33,13 @@ class Unmute : Command() {
 
         val mutedRoles = guild.getRolesByName("Muted", false)
         if (mutedRoles.size == 0) {
-            message.failMessage(bot, "Could not find a role called Muted, please create one yourself or mute a user to set it up automatically.")
+            message.failMessage("Could not find a role called Muted, please create one yourself or mute a user to set it up automatically.")
             return false
         }
 
         val (searchResult, unmuteUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (unmuteUser == null)) {
-            message.failMessage(bot, "Could not find the user to unmute!")
+            message.failMessage("Could not find the user to unmute!")
             return false
         }
 
@@ -52,12 +52,12 @@ class Unmute : Command() {
         try {
             controller.removeSingleRoleFromMember(unmuteMember, muteRole).await()
         } catch (e: Exception) {
-            message.failMessage(bot, "Could not unmute the user: \"${unmuteUser.name}\". Do I have enough permissions or is Muted role below me?")
+            message.failMessage("Could not unmute the user: \"${unmuteUser.name}\". Do I have enough permissions or is Muted role below me?")
             return false
         }
 
         MutesTable.invalidatePreviousUserMutes(guild, unmuteUser)
-        message.successReact(bot)
+        message.successReact()
         return false
     }
 }

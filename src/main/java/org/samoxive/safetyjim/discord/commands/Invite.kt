@@ -48,7 +48,7 @@ class Invite : Command() {
             embedHasAvatarURL = true
         }
 
-        message.successReact(bot)
+        message.successReact()
         channel.trySendMessage(embed!!)
 
         return false

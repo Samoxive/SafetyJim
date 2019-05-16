@@ -25,7 +25,7 @@ class Hardban : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Ban Members")
+            message.failMessage("You don't have enough permissions to execute this command! Required permission: Ban Members")
             return false
         }
 
@@ -35,7 +35,7 @@ class Hardban : Command() {
 
         val (searchResult, hardbanUser) = messageIterator.findUser(message, true)
         if (searchResult == SearchUserResult.NOT_FOUND || (hardbanUser == null)) {
-            message.failMessage(bot, "Could not find the user to hardban!")
+            message.failMessage("Could not find the user to hardban!")
             return false
         }
 
@@ -47,17 +47,17 @@ class Hardban : Command() {
         val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-            message.failMessage(bot, "I don't have enough permissions to do that!")
+            message.failMessage("I don't have enough permissions to do that!")
             return false
         }
 
         if (user == hardbanUser) {
-            message.failMessage(bot, "You can't hardban yourself, dummy!")
+            message.failMessage("You can't hardban yourself, dummy!")
             return false
         }
 
         if (hardbanMember != null && !hardbanMember.isBannableBy(selfMember)) {
-            message.failMessage(bot, "I don't have enough permissions to do that!")
+            message.failMessage("I don't have enough permissions to do that!")
             return false
         }
 
@@ -79,7 +79,7 @@ class Hardban : Command() {
         try {
             val auditLogReason = "Hardbanned by ${user.getUserTagAndId()} - $reason"
             controller.ban(hardbanUser, 7, auditLogReason).await()
-            message.successReact(bot)
+            message.successReact()
 
             val record = HardbansTable.insertHardban(
                     HardbanEntity(
@@ -95,7 +95,7 @@ class Hardban : Command() {
             message.createModLogEntry(shard, settings, hardbanUser, reason, "hardban", banId, null, false)
             channel.trySendMessage("Hardbanned ${hardbanUser.getUserTagAndId()}")
         } catch (e: Exception) {
-            message.failMessage(bot, "Could not hardban the specified user. Do I have enough permissions?")
+            message.failMessage("Could not hardban the specified user. Do I have enough permissions?")
         }
 
         return false

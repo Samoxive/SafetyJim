@@ -15,7 +15,7 @@ class Ping : Command() {
         embed.setAuthor("Safety Jim " + shard.shardInfo.getHumanReadableShardString(), null, shard.selfUser.avatarUrl)
         embed.setDescription(":ping_pong: Ping: ${shard.ping}ms")
         embed.setColor(Color(0x4286F4))
-        event.message.successReact(bot)
+        event.message.successReact()
         event.channel.trySendMessage(embed.build())
         return false
     }

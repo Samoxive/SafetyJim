@@ -117,27 +117,27 @@ class Clean : Command() {
         val selfMember = guild.selfMember
 
         if (!member.hasPermission(channel, Permission.MESSAGE_MANAGE)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command! Required permission: Manage Messages")
+            message.failMessage("You don't have enough permissions to execute this command! Required permission: Manage Messages")
             return false
         }
 
         if (!selfMember.hasPermission(channel, Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY)) {
-            message.failMessage(bot, "I don't have enough permissions to do that! Required permission: Manage Messages, Read Message History")
+            message.failMessage("I don't have enough permissions to do that! Required permission: Manage Messages, Read Message History")
             return false
         }
 
         if (!messageIterator.hasNextInt()) {
-            message.failReact(bot)
+            message.failReact()
             return true
         }
 
         val messageCount = messageIterator.nextInt()
 
         if (messageCount < 1) {
-            message.failMessage(bot, "You can't delete zero or negative messages.")
+            message.failMessage("You can't delete zero or negative messages.")
             return false
         } else if (messageCount > 100) {
-            message.failMessage(bot, "You can't delete more than 100 messages at once.")
+            message.failMessage("You can't delete more than 100 messages at once.")
             return false
         }
 
@@ -149,7 +149,7 @@ class Clean : Command() {
             } else {
                 val (searchResult, user) = messageIterator.findUser(message, true)
                 if (searchResult == SearchUserResult.NOT_FOUND || user == null) {
-                    message.failMessage(bot, "Invalid target, please try mentioning a user or writing `bot`.")
+                    message.failMessage("Invalid target, please try mentioning a user or writing `bot`.")
                     return false
                 }
 
@@ -165,7 +165,7 @@ class Clean : Command() {
         val seperatedMessages = seperateMessages(messages)
         tryhardAsync { bulkDelete(seperatedMessages, channel) }
 
-        message.successReact(bot)
+        message.successReact()
 
         return false
     }

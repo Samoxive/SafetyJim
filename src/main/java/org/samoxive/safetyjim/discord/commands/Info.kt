@@ -71,7 +71,7 @@ class Info : Command() {
         embed.setFooter("Made by Samoxive#8634. | Days since last incident: $daysSince", null)
         embed.setColor(Color(0x4286F4))
 
-        message.successReact(bot)
+        message.successReact()
         channel.trySendMessage(embed.build())
 
         return false

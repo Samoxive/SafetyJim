@@ -25,10 +25,10 @@ class Remind : Command() {
         val parsedReminderAndTime = try {
             messageIterator.getTextAndTime()
         } catch (e: InvalidTimeInputException) {
-            message.failMessage(bot, "Invalid time argument. Please try again.")
+            message.failMessage("Invalid time argument. Please try again.")
             return false
         } catch (e: TimeInputInPastException) {
-            message.failMessage(bot, "Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
+            message.failMessage("Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
 
@@ -53,7 +53,7 @@ class Remind : Command() {
                 )
         )
 
-        message.successReact(bot)
+        message.successReact()
 
         return false
     }

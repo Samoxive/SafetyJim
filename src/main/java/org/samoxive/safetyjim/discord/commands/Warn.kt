@@ -24,7 +24,7 @@ class Warn : Command() {
         val guild = event.guild
 
         if (!member.hasPermission(Permission.KICK_MEMBERS)) {
-            message.failMessage(bot, "You don't have enough permissions to execute this command!")
+            message.failMessage("You don't have enough permissions to execute this command!")
             return false
         }
 
@@ -34,7 +34,7 @@ class Warn : Command() {
 
         val (searchResult, warnUser) = messageIterator.findUser(message)
         if (searchResult == SearchUserResult.NOT_FOUND || (warnUser == null)) {
-            message.failMessage(bot, "Could not find the user to warn!")
+            message.failMessage("Could not find the user to warn!")
             return false
         }
 
@@ -43,7 +43,7 @@ class Warn : Command() {
         }
 
         if (user == warnUser) {
-            message.failMessage(bot, "You can't warn yourself, dummy!")
+            message.failMessage("You can't warn yourself, dummy!")
             return false
         }
 
@@ -66,7 +66,7 @@ class Warn : Command() {
             channel.trySendMessage("Could not send a warning to the specified user via private message!")
         }
 
-        message.successReact(bot)
+        message.successReact()
 
         val record = WarnsTable.insertWarn(
                 WarnEntity(
