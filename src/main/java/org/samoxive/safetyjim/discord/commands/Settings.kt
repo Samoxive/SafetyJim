@@ -32,7 +32,7 @@ class Settings : Command() {
             |`NoSpacePrefix <enabled/disabled>` - Default: disabled
             |`Statistics <enabled/disabled>` - Default: disabled""".trimMargin()
 
-    private suspend fun handleSettingsDisplay(bot: DiscordBot, settings: SettingsEntity, event: GuildMessageReceivedEvent) {
+    private suspend fun handleSettingsDisplay(settings: SettingsEntity, event: GuildMessageReceivedEvent) {
         val shard = event.jda
         val channel = event.channel
         val message = event.message
@@ -153,7 +153,7 @@ class Settings : Command() {
         }
 
         if (subCommand == "display") {
-            handleSettingsDisplay(bot, settings, event)
+            handleSettingsDisplay(settings, event)
             return false
         }
 

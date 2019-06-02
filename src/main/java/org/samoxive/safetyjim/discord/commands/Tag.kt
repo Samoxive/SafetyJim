@@ -24,7 +24,7 @@ class Tag : Command() {
         return false
     }
 
-    private suspend fun displayTags(bot: DiscordBot, event: GuildMessageReceivedEvent) {
+    private suspend fun displayTags(event: GuildMessageReceivedEvent) {
         val shard = event.jda
         val guild = event.guild
         val channel = event.channel
@@ -53,7 +53,7 @@ class Tag : Command() {
         channel.trySendMessage(embed.build())
     }
 
-    private suspend fun addTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
+    private suspend fun addTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
         val member = event.member
@@ -96,7 +96,7 @@ class Tag : Command() {
         }
     }
 
-    private suspend fun editTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
+    private suspend fun editTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
         val member = event.member
@@ -129,7 +129,7 @@ class Tag : Command() {
         message.successReact()
     }
 
-    private suspend fun deleteTag(bot: DiscordBot, event: GuildMessageReceivedEvent, messageIterator: Scanner) {
+    private suspend fun deleteTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
         val member = event.member
@@ -166,13 +166,11 @@ class Tag : Command() {
             return true
         }
 
-        val commandOrTag = messageIterator.next()
-
-        when (commandOrTag) {
-            "list" -> displayTags(bot, event)
-            "add" -> addTag(bot, event, messageIterator)
-            "edit" -> editTag(bot, event, messageIterator)
-            "remove" -> deleteTag(bot, event, messageIterator)
+        when (val commandOrTag = messageIterator.next()) {
+            "list" -> displayTags(event)
+            "add" -> addTag(event, messageIterator)
+            "edit" -> editTag(event, messageIterator)
+            "remove" -> deleteTag(event, messageIterator)
             else -> {
                 val record = TagsTable.fetchTagByName(guild, commandOrTag)
                 if (record == null) {
