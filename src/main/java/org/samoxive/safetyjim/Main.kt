@@ -1,6 +1,9 @@
 package org.samoxive.safetyjim
 
 import com.uchuhimo.konf.Config
+import io.vertx.core.Vertx
+import io.vertx.ext.web.client.WebClient
+import io.vertx.ext.web.client.WebClientOptions
 import kotlinx.coroutines.runBlocking
 import org.apache.log4j.*
 import org.samoxive.safetyjim.config.DatabaseConfig
@@ -27,8 +30,9 @@ fun main() {
     }.from.toml.file("config.toml")
 
     initPgPool(config)
+    initHttpClient()
     val bot = DiscordBot(config)
-    Server(bot)
+    Server(bot, vertx)
 }
 
 fun setupLoggers() {

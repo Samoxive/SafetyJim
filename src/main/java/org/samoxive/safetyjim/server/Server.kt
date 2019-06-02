@@ -9,8 +9,7 @@ import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.endpoints.*
 import org.slf4j.LoggerFactory
 
-class Server(val bot: DiscordBot) {
-    private val vertx: Vertx = Vertx.vertx()
+class Server(val bot: DiscordBot, vertx: Vertx) {
     private val endpoints = listOf(
             LoginEndpoint(bot),
             TestEndpoint(bot),

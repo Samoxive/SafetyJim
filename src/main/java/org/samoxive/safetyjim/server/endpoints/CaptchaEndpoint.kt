@@ -1,16 +1,16 @@
 package org.samoxive.safetyjim.server.endpoints
 
-import com.mashape.unirest.http.Unirest
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
+import io.vertx.kotlin.ext.web.client.sendAwait
 import org.json.JSONObject
-import org.samoxive.safetyjim.awaitAsString
 import org.samoxive.safetyjim.config.ServerConfig
 import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.await
+import org.samoxive.safetyjim.httpClient
 import org.samoxive.safetyjim.server.AbstractEndpoint
 import org.samoxive.safetyjim.server.Result
 import org.samoxive.safetyjim.server.Status
@@ -70,8 +70,12 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
         val member = guild.getMemberById(userId) ?: return Result(Status.NOT_FOUND)
 
         val captchaBody = request.formAttributes().get("g-recaptcha-response") ?: return Result(Status.BAD_REQUEST)
-        val captchaResponse = Unirest.post("https://www.google.com/recaptcha/api/siteverify?secret=${bot.config[ServerConfig.recaptcha_secret]}&response=$captchaBody").awaitAsString()
-        val responseObject = JSONObject(captchaResponse.body)
+        val captchaResponse = httpClient.post(443, "google.com", "/recaptcha/api/siteverify")
+                .addQueryParam("secret", bot.config[ServerConfig.recaptcha_secret])
+                .addQueryParam("response", captchaBody)
+                .sendAwait()
+
+        val responseObject = JSONObject(captchaResponse.bodyAsString())
         if (responseObject.has("success")) {
             val success = responseObject.getBoolean("success")
             if (!success) {
