@@ -71,6 +71,7 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
 
         val captchaBody = request.formAttributes().get("g-recaptcha-response") ?: return Result(Status.BAD_REQUEST)
         val captchaResponse = httpClient.post(443, "google.com", "/recaptcha/api/siteverify")
+                .putHeader("Content-Length", "0")
                 .addQueryParam("secret", bot.config[ServerConfig.recaptcha_secret])
                 .addQueryParam("response", captchaBody)
                 .sendAwait()
