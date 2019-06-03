@@ -45,7 +45,8 @@ class DiscordBot(val config: Config) {
             "iam" to Iam(),
             "role" to RoleCommand(),
             "hardban" to Hardban(),
-            "melo" to Melo()
+            "melo" to Melo(),
+            "xkcd" to Xkcd()
     )
     val deleteCommands = arrayOf("ban", "kick", "mute", "softban", "warn", "hardban")
     val processors = listOf(InviteLink(), MessageStats())
