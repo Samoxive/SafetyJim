@@ -1,0 +1,17 @@
+version: '3'
+services:
+  bot: 
+    container_name: "safetyjim"
+    build: .
+    volumes:
+      - .:/app
+    links:
+      - db:database
+  db:
+    image: "postgres:11"
+    container_name: "postgres_db"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+volumes:
+  db_data:
+  gradle-cache:

@@ -8,19 +8,12 @@ A moderation bot for discord communities.
 
 You will need the following to run Safety Jim
 
-- [ ] JDK 8
-- [ ] Gradle
-- [ ] PostgreSQL
+- Docker
 
 ## Development
-To develop Jim, you need to first make sure you have a local instance of postgresql running with schemas properly setup. Gradle will connect to your postgresql instance
-by using parameters defined (here)[build.gradle#L40] so feel free to change these to fit your own setup. You can find schema generation script (here)[schema.sql].
+Make a copy of `config_example.toml` called `example.toml` and fill in anything you need. To modify the username, password, and database name, set the environment variables `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` respectively, and update them accordingly in the `config.toml` file, but if you just want to test the bot, leaving the defaults is fine.
 
-Next, you will need to create your own configuration file, you can simply copy `config_example.toml` in the project root and rename it to `config.toml` with your own parameters.
-
-After you setup your postgresql instance, you can run `gradle run` command in your terminal and Jim will be up and running.
-
-To generate a fat jar with dependencies included, you can run `gradle shadowRun`.
+Run `docker-compose build` and then to launch the bot in the background `docker-compose up -d`. To make modifications to the code without rebuilding the entire image, you must share the drives that hold the code. Refer to the Docker documentation for further information. 
 
 ## License
 MIT
