@@ -7,6 +7,8 @@ object JimConfig : ConfigSpec("jim") {
     val token by required<String>()
     val default_prefix by required<String>()
     val shard_count by required<Int>()
+    val geocode_token by required<String>()
+    val darksky_token by required<String>()
 }
 
 object DatabaseConfig : ConfigSpec("database") {
