@@ -4,10 +4,13 @@ token = "" # put your discord token here
 default_prefix = "-dev" # all guilds will use this prefix unless changed
 shard_count = 1 # amount of shards jim will create
 
+# None of these need to be changed for development with Docker
 [database]
-user = "" # put your postgres username here
+user = "postgres" # put your postgres username here
 pass = "" # put your postgres password here
-jdbc_url = "jdbc:postgresql://(host_name):(port)/(database_name)"
+host = "database"
+port = 5432
+database = "postgres"
 
 [botlist]
 enabled = false # be careful with enabling this, bot will fail every time it tries to update lists if you have missing tokens
