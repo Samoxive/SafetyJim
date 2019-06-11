@@ -58,6 +58,7 @@ dependencies {
     compile 'io.reactiverse:reactive-pg-client:0.11.4'
     compile 'org.json:json:20180813'
     compile 'org.jsoup:jsoup:1.12.1'
+    compile 'com.google.guava:guava:27.1-jre'
 }
 
 jar {
