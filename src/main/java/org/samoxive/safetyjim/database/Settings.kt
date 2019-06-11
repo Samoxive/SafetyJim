@@ -1,5 +1,7 @@
 package org.samoxive.safetyjim.database
 
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
 import com.uchuhimo.konf.Config
 import io.reactiverse.kotlin.pgclient.preparedQueryAwait
 import io.reactiverse.pgclient.PgRowSet
@@ -8,6 +10,7 @@ import net.dv8tion.jda.core.entities.Guild
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
 import org.samoxive.safetyjim.tryhardAsync
+import java.util.concurrent.TimeUnit
 
 private const val createSQL = """
 create table if not exists settings (
@@ -74,6 +77,11 @@ object SettingsTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf<String>()
 
+    private val settingsCache: Cache<Long, SettingsEntity> = CacheBuilder.newBuilder()
+            .expireAfterAccess(1, TimeUnit.MINUTES)
+            .expireAfterWrite(1, TimeUnit.MINUTES)
+            .build<Long, SettingsEntity>()
+
     private fun PgRowSet.toSettingsEntities(): List<SettingsEntity> = this.map {
         SettingsEntity(
                 guildId = it.getLong(0),
@@ -95,20 +103,24 @@ object SettingsTable : AbstractTable {
     }
 
     suspend fun getGuildSettings(guild: Guild, config: Config): SettingsEntity {
+        val cachedSetting = settingsCache.getIfPresent(guild.idLong)
+        if (cachedSetting != null) {
+            println("cached")
+            return cachedSetting
+        }
+
         val existingSetting = fetchGuildSettings(guild)
         if (existingSetting != null) {
+            println("fetched")
+            String
+            settingsCache.put(guild.idLong, existingSetting)
             return existingSetting
         }
 
-        val newSetting = insertDefaultGuildSettings(config, guild)
-        newSetting ?: return fetchGuildSettings(guild)!!
+        val newSetting = insertDefaultGuildSettings(config, guild) ?: fetchGuildSettings(guild)!!
+        println("created & fetched")
+        settingsCache.put(guild.idLong, newSetting)
         return newSetting
-    }
-
-    suspend fun getAllGuildSettings(): Map<Long, SettingsEntity> {
-        return pgPool.preparedQueryAwait("select * from settings;")
-                .toSettingsEntities()
-                .associateBy { it.guildId }
     }
 
     private suspend fun fetchGuildSettings(guild: Guild): SettingsEntity? {
@@ -133,17 +145,21 @@ object SettingsTable : AbstractTable {
     }
 
     private suspend fun insertSettings(settings: SettingsEntity): SettingsEntity {
-        return pgPool.preparedQueryAwait(insertSQL, settings.toTuple())
+        val updatedSettings = pgPool.preparedQueryAwait(insertSQL, settings.toTuple())
                 .toSettingsEntities()
                 .first()
+        settingsCache.put(settings.guildId, settings)
+        return updatedSettings
     }
 
     suspend fun updateSettings(newSettings: SettingsEntity) {
         pgPool.preparedQueryAwait(updateSQL, newSettings.toTuple())
+        settingsCache.put(newSettings.guildId, newSettings)
     }
 
     suspend fun deleteSettings(guild: Guild) {
         pgPool.preparedQueryAwait("delete from settings where guildid = $1;", Tuple.of(guild.idLong))
+        settingsCache.invalidate(guild.idLong)
     }
 
     suspend fun resetSettings(guild: Guild, config: Config) {
