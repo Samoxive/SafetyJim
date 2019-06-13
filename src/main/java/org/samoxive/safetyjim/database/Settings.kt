@@ -105,20 +105,17 @@ object SettingsTable : AbstractTable {
     suspend fun getGuildSettings(guild: Guild, config: Config): SettingsEntity {
         val cachedSetting = settingsCache.getIfPresent(guild.idLong)
         if (cachedSetting != null) {
-            println("cached")
             return cachedSetting
         }
 
         val existingSetting = fetchGuildSettings(guild)
         if (existingSetting != null) {
-            println("fetched")
             String
             settingsCache.put(guild.idLong, existingSetting)
             return existingSetting
         }
 
         val newSetting = insertDefaultGuildSettings(config, guild) ?: fetchGuildSettings(guild)!!
-        println("created & fetched")
         settingsCache.put(guild.idLong, newSetting)
         return newSetting
     }
