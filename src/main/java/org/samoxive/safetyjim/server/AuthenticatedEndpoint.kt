@@ -11,7 +11,7 @@ import org.samoxive.safetyjim.tryhardAsync
 abstract class AuthenticatedEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse): Result {
         val token = request.getHeader("token") ?: return Result(Status.BAD_REQUEST)
-        val userId = getUserIdFromToken(bot.config, token) ?: return Result(Status.UNAUTHORIZED)
+        val userId = getUserIdFromToken(bot.config, token) ?: return Result(Status.UNAUTHORIZED, "Invalid token!")
         val user = tryhardAsync { bot.shards[0].jda.retrieveUserById(userId).await() }
                 ?: return Result(Status.UNAUTHORIZED)
         return handle(event, request, response, user)
