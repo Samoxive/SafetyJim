@@ -10,7 +10,7 @@ import org.samoxive.safetyjim.httpClient
 private val xkcdURLPattern = "^https?://(www\\.)?xkcd\\.com/\\d+/\$".toRegex()
 private const val userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
 
-class Xkcd: Command() {
+class Xkcd : Command() {
     override val usages = arrayOf<String>()
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {

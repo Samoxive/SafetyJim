@@ -146,7 +146,7 @@ suspend fun Message.meloReact() {
 
 private suspend fun Message.react(emoteName: String, emoteId: String) {
     val route = Route.Messages.ADD_REACTION.compile(textChannel.id, id, "$emoteName:$emoteId")
-    (object: RestAction<Void>(jda, route) {
+    (object : RestAction<Void>(jda, route) {
         override fun handleResponse(response: Response, request: Request<Void>) {
             request.onSuccess(null)
         }

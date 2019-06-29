@@ -10,7 +10,7 @@ create table if not exists uuidblacklist (
 );
 """
 
-object UUIDBlacklistTable: AbstractTable {
+object UUIDBlacklistTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf<String>()
 

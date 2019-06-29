@@ -32,7 +32,7 @@ private val dateFormatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:
 
 fun fahrenheitToCelcius(degree: Float): Float = ((degree - 32) * 5) / 9
 
-class Weather: Command() {
+class Weather : Command() {
     override val usages: Array<String> = arrayOf()
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val message = event.message
