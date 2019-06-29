@@ -17,7 +17,7 @@ class LoginEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
         val secrets = DiscordApi.getUserSecrets(bot.config, code) ?: return Result(Status.BAD_REQUEST)
         val self = DiscordApi.getSelfUser(secrets.access_token) ?: return Result(Status.BAD_REQUEST)
 
-        val token = getJWTFromUserId(bot.config, self.id)
+        val token = createJWTFromUserId(bot.config, self.id)
         response.endJson(token)
         return Result(Status.OK)
     }
