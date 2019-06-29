@@ -17,7 +17,6 @@ object DatabaseConfig : ConfigSpec("database") {
     val host by required<String>()
     val port by required<Int>()
     val database by required<String>()
-    val jdbc_url by required<String>()
 }
 
 object OauthConfig : ConfigSpec("oauth") {

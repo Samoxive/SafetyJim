@@ -1,17 +1,11 @@
 package org.samoxive.safetyjim
 
 import com.uchuhimo.konf.Config
-import io.vertx.core.Vertx
-import io.vertx.ext.web.client.WebClient
-import io.vertx.ext.web.client.WebClientOptions
-import kotlinx.coroutines.runBlocking
 import org.apache.log4j.*
 import org.samoxive.safetyjim.config.DatabaseConfig
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.config.OauthConfig
 import org.samoxive.safetyjim.config.ServerConfig
-import org.samoxive.safetyjim.database.BanEntity
-import org.samoxive.safetyjim.database.BansTable
 import org.samoxive.safetyjim.database.initPgPool
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.Server

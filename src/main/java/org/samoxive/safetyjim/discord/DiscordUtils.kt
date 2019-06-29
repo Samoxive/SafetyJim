@@ -226,8 +226,6 @@ suspend fun TextChannel.fetchFullHistoryAfterMessage(afterMessage: Message): Lis
     return messages
 }
 
-fun String.getCreationTime(): Long = toLong().ushr(TIMESTAMP_OFFSET) + DISCORD_EPOCH
-
 private fun MessageChannel.getChannelMention(): String = "<#$id>"
 
 fun User.getUserTagAndId(): String = "${getTag()} ($id)"
