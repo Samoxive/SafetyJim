@@ -41,22 +41,18 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     init {
         val config = bot.config
-        log = LoggerFactory.getLogger("DiscordShard " + getShardString(shardId, config[JimConfig.shard_count]))
-
-        val shardCount = config[JimConfig.shard_count]
-        val version = config[JimConfig.version]
+        val shardString = getShardString(shardId, config[JimConfig.shard_count])
+        log = LoggerFactory.getLogger("DiscordShard $shardString")
 
         val builder = JDABuilder(AccountType.BOT)
         this.jda = try {
             builder.setToken(config[JimConfig.token])
-                    .setAudioEnabled(false) // jim doesn't have any audio functionality
                     .addEventListener(this)
                     .addEventListener(confirmationListener)
                     .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
-                    .setEnableShutdownHook(true)
                     .useSharding(shardId, config[JimConfig.shard_count])
                     .setDisabledCacheFlags(EnumSet.of(CacheFlag.EMOTE, CacheFlag.GAME, CacheFlag.VOICE_STATE))
-                    .setGame(Game.playing("patreon.com/safetyjim | -mod help"))
+                    .setGame(Game.playing("safetyjim.xyz $shardString"))
                     .build()
                     .awaitReady()
         } catch (e: LoginException) {
