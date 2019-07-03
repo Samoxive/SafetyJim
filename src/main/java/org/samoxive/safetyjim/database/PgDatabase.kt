@@ -24,7 +24,8 @@ private val tables = arrayOf(
         SettingsTable,
         SoftbansTable,
         TagsTable,
-        WarnsTable
+        WarnsTable,
+        UUIDBlacklistTable
 )
 
 fun initPgPool(config: Config) {
