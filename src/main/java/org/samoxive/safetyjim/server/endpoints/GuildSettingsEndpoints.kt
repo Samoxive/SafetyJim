@@ -110,7 +110,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST, "Statistics option isn't open to public yet!")
         }
 
-        if (newSettings.silentCommandsLevel != SettingsEntity.MOD_COMMANDS_ONLY || newSettings.silentCommandsLevel != SettingsEntity.ALL) {
+        if (newSettings.silentCommandsLevel != SettingsEntity.MOD_COMMANDS_ONLY && newSettings.silentCommandsLevel != SettingsEntity.ALL) {
             return Result(Status.BAD_REQUEST, "Invalid value for silent commands level!")
         }
 
