@@ -79,7 +79,7 @@ class Warn : Command() {
         )
 
         message.createModLogEntry(shard, settings, warnUser, reason, "warn", record.id, null, false)
-        channel.trySendMessage("Warned " + warnUser.getUserTagAndId())
+        channel.sendModActionConfirmationMessage(settings, "Warned " + warnUser.getUserTagAndId())
 
         return false
     }

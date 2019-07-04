@@ -92,7 +92,7 @@ class Kick : Command() {
             )
 
             message.createModLogEntry(shard, settings, kickUser, reason, "kick", record.id, null, false)
-            channel.trySendMessage("Kicked " + kickUser.getUserTagAndId())
+            channel.sendModActionConfirmationMessage(settings, "Kicked " + kickUser.getUserTagAndId())
         } catch (e: Exception) {
             message.failMessage("Could not kick the specified user. Do I have enough permissions?")
         }

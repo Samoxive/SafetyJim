@@ -86,9 +86,16 @@ suspend fun Message.createModLogEntry(shard: JDA, settings: SettingsEntity, user
     modLogChannel.trySendMessage(embed.build())
 }
 
-suspend fun Message.deleteCommandMessage(settings: SettingsEntity) {
+val modDeleteCommands = arrayOf("ban", "kick", "mute", "softban", "warn", "hardban")
+suspend fun Message.deleteCommandMessage(settings: SettingsEntity, commandName: String) {
     if (!settings.silentCommands) {
         return
+    }
+
+    if (settings.silentCommandsLevel == SettingsEntity.MOD_COMMANDS_ONLY) {
+        if (!modDeleteCommands.contains(commandName)) {
+            return
+        }
     }
 
     tryhardAsync { delete().await() }
@@ -159,6 +166,12 @@ suspend fun MessageChannel.trySendMessage(message: String): Message? {
 
 suspend fun MessageChannel.trySendMessage(embed: MessageEmbed): Message? {
     return tryhardAsync { sendMessage(embed).await() }
+}
+
+suspend fun MessageChannel.sendModActionConfirmationMessage(settings: SettingsEntity, message: String) {
+    if (settings.modActionConfirmationMessage) {
+        trySendMessage(message)
+    }
 }
 
 suspend fun User.trySendMessage(embed: MessageEmbed): Message? {

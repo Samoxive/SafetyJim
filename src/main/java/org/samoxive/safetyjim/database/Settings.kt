@@ -28,7 +28,9 @@ create table if not exists settings (
     silentcommands boolean not null,
     nospaceprefix boolean not null,
     statistics boolean not null,
-    joincaptcha boolean not null
+    joincaptcha boolean not null,
+    silentcommandslevel integer not null,
+    modactionconfirmationmessage boolean not null
 );
 """
 
@@ -48,9 +50,11 @@ insert into settings (
     silentcommands,
     nospaceprefix,
     "statistics",
-    joincaptcha
+    joincaptcha,
+    silentcommandslevel,
+    modactionconfirmationmessage
 )
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 returning *;
 """
 
@@ -69,7 +73,9 @@ update settings set
     silentcommands = $12,
     nospaceprefix = $13,
     "statistics" = $14,
-    joincaptcha = $15
+    joincaptcha = $15,
+    silentcommandslevel = $16
+    modactionconfirmationmessage = $17
 where guildid = $1;
 """
 
@@ -98,7 +104,9 @@ object SettingsTable : AbstractTable {
                 silentCommands = it.getBoolean(11),
                 noSpacePrefix = it.getBoolean(12),
                 statistics = it.getBoolean(13),
-                joinCaptcha = it.getBoolean(14)
+                joinCaptcha = it.getBoolean(14),
+                silentCommandsLevel = it.getInteger(15),
+                modActionConfirmationMessage = it.getBoolean(16)
         )
     }
 
@@ -182,8 +190,15 @@ data class SettingsEntity(
         val silentCommands: Boolean = false,
         val noSpacePrefix: Boolean = false,
         val statistics: Boolean = false,
-        val joinCaptcha: Boolean = false
+        val joinCaptcha: Boolean = false,
+        val silentCommandsLevel: Int = 0,
+        val modActionConfirmationMessage: Boolean = true
 ) {
+    companion object {
+        const val MOD_COMMANDS_ONLY = 0
+        const val ALL = 1
+    }
+
     fun toTuple(): Tuple {
         return Tuple.of(
                 guildId,
@@ -200,7 +215,9 @@ data class SettingsEntity(
                 silentCommands,
                 noSpacePrefix,
                 statistics,
-                joinCaptcha
+                joinCaptcha,
+                silentCommandsLevel,
+                modActionConfirmationMessage
         )
     }
 }

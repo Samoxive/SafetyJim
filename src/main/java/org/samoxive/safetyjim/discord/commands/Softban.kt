@@ -116,7 +116,7 @@ class Softban : Command() {
             )
 
             message.createModLogEntry(shard, settings, softbanUser, reason, "softban", record.id, null, false)
-            channel.trySendMessage("Softbanned " + softbanUser.getUserTagAndId())
+            channel.sendModActionConfirmationMessage(settings, "Softbanned " + softbanUser.getUserTagAndId())
         } catch (e: Exception) {
             message.failMessage("Could not softban the specified user. Do I have enough permissions?")
         }

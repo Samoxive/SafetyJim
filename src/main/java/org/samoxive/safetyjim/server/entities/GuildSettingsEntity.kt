@@ -20,5 +20,7 @@ data class GuildSettingsEntity(
         val silentCommands: Boolean,
         val noSpacePrefix: Boolean,
         val statistics: Boolean,
-        val joinCaptcha: Boolean
+        val joinCaptcha: Boolean,
+        val silentCommandsLevel: Int,
+        val modActionConfirmationMessage: Boolean
 )

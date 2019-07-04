@@ -116,7 +116,7 @@ class Mute : Command() {
             )
 
             message.createModLogEntry(shard, settings, muteUser, reason, "mute", record.id, expirationDate, true)
-            channel.trySendMessage("Muted ${muteUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
+            channel.sendModActionConfirmationMessage(settings, "Muted ${muteUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
         } catch (e: Exception) {
             message.failMessage("Could not mute the specified user. Do I have enough permissions?")
         }

@@ -49,7 +49,7 @@ class DiscordBot(val config: Config) {
             "xkcd" to Xkcd(),
             "weather" to Weather()
     )
-    val deleteCommands = arrayOf("ban", "kick", "mute", "softban", "warn", "hardban")
+
     val processors = listOf(InviteLink(), MessageStats())
     val startTime = Date()
 

@@ -109,7 +109,7 @@ class Ban : Command() {
 
             val banId = record.id
             message.createModLogEntry(shard, settings, banUser, reason, "ban", banId, expirationDate, true)
-            channel.trySendMessage("Banned ${banUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
+            channel.sendModActionConfirmationMessage(settings, "Banned ${banUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
         } catch (e: Exception) {
             message.failMessage("Could not ban the specified user. Do I have enough permissions?")
         }

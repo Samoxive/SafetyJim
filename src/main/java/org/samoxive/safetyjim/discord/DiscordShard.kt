@@ -307,12 +307,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             message.failReact()
             channel.trySendMessage(embed.build())
         } else {
-            for (deleteCommand in bot.deleteCommands) {
-                if (commandName == deleteCommand) {
-                    message.deleteCommandMessage(settings)
-                    return
-                }
-            }
+            message.deleteCommandMessage(settings, commandName)
         }
     }
 }

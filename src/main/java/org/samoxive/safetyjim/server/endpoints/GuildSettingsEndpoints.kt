@@ -49,7 +49,9 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
                 guildSettingsDb.silentCommands,
                 guildSettingsDb.noSpacePrefix,
                 guildSettingsDb.statistics,
-                guildSettingsDb.joinCaptcha
+                guildSettingsDb.joinCaptcha,
+                guildSettingsDb.silentCommandsLevel,
+                guildSettingsDb.modActionConfirmationMessage
         )
 
         response.endJson(Json.stringify(GuildSettingsEntity.serializer(), settings))
@@ -108,6 +110,10 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST, "Statistics option isn't open to public yet!")
         }
 
+        if (newSettings.silentCommandsLevel != SettingsEntity.MOD_COMMANDS_ONLY || newSettings.silentCommandsLevel != SettingsEntity.ALL) {
+            return Result(Status.BAD_REQUEST, "Invalid value for silent commands level!")
+        }
+
         if (newSettings.guild.id != guild.id) {
             return Result(Status.BAD_REQUEST)
         }
@@ -129,7 +135,9 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                             silentCommands = newSettings.silentCommands,
                             noSpacePrefix = newSettings.noSpacePrefix,
                             statistics = newSettings.statistics,
-                            joinCaptcha = newSettings.joinCaptcha
+                            joinCaptcha = newSettings.joinCaptcha,
+                            silentCommandsLevel = newSettings.silentCommandsLevel,
+                            modActionConfirmationMessage = newSettings.modActionConfirmationMessage
                     )
             )
         } ?: return Result(Status.SERVER_ERROR)
