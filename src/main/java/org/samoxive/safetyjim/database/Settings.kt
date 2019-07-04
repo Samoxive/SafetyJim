@@ -74,7 +74,7 @@ update settings set
     nospaceprefix = $13,
     "statistics" = $14,
     joincaptcha = $15,
-    silentcommandslevel = $16
+    silentcommandslevel = $16,
     modactionconfirmationmessage = $17
 where guildid = $1;
 """
@@ -118,7 +118,6 @@ object SettingsTable : AbstractTable {
 
         val existingSetting = fetchGuildSettings(guild)
         if (existingSetting != null) {
-            String
             settingsCache.put(guild.idLong, existingSetting)
             return existingSetting
         }
