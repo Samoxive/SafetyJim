@@ -12,7 +12,6 @@ create table if not exists softbanlist (
     moderatoruserid bigint not null,
     guildid bigint not null,
     softbantime bigint not null,
-    deletedays integer not null,
     reason text not null
 );
 """
@@ -23,10 +22,9 @@ insert into softbanlist (
     moderatoruserid,
     guildid,
     softbantime,
-    deletedays,
     reason
 )
-values ($1, $2, $3, $4, $5, $6)
+values ($1, $2, $3, $4, $5)
 returning *;
 """
 
@@ -36,8 +34,7 @@ update softbanlist set
     moderatoruserid = $3,
     guildid = $4,
     softbantime = $5,
-    deletedays = $6,
-    reason = $7
+    reason = $6
 where id = $1;
 """
 
@@ -52,8 +49,7 @@ object SoftbansTable : AbstractTable {
                 moderatorUserId = it.getLong(2),
                 guildId = it.getLong(3),
                 softbanTime = it.getLong(4),
-                deleteDays = it.getInteger(5),
-                reason = it.getString(6)
+                reason = it.getString(5)
         )
     }
 
@@ -79,7 +75,6 @@ data class SoftbanEntity(
         val moderatorUserId: Long,
         val guildId: Long,
         val softbanTime: Long,
-        val deleteDays: Int,
         val reason: String
 ) {
     fun toTuple(): Tuple {
@@ -88,7 +83,6 @@ data class SoftbanEntity(
                 moderatorUserId,
                 guildId,
                 softbanTime,
-                deleteDays,
                 reason
         )
     }
@@ -100,7 +94,6 @@ data class SoftbanEntity(
                 moderatorUserId,
                 guildId,
                 softbanTime,
-                deleteDays,
                 reason
         )
     }
