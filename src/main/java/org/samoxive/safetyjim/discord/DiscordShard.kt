@@ -24,7 +24,7 @@ import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.config.ServerConfig
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.database.SettingsTable.getGuildSettings
-import org.samoxive.safetyjim.discord.commands.Mute
+import org.samoxive.safetyjim.discord.commands.setupMutedRole
 import org.samoxive.safetyjim.discord.processors.isInviteLinkBlacklisted
 import org.samoxive.safetyjim.tryhardAsync
 import org.slf4j.Logger
@@ -112,11 +112,13 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             return
         }
 
+        val guildSettings = getGuildSettings(guild, bot.config)
+
         // Spread processing jobs across threads as they are likely to be independent of io operations
         val processorResult = bot.processors.map {
             GlobalScope.async {
                 tryhardAsync {
-                    it.onMessage(bot, this@DiscordShard, event)
+                    it.onMessage(bot, this@DiscordShard, event, guildSettings)
                 } ?: false
             }
         }.map { it.await() }.reduce { acc, elem -> acc || elem }
@@ -126,7 +128,6 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             return
         }
 
-        val guildSettings = getGuildSettings(guild, bot.config)
         val prefix = guildSettings.prefix.toLowerCase()
 
         // 0 = prefix, 1 = command, rest are accepted as arguments
@@ -270,7 +271,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             return
         }
 
-        val mutedRole: Role = tryhardAsync { Mute.setupMutedRole(guild) } ?: return
+        val mutedRole: Role = tryhardAsync { setupMutedRole(guild) } ?: return
         tryhardAsync { controller.addSingleRoleToMember(member, mutedRole).await() }
     }
 

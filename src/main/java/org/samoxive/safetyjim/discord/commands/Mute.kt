@@ -2,9 +2,7 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Guild
-import net.dv8tion.jda.core.entities.PermissionOverride
-import net.dv8tion.jda.core.entities.Role
+import net.dv8tion.jda.core.entities.*
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.MuteEntity
 import org.samoxive.safetyjim.database.MutesTable
@@ -13,12 +11,110 @@ import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
+suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, muteUser: User, mutedRole: Role?, reason: String, expirationDate: Date?) {
+    var mutedRole = mutedRole ?: setupMutedRole(guild)
+    val muteMember = guild.getMember(muteUser)
+    val controller = guild.controller
+    val now = Date()
+
+    val embed = EmbedBuilder()
+    embed.setTitle("Muted in ${guild.name}")
+    embed.setColor(Color(0x4286F4))
+    embed.setDescription("You were muted in ${guild.name}")
+    embed.addField("Reason:", truncateForEmbed(reason), false)
+    embed.addField("Muted until", expirationDate?.toString() ?: "Indefinitely", false)
+    embed.setFooter("Muted by ${modUser.getUserTagAndId()}", null)
+    embed.setTimestamp(now.toInstant())
+
+    muteUser.trySendMessage(embed.build())
+
+    controller.addSingleRoleToMember(muteMember, mutedRole).await()
+
+    val expires = expirationDate != null
+    MutesTable.invalidatePreviousUserMutes(guild, muteUser)
+    val record = MutesTable.insertMute(
+            MuteEntity(
+                    userId = muteUser.idLong,
+                    moderatorUserId = modUser.idLong,
+                    guildId = guild.idLong,
+                    muteTime = now.time / 1000,
+                    expireTime = if (expirationDate == null) 0 else expirationDate.time / 1000,
+                    reason = reason,
+                    expires = expires,
+                    unmuted = false
+            )
+    )
+
+    createModLogEntry(guild, channel, settings, modUser, muteUser, reason, ModLogAction.Mute, record.id, expirationDate)
+}
+
+suspend fun setupMutedRole(guild: Guild): Role {
+    val controller = guild.controller
+    val channels = guild.textChannels
+    val roleList = guild.roles
+    var mutedRole: Role? = null
+
+    for (role in roleList) {
+        if (role.name == "Muted") {
+            mutedRole = role
+            break
+        }
+    }
+
+    if (mutedRole == null) {
+        // Muted role doesn't exist at all, so we need to create one
+        // and create channel overrides for the role
+        mutedRole = controller.createRole()
+                .setName("Muted")
+                .setPermissions(
+                        Permission.MESSAGE_READ,
+                        Permission.MESSAGE_HISTORY,
+                        Permission.VOICE_CONNECT
+                )
+                .await()
+
+        for (channel in channels) {
+            channel.createPermissionOverride(mutedRole)
+                    .setDeny(
+                            Permission.MESSAGE_WRITE,
+                            Permission.MESSAGE_ADD_REACTION,
+                            Permission.VOICE_SPEAK
+                    )
+                    .await()
+        }
+    }
+
+    for (channel in channels) {
+        var override: PermissionOverride? = null
+        for (channelOverride in channel.rolePermissionOverrides) {
+            if (channelOverride.role == mutedRole) {
+                override = channelOverride
+                break
+            }
+        }
+
+        // This channel is either created after we created a Muted role
+        // or its permissions were played with, so we should set it straight
+        if (override == null) {
+            channel.createPermissionOverride(mutedRole)
+                    .setDeny(
+                            Permission.MESSAGE_WRITE,
+                            Permission.MESSAGE_ADD_REACTION,
+                            Permission.VOICE_SPEAK
+                    )
+                    .await()
+        }
+    }
+
+    // return the found or created muted role so command can use it
+    return mutedRole!!
+}
+
 class Mute : Command() {
     override val usages = arrayOf("mute @user [reason] | [time] - mutes the user with specific args. Both arguments can be omitted.")
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
-        val shard = event.jda
 
         val member = event.member
         val user = event.author
@@ -45,9 +141,6 @@ class Mute : Command() {
         if (searchResult == SearchUserResult.GUESSED) {
             message.askConfirmation(bot, muteUser) ?: return false
         }
-
-        val muteMember = guild.getMember(muteUser)
-        val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.MANAGE_ROLES, Permission.MANAGE_PERMISSIONS)) {
             message.failMessage("I don't have enough permissions to do that!")
@@ -77,115 +170,21 @@ class Mute : Command() {
             message.failMessage("Invalid time argument. Please try again.")
             return false
         } catch (e: TimeInputInPastException) {
-            message.failMessage("Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
+            message.failMessage("Your time argument was set for the past. Try again.\nIf you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
 
         val (text, expirationDate) = parsedReasonAndTime
         val reason = if (text == "") "No reason specified" else text
-        val now = Date()
-
-        val embed = EmbedBuilder()
-        embed.setTitle("Muted in " + guild.name)
-        embed.setColor(Color(0x4286F4))
-        embed.setDescription("You were muted in " + guild.name)
-        embed.addField("Reason:", truncateForEmbed(reason), false)
-        embed.addField("Muted until", expirationDate?.toString() ?: "Indefinitely", false)
-        embed.setFooter("Muted by " + user.getUserTagAndId(), null)
-        embed.setTimestamp(now.toInstant())
-
-        muteUser.trySendMessage(embed.build())
 
         try {
-            controller.addSingleRoleToMember(muteMember, mutedRole).await()
+            muteAction(guild, channel, settings, user, muteUser, mutedRole, reason, expirationDate)
             message.successReact()
-
-            val expires = expirationDate != null
-            MutesTable.invalidatePreviousUserMutes(guild, muteUser)
-            val record = MutesTable.insertMute(
-                    MuteEntity(
-                            userId = muteUser.idLong,
-                            moderatorUserId = user.idLong,
-                            guildId = guild.idLong,
-                            muteTime = now.time / 1000,
-                            expireTime = if (expirationDate == null) 0 else expirationDate.time / 1000,
-                            reason = reason,
-                            expires = expires,
-                            unmuted = false
-                    )
-            )
-
-            message.createModLogEntry(shard, settings, muteUser, reason, "mute", record.id, expirationDate, true)
             channel.sendModActionConfirmationMessage(settings, "Muted ${muteUser.getUserTagAndId()} ${getExpirationTextInChannel(expirationDate)}")
         } catch (e: Exception) {
             message.failMessage("Could not mute the specified user. Do I have enough permissions?")
         }
 
         return false
-    }
-
-    companion object {
-
-        suspend fun setupMutedRole(guild: Guild): Role {
-            val controller = guild.controller
-            val channels = guild.textChannels
-            val roleList = guild.roles
-            var mutedRole: Role? = null
-
-            for (role in roleList) {
-                if (role.name == "Muted") {
-                    mutedRole = role
-                    break
-                }
-            }
-
-            if (mutedRole == null) {
-                // Muted role doesn't exist at all, so we need to create one
-                // and create channel overrides for the role
-                mutedRole = controller.createRole()
-                        .setName("Muted")
-                        .setPermissions(
-                                Permission.MESSAGE_READ,
-                                Permission.MESSAGE_HISTORY,
-                                Permission.VOICE_CONNECT
-                        )
-                        .await()
-
-                for (channel in channels) {
-                    channel.createPermissionOverride(mutedRole)
-                            .setDeny(
-                                    Permission.MESSAGE_WRITE,
-                                    Permission.MESSAGE_ADD_REACTION,
-                                    Permission.VOICE_SPEAK
-                            )
-                            .await()
-                }
-            }
-
-            for (channel in channels) {
-                var override: PermissionOverride? = null
-                for (channelOverride in channel.rolePermissionOverrides) {
-                    if (channelOverride.role == mutedRole) {
-                        override = channelOverride
-                        break
-                    }
-                }
-
-                // This channel is either created after we created a Muted role
-                // or its permissions were played with, so we should set it straight
-                if (override == null) {
-                    channel.createPermissionOverride(mutedRole)
-                            .setDeny(
-                                    Permission.MESSAGE_WRITE,
-                                    Permission.MESSAGE_ADD_REACTION,
-                                    Permission.VOICE_SPEAK
-                            )
-                            .await()
-                }
-            }
-
-            // return the found or created muted role so command can use it
-            return mutedRole!!
-        }
     }
 }

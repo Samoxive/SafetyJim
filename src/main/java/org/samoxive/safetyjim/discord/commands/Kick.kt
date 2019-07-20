@@ -2,6 +2,9 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
+import net.dv8tion.jda.core.entities.Guild
+import net.dv8tion.jda.core.entities.TextChannel
+import net.dv8tion.jda.core.entities.User
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.KickEntity
 import org.samoxive.safetyjim.database.KicksTable
@@ -10,12 +13,41 @@ import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
+suspend fun kickAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, kickUser: User, reason: String) {
+    val controller = guild.controller
+    val now = Date()
+
+    val embed = EmbedBuilder()
+    embed.setTitle("Kicked from ${guild.name}")
+    embed.setColor(Color(0x4286F4))
+    embed.setDescription("You were kicked from ${guild.name}")
+    embed.addField("Reason:", truncateForEmbed(reason), false)
+    embed.setFooter("Kicked by ${modUser.getUserTagAndId()}", null)
+    embed.setTimestamp(now.toInstant())
+
+    kickUser.trySendMessage(embed.build())
+
+    val auditLogReason = "Kicked by ${modUser.getUserTagAndId()} - $reason"
+    controller.kick(kickUser.id, auditLogReason).await()
+
+    val record = KicksTable.insertKick(
+            KickEntity(
+                    userId = kickUser.idLong,
+                    moderatorUserId = modUser.idLong,
+                    guildId = guild.idLong,
+                    kickTime = now.time / 1000,
+                    reason = reason
+            )
+    )
+
+    createModLogEntry(guild, channel, settings, modUser, kickUser, reason, ModLogAction.Kick, record.id)
+}
+
 class Kick : Command() {
     override val usages = arrayOf("kick @user [reason] - kicks the user with the specified reason")
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
-        val shard = event.jda
 
         val member = event.member
         val user = event.author
@@ -44,7 +76,6 @@ class Kick : Command() {
         }
 
         val kickMember = guild.getMember(kickUser)
-        val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.KICK_MEMBERS)) {
             message.failMessage("I don't have enough permissions to do that!")
@@ -64,35 +95,10 @@ class Kick : Command() {
         var reason = messageIterator.seekToEnd()
         reason = if (reason == "") "No reason specified" else reason
 
-        val now = Date()
-
-        val embed = EmbedBuilder()
-        embed.setTitle("Kicked from " + guild.name)
-        embed.setColor(Color(0x4286F4))
-        embed.setDescription("You were kicked from " + guild.name)
-        embed.addField("Reason:", truncateForEmbed(reason), false)
-        embed.setFooter("Kicked by " + user.getUserTagAndId(), null)
-        embed.setTimestamp(now.toInstant())
-
-        kickUser.trySendMessage(embed.build())
-
         try {
-            val auditLogReason = "Kicked by ${user.getUserTagAndId()} - $reason"
-            controller.kick(kickUser.id, auditLogReason).await()
+            kickAction(guild, channel, settings, user, kickUser, reason)
             message.successReact()
-
-            val record = KicksTable.insertKick(
-                    KickEntity(
-                            userId = kickUser.idLong,
-                            moderatorUserId = user.idLong,
-                            guildId = guild.idLong,
-                            kickTime = now.time / 1000,
-                            reason = reason
-                    )
-            )
-
-            message.createModLogEntry(shard, settings, kickUser, reason, "kick", record.id, null, false)
-            channel.sendModActionConfirmationMessage(settings, "Kicked " + kickUser.getUserTagAndId())
+            channel.sendModActionConfirmationMessage(settings, "Kicked ${kickUser.getUserTagAndId()}")
         } catch (e: Exception) {
             message.failMessage("Could not kick the specified user. Do I have enough permissions?")
         }

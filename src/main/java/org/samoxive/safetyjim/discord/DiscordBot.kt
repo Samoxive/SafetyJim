@@ -15,6 +15,7 @@ import org.samoxive.safetyjim.database.SettingsTable.getGuildSettings
 import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.discord.processors.InviteLink
 import org.samoxive.safetyjim.discord.processors.MessageStats
+import org.samoxive.safetyjim.discord.processors.WordFilter
 import org.samoxive.safetyjim.tryhard
 import org.samoxive.safetyjim.tryhardAsync
 import org.slf4j.LoggerFactory
@@ -50,7 +51,7 @@ class DiscordBot(val config: Config) {
             "weather" to Weather()
     )
 
-    val processors = listOf(InviteLink(), MessageStats())
+    val processors = listOf(InviteLink(), MessageStats(), WordFilter())
     val startTime = Date()
 
     val guildCount: Long
@@ -200,7 +201,7 @@ class DiscordBot(val config: Config) {
 
             val mutedRoles = guild.getRolesByName("Muted", false)
             val role = if (mutedRoles.isEmpty()) {
-                tryhardAsync { Mute.setupMutedRole(guild) }
+                tryhardAsync { setupMutedRole(guild) }
             } else {
                 mutedRoles[0]
             }

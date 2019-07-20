@@ -2,6 +2,9 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
+import net.dv8tion.jda.core.entities.Guild
+import net.dv8tion.jda.core.entities.TextChannel
+import net.dv8tion.jda.core.entities.User
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.WarnEntity
@@ -10,12 +13,36 @@ import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
+suspend fun warnAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, warnUser: User, reason: String) {
+    val now = Date()
+
+    val embed = EmbedBuilder()
+    embed.setTitle("Warned in ${guild.name}")
+    embed.setColor(Color(0x4286F4))
+    embed.setDescription("You were warned in ${guild.name}")
+    embed.addField("Reason:", truncateForEmbed(reason), false)
+    embed.setFooter("Warned by ${modUser.getUserTagAndId()}", null)
+    embed.setTimestamp(now.toInstant())
+
+    warnUser.trySendMessage(embed.build())
+    val record = WarnsTable.insertWarn(
+            WarnEntity(
+                    userId = warnUser.idLong,
+                    moderatorUserId = modUser.idLong,
+                    guildId = guild.idLong,
+                    warnTime = now.time / 1000,
+                    reason = reason
+            )
+    )
+
+    createModLogEntry(guild, channel, settings, modUser, warnUser, reason, ModLogAction.Warn, record.id)
+}
+
 class Warn : Command() {
     override val usages = arrayOf("warn @user [reason] - warn the user with the specified reason")
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
-        val shard = event.jda
 
         val member = event.member
         val user = event.author
@@ -50,36 +77,10 @@ class Warn : Command() {
         var reason = messageIterator.seekToEnd()
         reason = if (reason == "") "No reason specified" else reason
 
-        val now = Date()
 
-        val embed = EmbedBuilder()
-        embed.setTitle("Warned in " + guild.name)
-        embed.setColor(Color(0x4286F4))
-        embed.setDescription("You were warned in " + guild.name)
-        embed.addField("Reason:", truncateForEmbed(reason), false)
-        embed.setFooter("Warned by " + user.getUserTagAndId(), null)
-        embed.setTimestamp(now.toInstant())
-
-        try {
-            warnUser.trySendMessage(embed.build())
-        } catch (e: Exception) {
-            channel.trySendMessage("Could not send a warning to the specified user via private message!")
-        }
-
+        warnAction(guild, channel, settings, user, warnUser, reason)
         message.successReact()
-
-        val record = WarnsTable.insertWarn(
-                WarnEntity(
-                        userId = warnUser.idLong,
-                        moderatorUserId = user.idLong,
-                        guildId = guild.idLong,
-                        warnTime = now.time / 1000,
-                        reason = reason
-                )
-        )
-
-        message.createModLogEntry(shard, settings, warnUser, reason, "warn", record.id, null, false)
-        channel.sendModActionConfirmationMessage(settings, "Warned " + warnUser.getUserTagAndId())
+        channel.sendModActionConfirmationMessage(settings, "Warned ${warnUser.getUserTagAndId()}")
 
         return false
     }

@@ -2,6 +2,9 @@ package org.samoxive.safetyjim.discord.commands
 
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.Permission
+import net.dv8tion.jda.core.entities.Guild
+import net.dv8tion.jda.core.entities.TextChannel
+import net.dv8tion.jda.core.entities.User
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.HardbanEntity
 import org.samoxive.safetyjim.database.HardbansTable
@@ -10,12 +13,42 @@ import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
+suspend fun hardbanAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, hardbanUser: User, reason: String) {
+    val controller = guild.controller
+    val now = Date()
+
+    val embed = EmbedBuilder()
+    embed.setTitle("Hardbanned from ${guild.name}")
+    embed.setColor(Color(0x4286F4))
+    embed.setDescription("You were hardbanned from ${guild.name}")
+    embed.addField("Reason:", truncateForEmbed(reason), false)
+    embed.setFooter("Hardbanned by ${modUser.getUserTagAndId()}", null)
+    embed.setTimestamp(now.toInstant())
+
+    hardbanUser.trySendMessage(embed.build())
+
+    val auditLogReason = "Hardbanned by ${modUser.getUserTagAndId()} - $reason"
+    controller.ban(hardbanUser, 7, auditLogReason).await()
+
+    val record = HardbansTable.insertHardban(
+            HardbanEntity(
+                    userId = hardbanUser.idLong,
+                    moderatorUserId = modUser.idLong,
+                    guildId = guild.idLong,
+                    hardbanTime = now.time / 1000,
+                    reason = reason
+            )
+    )
+
+    val banId = record.id
+    createModLogEntry(guild, channel, settings, modUser, hardbanUser, reason, ModLogAction.Hardban, banId)
+}
+
 class Hardban : Command() {
-    override val usages = arrayOf("hardban @user [reason] - hard bans the user with specific arguments. Both arguments can be omitted.")
+    override val usages = arrayOf("hardban @user [reason] - hard bans the user with specific arguments.")
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
-        val shard = event.jda
 
         val member = event.member
         val user = event.author
@@ -44,7 +77,6 @@ class Hardban : Command() {
         }
 
         val hardbanMember = guild.getMember(hardbanUser)
-        val controller = guild.controller
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
             message.failMessage("I don't have enough permissions to do that!")
@@ -64,35 +96,9 @@ class Hardban : Command() {
         var reason = messageIterator.seekToEnd()
         reason = if (reason == "") "No reason specified" else reason
 
-        val now = Date()
-
-        val embed = EmbedBuilder()
-        embed.setTitle("Hardbanned from " + guild.name)
-        embed.setColor(Color(0x4286F4))
-        embed.setDescription("You were hardbanned from " + guild.name)
-        embed.addField("Reason:", truncateForEmbed(reason), false)
-        embed.setFooter("Hardbanned by " + user.getUserTagAndId(), null)
-        embed.setTimestamp(now.toInstant())
-
-        hardbanUser.trySendMessage(embed.build())
-
         try {
-            val auditLogReason = "Hardbanned by ${user.getUserTagAndId()} - $reason"
-            controller.ban(hardbanUser, 7, auditLogReason).await()
+            hardbanAction(guild, channel, settings, user, hardbanUser, reason)
             message.successReact()
-
-            val record = HardbansTable.insertHardban(
-                    HardbanEntity(
-                            userId = hardbanUser.idLong,
-                            moderatorUserId = user.idLong,
-                            guildId = guild.idLong,
-                            hardbanTime = now.time / 1000,
-                            reason = reason
-                    )
-            )
-
-            val banId = record.id
-            message.createModLogEntry(shard, settings, hardbanUser, reason, "hardban", banId, null, false)
             channel.sendModActionConfirmationMessage(settings, "Hardbanned ${hardbanUser.getUserTagAndId()}")
         } catch (e: Exception) {
             message.failMessage("Could not hardban the specified user. Do I have enough permissions?")
