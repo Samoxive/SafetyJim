@@ -22,17 +22,14 @@ private const val SUCCESS_EMOTE_NAME = "jimsuccess"
 private const val FAIL_EMOTE_ID = "322698553980092417"
 private const val FAIL_EMOTE_NAME = "jimfail"
 
-private const val DISCORD_EPOCH = 1420070400000L
-private const val TIMESTAMP_OFFSET = 22
-
-private val modLogColors = mapOf(
-        "ban" to Color(0xFF2900),
-        "kick" to Color(0xFF9900),
-        "warn" to Color(0xFFEB00),
-        "mute" to Color(0xFFFFFF),
-        "softban" to Color(0xFF55DD),
-        "hardban" to Color(0x700000)
-)
+enum class ModLogAction(val embedColor: Color, val expirationString: String? = null) {
+    Ban(Color(0xFF2900), "Banned until"),
+    Kick(Color(0xFF9900)),
+    Warn(Color(0xFFEB00)),
+    Mute(Color(0xFFFFFF), "Muted until"),
+    Softban(Color(0xFF55DD)),
+    Hardban(Color(0x700000))
+}
 
 suspend fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message? {
     val jimMessage = channel.trySendMessage("You selected user ${targetUser.getUserTagAndId()}. Confirm? (type yes/no)")
@@ -46,7 +43,7 @@ suspend fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message?
     return confirmationMessage
 }
 
-suspend fun Message.createModLogEntry(shard: JDA, settings: SettingsEntity, user: User, reason: String, action: String, id: Int, expirationDate: Date?, expires: Boolean) {
+suspend fun createModLogEntry(guild: Guild, channel: TextChannel? = null, settings: SettingsEntity, modUser: User, targetUser: User, reason: String, action: ModLogAction, entityId: Int, expirationDate: Date? = null) {
     val now = Date()
 
     val modLogActive = settings.modLog
@@ -56,31 +53,27 @@ suspend fun Message.createModLogEntry(shard: JDA, settings: SettingsEntity, user
         return
     }
 
-    val modLogChannel = shard.getTextChannelById(settings.modLogChannelId)
-
+    val modLogChannel = guild.getTextChannelById(settings.modLogChannelId)
     if (modLogChannel == null) {
-        channel.trySendMessage("Invalid moderator log channel in guild configuration, set a proper one via `$prefix settings` command.")
+        channel?.trySendMessage("Invalid moderator log channel in guild configuration, set a proper one via `$prefix settings` command.")
         return
     }
 
     val embed = EmbedBuilder()
-    embed.setColor(modLogColors[action])
-    embed.addField("Action ", "${action.capitalize()} - #$id", false)
-    embed.addField("User:", user.getUserTagAndId(), false)
+    embed.setColor(action.embedColor)
+    embed.addField("Action ", "${action.name} - #$entityId", false)
+    embed.addField("User:", targetUser.getUserTagAndId(), false)
     embed.addField("Reason:", truncateForEmbed(reason), false)
-    embed.addField("Responsible Moderator:", author.getUserTagAndId(), false)
-    embed.addField("Channel", channel.getChannelMention(), false)
+    embed.addField("Responsible Moderator:", modUser.getUserTagAndId(), false)
     embed.setTimestamp(now.toInstant())
 
-    if (expires) {
-        val dateText = expirationDate?.toString() ?: "Indefinitely"
-        val untilText = when (action) {
-            "ban" -> "Banned until"
-            "mute" -> "Muted until"
-            else -> null
-        }
+    if (channel != null) {
+        embed.addField("Channel", channel.getChannelMention(), false)
+    }
 
-        embed.addField(untilText, dateText, false)
+    if (action.expirationString != null) {
+        val dateText = expirationDate?.toString() ?: "Indefinitely"
+        embed.addField(action.expirationString, dateText, false)
     }
 
     modLogChannel.trySendMessage(embed.build())
@@ -92,7 +85,7 @@ suspend fun Message.deleteCommandMessage(settings: SettingsEntity, commandName: 
         return
     }
 
-    if (settings.silentCommandsLevel == SettingsEntity.MOD_COMMANDS_ONLY) {
+    if (settings.silentCommandsLevel == SettingsEntity.SILENT_COMMANDS_MOD_ONLY) {
         if (!modDeleteCommands.contains(commandName)) {
             return
         }
@@ -274,7 +267,7 @@ fun getShardIdFromGuildId(guildId: Long, shardCount: Int): Int = ((guildId shr 2
 
 fun getShardString(shardId: Int, shardCount: Int): String = "[${shardId + 1} / $shardCount]"
 
-fun JDA.ShardInfo.getHumanReadableShardString(): String = "[${shardId + 1} / $shardTotal]"
+fun JDA.ShardInfo.getHumanString(): String = "[${shardId + 1} / $shardTotal]"
 
 fun getExpirationTextInChannel(date: Date?): String = if (date != null) {
     "(Expires on $date)"
