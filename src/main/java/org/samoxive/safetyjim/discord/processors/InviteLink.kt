@@ -3,7 +3,7 @@ package org.samoxive.safetyjim.discord.processors
 import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.core.exceptions.InsufficientPermissionException
-import org.samoxive.safetyjim.database.SettingsTable
+import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 
 val blacklistedHosts = arrayOf("discord.gg/")
@@ -13,7 +13,7 @@ val whitelistedPermissions = arrayOf(Permission.ADMINISTRATOR, Permission.BAN_ME
 fun isInviteLinkBlacklisted(str: String) = blacklistedHosts.map { str.contains(it) }.filter { it }.any()
 
 class InviteLink : MessageProcessor() {
-    override suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent): Boolean {
+    override suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent, guildSettings: SettingsEntity): Boolean {
         val message = event.message
         val member = event.member
         for (permission in whitelistedPermissions) {
@@ -22,7 +22,7 @@ class InviteLink : MessageProcessor() {
             }
         }
 
-        val processorEnabled = SettingsTable.getGuildSettings(event.guild, bot.config).inviteLinkRemover
+        val processorEnabled = guildSettings.inviteLinkRemover
         if (!processorEnabled) {
             return false
         }
