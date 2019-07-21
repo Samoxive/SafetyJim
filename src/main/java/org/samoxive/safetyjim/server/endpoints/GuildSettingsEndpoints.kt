@@ -127,6 +127,10 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST, "Word filter blacklist cannot be too long!")
         }
 
+        if (newSettings.wordFilterLevel < SettingsEntity.ACTION_NOTHING || newSettings.wordFilterLevel > SettingsEntity.ACTION_HARDBAN) {
+            return Result(Status.BAD_REQUEST, "Invalid value for word filter level!")
+        }
+
         if (newSettings.guild.id != guild.id) {
             return Result(Status.BAD_REQUEST)
         }
