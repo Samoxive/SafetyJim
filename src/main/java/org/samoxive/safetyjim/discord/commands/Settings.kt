@@ -58,7 +58,7 @@ class Settings : Command() {
         } else {
             val modLogChannel = guild.getTextChannelById(settings.modLogChannelId)
             output.add("**Mod Log:** Enabled")
-            output.add("\t**Mod Log Channel:** " + if (modLogChannel == null) "null" else modLogChannel.asMention)
+            output.add("\t**Mod Log Channel:** ${modLogChannel?.asMention}")
         }
 
         if (!settings.welcomeMessage) {
@@ -66,7 +66,7 @@ class Settings : Command() {
         } else {
             val welcomeMessageChannel = guild.getTextChannelById(settings.welcomeMessageChannelId)
             output.add("**Welcome Messages:** Enabled")
-            output.add("\t**Welcome Message Channel:** " + if (welcomeMessageChannel == null) "null" else welcomeMessageChannel.asMention)
+            output.add("\t**Welcome Message Channel:** ${welcomeMessageChannel?.asMention}")
         }
 
         if (!settings.holdingRoom) {
@@ -76,7 +76,7 @@ class Settings : Command() {
             val holdingRoomRoleId = settings.holdingRoomRoleId
             val holdingRoomRole = if (holdingRoomRoleId != null) guild.getRoleById(holdingRoomRoleId) else null
             output.add("**Holding Room:** Enabled")
-            output.add("\t**Holding Room Role:** " + if (holdingRoomRole == null) "null" else holdingRoomRole.name)
+            output.add("\t**Holding Room Role:** ${holdingRoomRole?.name}")
             output.add("\t**Holding Room Delay:** $holdingRoomMinutes minute(s)")
         }
 
@@ -86,7 +86,7 @@ class Settings : Command() {
             val holdingRoomRoleId = settings.holdingRoomRoleId
             val holdingRoomRole = if (holdingRoomRoleId != null) guild.getRoleById(holdingRoomRoleId) else null
             output.add("**Join Captcha:** Enabled")
-            output.add("\t**Holding Room Role:** " + if (holdingRoomRole == null) "null" else holdingRoomRole.name)
+            output.add("\t**Holding Room Role:** ${holdingRoomRole?.name}")
         }
 
         if (settings.inviteLinkRemover) {

@@ -28,7 +28,7 @@ class Remind : Command() {
             message.failMessage("Invalid time argument. Please try again.")
             return false
         } catch (e: TimeInputInPastException) {
-            message.failMessage("Your time argument was set for the past. Try again.\n" + "If you're specifying a date, e.g. `30 December`, make sure you also write the year.")
+            message.failMessage("Your time argument was set for the past. Try again.\nIf you're specifying a date, e.g. `30 December`, make sure you also write the year.")
             return false
         }
 

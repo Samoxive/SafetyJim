@@ -12,7 +12,7 @@ class Ping : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val shard = event.jda
         val embed = EmbedBuilder()
-        embed.setAuthor("Safety Jim " + shard.shardInfo.getHumanReadableShardString(), null, shard.selfUser.avatarUrl)
+        embed.setAuthor("Safety Jim ${shard.shardInfo.getHumanString()}", null, shard.selfUser.avatarUrl)
         embed.setDescription(":ping_pong: Ping: ${shard.ping}ms")
         embed.setColor(Color(0x4286F4))
         event.message.successReact()

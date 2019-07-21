@@ -41,7 +41,7 @@ class Tag : Command() {
         val tagString = StringJoiner("\n")
 
         for (record in records) {
-            tagString.add("\u2022 `" + record.name + "`")
+            tagString.add("\u2022 `${record.name}`")
         }
 
         val embed = EmbedBuilder()

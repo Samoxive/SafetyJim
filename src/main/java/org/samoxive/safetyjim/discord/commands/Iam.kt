@@ -35,7 +35,7 @@ class Iam : Command() {
             }
 
             val rolesText = roles.mapNotNull { guild.getRoleById(it.roleId) }
-                    .joinToString("\n") { "\u2022 `" + it.name + "`" }
+                    .joinToString("\n") { "\u2022 `${it.name}`" }
 
             val embed = EmbedBuilder()
             embed.setAuthor("Safety Jim", null, event.jda.selfUser.avatarUrl)
