@@ -30,7 +30,6 @@ suspend fun banAction(guild: Guild, channel: TextChannel, settings: SettingsEnti
     val auditLogReason = "Banned by ${modUser.getUserTagAndId()} - $reason"
     controller.ban(banUser, 0, auditLogReason).await()
 
-
     val expires = expirationDate != null
 
     BansTable.invalidatePreviousUserBans(guild, banUser)

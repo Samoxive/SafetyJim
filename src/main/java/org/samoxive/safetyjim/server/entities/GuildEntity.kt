@@ -6,9 +6,9 @@ import org.samoxive.safetyjim.tryhard
 
 @Serializable
 data class GuildEntity(
-        val id: String,
-        val name: String,
-        val iconUrl: String
+    val id: String,
+    val name: String,
+    val iconUrl: String
 )
 
 fun Guild.toGuildEntity(): GuildEntity = GuildEntity(id, name, tryhard { iconUrl } ?: "")

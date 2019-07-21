@@ -99,15 +99,15 @@ object BansTable : AbstractTable {
 }
 
 data class BanEntity(
-        val id: Int = -1,
-        val userId: Long,
-        val moderatorUserId: Long,
-        val guildId: Long,
-        val banTime: Long,
-        val expireTime: Long?,
-        val reason: String,
-        val expires: Boolean,
-        val unbanned: Boolean
+    val id: Int = -1,
+    val userId: Long,
+    val moderatorUserId: Long,
+    val guildId: Long,
+    val banTime: Long,
+    val expireTime: Long?,
+    val reason: String,
+    val expires: Boolean,
+    val unbanned: Boolean
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(

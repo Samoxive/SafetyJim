@@ -78,14 +78,14 @@ object RemindersTable : AbstractTable {
 }
 
 data class ReminderEntity(
-        val id: Int = -1,
-        val userId: Long,
-        val channelId: Long,
-        val guildId: Long,
-        val createTime: Long,
-        val remindTime: Long,
-        val reminded: Boolean,
-        val message: String
+    val id: Int = -1,
+    val userId: Long,
+    val channelId: Long,
+    val guildId: Long,
+    val createTime: Long,
+    val remindTime: Long,
+    val reminded: Boolean,
+    val message: String
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(

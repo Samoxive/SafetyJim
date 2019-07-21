@@ -6,9 +6,9 @@ import java.awt.Color
 
 @Serializable
 data class RoleEntity(
-        val id: String,
-        val name: String,
-        val color: String
+    val id: String,
+    val name: String,
+    val color: String
 )
 
 private fun Int.toHex() = Integer.toHexString(this)

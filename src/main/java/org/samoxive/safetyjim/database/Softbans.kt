@@ -70,12 +70,12 @@ object SoftbansTable : AbstractTable {
 }
 
 data class SoftbanEntity(
-        val id: Int = -1,
-        val userId: Long,
-        val moderatorUserId: Long,
-        val guildId: Long,
-        val softbanTime: Long,
-        val reason: String
+    val id: Int = -1,
+    val userId: Long,
+    val moderatorUserId: Long,
+    val guildId: Long,
+    val softbanTime: Long,
+    val reason: String
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(

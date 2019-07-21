@@ -77,7 +77,6 @@ class Warn : Command() {
         var reason = messageIterator.seekToEnd()
         reason = if (reason == "") "No reason specified" else reason
 
-
         warnAction(guild, channel, settings, user, warnUser, reason)
         message.successReact()
         channel.sendModActionConfirmationMessage(settings, "Warned ${warnUser.getUserTagAndId()}")

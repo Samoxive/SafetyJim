@@ -70,12 +70,12 @@ object KicksTable : AbstractTable {
 }
 
 data class KickEntity(
-        val id: Int = -1,
-        val userId: Long,
-        val moderatorUserId: Long,
-        val guildId: Long,
-        val kickTime: Long,
-        val reason: String
+    val id: Int = -1,
+    val userId: Long,
+    val moderatorUserId: Long,
+    val guildId: Long,
+    val kickTime: Long,
+    val reason: String
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(

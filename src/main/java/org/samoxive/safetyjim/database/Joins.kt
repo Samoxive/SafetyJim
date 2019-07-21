@@ -81,12 +81,12 @@ object JoinsTable : AbstractTable {
 }
 
 data class JoinEntity(
-        val id: Int = -1,
-        val userId: Long,
-        val guildId: Long,
-        val joinTime: Long,
-        val allowTime: Long,
-        val allowed: Boolean
+    val id: Int = -1,
+    val userId: Long,
+    val guildId: Long,
+    val joinTime: Long,
+    val allowTime: Long,
+    val allowed: Boolean
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(

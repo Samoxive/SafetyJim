@@ -59,9 +59,9 @@ object RolesTable : AbstractTable {
 }
 
 data class RoleEntity(
-        val id: Int = -1,
-        val guildId: Long,
-        val roleId: Long
+    val id: Int = -1,
+    val guildId: Long,
+    val roleId: Long
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(

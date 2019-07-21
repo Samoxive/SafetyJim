@@ -98,15 +98,15 @@ object MutesTable : AbstractTable {
 }
 
 data class MuteEntity(
-        val id: Int = -1,
-        val userId: Long,
-        val moderatorUserId: Long,
-        val guildId: Long,
-        val muteTime: Long,
-        val expireTime: Long?,
-        val reason: String,
-        val expires: Boolean,
-        val unmuted: Boolean
+    val id: Int = -1,
+    val userId: Long,
+    val moderatorUserId: Long,
+    val guildId: Long,
+    val muteTime: Long,
+    val expireTime: Long?,
+    val reason: String,
+    val expires: Boolean,
+    val unmuted: Boolean
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(

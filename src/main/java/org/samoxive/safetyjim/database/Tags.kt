@@ -71,10 +71,10 @@ object TagsTable : AbstractTable {
 }
 
 data class TagEntity(
-        val id: Int = -1,
-        val guildId: Long,
-        val name: String,
-        val response: String
+    val id: Int = -1,
+    val guildId: Long,
+    val name: String,
+    val response: String
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
