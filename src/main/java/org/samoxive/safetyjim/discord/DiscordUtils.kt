@@ -3,6 +3,7 @@ package org.samoxive.safetyjim.discord
 import net.dv8tion.jda.core.EmbedBuilder
 import net.dv8tion.jda.core.JDA
 import net.dv8tion.jda.core.OnlineStatus
+import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.entities.*
 import net.dv8tion.jda.core.requests.Request
 import net.dv8tion.jda.core.requests.Response
@@ -274,6 +275,9 @@ fun getExpirationTextInChannel(date: Date?): String = if (date != null) {
 } else {
     "(Indefinitely)"
 }
+
+private val staffPermissions = arrayOf(Permission.ADMINISTRATOR, Permission.BAN_MEMBERS, Permission.KICK_MEMBERS, Permission.MANAGE_ROLES, Permission.MESSAGE_MANAGE)
+fun Member.isStaff(): Boolean = staffPermissions.any { hasPermission(it) }
 
 suspend fun <T> RestAction<T>.await(): T = suspendCoroutine { cont ->
     queue({ successValue -> cont.resume(successValue) }, { throwable -> cont.resumeWithException(throwable) })

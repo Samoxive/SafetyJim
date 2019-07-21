@@ -58,6 +58,10 @@ class WordFilter : MessageProcessor() {
             return false
         }
 
+        if (member.isStaff()) {
+            return false
+        }
+
         val filter = if (settings.wordFilterBlacklist != null) {
             SettingsTable.getWordFilter(settings)
         } else {
