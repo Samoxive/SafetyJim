@@ -22,5 +22,8 @@ data class GuildSettingsEntity(
         val statistics: Boolean,
         val joinCaptcha: Boolean,
         val silentCommandsLevel: Int,
-        val modActionConfirmationMessage: Boolean
+        val modActionConfirmationMessage: Boolean,
+        val wordFilter: Boolean,
+        val wordFilterBlacklist: String?,
+        val wordFilterLevel: Int
 )

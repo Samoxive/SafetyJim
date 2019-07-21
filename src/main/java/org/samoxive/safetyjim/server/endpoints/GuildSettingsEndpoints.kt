@@ -51,7 +51,10 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
                 guildSettingsDb.statistics,
                 guildSettingsDb.joinCaptcha,
                 guildSettingsDb.silentCommandsLevel,
-                guildSettingsDb.modActionConfirmationMessage
+                guildSettingsDb.modActionConfirmationMessage,
+                guildSettingsDb.wordFilter,
+                guildSettingsDb.wordFilterBlacklist,
+                guildSettingsDb.wordFilterLevel
         )
 
         response.endJson(Json.stringify(GuildSettingsEntity.serializer(), settings))
@@ -68,8 +71,14 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.FORBIDDEN, "You need to be an administrator to change server settings!")
         }
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val newSettings = tryhard { Json.parse(GuildSettingsEntity.serializer(), bodyString) }
+        val parsedSettings = tryhard { Json.parse(GuildSettingsEntity.serializer(), bodyString) }
                 ?: return Result(Status.BAD_REQUEST)
+
+        val newSettings = parsedSettings.copy(
+                message = parsedSettings.message.trim(),
+                prefix = parsedSettings.prefix.trim(),
+                wordFilterBlacklist = parsedSettings.wordFilterBlacklist?.trim()
+        )
 
         guild.textChannels.find { it.id == newSettings.modLogChannel.id }
                 ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
@@ -110,12 +119,26 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST, "Statistics option isn't open to public yet!")
         }
 
-        if (newSettings.silentCommandsLevel != SettingsEntity.MOD_COMMANDS_ONLY && newSettings.silentCommandsLevel != SettingsEntity.ALL) {
+        if (newSettings.silentCommandsLevel != SettingsEntity.SILENT_COMMANDS_MOD_ONLY && newSettings.silentCommandsLevel != SettingsEntity.SILENT_COMMANDS_ALL) {
             return Result(Status.BAD_REQUEST, "Invalid value for silent commands level!")
+        }
+
+        if (newSettings.wordFilterBlacklist != null && newSettings.wordFilterBlacklist.length > 2000) {
+            return Result(Status.BAD_REQUEST, "Word filter blacklist cannot be too long!")
         }
 
         if (newSettings.guild.id != guild.id) {
             return Result(Status.BAD_REQUEST)
+        }
+
+        val wordFilterBlacklist = if (newSettings.wordFilterBlacklist != null) {
+            if (newSettings.wordFilterBlacklist.isEmpty()) {
+                null
+            } else {
+                newSettings.wordFilterBlacklist
+            }
+        } else {
+            null
         }
 
         tryhardAsync {
@@ -137,7 +160,10 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                             statistics = newSettings.statistics,
                             joinCaptcha = newSettings.joinCaptcha,
                             silentCommandsLevel = newSettings.silentCommandsLevel,
-                            modActionConfirmationMessage = newSettings.modActionConfirmationMessage
+                            modActionConfirmationMessage = newSettings.modActionConfirmationMessage,
+                            wordFilter = newSettings.wordFilter,
+                            wordFilterBlacklist = wordFilterBlacklist,
+                            wordFilterLevel = newSettings.wordFilterLevel
                     )
             )
         } ?: return Result(Status.SERVER_ERROR)
