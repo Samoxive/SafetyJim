@@ -301,8 +301,8 @@ data class SettingsEntity(
         const val ACTION_HARDBAN = 6
         const val DURATION_TYPE_SECONDS = 0
         const val DURATION_TYPE_MINUTES = 1
-        const val DURATION_TYPE_HOURS = 3
-        const val DURATION_TYPE_DAYS = 4
+        const val DURATION_TYPE_HOURS = 2
+        const val DURATION_TYPE_DAYS = 3
     }
 
     fun toTuple(): Tuple {
@@ -333,5 +333,5 @@ data class SettingsEntity(
         )
     }
 
-    fun getWordFilterActionDurationDelta(): Int = getDelta(wordFilterActionDurationType, wordFilterAction)
+    fun getWordFilterActionDurationDelta(): Int = getDelta(wordFilterActionDurationType, wordFilterActionDuration)
 }
