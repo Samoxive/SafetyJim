@@ -192,7 +192,8 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                             wordFilterBlacklist = wordFilterBlacklist,
                             wordFilterLevel = newSettings.wordFilterLevel,
                             wordFilterAction = newSettings.wordFilterAction,
-                            wordFilterActionDuration = newSettings.wordFilterActionDuration
+                            wordFilterActionDuration = newSettings.wordFilterActionDuration,
+                            wordFilterActionDurationType = newSettings.wordFilterActionDurationType
                     )
             )
         } ?: return Result(Status.SERVER_ERROR)
