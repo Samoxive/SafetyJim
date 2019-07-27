@@ -11,6 +11,7 @@ import net.dv8tion.jda.core.entities.Member
 import net.dv8tion.jda.core.entities.User
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SettingsTable
+import org.samoxive.safetyjim.database.getDelta
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
 import org.samoxive.safetyjim.server.Result
@@ -54,7 +55,10 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
                 guildSettingsDb.modActionConfirmationMessage,
                 guildSettingsDb.wordFilter,
                 guildSettingsDb.wordFilterBlacklist,
-                guildSettingsDb.wordFilterLevel
+                guildSettingsDb.wordFilterLevel,
+                guildSettingsDb.wordFilterAction,
+                guildSettingsDb.wordFilterActionDuration,
+                guildSettingsDb.wordFilterActionDurationType
         )
 
         response.endJson(Json.stringify(GuildSettingsEntity.serializer(), settings))
@@ -84,6 +88,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                 ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
         guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id }
                 ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")
+
         if (newSettings.holdingRoomRole != null) {
             guild.roles.find { it.id == newSettings.holdingRoomRole.id }
                     ?: return Result(Status.BAD_REQUEST, "Selected holding room role doesn't exist!")
@@ -95,6 +100,10 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
 
         if (newSettings.joinCaptcha && newSettings.holdingRoom) {
             return Result(Status.BAD_REQUEST, "You can't enable both holding room and join captcha at the same time!")
+        }
+
+        if (newSettings.holdingRoomMinutes < 0) {
+            return Result(Status.BAD_REQUEST, "Holding room minutes cannot be negative!")
         }
 
         val message = newSettings.message
@@ -127,8 +136,22 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST, "Word filter blacklist cannot be too long!")
         }
 
-        if (newSettings.wordFilterLevel < SettingsEntity.ACTION_NOTHING || newSettings.wordFilterLevel > SettingsEntity.ACTION_HARDBAN) {
+        if (newSettings.wordFilterLevel != SettingsEntity.WORD_FILTER_LEVEL_LOW && newSettings.wordFilterLevel != SettingsEntity.WORD_FILTER_LEVEL_HIGH) {
             return Result(Status.BAD_REQUEST, "Invalid value for word filter level!")
+        }
+
+        if (newSettings.wordFilterAction < SettingsEntity.ACTION_NOTHING || newSettings.wordFilterAction > SettingsEntity.ACTION_HARDBAN) {
+            return Result(Status.BAD_REQUEST, "Invalid value for word filter action!")
+        }
+
+        if (newSettings.wordFilterActionDurationType < SettingsEntity.DURATION_TYPE_SECONDS || newSettings.wordFilterActionDurationType > SettingsEntity.DURATION_TYPE_DAYS) {
+            return Result(Status.BAD_REQUEST, "Invalid value for word filter action duration type!")
+        }
+
+        try {
+            getDelta(newSettings.wordFilterActionDurationType, newSettings.wordFilterActionDuration)
+        } catch (e: IllegalArgumentException) {
+            return Result(Status.BAD_REQUEST, e.message!!)
         }
 
         if (newSettings.guild.id != guild.id) {
@@ -167,7 +190,9 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                             modActionConfirmationMessage = newSettings.modActionConfirmationMessage,
                             wordFilter = newSettings.wordFilter,
                             wordFilterBlacklist = wordFilterBlacklist,
-                            wordFilterLevel = newSettings.wordFilterLevel
+                            wordFilterLevel = newSettings.wordFilterLevel,
+                            wordFilterAction = newSettings.wordFilterAction,
+                            wordFilterActionDuration = newSettings.wordFilterActionDuration
                     )
             )
         } ?: return Result(Status.SERVER_ERROR)

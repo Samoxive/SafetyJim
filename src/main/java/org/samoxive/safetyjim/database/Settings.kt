@@ -36,7 +36,8 @@ create table if not exists settings (
     wordfilterblacklist text,
     wordfilterlevel integer not null,
     wordfilteraction integer not null,
-    wordfilteractionduration integer not null
+    wordfilteractionduration integer not null,
+    wordfilteractiondurationtype integer not null
 );
 """
 
@@ -63,9 +64,10 @@ insert into settings (
     wordfilterblacklist,
     wordfilterlevel,
     wordfilteraction,
-    wordfilteractionduration
+    wordfilteractionduration,
+    wordfilteractiondurationtype
 )
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
 returning *;
 """
 
@@ -91,7 +93,8 @@ update settings set
     wordfilterblacklist = $19,
     wordfilterlevel = $20,
     wordfilteraction = $21,
-    wordfilteractionduration = $22
+    wordfilteractionduration = $22,
+    wordfilteractiondurationtype = $23
 where guildid = $1;
 """
 
@@ -132,7 +135,8 @@ object SettingsTable : AbstractTable {
                 wordFilterBlacklist = it.getString(18),
                 wordFilterLevel = it.getInteger(19),
                 wordFilterAction = it.getInteger(20),
-                wordFilterActionDuration = it.getInteger(21)
+                wordFilterActionDuration = it.getInteger(21),
+                wordFilterActionDurationType = it.getInteger(22)
         )
     }
 
@@ -235,6 +239,29 @@ object SettingsTable : AbstractTable {
 
 private const val DEFAULT_WELCOME_MESSAGE = "Welcome to \$guild \$user!"
 
+@Throws(IllegalArgumentException::class)
+fun getDelta(durationType: Int, duration: Int): Int {
+    val delta: Long = when (durationType) {
+        SettingsEntity.DURATION_TYPE_SECONDS -> duration * 1L
+        SettingsEntity.DURATION_TYPE_MINUTES -> duration * 60L
+        SettingsEntity.DURATION_TYPE_HOURS -> duration * 60L * 60L
+        SettingsEntity.DURATION_TYPE_DAYS -> duration * 60L * 60L * 24L
+        else -> throw IllegalStateException()
+    }
+
+    if (delta < 0) {
+        throw IllegalArgumentException("Mod action duration cannot be negative!")
+    }
+
+    // don't let users set too big of a time delta, will Jim even be alive then?
+    if (delta > (3L * 365L * 24L * 60L * 60L)) {
+        throw IllegalArgumentException("Mod action duration is too long! (more than 3 years)")
+    }
+
+    // can't overflow, we did our homework above
+    return delta.toInt()
+}
+
 data class SettingsEntity(
     val guildId: Long,
     val modLog: Boolean = false,
@@ -251,13 +278,14 @@ data class SettingsEntity(
     val noSpacePrefix: Boolean = false,
     val statistics: Boolean = false,
     val joinCaptcha: Boolean = false,
-    val silentCommandsLevel: Int = 0,
+    val silentCommandsLevel: Int = SILENT_COMMANDS_MOD_ONLY,
     val modActionConfirmationMessage: Boolean = true,
     val wordFilter: Boolean = false,
     val wordFilterBlacklist: String? = null,
-    val wordFilterLevel: Int = 0,
-    val wordFilterAction: Int = 0,
-    val wordFilterActionDuration: Int = 0
+    val wordFilterLevel: Int = WORD_FILTER_LEVEL_LOW,
+    val wordFilterAction: Int = ACTION_WARN,
+    val wordFilterActionDuration: Int = 0,
+    val wordFilterActionDurationType: Int = DURATION_TYPE_MINUTES
 ) {
     companion object {
         const val SILENT_COMMANDS_MOD_ONLY = 0
@@ -271,6 +299,10 @@ data class SettingsEntity(
         const val ACTION_BAN = 4
         const val ACTION_SOFTBAN = 5
         const val ACTION_HARDBAN = 6
+        const val DURATION_TYPE_SECONDS = 0
+        const val DURATION_TYPE_MINUTES = 1
+        const val DURATION_TYPE_HOURS = 3
+        const val DURATION_TYPE_DAYS = 4
     }
 
     fun toTuple(): Tuple {
@@ -296,7 +328,10 @@ data class SettingsEntity(
                 wordFilterBlacklist,
                 wordFilterLevel,
                 wordFilterAction,
-                wordFilterActionDuration
+                wordFilterActionDuration,
+                wordFilterActionDurationType
         )
     }
+
+    fun getWordFilterActionDurationDelta(): Int = getDelta(wordFilterActionDurationType, wordFilterAction)
 }

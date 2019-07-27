@@ -81,7 +81,7 @@ class WordFilter : MessageProcessor() {
             if (settings.wordFilterActionDuration == 0) {
                 null
             } else {
-                Date.from(Instant.now().plusSeconds(settings.wordFilterActionDuration.toLong()))
+                Date.from(Instant.now().plusSeconds(settings.getWordFilterActionDurationDelta().toLong()))
             }
         } else {
             null

@@ -25,5 +25,8 @@ data class GuildSettingsEntity(
     val modActionConfirmationMessage: Boolean,
     val wordFilter: Boolean,
     val wordFilterBlacklist: String?,
-    val wordFilterLevel: Int
+    val wordFilterLevel: Int,
+    val wordFilterAction: Int,
+    val wordFilterActionDuration: Int,
+    val wordFilterActionDurationType: Int
 )
