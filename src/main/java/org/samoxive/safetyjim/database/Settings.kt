@@ -344,7 +344,10 @@ data class SettingsEntity(
                 wordFilterLevel,
                 wordFilterAction,
                 wordFilterActionDuration,
-                wordFilterActionDurationType
+                wordFilterActionDurationType,
+                inviteLinkRemoverAction,
+                inviteLinkRemoverActionDuration,
+                inviteLinkRemoverActionDurationType
         )
     }
 
