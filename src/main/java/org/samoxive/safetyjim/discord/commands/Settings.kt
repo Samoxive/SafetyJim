@@ -1,12 +1,8 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.Permission
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
-import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.discord.*
-import java.awt.Color
 import java.util.*
 
 class Settings : Command() {
