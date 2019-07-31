@@ -28,5 +28,8 @@ data class GuildSettingsEntity(
     val wordFilterLevel: Int,
     val wordFilterAction: Int,
     val wordFilterActionDuration: Int,
-    val wordFilterActionDurationType: Int
+    val wordFilterActionDurationType: Int,
+    val inviteLinkRemoverAction: Int,
+    val inviteLinkRemoverActionDuration: Int,
+    val inviteLinkRemoverActionDurationType: Int
 )

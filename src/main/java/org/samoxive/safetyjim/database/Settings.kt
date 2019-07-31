@@ -37,7 +37,10 @@ create table if not exists settings (
     wordfilterlevel integer not null,
     wordfilteraction integer not null,
     wordfilteractionduration integer not null,
-    wordfilteractiondurationtype integer not null
+    wordfilteractiondurationtype integer not null,
+    invitelinkremoveraction integer not null,
+    invitelinkremoveractionduration integer not null,
+    invitelinkremoveractiondurationtype integer not null
 );
 """
 
@@ -65,9 +68,12 @@ insert into settings (
     wordfilterlevel,
     wordfilteraction,
     wordfilteractionduration,
-    wordfilteractiondurationtype
+    wordfilteractiondurationtype,
+    invitelinkremoveraction,
+    invitelinkremoveractionduration,
+    invitelinkremoveractiondurationtype
 )
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
 returning *;
 """
 
@@ -94,7 +100,10 @@ update settings set
     wordfilterlevel = $20,
     wordfilteraction = $21,
     wordfilteractionduration = $22,
-    wordfilteractiondurationtype = $23
+    wordfilteractiondurationtype = $23,
+    invitelinkremoveraction = $24,
+    invitelinkremoveractionduration = $25,
+    invitelinkremoveractiondurationtype = $26
 where guildid = $1;
 """
 
@@ -136,7 +145,10 @@ object SettingsTable : AbstractTable {
                 wordFilterLevel = it.getInteger(19),
                 wordFilterAction = it.getInteger(20),
                 wordFilterActionDuration = it.getInteger(21),
-                wordFilterActionDurationType = it.getInteger(22)
+                wordFilterActionDurationType = it.getInteger(22),
+                inviteLinkRemoverAction = it.getInteger(23),
+                inviteLinkRemoverActionDuration = it.getInteger(24),
+                inviteLinkRemoverActionDurationType = it.getInteger(25)
         )
     }
 
@@ -285,7 +297,10 @@ data class SettingsEntity(
     val wordFilterLevel: Int = WORD_FILTER_LEVEL_LOW,
     val wordFilterAction: Int = ACTION_WARN,
     val wordFilterActionDuration: Int = 0,
-    val wordFilterActionDurationType: Int = DURATION_TYPE_MINUTES
+    val wordFilterActionDurationType: Int = DURATION_TYPE_MINUTES,
+    val inviteLinkRemoverAction: Int = ACTION_WARN,
+    val inviteLinkRemoverActionDuration: Int = 0,
+    val inviteLinkRemoverActionDurationType: Int = DURATION_TYPE_MINUTES
 ) {
     companion object {
         const val SILENT_COMMANDS_MOD_ONLY = 0
@@ -334,4 +349,5 @@ data class SettingsEntity(
     }
 
     fun getWordFilterActionDurationDelta(): Int = getDelta(wordFilterActionDurationType, wordFilterActionDuration)
+    fun getInviteLinkRemoverActionDurationDelta(): Int = getDelta(inviteLinkRemoverActionDurationType, inviteLinkRemoverActionDuration)
 }

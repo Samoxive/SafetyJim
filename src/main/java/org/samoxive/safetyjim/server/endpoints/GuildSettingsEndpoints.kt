@@ -58,7 +58,10 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
                 guildSettingsDb.wordFilterLevel,
                 guildSettingsDb.wordFilterAction,
                 guildSettingsDb.wordFilterActionDuration,
-                guildSettingsDb.wordFilterActionDurationType
+                guildSettingsDb.wordFilterActionDurationType,
+                guildSettingsDb.inviteLinkRemoverAction,
+                guildSettingsDb.inviteLinkRemoverActionDuration,
+                guildSettingsDb.inviteLinkRemoverActionDurationType
         )
 
         response.endJson(Json.stringify(GuildSettingsEntity.serializer(), settings))
@@ -148,8 +151,17 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST, "Invalid value for word filter action duration type!")
         }
 
+        if (newSettings.inviteLinkRemoverAction < SettingsEntity.ACTION_NOTHING || newSettings.inviteLinkRemoverAction > SettingsEntity.ACTION_HARDBAN) {
+            return Result(Status.BAD_REQUEST, "Invalid value for invite link remover action!")
+        }
+
+        if (newSettings.inviteLinkRemoverActionDurationType < SettingsEntity.DURATION_TYPE_SECONDS || newSettings.inviteLinkRemoverActionDurationType > SettingsEntity.DURATION_TYPE_DAYS) {
+            return Result(Status.BAD_REQUEST, "Invalid value for invite link remover action duration type!")
+        }
+
         try {
             getDelta(newSettings.wordFilterActionDurationType, newSettings.wordFilterActionDuration)
+            getDelta(newSettings.inviteLinkRemoverActionDurationType, newSettings.inviteLinkRemoverActionDuration)
         } catch (e: IllegalArgumentException) {
             return Result(Status.BAD_REQUEST, e.message!!)
         }
@@ -193,7 +205,10 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                             wordFilterLevel = newSettings.wordFilterLevel,
                             wordFilterAction = newSettings.wordFilterAction,
                             wordFilterActionDuration = newSettings.wordFilterActionDuration,
-                            wordFilterActionDurationType = newSettings.wordFilterActionDurationType
+                            wordFilterActionDurationType = newSettings.wordFilterActionDurationType,
+                            inviteLinkRemoverAction = newSettings.inviteLinkRemoverAction,
+                            inviteLinkRemoverActionDuration = newSettings.inviteLinkRemoverActionDuration,
+                            inviteLinkRemoverActionDurationType = newSettings.inviteLinkRemoverActionDurationType
                     )
             )
         } ?: return Result(Status.SERVER_ERROR)
