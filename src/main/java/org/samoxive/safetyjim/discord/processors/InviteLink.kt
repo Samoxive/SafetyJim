@@ -1,7 +1,6 @@
 package org.samoxive.safetyjim.discord.processors
 
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import net.dv8tion.jda.core.exceptions.InsufficientPermissionException
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import org.samoxive.safetyjim.discord.commands.*
