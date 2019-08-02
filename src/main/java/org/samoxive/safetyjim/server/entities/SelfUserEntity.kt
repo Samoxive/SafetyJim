@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 data class SelfUserEntity(
     val id: String,
     val name: String,
-    val avatarUrl: String,
+    val avatarUrl: String?,
     val guilds: List<GuildEntity>
 )
