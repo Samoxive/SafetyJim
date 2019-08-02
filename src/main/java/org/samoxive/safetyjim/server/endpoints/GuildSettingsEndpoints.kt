@@ -13,6 +13,7 @@ import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.database.getDelta
 import org.samoxive.safetyjim.discord.DiscordBot
+import org.samoxive.safetyjim.discord.isStaff
 import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
 import org.samoxive.safetyjim.server.Result
 import org.samoxive.safetyjim.server.Status
@@ -28,8 +29,22 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
     override val route = "/guilds/:guildId/settings"
     override val method = HttpMethod.GET
 
+    private fun canMemberView(member: Member, settings: SettingsEntity): Boolean {
+        return when(settings.privacySettings) {
+            SettingsEntity.PRIVACY_EVERYONE -> true
+            SettingsEntity.PRIVACY_STAFF_ONLY -> member.isStaff()
+            SettingsEntity.PRIVACY_ADMIN_ONLY -> member.hasPermission(Permission.ADMINISTRATOR)
+            else -> throw IllegalStateException()
+        }
+    }
+
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
         val guildSettingsDb = SettingsTable.getGuildSettings(guild, bot.config)
+
+        if (!canMemberView(member, guildSettingsDb)) {
+            return Result(Status.FORBIDDEN, "You are not allowed to view server settings!")
+        }
+
         val holdingRoomRole = if (guildSettingsDb.holdingRoomRoleId != null) guild.getRoleById(guildSettingsDb.holdingRoomRoleId) else null
         val settings = GuildSettingsEntity(
                 guild.toGuildEntity(),
@@ -61,7 +76,9 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
                 guildSettingsDb.wordFilterActionDurationType,
                 guildSettingsDb.inviteLinkRemoverAction,
                 guildSettingsDb.inviteLinkRemoverActionDuration,
-                guildSettingsDb.inviteLinkRemoverActionDurationType
+                guildSettingsDb.inviteLinkRemoverActionDurationType,
+                guildSettingsDb.privacySettings,
+                guildSettingsDb.privacyModLog
         )
 
         response.endJson(Json.stringify(GuildSettingsEntity.serializer(), settings))
@@ -166,6 +183,14 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST, e.message!!)
         }
 
+        if (newSettings.privacySettings < SettingsEntity.PRIVACY_EVERYONE || newSettings.privacySettings > SettingsEntity.PRIVACY_ADMIN_ONLY) {
+            return Result(Status.BAD_REQUEST, "Invalid value for settings privacy!")
+        }
+
+        if (newSettings.privacyModLog < SettingsEntity.PRIVACY_EVERYONE || newSettings.privacyModLog > SettingsEntity.PRIVACY_ADMIN_ONLY) {
+            return Result(Status.BAD_REQUEST, "Invalid value for moderator log privacy!")
+        }
+
         if (newSettings.guild.id != guild.id) {
             return Result(Status.BAD_REQUEST)
         }
@@ -208,7 +233,9 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                             wordFilterActionDurationType = newSettings.wordFilterActionDurationType,
                             inviteLinkRemoverAction = newSettings.inviteLinkRemoverAction,
                             inviteLinkRemoverActionDuration = newSettings.inviteLinkRemoverActionDuration,
-                            inviteLinkRemoverActionDurationType = newSettings.inviteLinkRemoverActionDurationType
+                            inviteLinkRemoverActionDurationType = newSettings.inviteLinkRemoverActionDurationType,
+                            privacySettings = newSettings.privacySettings,
+                            privacyModLog = newSettings.privacyModLog
                     )
             )
         } ?: return Result(Status.SERVER_ERROR)

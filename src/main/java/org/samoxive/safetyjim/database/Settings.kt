@@ -40,7 +40,9 @@ create table if not exists settings (
     wordfilteractiondurationtype integer not null,
     invitelinkremoveraction integer not null,
     invitelinkremoveractionduration integer not null,
-    invitelinkremoveractiondurationtype integer not null
+    invitelinkremoveractiondurationtype integer not null,
+    privacysettings integer not null,
+    privacymodlog integer not null
 );
 """
 
@@ -71,9 +73,11 @@ insert into settings (
     wordfilteractiondurationtype,
     invitelinkremoveraction,
     invitelinkremoveractionduration,
-    invitelinkremoveractiondurationtype
+    invitelinkremoveractiondurationtype,
+    privacysettings,
+    privacymodlog
 )
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
 returning *;
 """
 
@@ -103,7 +107,9 @@ update settings set
     wordfilteractiondurationtype = $23,
     invitelinkremoveraction = $24,
     invitelinkremoveractionduration = $25,
-    invitelinkremoveractiondurationtype = $26
+    invitelinkremoveractiondurationtype = $26,
+    privacysettings = $27,
+    privacymodlog = $28
 where guildid = $1;
 """
 
@@ -148,7 +154,9 @@ object SettingsTable : AbstractTable {
                 wordFilterActionDurationType = it.getInteger(22),
                 inviteLinkRemoverAction = it.getInteger(23),
                 inviteLinkRemoverActionDuration = it.getInteger(24),
-                inviteLinkRemoverActionDurationType = it.getInteger(25)
+                inviteLinkRemoverActionDurationType = it.getInteger(25),
+                privacySettings = it.getInteger(26),
+                privacyModLog = it.getInteger(27)
         )
     }
 
@@ -300,7 +308,9 @@ data class SettingsEntity(
     val wordFilterActionDurationType: Int = DURATION_TYPE_MINUTES,
     val inviteLinkRemoverAction: Int = ACTION_WARN,
     val inviteLinkRemoverActionDuration: Int = 0,
-    val inviteLinkRemoverActionDurationType: Int = DURATION_TYPE_MINUTES
+    val inviteLinkRemoverActionDurationType: Int = DURATION_TYPE_MINUTES,
+    val privacySettings: Int = PRIVACY_EVERYONE,
+    val privacyModLog: Int = PRIVACY_EVERYONE
 ) {
     companion object {
         const val SILENT_COMMANDS_MOD_ONLY = 0
@@ -318,6 +328,10 @@ data class SettingsEntity(
         const val DURATION_TYPE_MINUTES = 1
         const val DURATION_TYPE_HOURS = 2
         const val DURATION_TYPE_DAYS = 3
+        const val PRIVACY_EVERYONE = 0
+        const val PRIVACY_STAFF_ONLY = 1
+        const val PRIVACY_ADMIN_ONLY = 2
+
     }
 
     fun toTuple(): Tuple {
@@ -347,7 +361,9 @@ data class SettingsEntity(
                 wordFilterActionDurationType,
                 inviteLinkRemoverAction,
                 inviteLinkRemoverActionDuration,
-                inviteLinkRemoverActionDurationType
+                inviteLinkRemoverActionDurationType,
+                privacySettings,
+                privacyModLog
         )
     }
 

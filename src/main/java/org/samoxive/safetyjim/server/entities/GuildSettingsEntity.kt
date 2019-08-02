@@ -31,5 +31,7 @@ data class GuildSettingsEntity(
     val wordFilterActionDurationType: Int,
     val inviteLinkRemoverAction: Int,
     val inviteLinkRemoverActionDuration: Int,
-    val inviteLinkRemoverActionDurationType: Int
+    val inviteLinkRemoverActionDurationType: Int,
+    val privacySettings: Int,
+    val privacyModLog: Int
 )
