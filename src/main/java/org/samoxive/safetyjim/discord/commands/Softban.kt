@@ -1,11 +1,11 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Guild
-import net.dv8tion.jda.core.entities.TextChannel
-import net.dv8tion.jda.core.entities.User
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SoftbanEntity
 import org.samoxive.safetyjim.database.SoftbansTable
@@ -14,7 +14,6 @@ import java.awt.Color
 import java.util.*
 
 suspend fun softbanAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, softbanUser: User, reason: String) {
-    val controller = guild.controller
     val now = Date()
 
     val embed = EmbedBuilder()
@@ -27,8 +26,8 @@ suspend fun softbanAction(guild: Guild, channel: TextChannel?, settings: Setting
 
     softbanUser.trySendMessage(embed.build())
     val auditLogReason = "Softbanned by ${modUser.getUserTagAndId()} - $reason"
-    controller.ban(softbanUser, 1, auditLogReason).await()
-    controller.unban(softbanUser).await()
+    guild.ban(softbanUser, 1, auditLogReason).await()
+    guild.unban(softbanUser).await()
 
     val record = SoftbansTable.insertSoftban(
             SoftbanEntity(
@@ -49,7 +48,7 @@ class Softban : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
-        val member = event.member
+        val member = event.member!!
         val user = event.author
         val message = event.message
         val channel = event.channel

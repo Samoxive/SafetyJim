@@ -1,8 +1,8 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.TagEntity
 import org.samoxive.safetyjim.database.TagsTable
@@ -56,7 +56,7 @@ class Tag : Command() {
     private suspend fun addTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
-        val member = event.member
+        val member = event.member!!
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
             message.failMessage("You don't have enough permissions to use this command!")
@@ -99,7 +99,7 @@ class Tag : Command() {
     private suspend fun editTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
-        val member = event.member
+        val member = event.member!!
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
             message.failMessage("You don't have enough permissions to use this command!")
@@ -132,7 +132,7 @@ class Tag : Command() {
     private suspend fun deleteTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
-        val member = event.member
+        val member = event.member!!
 
         if (!member.hasPermission(Permission.ADMINISTRATOR)) {
             message.failMessage("You don't have enough permissions to use this command!")

@@ -1,7 +1,7 @@
 package org.samoxive.safetyjim.discord.processors
 
-import net.dv8tion.jda.core.events.message.guild.GuildMessageDeleteEvent
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.events.message.guild.GuildMessageDeleteEvent
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.DiscordShard

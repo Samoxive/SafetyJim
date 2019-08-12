@@ -4,11 +4,11 @@ import com.uchuhimo.konf.Config
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.MessageBuilder
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Guild
-import net.dv8tion.jda.core.utils.SessionControllerAdapter
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.MessageBuilder
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.utils.SessionControllerAdapter
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.database.SettingsTable.getGuildSettings
@@ -71,7 +71,7 @@ class DiscordBot(val config: Config) {
         scheduleJob(10, 30, "unbanUsers") { unbanUsers() }
         scheduleJob(10, 5, "remindReminders") { remindReminders() }
 
-        val inviteLink = shards[0].jda.asBot().getInviteUrl(
+        val inviteLink = shards[0].jda.getInviteUrl(
                 Permission.KICK_MEMBERS,
                 Permission.BAN_MEMBERS,
                 Permission.MESSAGE_ADD_REACTION,
@@ -124,17 +124,16 @@ class DiscordBot(val config: Config) {
 
             if (enabled) {
                 val guildUser = shard.jda.retrieveUserById(user.userId).await()
-                val member = guild.getMember(guildUser)
+                val member = guild.getMember(guildUser)!!
                 val roleId = guildSettings.holdingRoomRoleId
                 val role = if (roleId != null) guild.getRoleById(roleId) else null
-                val controller = guild.controller
 
                 if (role == null) {
                     SettingsTable.updateSettings(guildSettings.copy(holdingRoom = false))
                     continue
                 }
 
-                tryhardAsync { controller.addSingleRoleToMember(member, role).await() }
+                tryhardAsync { guild.addRoleToMember(member, role).await() }
             }
 
             JoinsTable.updateJoin(user.copy(allowed = true))
@@ -157,14 +156,13 @@ class DiscordBot(val config: Config) {
             }
 
             val guildUser = shard.jda.retrieveUserById(user.userId).await()
-            val controller = guild.controller
 
             if (!guild.selfMember.hasPermission(Permission.BAN_MEMBERS)) {
                 BansTable.updateBan(user.copy(unbanned = true))
                 continue
             }
 
-            val banRecord = tryhardAsync { guild.banList.await() }
+            val banRecord = tryhardAsync { guild.retrieveBanList().await() }
                     ?.firstOrNull { ban -> ban.user.id == guildUser.id }
 
             if (banRecord == null) {
@@ -172,7 +170,7 @@ class DiscordBot(val config: Config) {
                 continue
             }
 
-            tryhardAsync { controller.unban(guildUser).await() }
+            tryhardAsync { guild.unban(guildUser).await() }
             BansTable.updateBan(user.copy(unbanned = true))
         }
     }
@@ -211,9 +209,7 @@ class DiscordBot(val config: Config) {
                 continue
             }
 
-            val controller = guild.controller
-
-            tryhardAsync { controller.removeSingleRoleFromMember(member, role).await() }
+            tryhardAsync { guild.removeRoleFromMember(member, role).await() }
             MutesTable.updateMute(user.copy(unmuted = true))
         }
     }

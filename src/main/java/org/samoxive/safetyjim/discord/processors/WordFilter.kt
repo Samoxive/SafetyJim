@@ -2,8 +2,8 @@ package org.samoxive.safetyjim.discord.processors
 
 import io.vertx.kotlin.ext.web.client.sendAwait
 import kotlinx.coroutines.runBlocking
-import net.dv8tion.jda.core.events.message.guild.GuildMessageDeleteEvent
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.events.message.guild.GuildMessageDeleteEvent
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.ahocorasick.trie.Trie
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SettingsTable
@@ -48,7 +48,7 @@ class WordFilter : MessageProcessor() {
 
     override suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent, settings: SettingsEntity): Boolean {
         val message = event.message
-        val member = event.member
+        val member = event.member!!
         val channel = event.channel
         val guild = event.guild
         val selfUser = event.jda.selfUser

@@ -1,7 +1,7 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.MutesTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
@@ -12,10 +12,9 @@ class Unmute : Command() {
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
-        val member = event.member
+        val member = event.member!!
         val message = event.message
         val guild = event.guild
-        val controller = guild.controller
 
         if (!member.hasPermission(Permission.MANAGE_ROLES)) {
             message.failMessage("You don't have enough permissions to execute this command! Required permission: Manage Roles")
@@ -48,9 +47,9 @@ class Unmute : Command() {
         }
 
         val muteRole = mutedRoles[0]
-        val unmuteMember = guild.getMember(unmuteUser)
+        val unmuteMember = guild.getMember(unmuteUser)!!
         try {
-            controller.removeSingleRoleFromMember(unmuteMember, muteRole).await()
+            guild.removeRoleFromMember(unmuteMember, muteRole).await()
         } catch (e: Exception) {
             message.failMessage("Could not unmute the user: \"${unmuteUser.name}\". Do I have enough permissions or is Muted role below me?")
             return false

@@ -3,7 +3,7 @@ package org.samoxive.safetyjim.database
 import io.reactiverse.kotlin.pgclient.preparedQueryAwait
 import io.reactiverse.pgclient.PgRowSet
 import io.reactiverse.pgclient.Tuple
-import net.dv8tion.jda.core.entities.Guild
+import net.dv8tion.jda.api.entities.Guild
 
 private const val createSQL = """
 create table if not exists taglist (

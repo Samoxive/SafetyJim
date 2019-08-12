@@ -1,14 +1,11 @@
 package org.samoxive.safetyjim.discord
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.JDA
-import net.dv8tion.jda.core.OnlineStatus
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.*
-import net.dv8tion.jda.core.requests.Request
-import net.dv8tion.jda.core.requests.Response
-import net.dv8tion.jda.core.requests.RestAction
-import net.dv8tion.jda.core.requests.Route
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.OnlineStatus
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.*
+import net.dv8tion.jda.api.requests.RestAction
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.tryhardAsync
@@ -146,12 +143,7 @@ suspend fun Message.meloReact() {
 }
 
 private suspend fun Message.react(emoteName: String, emoteId: String) {
-    val route = Route.Messages.ADD_REACTION.compile(textChannel.id, id, "$emoteName:$emoteId")
-    (object : RestAction<Void>(jda, route) {
-        override fun handleResponse(response: Response, request: Request<Void>) {
-            request.onSuccess(null)
-        }
-    }).await()
+    addReaction("$emoteName:$emoteId").await()
 }
 
 suspend fun MessageChannel.trySendMessage(message: String): Message? {

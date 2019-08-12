@@ -1,8 +1,8 @@
 package org.samoxive.safetyjim.discord.commands
 
 import io.vertx.kotlin.ext.web.client.sendAwait
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.json.JSONObject
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.SettingsEntity

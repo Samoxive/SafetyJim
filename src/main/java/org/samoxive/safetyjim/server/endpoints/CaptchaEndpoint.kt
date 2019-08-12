@@ -91,7 +91,7 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
                 ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up!")
         val holdingRoomRole = guild.getRoleById(holdingRoomRoleId)
                 ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up correctly!")
-        tryhardAsync { guild.controller.addRolesToMember(member, holdingRoomRole).await() }
+        tryhardAsync { guild.addRoleToMember(member, holdingRoomRole).await() }
         response.end("You have been approved to join! You can close this window.")
         return Result(Status.OK)
     }

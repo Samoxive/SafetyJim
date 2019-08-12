@@ -1,7 +1,7 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.RoleEntity
 import org.samoxive.safetyjim.database.RolesTable
 import org.samoxive.safetyjim.database.SettingsEntity
@@ -14,7 +14,7 @@ class RoleCommand : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
-        val member = event.member
+        val member = event.member!!
         val message = event.message
         val guild = event.guild
 

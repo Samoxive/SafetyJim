@@ -1,11 +1,11 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Guild
-import net.dv8tion.jda.core.entities.TextChannel
-import net.dv8tion.jda.core.entities.User
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.HardbanEntity
 import org.samoxive.safetyjim.database.HardbansTable
 import org.samoxive.safetyjim.database.SettingsEntity
@@ -14,7 +14,6 @@ import java.awt.Color
 import java.util.*
 
 suspend fun hardbanAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, hardbanUser: User, reason: String) {
-    val controller = guild.controller
     val now = Date()
 
     val embed = EmbedBuilder()
@@ -28,7 +27,7 @@ suspend fun hardbanAction(guild: Guild, channel: TextChannel?, settings: Setting
     hardbanUser.trySendMessage(embed.build())
 
     val auditLogReason = "Hardbanned by ${modUser.getUserTagAndId()} - $reason"
-    controller.ban(hardbanUser, 7, auditLogReason).await()
+    guild.ban(hardbanUser, 7, auditLogReason).await()
 
     val record = HardbansTable.insertHardban(
             HardbanEntity(
@@ -50,7 +49,7 @@ class Hardban : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
-        val member = event.member
+        val member = event.member!!
         val user = event.author
         val message = event.message
         val channel = event.channel

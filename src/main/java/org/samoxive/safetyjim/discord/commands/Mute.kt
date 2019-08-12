@@ -1,9 +1,9 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.*
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.*
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.MuteEntity
 import org.samoxive.safetyjim.database.MutesTable
 import org.samoxive.safetyjim.database.SettingsEntity
@@ -13,8 +13,7 @@ import java.util.*
 
 suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, muteUser: User, mutedRole: Role?, reason: String, expirationDate: Date?) {
     var mutedRole = mutedRole ?: setupMutedRole(guild)
-    val muteMember = guild.getMember(muteUser)
-    val controller = guild.controller
+    val muteMember = guild.getMember(muteUser)!!
     val now = Date()
 
     val embed = EmbedBuilder()
@@ -28,7 +27,7 @@ suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
 
     muteUser.trySendMessage(embed.build())
 
-    controller.addSingleRoleToMember(muteMember, mutedRole).await()
+    guild.addRoleToMember(muteMember, mutedRole).await()
 
     val expires = expirationDate != null
     MutesTable.invalidatePreviousUserMutes(guild, muteUser)
@@ -49,7 +48,6 @@ suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
 }
 
 suspend fun setupMutedRole(guild: Guild): Role {
-    val controller = guild.controller
     val channels = guild.textChannels
     val roleList = guild.roles
     var mutedRole: Role? = null
@@ -64,7 +62,7 @@ suspend fun setupMutedRole(guild: Guild): Role {
     if (mutedRole == null) {
         // Muted role doesn't exist at all, so we need to create one
         // and create channel overrides for the role
-        mutedRole = controller.createRole()
+        mutedRole = guild.createRole()
                 .setName("Muted")
                 .setPermissions(
                         Permission.MESSAGE_READ,
@@ -96,7 +94,7 @@ suspend fun setupMutedRole(guild: Guild): Role {
         // This channel is either created after we created a Muted role
         // or its permissions were played with, so we should set it straight
         if (override == null) {
-            channel.createPermissionOverride(mutedRole)
+            channel.createPermissionOverride(mutedRole!!)
                     .setDeny(
                             Permission.MESSAGE_WRITE,
                             Permission.MESSAGE_ADD_REACTION,
@@ -116,7 +114,7 @@ class Mute : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
-        val member = event.member
+        val member = event.member!!
         val user = event.author
         val message = event.message
         val channel = event.channel

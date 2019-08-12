@@ -1,11 +1,11 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Guild
-import net.dv8tion.jda.core.entities.TextChannel
-import net.dv8tion.jda.core.entities.User
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.WarnEntity
 import org.samoxive.safetyjim.database.WarnsTable
@@ -44,7 +44,7 @@ class Warn : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
-        val member = event.member
+        val member = event.member!!
         val user = event.author
         val message = event.message
         val channel = event.channel

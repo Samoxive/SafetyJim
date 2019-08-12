@@ -1,7 +1,7 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.BansTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
@@ -13,11 +13,10 @@ class Unban : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
-        val member = event.member
+        val member = event.member!!
         val message = event.message
         val guild = event.guild
         val selfMember = guild.selfMember
-        val controller = guild.controller
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
             message.failMessage("You don't have enough permissions to execute this command! Required permission: Ban Members")
@@ -43,7 +42,7 @@ class Unban : Command() {
             message.askConfirmation(bot, targetUser) ?: return false
         }
 
-        controller.unban(targetUser).await()
+        guild.unban(targetUser).await()
         BansTable.invalidatePreviousUserBans(guild, targetUser)
         message.successReact()
 

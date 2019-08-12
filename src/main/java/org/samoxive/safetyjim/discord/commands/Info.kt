@@ -1,7 +1,7 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.ocpsoft.prettytime.PrettyTime
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.BansTable
@@ -38,10 +38,10 @@ class Info : Command() {
                 .asSequence()
                 .map { shard -> shard.users.size }
                 .sum()
-        val pingShard = currentShard.ping
+        val pingShard = currentShard.gatewayPing
         val pingAverage = shards
                 .asSequence()
-                .map { shard -> shard.ping }
+                .map { shard -> shard.gatewayPing }
                 .sum() / shardCount
 
         val runtime = Runtime.getRuntime()

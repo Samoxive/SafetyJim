@@ -1,11 +1,11 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Guild
-import net.dv8tion.jda.core.entities.TextChannel
-import net.dv8tion.jda.core.entities.User
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.BanEntity
 import org.samoxive.safetyjim.database.BansTable
 import org.samoxive.safetyjim.database.SettingsEntity
@@ -14,7 +14,6 @@ import java.awt.Color
 import java.util.*
 
 suspend fun banAction(guild: Guild, channel: TextChannel, settings: SettingsEntity, modUser: User, banUser: User, reason: String, expirationDate: Date?) {
-    val controller = guild.controller
     val now = Date()
     val embed = EmbedBuilder()
     embed.setTitle("Banned from ${guild.name}")
@@ -28,7 +27,7 @@ suspend fun banAction(guild: Guild, channel: TextChannel, settings: SettingsEnti
     banUser.trySendMessage(embed.build())
 
     val auditLogReason = "Banned by ${modUser.getUserTagAndId()} - $reason"
-    controller.ban(banUser, 0, auditLogReason).await()
+    guild.ban(banUser, 0, auditLogReason).await()
 
     val expires = expirationDate != null
 
@@ -56,7 +55,7 @@ class Ban : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
-        val member = event.member
+        val member = event.member!!
         val user = event.author
         val message = event.message
         val channel = event.channel

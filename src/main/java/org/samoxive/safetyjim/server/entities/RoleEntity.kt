@@ -1,7 +1,7 @@
 package org.samoxive.safetyjim.server.entities
 
 import kotlinx.serialization.Serializable
-import net.dv8tion.jda.core.entities.Role
+import net.dv8tion.jda.api.entities.Role
 import java.awt.Color
 
 @Serializable

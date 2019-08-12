@@ -1,7 +1,7 @@
 package org.samoxive.safetyjim.server.entities
 
 import kotlinx.serialization.Serializable
-import net.dv8tion.jda.core.entities.Guild
+import net.dv8tion.jda.api.entities.Guild
 import org.samoxive.safetyjim.tryhard
 
 @Serializable

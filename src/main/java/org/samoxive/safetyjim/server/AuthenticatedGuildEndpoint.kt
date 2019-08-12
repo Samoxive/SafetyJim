@@ -3,9 +3,9 @@ package org.samoxive.safetyjim.server
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import net.dv8tion.jda.core.entities.Guild
-import net.dv8tion.jda.core.entities.Member
-import net.dv8tion.jda.core.entities.User
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.discord.DiscordBot
 
 abstract class AuthenticatedGuildEndpoint(bot: DiscordBot) : AuthenticatedEndpoint(bot) {

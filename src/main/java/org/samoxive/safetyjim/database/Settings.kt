@@ -6,7 +6,7 @@ import com.uchuhimo.konf.Config
 import io.reactiverse.kotlin.pgclient.preparedQueryAwait
 import io.reactiverse.pgclient.PgRowSet
 import io.reactiverse.pgclient.Tuple
-import net.dv8tion.jda.core.entities.Guild
+import net.dv8tion.jda.api.entities.Guild
 import org.ahocorasick.trie.Trie
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
@@ -331,7 +331,6 @@ data class SettingsEntity(
         const val PRIVACY_EVERYONE = 0
         const val PRIVACY_STAFF_ONLY = 1
         const val PRIVACY_ADMIN_ONLY = 2
-
     }
 
     fun toTuple(): Tuple {

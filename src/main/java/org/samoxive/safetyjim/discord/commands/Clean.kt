@@ -4,11 +4,11 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Message
-import net.dv8tion.jda.core.entities.TextChannel
-import net.dv8tion.jda.core.entities.User
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import org.samoxive.safetyjim.tryhard
@@ -78,7 +78,7 @@ class Clean : Command() {
         val now = Date().time / 1000
 
         for (message in messages) {
-            if (now - message.creationTime.toEpochSecond() <= 60 * 60 * 24 * 12) {
+            if (now - message.timeCreated.toEpochSecond() <= 60 * 60 * 24 * 12) {
                 newMessages.add(message)
             } else {
                 oldMessages.add(message)
@@ -110,7 +110,7 @@ class Clean : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
-        val member = event.member
+        val member = event.member!!
         val message = event.message
         val channel = event.channel
         val guild = event.guild

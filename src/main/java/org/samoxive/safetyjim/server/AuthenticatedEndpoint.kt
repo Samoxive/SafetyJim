@@ -3,7 +3,7 @@ package org.samoxive.safetyjim.server
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import net.dv8tion.jda.core.entities.User
+import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.await
 import org.samoxive.safetyjim.tryhardAsync

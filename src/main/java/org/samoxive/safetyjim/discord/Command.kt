@@ -1,6 +1,6 @@
 package org.samoxive.safetyjim.discord
 
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 
 abstract class Command {

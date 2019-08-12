@@ -5,10 +5,10 @@ import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
 import kotlinx.serialization.json.Json
-import net.dv8tion.jda.core.Permission
-import net.dv8tion.jda.core.entities.Guild
-import net.dv8tion.jda.core.entities.Member
-import net.dv8tion.jda.core.entities.User
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.database.getDelta
@@ -30,7 +30,7 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
     override val method = HttpMethod.GET
 
     private fun canMemberView(member: Member, settings: SettingsEntity): Boolean {
-        return when(settings.privacySettings) {
+        return when (settings.privacySettings) {
             SettingsEntity.PRIVACY_EVERYONE -> true
             SettingsEntity.PRIVACY_STAFF_ONLY -> member.isStaff()
             SettingsEntity.PRIVACY_ADMIN_ONLY -> member.hasPermission(Permission.ADMINISTRATOR)

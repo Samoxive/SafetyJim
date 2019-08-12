@@ -3,23 +3,23 @@ package org.samoxive.safetyjim.discord
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import net.dv8tion.jda.core.AccountType
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.JDA
-import net.dv8tion.jda.core.JDABuilder
-import net.dv8tion.jda.core.entities.Game
-import net.dv8tion.jda.core.entities.Role
-import net.dv8tion.jda.core.events.ExceptionEvent
-import net.dv8tion.jda.core.events.ReadyEvent
-import net.dv8tion.jda.core.events.guild.GuildJoinEvent
-import net.dv8tion.jda.core.events.guild.GuildLeaveEvent
-import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent
-import net.dv8tion.jda.core.events.guild.member.GuildMemberLeaveEvent
-import net.dv8tion.jda.core.events.message.guild.GuildMessageDeleteEvent
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
-import net.dv8tion.jda.core.hooks.ListenerAdapter
-import net.dv8tion.jda.core.utils.SessionController
-import net.dv8tion.jda.core.utils.cache.CacheFlag
+import net.dv8tion.jda.api.AccountType
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.entities.Activity
+import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.events.ExceptionEvent
+import net.dv8tion.jda.api.events.ReadyEvent
+import net.dv8tion.jda.api.events.guild.GuildJoinEvent
+import net.dv8tion.jda.api.events.guild.GuildLeaveEvent
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent
+import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent
+import net.dv8tion.jda.api.events.message.guild.GuildMessageDeleteEvent
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.utils.SessionController
+import net.dv8tion.jda.api.utils.cache.CacheFlag
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.config.ServerConfig
 import org.samoxive.safetyjim.database.*
@@ -47,12 +47,11 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val builder = JDABuilder(AccountType.BOT)
         this.jda = try {
             builder.setToken(config[JimConfig.token])
-                    .addEventListener(this)
-                    .addEventListener(confirmationListener)
+                    .addEventListeners(this, confirmationListener)
                     .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
                     .useSharding(shardId, config[JimConfig.shard_count])
-                    .setDisabledCacheFlags(EnumSet.of(CacheFlag.EMOTE, CacheFlag.GAME, CacheFlag.VOICE_STATE))
-                    .setGame(Game.playing("safetyjim.xyz $shardString"))
+                    .setDisabledCacheFlags(EnumSet.of(CacheFlag.ACTIVITY, CacheFlag.EMOTE, CacheFlag.VOICE_STATE))
+                    .setActivity(Activity.playing("safetyjim.xyz $shardString"))
                     .build()
                     .awaitReady()
         } catch (e: LoginException) {
@@ -89,6 +88,11 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     private suspend fun onGuildMessageReceivedAsync(event: GuildMessageReceivedEvent) {
         if (event.author.isBot) {
+            return
+        }
+
+        // make sure event#member is not null, it's used quite a lot
+        if (event.isWebhookMessage) {
             return
         }
 
@@ -217,14 +221,13 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     private suspend fun onGuildMemberJoinAsync(event: GuildMemberJoinEvent) {
         val shard = event.jda
         val guild = event.guild
-        val controller = guild.controller
-        val member = event.member
+        val member = event.member!!
         val user = member.user
         val guildSettings = getGuildSettings(guild, bot.config)
 
         if (guildSettings.inviteLinkRemover) {
             if (isInviteLinkBlacklisted(user.name)) {
-                tryhardAsync { controller.kick(member).await() }
+                tryhardAsync { guild.kick(member).await() }
                 return
             }
         }
@@ -272,7 +275,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         }
 
         val mutedRole: Role = tryhardAsync { setupMutedRole(guild) } ?: return
-        tryhardAsync { controller.addSingleRoleToMember(member, mutedRole).await() }
+        tryhardAsync { guild.addRoleToMember(member, mutedRole).await() }
     }
 
     override fun onGuildMemberLeave(event: GuildMemberLeaveEvent) {

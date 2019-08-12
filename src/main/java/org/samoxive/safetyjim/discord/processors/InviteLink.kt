@@ -1,6 +1,6 @@
 package org.samoxive.safetyjim.discord.processors
 
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import org.samoxive.safetyjim.discord.commands.*
@@ -16,7 +16,7 @@ fun isInviteLinkBlacklisted(str: String) = blacklistedHosts.map { str.contains(i
 class InviteLink : MessageProcessor() {
     override suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent, settings: SettingsEntity): Boolean {
         val message = event.message
-        val member = event.member
+        val member = event.member!!
         val channel = event.channel
         val guild = event.guild
         val selfUser = event.jda.selfUser

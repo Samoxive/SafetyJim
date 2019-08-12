@@ -1,7 +1,7 @@
 package org.samoxive.safetyjim.discord.commands
 
-import net.dv8tion.jda.core.EmbedBuilder
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.RolesTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
@@ -14,7 +14,7 @@ class Iam : Command() {
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val messageIterator = Scanner(args)
 
-        val member = event.member
+        val member = event.member!!
         val message = event.message
         val guild = event.guild
         val channel = event.channel
@@ -61,17 +61,16 @@ class Iam : Command() {
             return false
         }
 
-        val controller = guild.controller
         if (member.roles.find { it == matchedRole } != null) {
             try {
-                controller.removeSingleRoleFromMember(member, matchedRole).await()
+                guild.removeRoleFromMember(member, matchedRole).await()
                 message.successReact()
             } catch (e: Exception) {
                 message.failMessage("Could not remove specified role. Do I have enough permissions?")
             }
         } else {
             try {
-                controller.addSingleRoleToMember(member, matchedRole).await()
+                guild.addRoleToMember(member, matchedRole).await()
                 message.successReact()
             } catch (e: Exception) {
                 message.failMessage("Could not assign specified role. Do I have enough permissions?")

@@ -2,8 +2,8 @@ package org.samoxive.safetyjim.discord
 
 import com.joestelmach.natty.Parser
 import me.xdrop.fuzzywuzzy.FuzzySearch
-import net.dv8tion.jda.core.entities.Message
-import net.dv8tion.jda.core.entities.User
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.tryhardAsync
 import java.util.*
 import java.util.regex.Pattern
@@ -137,7 +137,7 @@ suspend fun Scanner.findBannedUser(message: Message): Pair<SearchUserResult, Use
         return SearchUserResult.NOT_FOUND to null
     }
 
-    val banList = guild.banList.await().map { it.user }
+    val banList = guild.retrieveBanList().await().map { it.user }
     if (banList.isEmpty()) {
         return SearchUserResult.NOT_FOUND to null
     }
