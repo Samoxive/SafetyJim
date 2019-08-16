@@ -1,18 +1,17 @@
 package org.samoxive.safetyjim.server.models
 
 import kotlinx.serialization.Serializable
-import net.dv8tion.jda.api.entities.Guild
 import org.samoxive.safetyjim.database.SoftbanEntity
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.await
 
 @Serializable
 data class SoftbanModel(
-        val id: Int,
-        val user: UserModel,
-        val moderatorUser: UserModel,
-        val actionTime: Long,
-        val reason: String
+    val id: Int,
+    val user: UserModel,
+    val moderatorUser: UserModel,
+    val actionTime: Long,
+    val reason: String
 )
 
 suspend fun SoftbanEntity.toSoftbanModel(bot: DiscordBot): SoftbanModel {

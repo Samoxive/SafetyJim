@@ -19,7 +19,7 @@ import org.samoxive.safetyjim.server.endJson
 import org.samoxive.safetyjim.server.models.MuteModel
 import org.samoxive.safetyjim.server.models.toMuteModel
 
-class GetMutesEndpoint(bot: DiscordBot): ModLogEndpoint(bot) {
+class GetMutesEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity): Result {
         val mutes = MutesTable.fetchGuildMutes(guild).map { it.toMuteModel(bot) }
         response.endJson(Json.stringify(MuteModel.serializer().list, mutes))

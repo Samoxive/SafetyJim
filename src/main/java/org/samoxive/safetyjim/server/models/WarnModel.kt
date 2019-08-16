@@ -7,11 +7,11 @@ import org.samoxive.safetyjim.discord.await
 
 @Serializable
 data class WarnModel(
-        val id: Int,
-        val user: UserModel,
-        val moderatorUser: UserModel,
-        val actionTime: Long,
-        val reason: String
+    val id: Int,
+    val user: UserModel,
+    val moderatorUser: UserModel,
+    val actionTime: Long,
+    val reason: String
 )
 
 suspend fun WarnEntity.toWarnModel(bot: DiscordBot): WarnModel {

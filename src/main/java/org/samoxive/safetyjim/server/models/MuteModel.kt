@@ -7,13 +7,13 @@ import org.samoxive.safetyjim.discord.await
 
 @Serializable
 data class MuteModel(
-        val id: Int,
-        val user: UserModel,
-        val moderatorUser: UserModel,
-        val actionTime: Long,
-        val expirationTime: Long?,
-        val unmuted: Boolean,
-        val reason: String
+    val id: Int,
+    val user: UserModel,
+    val moderatorUser: UserModel,
+    val actionTime: Long,
+    val expirationTime: Long?,
+    val unmuted: Boolean,
+    val reason: String
 )
 
 suspend fun MuteEntity.toMuteModel(bot: DiscordBot): MuteModel {

@@ -19,7 +19,7 @@ import org.samoxive.safetyjim.server.endJson
 import org.samoxive.safetyjim.server.models.HardbanModel
 import org.samoxive.safetyjim.server.models.toHardbanModel
 
-class GetHardbansEndpoint(bot: DiscordBot): ModLogEndpoint(bot) {
+class GetHardbansEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity): Result {
         val hardbans = HardbansTable.fetchGuildHardbans(guild).map { it.toHardbanModel(bot) }
         response.endJson(Json.stringify(HardbanModel.serializer().list, hardbans))

@@ -19,7 +19,7 @@ import org.samoxive.safetyjim.server.endJson
 import org.samoxive.safetyjim.server.models.BanModel
 import org.samoxive.safetyjim.server.models.toBanModel
 
-class GetBansEndpoint(bot: DiscordBot): ModLogEndpoint(bot) {
+class GetBansEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity): Result {
         val bans = BansTable.fetchGuildBans(guild).map { it.toBanModel(bot) }
         response.endJson(Json.stringify(BanModel.serializer().list, bans))

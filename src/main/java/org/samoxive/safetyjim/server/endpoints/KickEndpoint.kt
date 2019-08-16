@@ -19,7 +19,7 @@ import org.samoxive.safetyjim.server.endJson
 import org.samoxive.safetyjim.server.models.KickModel
 import org.samoxive.safetyjim.server.models.toKickModel
 
-class GetKicksEndpoint(bot: DiscordBot): ModLogEndpoint(bot) {
+class GetKicksEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity): Result {
         val kicks = KicksTable.fetchGuildKicks(guild).map { it.toKickModel(bot) }
         response.endJson(Json.stringify(KickModel.serializer().list, kicks))

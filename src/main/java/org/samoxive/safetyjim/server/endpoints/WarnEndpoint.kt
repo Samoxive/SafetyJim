@@ -19,7 +19,7 @@ import org.samoxive.safetyjim.server.endJson
 import org.samoxive.safetyjim.server.models.WarnModel
 import org.samoxive.safetyjim.server.models.toWarnModel
 
-class GetWarnsEndpoint(bot: DiscordBot): ModLogEndpoint(bot) {
+class GetWarnsEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity): Result {
         val warns = WarnsTable.fetchGuildWarns(guild).map { it.toWarnModel(bot) }
         response.endJson(Json.stringify(WarnModel.serializer().list, warns))

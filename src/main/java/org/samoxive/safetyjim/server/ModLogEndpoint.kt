@@ -12,7 +12,7 @@ import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.isStaff
 
-abstract class ModLogEndpoint(bot: DiscordBot): AuthenticatedGuildEndpoint(bot) {
+abstract class ModLogEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
     private fun canMemberView(member: Member, settings: SettingsEntity): Boolean {
         return when (settings.privacyModLog) {
             SettingsEntity.PRIVACY_EVERYONE -> true

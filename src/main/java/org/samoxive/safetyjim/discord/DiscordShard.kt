@@ -221,7 +221,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     private suspend fun onGuildMemberJoinAsync(event: GuildMemberJoinEvent) {
         val shard = event.jda
         val guild = event.guild
-        val member = event.member!!
+        val member = event.member
         val user = member.user
         val guildSettings = getGuildSettings(guild, bot.config)
 
