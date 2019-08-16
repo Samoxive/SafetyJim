@@ -18,7 +18,13 @@ class Server(val bot: DiscordBot, vertx: Vertx) {
             PostGuildSettingsEndpoint(bot),
             ResetGuildSettingsEndpoint(bot),
             CaptchaPageEndpoint(bot),
-            CaptchaSubmitEndpoint(bot)
+            CaptchaSubmitEndpoint(bot),
+            GetBansEndpoint(bot),
+            GetSoftbansEndpoint(bot),
+            GetHardbansEndpoint(bot),
+            GetKicksEndpoint(bot),
+            GetMutesEndpoint(bot),
+            GetWarnsEndpoint(bot)
     )
 
     init {

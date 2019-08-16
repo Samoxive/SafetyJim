@@ -5,6 +5,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.MessageBuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
@@ -98,10 +99,15 @@ class DiscordBot(val config: Config) {
         }
     }
 
-    fun getGuildFromBot(guildId: String): Guild? {
+    fun getGuild(guildId: String): Guild? {
         val guildIdLong = tryhard { guildId.toLong() } ?: return null
         val shardId = getShardIdFromGuildId(guildIdLong, shards.size)
         return shards[shardId].jda.getGuildById(guildId)
+    }
+
+    fun getGuildShard(guildId: Long): JDA {
+        val shardId = getShardIdFromGuildId(guildId, shards.size)
+        return shards[shardId].jda
     }
 
     private suspend fun allowUsers() {
