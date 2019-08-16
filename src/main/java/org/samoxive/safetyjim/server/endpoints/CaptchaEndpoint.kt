@@ -49,7 +49,7 @@ class CaptchaPageEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
 
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse): Result {
         val guildId = request.getParam("guildId") ?: return Result(Status.SERVER_ERROR)
-        val guild = bot.getGuildFromBot(guildId) ?: return Result(Status.NOT_FOUND)
+        val guild = bot.getGuild(guildId) ?: return Result(Status.NOT_FOUND)
         val userId = request.getParam("userId") ?: return Result(Status.SERVER_ERROR)
         val member = guild.getMemberById(userId) ?: return Result(Status.NOT_FOUND)
 
@@ -65,7 +65,7 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
 
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse): Result {
         val guildId = request.getParam("guildId") ?: return Result(Status.SERVER_ERROR)
-        val guild = bot.getGuildFromBot(guildId) ?: return Result(Status.NOT_FOUND)
+        val guild = bot.getGuild(guildId) ?: return Result(Status.NOT_FOUND)
         val userId = request.getParam("userId") ?: return Result(Status.SERVER_ERROR)
         val member = guild.getMemberById(userId) ?: return Result(Status.NOT_FOUND)
 

@@ -1,11 +1,11 @@
-package org.samoxive.safetyjim.server.entities
+package org.samoxive.safetyjim.server.models
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SelfUserEntity(
+data class SelfUserModel(
     val id: String,
     val name: String,
     val avatarUrl: String?,
-    val guilds: List<GuildEntity>
+    val guilds: List<GuildModel>
 )

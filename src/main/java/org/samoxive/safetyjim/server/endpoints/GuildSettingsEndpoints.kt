@@ -18,10 +18,7 @@ import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
 import org.samoxive.safetyjim.server.Result
 import org.samoxive.safetyjim.server.Status
 import org.samoxive.safetyjim.server.endJson
-import org.samoxive.safetyjim.server.entities.GuildSettingsEntity
-import org.samoxive.safetyjim.server.entities.toChannelEntity
-import org.samoxive.safetyjim.server.entities.toGuildEntity
-import org.samoxive.safetyjim.server.entities.toRoleEntity
+import org.samoxive.safetyjim.server.models.*
 import org.samoxive.safetyjim.tryhard
 import org.samoxive.safetyjim.tryhardAsync
 
@@ -46,20 +43,20 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
         }
 
         val holdingRoomRole = if (guildSettingsDb.holdingRoomRoleId != null) guild.getRoleById(guildSettingsDb.holdingRoomRoleId) else null
-        val settings = GuildSettingsEntity(
-                guild.toGuildEntity(),
-                guild.textChannels.map { it.toChannelEntity() },
-                guild.roles.map { it.toRoleEntity() },
+        val settings = GuildSettingsModel(
+                guild.toGuildModel(),
+                guild.textChannels.map { it.toChannelModel() },
+                guild.roles.map { it.toRoleModel() },
                 guildSettingsDb.modLog,
-                guild.getTextChannelById(guildSettingsDb.modLogChannelId)?.toChannelEntity()
+                guild.getTextChannelById(guildSettingsDb.modLogChannelId)?.toChannelModel()
                         ?: return Result(Status.SERVER_ERROR),
                 guildSettingsDb.holdingRoom,
-                holdingRoomRole?.toRoleEntity(),
+                holdingRoomRole?.toRoleModel(),
                 guildSettingsDb.holdingRoomMinutes,
                 guildSettingsDb.inviteLinkRemover,
                 guildSettingsDb.welcomeMessage,
                 guildSettingsDb.message,
-                guild.getTextChannelById(guildSettingsDb.welcomeMessageChannelId)?.toChannelEntity()
+                guild.getTextChannelById(guildSettingsDb.welcomeMessageChannelId)?.toChannelModel()
                         ?: return Result(Status.SERVER_ERROR),
                 guildSettingsDb.prefix,
                 guildSettingsDb.silentCommands,
@@ -81,7 +78,7 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
                 guildSettingsDb.privacyModLog
         )
 
-        response.endJson(Json.stringify(GuildSettingsEntity.serializer(), settings))
+        response.endJson(Json.stringify(GuildSettingsModel.serializer(), settings))
         return Result(Status.OK)
     }
 }
@@ -95,7 +92,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.FORBIDDEN, "You need to be an administrator to change server settings!")
         }
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val parsedSettings = tryhard { Json.parse(GuildSettingsEntity.serializer(), bodyString) }
+        val parsedSettings = tryhard { Json.parse(GuildSettingsModel.serializer(), bodyString) }
                 ?: return Result(Status.BAD_REQUEST)
 
         val newSettings = parsedSettings.copy(

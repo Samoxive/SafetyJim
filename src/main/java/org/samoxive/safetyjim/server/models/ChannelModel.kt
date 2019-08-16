@@ -1,12 +1,12 @@
-package org.samoxive.safetyjim.server.entities
+package org.samoxive.safetyjim.server.models
 
 import kotlinx.serialization.Serializable
 import net.dv8tion.jda.api.entities.TextChannel
 
 @Serializable
-data class ChannelEntity(
+data class ChannelModel(
     val id: String,
     val name: String
 )
 
-fun TextChannel.toChannelEntity(): ChannelEntity = ChannelEntity(id, name)
+fun TextChannel.toChannelModel(): ChannelModel = ChannelModel(id, name)

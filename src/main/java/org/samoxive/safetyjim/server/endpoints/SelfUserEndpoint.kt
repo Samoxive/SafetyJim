@@ -12,17 +12,17 @@ import org.samoxive.safetyjim.server.AuthenticatedEndpoint
 import org.samoxive.safetyjim.server.Result
 import org.samoxive.safetyjim.server.Status
 import org.samoxive.safetyjim.server.endJson
-import org.samoxive.safetyjim.server.entities.SelfUserEntity
-import org.samoxive.safetyjim.server.entities.toGuildEntity
+import org.samoxive.safetyjim.server.models.SelfUserModel
+import org.samoxive.safetyjim.server.models.toGuildModel
 
 class SelfUserEndpoint(bot: DiscordBot) : AuthenticatedEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User): Result {
         val guilds = bot.shards.flatMap { it.jda.guilds }
                 .asSequence()
                 .filter { it.isMember(user) }
-                .map { it.toGuildEntity() }
+                .map { it.toGuildModel() }
                 .toList()
-        response.endJson(Json.stringify(SelfUserEntity.serializer(), SelfUserEntity(user.id, user.getTag(), user.avatarUrl, guilds)))
+        response.endJson(Json.stringify(SelfUserModel.serializer(), SelfUserModel(user.id, user.getTag(), user.avatarUrl, guilds)))
         return Result(Status.OK)
     }
 

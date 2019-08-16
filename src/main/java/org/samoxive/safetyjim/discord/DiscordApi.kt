@@ -8,7 +8,7 @@ import kotlinx.serialization.json.Json
 import org.samoxive.safetyjim.config.OauthConfig
 import org.samoxive.safetyjim.discord.entities.DiscordSelfUser
 import org.samoxive.safetyjim.httpClient
-import org.samoxive.safetyjim.server.entities.AccessTokenResponse
+import org.samoxive.safetyjim.server.models.AccessTokenResponse
 import org.samoxive.safetyjim.tryhardAsync
 
 object DiscordApi {
