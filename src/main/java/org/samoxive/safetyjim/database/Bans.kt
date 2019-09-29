@@ -50,7 +50,9 @@ where id = $1;
 
 object BansTable : AbstractTable {
     override val createStatement = createSQL
-    override val createIndexStatements = arrayOf<String>()
+    override val createIndexStatements = arrayOf(
+            "create index if not exists banlist_bantime_index on banlist (bantime desc);"
+    )
 
     private fun PgRowSet.toBanEntities(): List<BanEntity> = this.map {
         BanEntity(
@@ -66,9 +68,15 @@ object BansTable : AbstractTable {
         )
     }
 
-    suspend fun fetchGuildBans(guild: Guild): List<BanEntity> {
-        return pgPool.preparedQueryAwait("select * from banlist where guildid = $1;", Tuple.of(guild.idLong))
+    suspend fun fetchGuildBans(guild: Guild, page: Int): List<BanEntity> {
+        return pgPool.preparedQueryAwait("select * from banlist where guildid = $1 order by bantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toBanEntities()
+    }
+
+    suspend fun fetchGuildBansCount(guild: Guild): Int {
+        return pgPool.preparedQueryAwait("select count(*) from banlist where guildid = $1;", Tuple.of(guild.idLong))
+                .first()
+                .getInteger(0)
     }
 
     suspend fun fetchExpiredBans(): List<BanEntity> {

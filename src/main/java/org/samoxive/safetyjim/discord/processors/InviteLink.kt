@@ -48,7 +48,8 @@ class InviteLink : MessageProcessor() {
         tryhardAsync {
             message.delete().await()
             when (settings.inviteLinkRemoverAction) {
-                SettingsEntity.ACTION_NOTHING -> {}
+                SettingsEntity.ACTION_NOTHING -> {
+                }
                 SettingsEntity.ACTION_WARN -> warnAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)
                 SettingsEntity.ACTION_MUTE -> muteAction(guild, channel, settings, selfUser, targetUser, null, ACTION_REASON, expirationDate)
                 SettingsEntity.ACTION_KICK -> kickAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)

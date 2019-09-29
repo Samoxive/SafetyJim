@@ -18,7 +18,10 @@ import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
 import org.samoxive.safetyjim.server.Result
 import org.samoxive.safetyjim.server.Status
 import org.samoxive.safetyjim.server.endJson
-import org.samoxive.safetyjim.server.models.*
+import org.samoxive.safetyjim.server.models.GuildSettingsModel
+import org.samoxive.safetyjim.server.models.toChannelModel
+import org.samoxive.safetyjim.server.models.toGuildModel
+import org.samoxive.safetyjim.server.models.toRoleModel
 import org.samoxive.safetyjim.tryhard
 import org.samoxive.safetyjim.tryhardAsync
 

@@ -40,7 +40,9 @@ where id = $1;
 
 object HardbansTable : AbstractTable {
     override val createStatement = createSQL
-    override val createIndexStatements = arrayOf<String>()
+    override val createIndexStatements = arrayOf(
+            "create index if not exists hardbanlist_hardbantime_index on hardbanlist (hardbantime desc);"
+    )
 
     private fun PgRowSet.toHardbanEntities(): List<HardbanEntity> = this.map {
         HardbanEntity(
@@ -53,9 +55,15 @@ object HardbansTable : AbstractTable {
         )
     }
 
-    suspend fun fetchGuildHardbans(guild: Guild): List<HardbanEntity> {
-        return pgPool.preparedQueryAwait("select * from hardbanlist where guildid = $1;", Tuple.of(guild.idLong))
+    suspend fun fetchGuildHardbans(guild: Guild, page: Int): List<HardbanEntity> {
+        return pgPool.preparedQueryAwait("select * from hardbanlist where guildid = $1 order by hardbantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toHardbanEntities()
+    }
+
+    suspend fun fetchGuildHardbansCount(guild: Guild): Int {
+        return pgPool.preparedQueryAwait("select count(*) from hardbanlist where guildid = $1;", Tuple.of(guild.idLong))
+                .first()
+                .getInteger(0)
     }
 
     suspend fun insertHardban(hardban: HardbanEntity): HardbanEntity {

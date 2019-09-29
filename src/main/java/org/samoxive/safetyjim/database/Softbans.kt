@@ -53,9 +53,15 @@ object SoftbansTable : AbstractTable {
         )
     }
 
-    suspend fun fetchGuildSoftbans(guild: Guild): List<SoftbanEntity> {
-        return pgPool.preparedQueryAwait("select * from softbanlist where guildid = $1;", Tuple.of(guild.idLong))
+    suspend fun fetchGuildSoftbans(guild: Guild, page: Int): List<SoftbanEntity> {
+        return pgPool.preparedQueryAwait("select * from softbanlist where guildid = $1 order by softbantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toSoftbanEntities()
+    }
+
+    suspend fun fetchGuildSoftbansCount(guild: Guild): Int {
+        return pgPool.preparedQueryAwait("select count(*) from softbanlist where guildid = $1;", Tuple.of(guild.idLong))
+                .first()
+                .getInteger(0)
     }
 
     suspend fun insertSoftban(softban: SoftbanEntity): SoftbanEntity {

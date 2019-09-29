@@ -28,8 +28,13 @@ abstract class ModLogEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot)
             return Result(Status.FORBIDDEN, "Server settings prevent you from viewing moderator log entries!")
         }
 
-        return handle(event, request, response, user, guild, member, settings)
+        val page = request.getParam("page")?.toIntOrNull() ?: 1
+        if (page < 1) {
+            return Result(Status.BAD_REQUEST, "Invalid page number!")
+        }
+
+        return handle(event, request, response, user, guild, member, settings, page)
     }
 
-    abstract suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity): Result
+    abstract suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity, page: Int): Result
 }

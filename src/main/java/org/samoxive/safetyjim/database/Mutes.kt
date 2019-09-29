@@ -66,9 +66,15 @@ object MutesTable : AbstractTable {
         )
     }
 
-    suspend fun fetchGuildMutes(guild: Guild): List<MuteEntity> {
-        return pgPool.preparedQueryAwait("select * from mutelist where guildid = $1;", Tuple.of(guild.idLong))
+    suspend fun fetchGuildMutes(guild: Guild, page: Int): List<MuteEntity> {
+        return pgPool.preparedQueryAwait("select * from mutelist where guildid = $1 order by mutetime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toMuteEntities()
+    }
+
+    suspend fun fetchGuildMutesCount(guild: Guild): Int {
+        return pgPool.preparedQueryAwait("select count(*) from mutelist where guildid = $1;", Tuple.of(guild.idLong))
+                .first()
+                .getInteger(0)
     }
 
     suspend fun fetchExpiredMutes(): List<MuteEntity> {

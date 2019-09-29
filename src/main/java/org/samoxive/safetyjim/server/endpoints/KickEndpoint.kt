@@ -4,8 +4,8 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.list
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.User
@@ -19,10 +19,19 @@ import org.samoxive.safetyjim.server.endJson
 import org.samoxive.safetyjim.server.models.KickModel
 import org.samoxive.safetyjim.server.models.toKickModel
 
+@Serializable
+data class GetKicksEndpointResponse(
+    val currentPage: Int,
+    val totalPages: Int,
+    val entries: List<KickModel>
+)
+
 class GetKicksEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
-    override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity): Result {
-        val kicks = KicksTable.fetchGuildKicks(guild).map { it.toKickModel(bot) }
-        response.endJson(Json.stringify(KickModel.serializer().list, kicks))
+    override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity, page: Int): Result {
+        val kicks = KicksTable.fetchGuildKicks(guild, page).map { it.toKickModel(bot) }
+        val pageCount = KicksTable.fetchGuildKicksCount(guild)
+        val body = GetKicksEndpointResponse(page, pageCount, kicks)
+        response.endJson(Json.stringify(GetKicksEndpointResponse.serializer(), body))
         return Result(Status.OK)
     }
 
