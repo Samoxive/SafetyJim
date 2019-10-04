@@ -23,7 +23,7 @@ import org.samoxive.safetyjim.server.models.toBanModel
 data class GetBansEndpointResponse(
     val currentPage: Int,
     val totalPages: Int,
-    val bans: List<BanModel>
+    val entries: List<BanModel>
 )
 
 class GetBansEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
