@@ -32,7 +32,7 @@ class GetMutesEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
         val mutes = MutesTable.fetchGuildMutes(guild, page).map { it.toMuteModel(bot) }
         val pageCount = MutesTable.fetchGuildMutesCount(guild)
         val body = GetMutesEndpointResponse(page, pageCount, mutes)
-        response.endJson(Json.stringify(MuteModel.serializer().list, mutes))
+        response.endJson(Json.stringify(GetMutesEndpointResponse.serializer(), body))
         return Result(Status.OK)
     }
 
