@@ -29,7 +29,7 @@ data class GetKicksEndpointResponse(
 class GetKicksEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity, page: Int): Result {
         val kicks = KicksTable.fetchGuildKicks(guild, page).map { it.toKickModel(bot) }
-        val pageCount = KicksTable.fetchGuildKicksCount(guild)
+        val pageCount = (KicksTable.fetchGuildKicksCount(guild) / 10) + 1
         val body = GetKicksEndpointResponse(page, pageCount, kicks)
         response.endJson(Json.stringify(GetKicksEndpointResponse.serializer(), body))
         return Result(Status.OK)

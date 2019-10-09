@@ -29,7 +29,7 @@ data class GetBansEndpointResponse(
 class GetBansEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity, page: Int): Result {
         val bans = BansTable.fetchGuildBans(guild, page).map { it.toBanModel(bot) }
-        val pageCount = BansTable.fetchGuildBansCount(guild)
+        val pageCount = (BansTable.fetchGuildBansCount(guild) / 10) + 1
         val body = GetBansEndpointResponse(page, pageCount, bans)
         response.endJson(Json.stringify(GetBansEndpointResponse.serializer(), body))
         return Result(Status.OK)

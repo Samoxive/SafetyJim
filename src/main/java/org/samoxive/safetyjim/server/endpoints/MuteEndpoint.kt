@@ -30,7 +30,7 @@ data class GetMutesEndpointResponse(
 class GetMutesEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity, page: Int): Result {
         val mutes = MutesTable.fetchGuildMutes(guild, page).map { it.toMuteModel(bot) }
-        val pageCount = MutesTable.fetchGuildMutesCount(guild)
+        val pageCount = (MutesTable.fetchGuildMutesCount(guild) / 10) + 1
         val body = GetMutesEndpointResponse(page, pageCount, mutes)
         response.endJson(Json.stringify(GetMutesEndpointResponse.serializer(), body))
         return Result(Status.OK)

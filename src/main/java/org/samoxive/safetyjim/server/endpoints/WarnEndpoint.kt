@@ -29,7 +29,7 @@ data class GetWarnsEndpointResponse(
 class GetWarnsEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity, page: Int): Result {
         val warns = WarnsTable.fetchGuildWarns(guild, page).map { it.toWarnModel(bot) }
-        val pageCount = WarnsTable.fetchGuildWarnsCount(guild)
+        val pageCount = (WarnsTable.fetchGuildWarnsCount(guild) / 10) + 1
         val body = GetWarnsEndpointResponse(page, pageCount, warns)
         response.endJson(Json.stringify(GetWarnsEndpointResponse.serializer(), body))
         return Result(Status.OK)
