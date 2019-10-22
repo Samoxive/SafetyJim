@@ -2,6 +2,7 @@ package org.samoxive.safetyjim.server.models
 
 import kotlinx.serialization.Serializable
 import net.dv8tion.jda.api.entities.User
+import org.samoxive.safetyjim.discord.getTag
 
 @Serializable
 data class UserModel(
@@ -10,4 +11,4 @@ data class UserModel(
     val avatarUrl: String
 )
 
-fun User.toUserModel(): UserModel = UserModel(id, name, effectiveAvatarUrl)
+fun User.toUserModel(): UserModel = UserModel(id, getTag(), effectiveAvatarUrl)
