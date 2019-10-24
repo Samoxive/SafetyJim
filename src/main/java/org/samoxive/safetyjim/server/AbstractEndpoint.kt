@@ -43,7 +43,7 @@ abstract class AbstractEndpoint(val bot: DiscordBot) : Handler<RoutingContext> {
             if (result.message != "") {
                 response.statusCode = result.status.code
                 response.putHeader("Content-Type", "application/json")
-                response.end("\"${result.message}\"")
+                response.endJsonString(result.message)
             } else {
                 response.statusCode = result.status.code
                 response.end()
