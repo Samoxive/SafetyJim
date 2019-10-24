@@ -13,7 +13,8 @@ data class MuteModel(
     val actionTime: Long,
     val expirationTime: Long?,
     val unmuted: Boolean,
-    val reason: String
+    val reason: String,
+    val pardoned: Boolean
 )
 
 suspend fun MuteEntity.toMuteModel(bot: DiscordBot): MuteModel {
@@ -21,5 +22,5 @@ suspend fun MuteEntity.toMuteModel(bot: DiscordBot): MuteModel {
     val user = shard.retrieveUserById(userId).await()
     val moderatorUser = shard.retrieveUserById(moderatorUserId).await()
 
-    return MuteModel(id, user.toUserModel(), moderatorUser.toUserModel(), muteTime, expireTime, unmuted, reason)
+    return MuteModel(id, user.toUserModel(), moderatorUser.toUserModel(), muteTime, expireTime, unmuted, reason, pardoned)
 }

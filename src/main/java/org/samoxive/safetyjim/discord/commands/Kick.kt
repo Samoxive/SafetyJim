@@ -13,7 +13,9 @@ import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
-suspend fun kickAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, kickUser: User, reason: String) {
+private const val ACTION_REASON = "Kick threshold exceeded."
+
+suspend fun kickAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, kickUser: User, reason: String, callDepth: Int = 0) {
     val now = Date()
 
     val embed = EmbedBuilder()
@@ -35,11 +37,20 @@ suspend fun kickAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
                     moderatorUserId = modUser.idLong,
                     guildId = guild.idLong,
                     kickTime = now.time / 1000,
-                    reason = reason
+                    reason = reason,
+                    pardoned = false
             )
     )
 
     createModLogEntry(guild, channel, settings, modUser, kickUser, reason, ModLogAction.Kick, record.id)
+
+    if (settings.kickThreshold != 0) {
+        val kickCount = KicksTable.fetchUserActionableKickCount(guild, kickUser)
+        if (kickCount >= settings.kickThreshold) {
+            val expirationDate = settings.getKickActionExpirationDate()
+            executeModAction(settings.kickAction, guild, channel, settings, modUser, kickUser, ACTION_REASON, expirationDate, callDepth)
+        }
+    }
 }
 
 class Kick : Command() {

@@ -13,7 +13,7 @@ import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
-suspend fun banAction(guild: Guild, channel: TextChannel, settings: SettingsEntity, modUser: User, banUser: User, reason: String, expirationDate: Date?) {
+suspend fun banAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, banUser: User, reason: String, expirationDate: Date?) {
     val now = Date()
     val embed = EmbedBuilder()
     embed.setTitle("Banned from ${guild.name}")

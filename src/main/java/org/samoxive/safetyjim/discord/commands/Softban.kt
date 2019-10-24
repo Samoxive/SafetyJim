@@ -13,7 +13,9 @@ import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
-suspend fun softbanAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, softbanUser: User, reason: String) {
+private const val ACTION_REASON = "Softban threshold exceeded."
+
+suspend fun softbanAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, softbanUser: User, reason: String, callDepth: Int = 0) {
     val now = Date()
 
     val embed = EmbedBuilder()
@@ -35,11 +37,20 @@ suspend fun softbanAction(guild: Guild, channel: TextChannel?, settings: Setting
                     moderatorUserId = modUser.idLong,
                     guildId = guild.idLong,
                     softbanTime = now.time / 1000,
-                    reason = reason
+                    reason = reason,
+                    pardoned = false
             )
     )
 
     createModLogEntry(guild, channel, settings, modUser, softbanUser, reason, ModLogAction.Softban, record.id)
+
+    if (settings.softbanThreshold != 0) {
+        val softbanCount = SoftbansTable.fetchUserActionableSoftbanCount(guild, softbanUser)
+        if (softbanCount >= settings.softbanThreshold) {
+            val expirationDate = settings.getSoftbanActionExpirationDate()
+            executeModAction(settings.softbanAction, guild, channel, settings, modUser, softbanUser, ACTION_REASON, expirationDate, callDepth)
+        }
+    }
 }
 
 class Softban : Command() {

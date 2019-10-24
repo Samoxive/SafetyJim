@@ -16,7 +16,8 @@ create table if not exists mutelist (
     expiretime bigint,
     reason text not null,
     expires boolean not null,
-    unmuted boolean not null
+    unmuted boolean not null,
+    pardoned boolean not null
 );
 """
 
@@ -29,9 +30,10 @@ insert into mutelist (
     expiretime,
     reason,
     expires,
-    unmuted
+    unmuted,
+    pardoned
 )
-values ($1, $2, $3, $4, $5, $6, $7, $8)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 returning *;
 """
 
@@ -44,7 +46,8 @@ update mutelist set
     expiretime = $6,
     reason = $7,
     expires = $8,
-    unmuted = $9
+    unmuted = $9,
+    pardoned = $10
 where id = $1;
 """
 
@@ -62,7 +65,8 @@ object MutesTable : AbstractTable {
                 expireTime = it.getLong(5),
                 reason = it.getString(6),
                 expires = it.getBoolean(7),
-                unmuted = it.getBoolean(8)
+                unmuted = it.getBoolean(8),
+                pardoned = it.getBoolean(9)
         )
     }
 
@@ -86,6 +90,12 @@ object MutesTable : AbstractTable {
     suspend fun fetchValidUserMutes(guild: Guild, user: User): List<MuteEntity> {
         return pgPool.preparedQueryAwait("select * from mutelist where guildid = $1 and userid = $2 and unmuted = false;", Tuple.of(guild.idLong, user.idLong))
                 .toMuteEntities()
+    }
+
+    suspend fun fetchUserActionableMuteCount(guild: Guild, user: User): Int {
+        return pgPool.preparedQueryAwait("select count(*) from mutelist where guildid = $1 and userid = $2;", Tuple.of(guild.idLong, user.idLong))
+                .first()
+                .getInteger(0)
     }
 
     suspend fun insertMute(mute: MuteEntity): MuteEntity {
@@ -112,7 +122,8 @@ data class MuteEntity(
     val expireTime: Long?,
     val reason: String,
     val expires: Boolean,
-    val unmuted: Boolean
+    val unmuted: Boolean,
+    val pardoned: Boolean
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
@@ -123,7 +134,8 @@ data class MuteEntity(
                 expireTime,
                 reason,
                 expires,
-                unmuted
+                unmuted,
+                pardoned
         )
     }
 
@@ -137,7 +149,8 @@ data class MuteEntity(
                 expireTime,
                 reason,
                 expires,
-                unmuted
+                unmuted,
+                pardoned
         )
     }
 }

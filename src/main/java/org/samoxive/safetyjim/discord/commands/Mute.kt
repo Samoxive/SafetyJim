@@ -11,8 +11,13 @@ import org.samoxive.safetyjim.discord.*
 import java.awt.Color
 import java.util.*
 
-suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, muteUser: User, mutedRole: Role?, reason: String, expirationDate: Date?) {
-    var mutedRole = mutedRole ?: setupMutedRole(guild)
+private const val ACTION_REASON = "Mute threshold exceeded."
+
+suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, muteUser: User, reason: String, expirationDate: Date?, callDepth: Int) {
+    muteAction(guild, channel, settings, modUser, muteUser, setupMutedRole(guild), reason, expirationDate, callDepth)
+}
+
+suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, muteUser: User, mutedRole: Role, reason: String, expirationDate: Date?, callDepth: Int = 0) {
     val muteMember = guild.getMember(muteUser)!!
     val now = Date()
 
@@ -40,11 +45,20 @@ suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
                     expireTime = if (expirationDate == null) 0 else expirationDate.time / 1000,
                     reason = reason,
                     expires = expires,
-                    unmuted = false
+                    unmuted = false,
+                    pardoned = false
             )
     )
 
     createModLogEntry(guild, channel, settings, modUser, muteUser, reason, ModLogAction.Mute, record.id, expirationDate)
+
+    if (settings.muteThreshold != 0) {
+        val muteCount = MutesTable.fetchUserActionableMuteCount(guild, muteUser)
+        if (muteCount >= settings.muteThreshold) {
+            val expirationDate = settings.getMuteActionExpirationDate()
+            executeModAction(settings.muteAction, guild, channel, settings, modUser, muteUser, ACTION_REASON, expirationDate, callDepth)
+        }
+    }
 }
 
 suspend fun setupMutedRole(guild: Guild): Role {

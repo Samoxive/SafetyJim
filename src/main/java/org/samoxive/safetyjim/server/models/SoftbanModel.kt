@@ -11,7 +11,8 @@ data class SoftbanModel(
     val user: UserModel,
     val moderatorUser: UserModel,
     val actionTime: Long,
-    val reason: String
+    val reason: String,
+    val pardoned: Boolean
 )
 
 suspend fun SoftbanEntity.toSoftbanModel(bot: DiscordBot): SoftbanModel {
@@ -19,5 +20,5 @@ suspend fun SoftbanEntity.toSoftbanModel(bot: DiscordBot): SoftbanModel {
     val user = shard.retrieveUserById(userId).await()
     val moderatorUser = shard.retrieveUserById(moderatorUserId).await()
 
-    return SoftbanModel(id, user.toUserModel(), moderatorUser.toUserModel(), softbanTime, reason)
+    return SoftbanModel(id, user.toUserModel(), moderatorUser.toUserModel(), softbanTime, reason, pardoned)
 }

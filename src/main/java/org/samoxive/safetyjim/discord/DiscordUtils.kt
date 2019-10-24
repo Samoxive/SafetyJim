@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.requests.RestAction
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.SettingsEntity
+import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.tryhardAsync
 import java.awt.Color
 import java.util.*
@@ -41,11 +42,10 @@ suspend fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message?
     return confirmationMessage
 }
 
-suspend fun createModLogEntry(guild: Guild, channel: TextChannel? = null, settings: SettingsEntity, modUser: User, targetUser: User, reason: String, action: ModLogAction, entityId: Int, expirationDate: Date? = null) {
+suspend fun createModLogEntry(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, targetUser: User, reason: String, action: ModLogAction, entityId: Int, expirationDate: Date? = null) {
     val now = Date()
 
     val modLogActive = settings.modLog
-    val prefix = settings.prefix
 
     if (!modLogActive) {
         return
@@ -53,7 +53,7 @@ suspend fun createModLogEntry(guild: Guild, channel: TextChannel? = null, settin
 
     val modLogChannel = guild.getTextChannelById(settings.modLogChannelId)
     if (modLogChannel == null) {
-        channel?.trySendMessage("Invalid moderator log channel in guild configuration, set a proper one via `$prefix settings` command.")
+        channel?.trySendMessage("Invalid moderator log channel in guild configuration, set a proper one via web dashboard.\n\nhttps://safetyjim.xyz/dashboard/${guild.id}/settings")
         return
     }
 
@@ -273,4 +273,22 @@ fun Member.isStaff(): Boolean = staffPermissions.any { hasPermission(it) }
 
 suspend fun <T> RestAction<T>.await(): T = suspendCoroutine { cont ->
     queue({ successValue -> cont.resume(successValue) }, { throwable -> cont.resumeWithException(throwable) })
+}
+
+suspend fun executeModAction(actionId: Int, guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, targetUser: User, reason: String, expirationDate: Date?, callDepth: Int = 0) {
+    if (callDepth >= 3) {
+        return
+    }
+
+    when (actionId) {
+        SettingsEntity.ACTION_NOTHING -> {
+        }
+        SettingsEntity.ACTION_WARN -> warnAction(guild, channel, settings, modUser, targetUser, reason, callDepth + 1)
+        SettingsEntity.ACTION_MUTE -> muteAction(guild, channel, settings, modUser, targetUser, reason, expirationDate, callDepth + 1)
+        SettingsEntity.ACTION_KICK -> kickAction(guild, channel, settings, modUser, targetUser, reason, callDepth + 1)
+        SettingsEntity.ACTION_BAN -> banAction(guild, channel, settings, modUser, targetUser, reason, expirationDate)
+        SettingsEntity.ACTION_SOFTBAN -> softbanAction(guild, channel, settings, modUser, targetUser, reason, callDepth + 1)
+        SettingsEntity.ACTION_HARDBAN -> hardbanAction(guild, channel, settings, modUser, targetUser, reason)
+        else -> throw IllegalStateException()
+    }
 }

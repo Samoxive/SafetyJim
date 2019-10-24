@@ -4,6 +4,7 @@ import io.reactiverse.kotlin.pgclient.preparedQueryAwait
 import io.reactiverse.pgclient.PgRowSet
 import io.reactiverse.pgclient.Tuple
 import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.User
 
 private const val createSQL = """
 create table if not exists warnlist (
@@ -12,7 +13,8 @@ create table if not exists warnlist (
     moderatoruserid bigint not null,
     guildid bigint not null,
     warntime bigint not null,
-    reason text not null
+    reason text not null,
+    pardoned boolean not null
 );
 """
 
@@ -22,9 +24,10 @@ insert into warnlist (
     moderatoruserid,
     guildid,
     warntime,
-    reason
+    reason,
+    pardoned
 )
-values ($1, $2, $3, $4, $5)
+values ($1, $2, $3, $4, $5, $6)
 returning *;
 """
 
@@ -34,7 +37,8 @@ update warnlist set
     moderatoruserid = $3,
     guildid = $4,
     warntime = $5,
-    reason = $6
+    reason = $6,
+    pardoned = $7
 where id = $1;
 """
 
@@ -49,7 +53,8 @@ object WarnsTable : AbstractTable {
                 moderatorUserId = it.getLong(2),
                 guildId = it.getLong(3),
                 warnTime = it.getLong(4),
-                reason = it.getString(5)
+                reason = it.getString(5),
+                pardoned = it.getBoolean(6)
         )
     }
 
@@ -60,6 +65,12 @@ object WarnsTable : AbstractTable {
 
     suspend fun fetchGuildWarnsCount(guild: Guild): Int {
         return pgPool.preparedQueryAwait("select count(*) from warnlist where guildid = $1;", Tuple.of(guild.idLong))
+                .first()
+                .getInteger(0)
+    }
+
+    suspend fun fetchUserActionableSoftbanCount(guild: Guild, user: User): Int {
+        return pgPool.preparedQueryAwait("select count(*) from warnlist where guildid = $1 and userid = $2;", Tuple.of(guild.idLong, user.idLong))
                 .first()
                 .getInteger(0)
     }
@@ -81,7 +92,8 @@ data class WarnEntity(
     val moderatorUserId: Long,
     val guildId: Long,
     val warnTime: Long,
-    val reason: String
+    val reason: String,
+    val pardoned: Boolean
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
@@ -89,7 +101,8 @@ data class WarnEntity(
                 moderatorUserId,
                 guildId,
                 warnTime,
-                reason
+                reason,
+                pardoned
         )
     }
 
@@ -100,7 +113,8 @@ data class WarnEntity(
                 moderatorUserId,
                 guildId,
                 warnTime,
-                reason
+                reason,
+                pardoned
         )
     }
 }

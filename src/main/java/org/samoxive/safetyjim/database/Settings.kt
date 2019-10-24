@@ -9,8 +9,10 @@ import io.reactiverse.pgclient.Tuple
 import net.dv8tion.jda.api.entities.Guild
 import org.ahocorasick.trie.Trie
 import org.samoxive.safetyjim.config.JimConfig
+import org.samoxive.safetyjim.dateFromNow
 import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
 import org.samoxive.safetyjim.tryhardAsync
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 private const val createSQL = """
@@ -42,7 +44,23 @@ create table if not exists settings (
     invitelinkremoveractionduration integer not null,
     invitelinkremoveractiondurationtype integer not null,
     privacysettings integer not null,
-    privacymodlog integer not null
+    privacymodlog integer not null,
+    softbanthreshold integer not null,
+    softbanaction integer not null,
+    softbanactionduration integer not null,
+    softbanactiondurationtype integer not null,
+    kickthreshold integer not null,
+    kickaction integer not null,
+    kickactionduration integer not null,
+    kickactiondurationtype integer not null,
+    mutethreshold integer not null,
+    muteaction integer not null,
+    muteactionduration integer not null,
+    kickactiondurationtype integer not null,
+    warnthreshold integer not null,
+    warnaction integer not null,
+    warnactionduration integer not null,
+    warnactiondurationtype integer not null
 );
 """
 
@@ -75,9 +93,25 @@ insert into settings (
     invitelinkremoveractionduration,
     invitelinkremoveractiondurationtype,
     privacysettings,
-    privacymodlog
+    privacymodlog,
+    softbanthreshold
+    softbanaction,
+    softbanactionduration,
+    softbanactiondurationtype,
+    kickthreshold,
+    kickaction,
+    kickactionduration,
+    kickactiondurationtype,
+    mutethreshold,
+    muteaction,
+    muteactionduration,
+    kickactiondurationtype,
+    warnthreshold,
+    warnaction,
+    warnactionduration,
+    warnactiondurationtype
 )
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44)
 returning *;
 """
 
@@ -109,7 +143,23 @@ update settings set
     invitelinkremoveractionduration = $25,
     invitelinkremoveractiondurationtype = $26,
     privacysettings = $27,
-    privacymodlog = $28
+    privacymodlog = $28,
+    softbanthreshold = $29
+    softbanaction = $30,
+    softbanactionduration = $31,
+    softbanactiondurationtype = $32,
+    kickthreshold = $33,
+    kickaction = $34,
+    kickactionduration = $35,
+    kickactiondurationtype = $36,
+    mutethreshold = $37,
+    muteaction = $38,
+    muteactionduration = $39,
+    kickactiondurationtype = $40,
+    warnthreshold = $41,
+    warnaction = $42,
+    warnactionduration = $43,
+    warnactiondurationtype = $44
 where guildid = $1;
 """
 
@@ -156,7 +206,23 @@ object SettingsTable : AbstractTable {
                 inviteLinkRemoverActionDuration = it.getInteger(24),
                 inviteLinkRemoverActionDurationType = it.getInteger(25),
                 privacySettings = it.getInteger(26),
-                privacyModLog = it.getInteger(27)
+                privacyModLog = it.getInteger(27),
+                softbanThreshold = it.getInteger(28),
+                softbanAction = it.getInteger(29),
+                softbanActionDuration = it.getInteger(30),
+                softbanActionDurationType = it.getInteger(31),
+                kickThreshold = it.getInteger(32),
+                kickAction = it.getInteger(33),
+                kickActionDuration = it.getInteger(34),
+                kickActionDurationType = it.getInteger(35),
+                muteThreshold = it.getInteger(36),
+                muteAction = it.getInteger(37),
+                muteActionDuration = it.getInteger(38),
+                muteActionDurationType = it.getInteger(39),
+                warnThreshold = it.getInteger(40),
+                warnAction = it.getInteger(41),
+                warnActionDuration = it.getInteger(42),
+                warnActionDurationType = it.getInteger(43)
         )
     }
 
@@ -224,13 +290,8 @@ object SettingsTable : AbstractTable {
     }
 
     fun getWordFilter(settings: SettingsEntity): Trie {
-        if (!settings.wordFilter) {
-            throw IllegalStateException()
-        }
-
-        if (settings.wordFilterBlacklist == null) {
-            throw IllegalStateException()
-        }
+        check(settings.wordFilter)
+        checkNotNull(settings.wordFilterBlacklist)
 
         val cachedFilter = wordFilterCache.getIfPresent(settings.guildId)
         if (cachedFilter != null) {
@@ -269,17 +330,25 @@ fun getDelta(durationType: Int, duration: Int): Int {
         else -> throw IllegalStateException()
     }
 
-    if (delta < 0) {
-        throw IllegalArgumentException("Mod action duration cannot be negative!")
-    }
+    require(delta >= 0) { "Mod action duration cannot be negative!" }
 
     // don't let users set too big of a time delta, will Jim even be alive then?
-    if (delta > (3L * 365L * 24L * 60L * 60L)) {
-        throw IllegalArgumentException("Mod action duration is too long! (more than 3 years)")
-    }
+    require(delta <= (3L * 365L * 24L * 60L * 60L)) { "Mod action duration is too long! (more than 3 years)" }
 
     // can't overflow, we did our homework above
     return delta.toInt()
+}
+
+fun getExpirationDateOfModAction(action: Int, durationType: Int, duration: Int): Date? {
+    return if (action == SettingsEntity.ACTION_BAN || action == SettingsEntity.ACTION_MUTE) {
+        if (duration == 0) {
+            null
+        } else {
+            dateFromNow(getDelta(durationType, duration))
+        }
+    } else {
+        null
+    }
 }
 
 data class SettingsEntity(
@@ -310,7 +379,23 @@ data class SettingsEntity(
     val inviteLinkRemoverActionDuration: Int = 0,
     val inviteLinkRemoverActionDurationType: Int = DURATION_TYPE_MINUTES,
     val privacySettings: Int = PRIVACY_EVERYONE,
-    val privacyModLog: Int = PRIVACY_EVERYONE
+    val privacyModLog: Int = PRIVACY_EVERYONE,
+    val softbanThreshold: Int = 0,
+    val softbanAction: Int = ACTION_NOTHING,
+    val softbanActionDuration: Int = 0,
+    val softbanActionDurationType: Int = DURATION_TYPE_MINUTES,
+    val kickThreshold: Int = 0,
+    val kickAction: Int = ACTION_NOTHING,
+    val kickActionDuration: Int = 0,
+    val kickActionDurationType: Int = DURATION_TYPE_MINUTES,
+    val muteThreshold: Int = 0,
+    val muteAction: Int = ACTION_NOTHING,
+    val muteActionDuration: Int = 0,
+    val muteActionDurationType: Int = DURATION_TYPE_MINUTES,
+    val warnThreshold: Int = 0,
+    val warnAction: Int = ACTION_NOTHING,
+    val warnActionDuration: Int = 0,
+    val warnActionDurationType: Int = DURATION_TYPE_MINUTES
 ) {
     companion object {
         const val SILENT_COMMANDS_MOD_ONLY = 0
@@ -362,10 +447,30 @@ data class SettingsEntity(
                 inviteLinkRemoverActionDuration,
                 inviteLinkRemoverActionDurationType,
                 privacySettings,
-                privacyModLog
+                privacyModLog,
+                softbanThreshold,
+                softbanAction,
+                softbanActionDuration,
+                softbanActionDurationType,
+                kickThreshold,
+                kickAction,
+                kickActionDuration,
+                kickActionDurationType,
+                muteThreshold,
+                muteAction,
+                muteActionDuration,
+                muteActionDurationType,
+                warnThreshold,
+                warnAction,
+                warnActionDuration,
+                warnActionDurationType
         )
     }
 
-    fun getWordFilterActionDurationDelta(): Int = getDelta(wordFilterActionDurationType, wordFilterActionDuration)
-    fun getInviteLinkRemoverActionDurationDelta(): Int = getDelta(inviteLinkRemoverActionDurationType, inviteLinkRemoverActionDuration)
+    fun getWordFilterActionExpirationDate(): Date? = getExpirationDateOfModAction(wordFilterAction, wordFilterActionDurationType, wordFilterActionDuration)
+    fun getInviteLinkRemoverActionExpirationDate(): Date? = getExpirationDateOfModAction(inviteLinkRemoverAction, inviteLinkRemoverActionDurationType, inviteLinkRemoverActionDuration)
+    fun getSoftbanActionExpirationDate(): Date? = getExpirationDateOfModAction(softbanAction, softbanActionDurationType, softbanActionDuration)
+    fun getKickActionExpirationDate(): Date? = getExpirationDateOfModAction(kickAction, kickActionDurationType, kickActionDuration)
+    fun getMuteActionExpirationDate(): Date? = getExpirationDateOfModAction(muteAction, muteActionDurationType, muteActionDuration)
+    fun getWarnActionExpirationDate(): Date? = getExpirationDateOfModAction(warnAction, warnActionDurationType, warnActionDuration)
 }

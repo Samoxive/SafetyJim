@@ -11,7 +11,8 @@ data class WarnModel(
     val user: UserModel,
     val moderatorUser: UserModel,
     val actionTime: Long,
-    val reason: String
+    val reason: String,
+    val pardoned: Boolean
 )
 
 suspend fun WarnEntity.toWarnModel(bot: DiscordBot): WarnModel {
@@ -19,5 +20,5 @@ suspend fun WarnEntity.toWarnModel(bot: DiscordBot): WarnModel {
     val user = shard.retrieveUserById(userId).await()
     val moderatorUser = shard.retrieveUserById(moderatorUserId).await()
 
-    return WarnModel(id, user.toUserModel(), moderatorUser.toUserModel(), warnTime, reason)
+    return WarnModel(id, user.toUserModel(), moderatorUser.toUserModel(), warnTime, reason, pardoned)
 }

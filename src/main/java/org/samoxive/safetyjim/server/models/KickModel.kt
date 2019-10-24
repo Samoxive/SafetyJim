@@ -11,7 +11,8 @@ data class KickModel(
     val user: UserModel,
     val moderatorUser: UserModel,
     val actionTime: Long,
-    val reason: String
+    val reason: String,
+    val pardoned: Boolean
 )
 
 suspend fun KickEntity.toKickModel(bot: DiscordBot): KickModel {
@@ -19,5 +20,5 @@ suspend fun KickEntity.toKickModel(bot: DiscordBot): KickModel {
     val user = shard.retrieveUserById(userId).await()
     val moderatorUser = shard.retrieveUserById(moderatorUserId).await()
 
-    return KickModel(id, user.toUserModel(), moderatorUser.toUserModel(), kickTime, reason)
+    return KickModel(id, user.toUserModel(), moderatorUser.toUserModel(), kickTime, reason, pardoned)
 }

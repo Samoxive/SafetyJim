@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.ahocorasick.trie.Trie
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SettingsTable
+import org.samoxive.safetyjim.dateFromNow
 import org.samoxive.safetyjim.discord.*
 import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.httpClient
@@ -77,29 +78,11 @@ class WordFilter : MessageProcessor() {
             return false
         }
 
-        val expirationDate = if (settings.wordFilterAction == SettingsEntity.ACTION_BAN || settings.wordFilterAction == SettingsEntity.ACTION_MUTE) {
-            if (settings.wordFilterActionDuration == 0) {
-                null
-            } else {
-                Date.from(Instant.now().plusSeconds(settings.getWordFilterActionDurationDelta().toLong()))
-            }
-        } else {
-            null
-        }
+        val expirationDate = settings.getInviteLinkRemoverActionExpirationDate()
 
         tryhardAsync {
             message.delete().await()
-            when (settings.wordFilterAction) {
-                SettingsEntity.ACTION_NOTHING -> {
-                }
-                SettingsEntity.ACTION_WARN -> warnAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)
-                SettingsEntity.ACTION_MUTE -> muteAction(guild, channel, settings, selfUser, targetUser, null, ACTION_REASON, expirationDate)
-                SettingsEntity.ACTION_KICK -> kickAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)
-                SettingsEntity.ACTION_BAN -> banAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON, expirationDate)
-                SettingsEntity.ACTION_SOFTBAN -> softbanAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)
-                SettingsEntity.ACTION_HARDBAN -> hardbanAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)
-                else -> throw IllegalStateException()
-            }
+            executeModAction(settings.wordFilterAction, guild, channel, settings, selfUser, targetUser, ACTION_REASON, expirationDate)
         }
 
         return true

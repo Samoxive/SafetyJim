@@ -2,6 +2,7 @@ package org.samoxive.safetyjim.discord.processors
 
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
+import org.samoxive.safetyjim.dateFromNow
 import org.samoxive.safetyjim.discord.*
 import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.tryhardAsync
@@ -35,29 +36,10 @@ class InviteLink : MessageProcessor() {
             return false
         }
 
-        val expirationDate = if (settings.inviteLinkRemoverAction == SettingsEntity.ACTION_BAN || settings.inviteLinkRemoverAction == SettingsEntity.ACTION_MUTE) {
-            if (settings.inviteLinkRemoverActionDuration == 0) {
-                null
-            } else {
-                Date.from(Instant.now().plusSeconds(settings.getInviteLinkRemoverActionDurationDelta().toLong()))
-            }
-        } else {
-            null
-        }
-
+        val expirationDate = settings.getInviteLinkRemoverActionExpirationDate()
         tryhardAsync {
             message.delete().await()
-            when (settings.inviteLinkRemoverAction) {
-                SettingsEntity.ACTION_NOTHING -> {
-                }
-                SettingsEntity.ACTION_WARN -> warnAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)
-                SettingsEntity.ACTION_MUTE -> muteAction(guild, channel, settings, selfUser, targetUser, null, ACTION_REASON, expirationDate)
-                SettingsEntity.ACTION_KICK -> kickAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)
-                SettingsEntity.ACTION_BAN -> banAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON, expirationDate)
-                SettingsEntity.ACTION_SOFTBAN -> softbanAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)
-                SettingsEntity.ACTION_HARDBAN -> hardbanAction(guild, channel, settings, selfUser, targetUser, ACTION_REASON)
-                else -> throw IllegalStateException()
-            }
+            executeModAction(settings.inviteLinkRemoverAction, guild, channel, settings, selfUser, targetUser, ACTION_REASON, expirationDate)
         }
 
         return true
