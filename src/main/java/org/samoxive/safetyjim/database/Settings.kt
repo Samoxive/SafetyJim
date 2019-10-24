@@ -56,7 +56,7 @@ create table if not exists settings (
     mutethreshold integer not null,
     muteaction integer not null,
     muteactionduration integer not null,
-    kickactiondurationtype integer not null,
+    muteactiondurationtype integer not null,
     warnthreshold integer not null,
     warnaction integer not null,
     warnactionduration integer not null,
@@ -94,7 +94,7 @@ insert into settings (
     invitelinkremoveractiondurationtype,
     privacysettings,
     privacymodlog,
-    softbanthreshold
+    softbanthreshold,
     softbanaction,
     softbanactionduration,
     softbanactiondurationtype,
@@ -105,13 +105,13 @@ insert into settings (
     mutethreshold,
     muteaction,
     muteactionduration,
-    kickactiondurationtype,
+    muteactiondurationtype,
     warnthreshold,
     warnaction,
     warnactionduration,
     warnactiondurationtype
 )
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44)
 returning *;
 """
 
@@ -144,7 +144,7 @@ update settings set
     invitelinkremoveractiondurationtype = $26,
     privacysettings = $27,
     privacymodlog = $28,
-    softbanthreshold = $29
+    softbanthreshold = $29,
     softbanaction = $30,
     softbanactionduration = $31,
     softbanactiondurationtype = $32,
@@ -155,7 +155,7 @@ update settings set
     mutethreshold = $37,
     muteaction = $38,
     muteactionduration = $39,
-    kickactiondurationtype = $40,
+    muteactiondurationtype = $40,
     warnthreshold = $41,
     warnaction = $42,
     warnactionduration = $43,
