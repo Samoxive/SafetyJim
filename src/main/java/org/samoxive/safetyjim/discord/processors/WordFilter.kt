@@ -78,7 +78,7 @@ class WordFilter : MessageProcessor() {
             return false
         }
 
-        val expirationDate = settings.getInviteLinkRemoverActionExpirationDate()
+        val expirationDate = settings.getWordFilterActionExpirationDate()
 
         tryhardAsync {
             message.delete().await()
