@@ -11,6 +11,7 @@ import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.Server
 import org.slf4j.LoggerFactory
 import java.io.OutputStreamWriter
+import kotlin.system.exitProcess
 
 fun main() {
     System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory")
@@ -39,7 +40,7 @@ fun setupLoggers() {
         DailyRollingFileAppender(layout, "logs/jim.log", "'.'yyyy-MM-dd")
     } catch (e: Exception) {
         log.error("Could not access log files!", e)
-        return System.exit(1)
+        return exitProcess(1)
     }
 
     Logger.getLogger("com.joestelmach.natty.Parser").level = Level.WARN

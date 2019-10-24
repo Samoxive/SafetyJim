@@ -142,10 +142,10 @@ class Clean : Command() {
         }
 
         val messages = if (!messageIterator.hasNext()) {
-            fetchMessages(channel, messageCount, true, false, false, null)
+            fetchMessages(channel, messageCount, skipOneMessage = true, filterBotMessages = false, filterUserMessages = false, filterUser = null)
         } else {
             if (messageIterator.hasNext("bot")) {
-                fetchMessages(channel, messageCount, false, true, false, null)
+                fetchMessages(channel, messageCount, skipOneMessage = false, filterBotMessages = true, filterUserMessages = false, filterUser = null)
             } else {
                 val (searchResult, user) = messageIterator.findUser(message, true)
                 if (searchResult == SearchUserResult.NOT_FOUND || user == null) {
@@ -153,7 +153,7 @@ class Clean : Command() {
                     return false
                 }
 
-                val messages = fetchMessages(channel, messageCount, true, false, true, user)
+                val messages = fetchMessages(channel, messageCount, skipOneMessage = true, filterBotMessages = false, filterUserMessages = true, filterUser = user)
                 if (searchResult == SearchUserResult.GUESSED) {
                     message.askConfirmation(bot, user) ?: return false
                 }

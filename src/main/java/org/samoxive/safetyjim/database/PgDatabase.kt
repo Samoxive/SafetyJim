@@ -10,6 +10,7 @@ import io.reactiverse.pgclient.PgPoolOptions
 import kotlinx.coroutines.runBlocking
 import org.samoxive.safetyjim.config.DatabaseConfig
 import org.slf4j.LoggerFactory
+import kotlin.system.exitProcess
 
 lateinit var pgPool: PgPool
 
@@ -55,7 +56,7 @@ fun initPgPool(config: Config) {
             conn.close()
         } catch (e: Throwable) {
             LoggerFactory.getLogger("PgPool").error("Failed to initiate tables!", e)
-            System.exit(1)
+            exitProcess(1)
         }
     }
 }
