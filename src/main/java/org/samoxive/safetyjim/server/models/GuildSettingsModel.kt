@@ -33,5 +33,21 @@ data class GuildSettingsModel(
     val inviteLinkRemoverActionDuration: Int,
     val inviteLinkRemoverActionDurationType: Int,
     val privacySettings: Int,
-    val privacyModLog: Int
+    val privacyModLog: Int,
+    val softbanThreshold: Int,
+    val softbanAction: Int,
+    val softbanActionDuration: Int,
+    val softbanActionDurationType: Int,
+    val kickThreshold: Int,
+    val kickAction: Int,
+    val kickActionDuration: Int,
+    val kickActionDurationType: Int,
+    val muteThreshold: Int,
+    val muteAction: Int,
+    val muteActionDuration: Int,
+    val muteActionDurationType: Int,
+    val warnThreshold: Int,
+    val warnAction: Int,
+    val warnActionDuration: Int,
+    val warnActionDurationType: Int
 )

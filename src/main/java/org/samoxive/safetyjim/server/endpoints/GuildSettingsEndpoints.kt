@@ -39,46 +39,62 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
     }
 
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
-        val guildSettingsDb = SettingsTable.getGuildSettings(guild, bot.config)
+        val settingsEntity = SettingsTable.getGuildSettings(guild, bot.config)
 
-        if (!canMemberView(member, guildSettingsDb)) {
+        if (!canMemberView(member, settingsEntity)) {
             return Result(Status.FORBIDDEN, "You are not allowed to view server settings!")
         }
 
-        val holdingRoomRole = if (guildSettingsDb.holdingRoomRoleId != null) guild.getRoleById(guildSettingsDb.holdingRoomRoleId) else null
+        val holdingRoomRole = if (settingsEntity.holdingRoomRoleId != null) guild.getRoleById(settingsEntity.holdingRoomRoleId) else null
         val settings = GuildSettingsModel(
                 guild.toGuildModel(),
                 guild.textChannels.map { it.toChannelModel() },
                 guild.roles.map { it.toRoleModel() },
-                guildSettingsDb.modLog,
-                guild.getTextChannelById(guildSettingsDb.modLogChannelId)?.toChannelModel()
+                settingsEntity.modLog,
+                guild.getTextChannelById(settingsEntity.modLogChannelId)?.toChannelModel()
                         ?: return Result(Status.SERVER_ERROR),
-                guildSettingsDb.holdingRoom,
+                settingsEntity.holdingRoom,
                 holdingRoomRole?.toRoleModel(),
-                guildSettingsDb.holdingRoomMinutes,
-                guildSettingsDb.inviteLinkRemover,
-                guildSettingsDb.welcomeMessage,
-                guildSettingsDb.message,
-                guild.getTextChannelById(guildSettingsDb.welcomeMessageChannelId)?.toChannelModel()
+                settingsEntity.holdingRoomMinutes,
+                settingsEntity.inviteLinkRemover,
+                settingsEntity.welcomeMessage,
+                settingsEntity.message,
+                guild.getTextChannelById(settingsEntity.welcomeMessageChannelId)?.toChannelModel()
                         ?: return Result(Status.SERVER_ERROR),
-                guildSettingsDb.prefix,
-                guildSettingsDb.silentCommands,
-                guildSettingsDb.noSpacePrefix,
-                guildSettingsDb.statistics,
-                guildSettingsDb.joinCaptcha,
-                guildSettingsDb.silentCommandsLevel,
-                guildSettingsDb.modActionConfirmationMessage,
-                guildSettingsDb.wordFilter,
-                guildSettingsDb.wordFilterBlacklist,
-                guildSettingsDb.wordFilterLevel,
-                guildSettingsDb.wordFilterAction,
-                guildSettingsDb.wordFilterActionDuration,
-                guildSettingsDb.wordFilterActionDurationType,
-                guildSettingsDb.inviteLinkRemoverAction,
-                guildSettingsDb.inviteLinkRemoverActionDuration,
-                guildSettingsDb.inviteLinkRemoverActionDurationType,
-                guildSettingsDb.privacySettings,
-                guildSettingsDb.privacyModLog
+                settingsEntity.prefix,
+                settingsEntity.silentCommands,
+                settingsEntity.noSpacePrefix,
+                settingsEntity.statistics,
+                settingsEntity.joinCaptcha,
+                settingsEntity.silentCommandsLevel,
+                settingsEntity.modActionConfirmationMessage,
+                settingsEntity.wordFilter,
+                settingsEntity.wordFilterBlacklist,
+                settingsEntity.wordFilterLevel,
+                settingsEntity.wordFilterAction,
+                settingsEntity.wordFilterActionDuration,
+                settingsEntity.wordFilterActionDurationType,
+                settingsEntity.inviteLinkRemoverAction,
+                settingsEntity.inviteLinkRemoverActionDuration,
+                settingsEntity.inviteLinkRemoverActionDurationType,
+                settingsEntity.privacySettings,
+                settingsEntity.privacyModLog,
+                settingsEntity.softbanThreshold,
+                settingsEntity.softbanAction,
+                settingsEntity.softbanActionDuration,
+                settingsEntity.softbanActionDurationType,
+                settingsEntity.kickThreshold,
+                settingsEntity.kickAction,
+                settingsEntity.kickActionDuration,
+                settingsEntity.kickActionDurationType,
+                settingsEntity.muteThreshold,
+                settingsEntity.muteAction,
+                settingsEntity.muteActionDuration,
+                settingsEntity.muteActionDurationType,
+                settingsEntity.warnThreshold,
+                settingsEntity.warnAction,
+                settingsEntity.warnActionDuration,
+                settingsEntity.warnActionDurationType
         )
 
         response.endJson(Json.stringify(GuildSettingsModel.serializer(), settings))
@@ -176,9 +192,29 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST, "Invalid value for invite link remover action duration type!")
         }
 
+        if (newSettings.softbanActionDurationType < SettingsEntity.DURATION_TYPE_SECONDS || newSettings.softbanActionDurationType > SettingsEntity.DURATION_TYPE_DAYS) {
+            return Result(Status.BAD_REQUEST, "Invalid value for softban action duration type!")
+        }
+
+        if (newSettings.kickActionDurationType < SettingsEntity.DURATION_TYPE_SECONDS || newSettings.kickActionDurationType > SettingsEntity.DURATION_TYPE_DAYS) {
+            return Result(Status.BAD_REQUEST, "Invalid value for kick action duration type!")
+        }
+
+        if (newSettings.muteActionDurationType < SettingsEntity.DURATION_TYPE_SECONDS || newSettings.muteActionDurationType > SettingsEntity.DURATION_TYPE_DAYS) {
+            return Result(Status.BAD_REQUEST, "Invalid value for mute action duration type!")
+        }
+
+        if (newSettings.warnActionDurationType < SettingsEntity.DURATION_TYPE_SECONDS || newSettings.warnActionDurationType > SettingsEntity.DURATION_TYPE_DAYS) {
+            return Result(Status.BAD_REQUEST, "Invalid value for warn action duration type!")
+        }
+
         try {
             getDelta(newSettings.wordFilterActionDurationType, newSettings.wordFilterActionDuration)
             getDelta(newSettings.inviteLinkRemoverActionDurationType, newSettings.inviteLinkRemoverActionDuration)
+            getDelta(newSettings.softbanActionDurationType, newSettings.softbanActionDuration)
+            getDelta(newSettings.kickActionDurationType, newSettings.kickActionDuration)
+            getDelta(newSettings.muteActionDurationType, newSettings.muteActionDuration)
+            getDelta(newSettings.warnActionDurationType, newSettings.warnActionDuration)
         } catch (e: IllegalArgumentException) {
             return Result(Status.BAD_REQUEST, e.message!!)
         }
@@ -189,6 +225,38 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
 
         if (newSettings.privacyModLog < SettingsEntity.PRIVACY_EVERYONE || newSettings.privacyModLog > SettingsEntity.PRIVACY_ADMIN_ONLY) {
             return Result(Status.BAD_REQUEST, "Invalid value for moderator log privacy!")
+        }
+
+        if (newSettings.softbanAction < SettingsEntity.ACTION_NOTHING || newSettings.softbanAction > SettingsEntity.ACTION_HARDBAN) {
+            return Result(Status.BAD_REQUEST, "Invalid value for softban action!")
+        }
+
+        if (newSettings.kickAction < SettingsEntity.ACTION_NOTHING || newSettings.kickAction > SettingsEntity.ACTION_HARDBAN) {
+            return Result(Status.BAD_REQUEST, "Invalid value for kick action!")
+        }
+
+        if (newSettings.muteAction < SettingsEntity.ACTION_NOTHING || newSettings.muteAction > SettingsEntity.ACTION_HARDBAN) {
+            return Result(Status.BAD_REQUEST, "Invalid value for mute action!")
+        }
+
+        if (newSettings.warnAction < SettingsEntity.ACTION_NOTHING || newSettings.warnAction > SettingsEntity.ACTION_HARDBAN) {
+            return Result(Status.BAD_REQUEST, "Invalid value for warn action!")
+        }
+
+        if (newSettings.softbanThreshold < 0) {
+            return Result(Status.BAD_REQUEST, "Softban threshold cannot be negative!")
+        }
+
+        if (newSettings.kickThreshold < 0) {
+            return Result(Status.BAD_REQUEST, "Kick threshold cannot be negative!")
+        }
+
+        if (newSettings.muteThreshold < 0) {
+            return Result(Status.BAD_REQUEST, "Mute threshold cannot be negative!")
+        }
+
+        if (newSettings.warnThreshold < 0) {
+            return Result(Status.BAD_REQUEST, "Warn threshold cannot be negative!")
         }
 
         if (newSettings.guild.id != guild.id) {
@@ -235,7 +303,23 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                             inviteLinkRemoverActionDuration = newSettings.inviteLinkRemoverActionDuration,
                             inviteLinkRemoverActionDurationType = newSettings.inviteLinkRemoverActionDurationType,
                             privacySettings = newSettings.privacySettings,
-                            privacyModLog = newSettings.privacyModLog
+                            privacyModLog = newSettings.privacyModLog,
+                            softbanThreshold = newSettings.softbanThreshold,
+                            softbanAction = newSettings.softbanAction,
+                            softbanActionDuration = newSettings.softbanActionDuration,
+                            softbanActionDurationType = newSettings.softbanActionDurationType,
+                            kickThreshold = newSettings.kickThreshold,
+                            kickAction = newSettings.kickAction,
+                            kickActionDuration = newSettings.kickActionDuration,
+                            kickActionDurationType = newSettings.kickActionDurationType,
+                            muteThreshold = newSettings.muteThreshold,
+                            muteAction = newSettings.muteAction,
+                            muteActionDuration = newSettings.muteActionDuration,
+                            muteActionDurationType = newSettings.muteActionDurationType,
+                            warnThreshold = newSettings.warnThreshold,
+                            warnAction = newSettings.warnAction,
+                            warnActionDuration = newSettings.warnActionDuration,
+                            warnActionDurationType = newSettings.warnActionDurationType
                     )
             )
         } ?: return Result(Status.SERVER_ERROR)
