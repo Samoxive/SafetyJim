@@ -8,7 +8,7 @@ import org.samoxive.safetyjim.discord.DiscordShard
 import org.samoxive.safetyjim.discord.MessageProcessor
 
 class MessageStats : MessageProcessor() {
-    override suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent, guildSettings: SettingsEntity): Boolean {
+    override suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent, settings: SettingsEntity): Boolean {
         /*
         GlobalScope.launch {
             val guild = event.guild
