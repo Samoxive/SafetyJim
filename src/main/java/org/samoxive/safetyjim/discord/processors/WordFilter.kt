@@ -8,10 +8,8 @@ import org.ahocorasick.trie.Trie
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.discord.*
-import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.httpClient
 import org.samoxive.safetyjim.tryhardAsync
-import java.util.*
 
 private const val DEFAULT_BLACKLIST_URL = "https://raw.githubusercontent.com/Samoxive/Google-profanity-words/master/list.txt"
 private const val ACTION_REASON = "Using blacklisted word(s)."

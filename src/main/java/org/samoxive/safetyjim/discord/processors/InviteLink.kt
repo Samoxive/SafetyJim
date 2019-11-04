@@ -3,9 +3,7 @@ package org.samoxive.safetyjim.discord.processors
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
-import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.tryhardAsync
-import java.util.*
 
 private val blacklistedHosts = arrayOf("discord.gg/")
 private const val ACTION_REASON = "Sending invite links"
