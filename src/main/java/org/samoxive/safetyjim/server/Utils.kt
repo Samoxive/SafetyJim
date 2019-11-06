@@ -5,12 +5,12 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.uchuhimo.konf.Config
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.kotlin.core.http.endAwait
-import org.samoxive.safetyjim.config.ServerConfig
-import org.samoxive.safetyjim.database.UUIDBlacklistTable
-import org.samoxive.safetyjim.tryhardAsync
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import org.samoxive.safetyjim.config.ServerConfig
+import org.samoxive.safetyjim.database.UUIDBlacklistTable
+import org.samoxive.safetyjim.tryhardAsync
 
 suspend fun getUserIdFromToken(config: Config, token: String) = tryhardAsync {
     val algorithm = Algorithm.HMAC512(config[ServerConfig.secret])

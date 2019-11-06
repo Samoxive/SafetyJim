@@ -6,14 +6,14 @@ import com.uchuhimo.konf.Config
 import io.reactiverse.kotlin.pgclient.preparedQueryAwait
 import io.reactiverse.pgclient.PgRowSet
 import io.reactiverse.pgclient.Tuple
+import java.util.*
+import java.util.concurrent.TimeUnit
 import net.dv8tion.jda.api.entities.Guild
 import org.ahocorasick.trie.Trie
 import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.dateFromNow
 import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
 import org.samoxive.safetyjim.tryhardAsync
-import java.util.*
-import java.util.concurrent.TimeUnit
 
 private const val createSQL = """
 create table if not exists settings (

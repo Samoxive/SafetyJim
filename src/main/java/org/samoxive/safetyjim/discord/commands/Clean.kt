@@ -1,5 +1,6 @@
 package org.samoxive.safetyjim.discord.commands
 
+import java.util.*
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -13,7 +14,6 @@ import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import org.samoxive.safetyjim.tryhard
 import org.samoxive.safetyjim.tryhardAsync
-import java.util.*
 
 class Clean : Command() {
     override val usages = arrayOf("clean <number> - deletes last number of messages", "clean <number> @user - deletes number of messages from specified user", "clean <number> bot - deletes number of messages sent from bots")

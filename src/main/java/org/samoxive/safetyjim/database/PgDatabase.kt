@@ -7,10 +7,10 @@ import io.reactiverse.kotlin.pgclient.queryAwait
 import io.reactiverse.pgclient.PgClient
 import io.reactiverse.pgclient.PgPool
 import io.reactiverse.pgclient.PgPoolOptions
+import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import org.samoxive.safetyjim.config.DatabaseConfig
 import org.slf4j.LoggerFactory
-import kotlin.system.exitProcess
 
 lateinit var pgPool: PgPool
 

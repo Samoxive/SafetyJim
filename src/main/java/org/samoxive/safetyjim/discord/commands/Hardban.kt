@@ -1,5 +1,7 @@
 package org.samoxive.safetyjim.discord.commands
 
+import java.awt.Color
+import java.util.*
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
@@ -10,8 +12,6 @@ import org.samoxive.safetyjim.database.HardbanEntity
 import org.samoxive.safetyjim.database.HardbansTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
-import java.awt.Color
-import java.util.*
 
 suspend fun hardbanAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, hardbanUser: User, reason: String) {
     val now = Date()

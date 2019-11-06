@@ -1,5 +1,9 @@
 package org.samoxive.safetyjim.discord
 
+import java.awt.Color
+import java.util.*
+import javax.security.auth.login.LoginException
+import kotlin.system.exitProcess
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -29,10 +33,6 @@ import org.samoxive.safetyjim.discord.processors.isInviteLinkBlacklisted
 import org.samoxive.safetyjim.tryhardAsync
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.awt.Color
-import java.util.*
-import javax.security.auth.login.LoginException
-import kotlin.system.exitProcess
 
 class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController) : ListenerAdapter() {
     private val log: Logger

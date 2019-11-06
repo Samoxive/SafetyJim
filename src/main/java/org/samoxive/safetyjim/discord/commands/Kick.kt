@@ -1,5 +1,7 @@
 package org.samoxive.safetyjim.discord.commands
 
+import java.awt.Color
+import java.util.*
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
@@ -10,8 +12,6 @@ import org.samoxive.safetyjim.database.KickEntity
 import org.samoxive.safetyjim.database.KicksTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
-import java.awt.Color
-import java.util.*
 
 private const val ACTION_REASON = "Kick threshold exceeded."
 

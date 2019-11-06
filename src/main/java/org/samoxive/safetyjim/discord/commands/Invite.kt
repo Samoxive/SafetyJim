@@ -1,5 +1,6 @@
 package org.samoxive.safetyjim.discord.commands
 
+import java.awt.Color
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
@@ -8,7 +9,6 @@ import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.successReact
 import org.samoxive.safetyjim.discord.trySendMessage
-import java.awt.Color
 
 class Invite : Command() {
     override val usages = arrayOf("invite - provides the invite link for Jim")

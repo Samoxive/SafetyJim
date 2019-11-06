@@ -1,10 +1,10 @@
 package org.samoxive.safetyjim.discord.commands
 
+import java.awt.Color
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
-import java.awt.Color
 
 class Ping : Command() {
     override val usages = arrayOf("ping - pong")

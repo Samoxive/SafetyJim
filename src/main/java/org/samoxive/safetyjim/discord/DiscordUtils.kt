@@ -1,5 +1,10 @@
 package org.samoxive.safetyjim.discord
 
+import java.awt.Color
+import java.util.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.OnlineStatus
@@ -10,11 +15,6 @@ import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.tryhardAsync
-import java.awt.Color
-import java.util.*
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 private const val SUCCESS_EMOTE_ID = "322698554294534144"
 private const val SUCCESS_EMOTE_NAME = "jimsuccess"

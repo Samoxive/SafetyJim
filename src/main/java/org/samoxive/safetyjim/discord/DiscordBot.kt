@@ -1,6 +1,9 @@
 package org.samoxive.safetyjim.discord
 
 import com.uchuhimo.konf.Config
+import java.awt.Color
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -20,9 +23,6 @@ import org.samoxive.safetyjim.discord.processors.WordFilter
 import org.samoxive.safetyjim.tryhard
 import org.samoxive.safetyjim.tryhardAsync
 import org.slf4j.LoggerFactory
-import java.awt.Color
-import java.util.*
-import kotlin.collections.ArrayList
 
 class DiscordBot(val config: Config) {
     private val log = LoggerFactory.getLogger(DiscordBot::class.java)

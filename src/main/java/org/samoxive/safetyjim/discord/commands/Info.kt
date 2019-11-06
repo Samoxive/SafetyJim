@@ -1,5 +1,7 @@
 package org.samoxive.safetyjim.discord.commands
 
+import java.awt.Color
+import java.util.*
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.ocpsoft.prettytime.PrettyTime
@@ -7,8 +9,6 @@ import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.BansTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
-import java.awt.Color
-import java.util.*
 
 class Info : Command() {
     override val usages = arrayOf("info - displays some information about the bot")

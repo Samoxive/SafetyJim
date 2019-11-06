@@ -1,6 +1,8 @@
 package org.samoxive.safetyjim
 
 import com.uchuhimo.konf.Config
+import java.io.OutputStreamWriter
+import kotlin.system.exitProcess
 import org.apache.log4j.*
 import org.samoxive.safetyjim.config.DatabaseConfig
 import org.samoxive.safetyjim.config.JimConfig
@@ -10,8 +12,6 @@ import org.samoxive.safetyjim.database.initPgPool
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.Server
 import org.slf4j.LoggerFactory
-import java.io.OutputStreamWriter
-import kotlin.system.exitProcess
 
 fun main() {
     System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory")
