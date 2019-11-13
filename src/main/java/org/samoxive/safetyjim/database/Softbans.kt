@@ -58,6 +58,12 @@ object SoftbansTable : AbstractTable {
         )
     }
 
+    suspend fun fetchSoftban(id: Int): SoftbanEntity? {
+        return pgPool.preparedQueryAwait("select * from softbanlist where id = $1;", Tuple.of(id))
+                .toSoftbanEntities()
+                .firstOrNull()
+    }
+
     suspend fun fetchGuildSoftbans(guild: Guild, page: Int): List<SoftbanEntity> {
         return pgPool.preparedQueryAwait("select * from softbanlist where guildid = $1 order by softbantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toSoftbanEntities()

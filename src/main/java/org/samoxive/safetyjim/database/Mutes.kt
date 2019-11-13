@@ -70,6 +70,12 @@ object MutesTable : AbstractTable {
         )
     }
 
+    suspend fun fetchMute(id: Int): MuteEntity? {
+        return pgPool.preparedQueryAwait("select * from mutelist where id = $1;", Tuple.of(id))
+                .toMuteEntities()
+                .firstOrNull()
+    }
+
     suspend fun fetchGuildMutes(guild: Guild, page: Int): List<MuteEntity> {
         return pgPool.preparedQueryAwait("select * from mutelist where guildid = $1 order by mutetime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toMuteEntities()

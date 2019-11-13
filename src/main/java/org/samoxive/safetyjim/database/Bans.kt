@@ -68,6 +68,12 @@ object BansTable : AbstractTable {
         )
     }
 
+    suspend fun fetchBan(id: Int): BanEntity? {
+        return pgPool.preparedQueryAwait("select * from banlist where id = $1;", Tuple.of(id))
+                .toBanEntities()
+                .firstOrNull()
+    }
+
     suspend fun fetchGuildBans(guild: Guild, page: Int): List<BanEntity> {
         return pgPool.preparedQueryAwait("select * from banlist where guildid = $1 order by bantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toBanEntities()

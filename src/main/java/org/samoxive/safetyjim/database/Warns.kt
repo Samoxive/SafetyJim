@@ -58,6 +58,12 @@ object WarnsTable : AbstractTable {
         )
     }
 
+    suspend fun fetchWarn(id: Int): WarnEntity? {
+        return pgPool.preparedQueryAwait("select * from warnlist where id = $1;", Tuple.of(id))
+                .toWarnEntities()
+                .firstOrNull()
+    }
+
     suspend fun fetchGuildWarns(guild: Guild, page: Int): List<WarnEntity> {
         return pgPool.preparedQueryAwait("select * from warnlist where guildid = $1 order by warntime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toWarnEntities()

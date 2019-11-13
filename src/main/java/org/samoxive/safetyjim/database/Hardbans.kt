@@ -55,6 +55,12 @@ object HardbansTable : AbstractTable {
         )
     }
 
+    suspend fun fetchHardban(id: Int): HardbanEntity? {
+        return pgPool.preparedQueryAwait("select * from hardbanlist where id = $1;", Tuple.of(id))
+                .toHardbanEntities()
+                .firstOrNull()
+    }
+
     suspend fun fetchGuildHardbans(guild: Guild, page: Int): List<HardbanEntity> {
         return pgPool.preparedQueryAwait("select * from hardbanlist where guildid = $1 order by hardbantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toHardbanEntities()

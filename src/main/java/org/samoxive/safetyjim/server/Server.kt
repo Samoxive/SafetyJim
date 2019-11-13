@@ -24,7 +24,13 @@ class Server(val bot: DiscordBot, vertx: Vertx) {
             GetHardbansEndpoint(bot),
             GetKicksEndpoint(bot),
             GetMutesEndpoint(bot),
-            GetWarnsEndpoint(bot)
+            GetWarnsEndpoint(bot),
+            GetBanEndpoint(bot),
+            GetSoftbanEndpoint(bot),
+            GetHardbanEndpoint(bot),
+            GetKickEndpoint(bot),
+            GetMuteEndpoint(bot),
+            GetWarnEndpoint(bot)
     )
 
     init {

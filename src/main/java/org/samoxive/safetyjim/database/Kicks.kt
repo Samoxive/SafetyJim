@@ -58,6 +58,12 @@ object KicksTable : AbstractTable {
         )
     }
 
+    suspend fun fetchKick(id: Int): KickEntity? {
+        return pgPool.preparedQueryAwait("select * from kicklist where id = $1;", Tuple.of(id))
+                .toKickEntities()
+                .firstOrNull()
+    }
+
     suspend fun fetchGuildKicks(guild: Guild, page: Int): List<KickEntity> {
         return pgPool.preparedQueryAwait("select * from kicklist where guildid = $1 order by kicktime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
                 .toKickEntities()
