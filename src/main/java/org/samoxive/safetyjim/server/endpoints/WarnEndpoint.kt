@@ -49,4 +49,3 @@ class GetWarnEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override val route: String = "/guilds/:guildId/warns/:warnId"
     override val method: HttpMethod = HttpMethod.GET
 }
-

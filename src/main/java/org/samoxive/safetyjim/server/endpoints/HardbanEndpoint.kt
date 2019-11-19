@@ -49,4 +49,3 @@ class GetHardbanEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override val route: String = "/guilds/:guildId/hardbans/:hardbanId"
     override val method: HttpMethod = HttpMethod.GET
 }
-
