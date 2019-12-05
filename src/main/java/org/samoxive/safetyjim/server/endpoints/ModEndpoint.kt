@@ -19,7 +19,7 @@ import org.samoxive.safetyjim.server.models.UserModel
 import org.samoxive.safetyjim.server.models.toUserModel
 
 @Serializable
-data class GetModsResponse (
+data class GetModsResponse(
     val banMods: List<UserModel>,
     val kickMods: List<UserModel>,
     val roleMods: List<UserModel>

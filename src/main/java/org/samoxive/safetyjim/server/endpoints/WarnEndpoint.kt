@@ -104,4 +104,3 @@ class UpdateWarnEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
     override val route: String = "/guilds/:guildId/warns/:warnId"
     override val method: HttpMethod = HttpMethod.POST
 }
-

@@ -20,9 +20,9 @@ import org.samoxive.safetyjim.tryhard
 
 @Serializable
 data class GetBansEndpointResponse(
-        val currentPage: Int,
-        val totalPages: Int,
-        val entries: List<BanModel>
+    val currentPage: Int,
+    val totalPages: Int,
+    val entries: List<BanModel>
 )
 
 class GetBansEndpoint(bot: DiscordBot) : ModLogPaginationEndpoint(bot) {
