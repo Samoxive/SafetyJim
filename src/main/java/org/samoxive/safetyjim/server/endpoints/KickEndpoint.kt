@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.User
@@ -15,6 +16,7 @@ import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.KickModel
 import org.samoxive.safetyjim.server.models.toKickModel
+import org.samoxive.safetyjim.tryhard
 
 @Serializable
 data class GetKicksEndpointResponse(
@@ -48,4 +50,57 @@ class GetKickEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
 
     override val route: String = "/guilds/:guildId/kicks/:kickId"
     override val method: HttpMethod = HttpMethod.GET
+}
+
+class UpdateKickEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
+    override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
+        val kickId = request.getParam("kickId") ?: return Result(Status.SERVER_ERROR, "How did this happen?")
+        val id = kickId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid kick id!")
+        val kick = KicksTable.fetchKick(id) ?: return Result(Status.NOT_FOUND, "Kick with given id doesn't exist!")
+
+        val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
+        val parsedKick = tryhard { Json.parse(KickModel.serializer(), bodyString) }
+                ?: return Result(Status.BAD_REQUEST)
+
+        val newKick = parsedKick.copy(
+                reason = parsedKick.reason.trim()
+        )
+
+        if (!member.hasPermission(Permission.KICK_MEMBERS)) {
+            return Result(Status.FORBIDDEN, "You don't have permissions to change kick history!")
+        }
+
+        if (kick.guildId != guild.idLong) {
+            return Result(Status.FORBIDDEN, "Given kick id doesn't belong to your guild!")
+        }
+
+        if (kick.id != newKick.id ||
+                kick.userId.toString() != newKick.user.id ||
+                kick.kickTime != newKick.actionTime
+        ) {
+            return Result(Status.BAD_REQUEST, "Read only properties were modified!")
+        }
+
+        if (kick.moderatorUserId.toString() != newKick.moderatorUser.id) {
+            val moderator = guild.getMemberById(newKick.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
+            if (!moderator.hasPermission(Permission.KICK_MEMBERS)) {
+                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
+            }
+        }
+
+        if (kick.pardoned && !newKick.pardoned) {
+            return Result(Status.BAD_REQUEST, "You can't un-pardon a kick!")
+        }
+
+        KicksTable.updateKick(kick.copy(
+                moderatorUserId = newKick.moderatorUser.id.toLong(),
+                reason = if (newKick.reason.isBlank()) "No reason specified" else newKick.reason,
+                pardoned = newKick.pardoned
+        ))
+
+        return Result(Status.OK)
+    }
+
+    override val route: String = "/guilds/:guildId/kicks/:kickId"
+    override val method: HttpMethod = HttpMethod.POST
 }

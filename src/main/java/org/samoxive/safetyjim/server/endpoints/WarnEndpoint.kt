@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.User
@@ -15,6 +16,7 @@ import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.WarnModel
 import org.samoxive.safetyjim.server.models.toWarnModel
+import org.samoxive.safetyjim.tryhard
 
 @Serializable
 data class GetWarnsEndpointResponse(
@@ -48,5 +50,58 @@ class GetWarnEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
 
     override val route: String = "/guilds/:guildId/warns/:warnId"
     override val method: HttpMethod = HttpMethod.GET
+}
+
+class UpdateWarnEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
+    override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
+        val warnId = request.getParam("warnId") ?: return Result(Status.SERVER_ERROR, "How did this happen?")
+        val id = warnId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid warn id!")
+        val warn = WarnsTable.fetchWarn(id) ?: return Result(Status.NOT_FOUND, "Warn with given id doesn't exist!")
+
+        val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
+        val parsedWarn = tryhard { Json.parse(WarnModel.serializer(), bodyString) }
+                ?: return Result(Status.BAD_REQUEST)
+
+        val newWarn = parsedWarn.copy(
+                reason = parsedWarn.reason.trim()
+        )
+
+        if (!member.hasPermission(Permission.KICK_MEMBERS)) {
+            return Result(Status.FORBIDDEN, "You don't have permissions to change warn history!")
+        }
+
+        if (warn.guildId != guild.idLong) {
+            return Result(Status.FORBIDDEN, "Given warn id doesn't belong to your guild!")
+        }
+
+        if (warn.id != newWarn.id ||
+                warn.userId.toString() != newWarn.user.id ||
+                warn.warnTime != newWarn.actionTime
+        ) {
+            return Result(Status.BAD_REQUEST, "Read only properties were modified!")
+        }
+
+        if (warn.moderatorUserId.toString() != newWarn.moderatorUser.id) {
+            val moderator = guild.getMemberById(newWarn.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
+            if (!moderator.hasPermission(Permission.KICK_MEMBERS)) {
+                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
+            }
+        }
+
+        if (warn.pardoned && !newWarn.pardoned) {
+            return Result(Status.BAD_REQUEST, "You can't un-pardon a warn!")
+        }
+
+        WarnsTable.updateWarn(warn.copy(
+                moderatorUserId = newWarn.moderatorUser.id.toLong(),
+                reason = if (newWarn.reason.isBlank()) "No reason specified" else newWarn.reason,
+                pardoned = newWarn.pardoned
+        ))
+
+        return Result(Status.OK)
+    }
+
+    override val route: String = "/guilds/:guildId/warns/:warnId"
+    override val method: HttpMethod = HttpMethod.POST
 }
 

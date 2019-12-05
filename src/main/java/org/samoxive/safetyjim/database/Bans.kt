@@ -13,7 +13,7 @@ create table if not exists banlist (
     moderatoruserid bigint  not null,
     guildid         bigint  not null,
     bantime         bigint  not null,
-    expiretime      bigint,
+    expiretime      bigint  not null,
     reason          text    not null,
     expires         boolean not null,
     unbanned        boolean not null
@@ -118,7 +118,7 @@ data class BanEntity(
     val moderatorUserId: Long,
     val guildId: Long,
     val banTime: Long,
-    val expireTime: Long?,
+    val expireTime: Long,
     val reason: String,
     val expires: Boolean,
     val unbanned: Boolean

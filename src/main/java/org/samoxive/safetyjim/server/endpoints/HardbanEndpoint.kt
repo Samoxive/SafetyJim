@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.User
@@ -15,6 +16,7 @@ import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.HardbanModel
 import org.samoxive.safetyjim.server.models.toHardbanModel
+import org.samoxive.safetyjim.tryhard
 
 @Serializable
 data class GetHardbansEndpointResponse(
@@ -50,3 +52,50 @@ class GetHardbanEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override val method: HttpMethod = HttpMethod.GET
 }
 
+class UpdateHardbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
+    override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
+        val hardbanId = request.getParam("hardbanId") ?: return Result(Status.SERVER_ERROR, "How did this happen?")
+        val id = hardbanId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid hardban id!")
+        val hardban = HardbansTable.fetchHardban(id) ?: return Result(Status.NOT_FOUND, "Hardban with given id doesn't exist!")
+
+        val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
+        val parsedHardban = tryhard { Json.parse(HardbanModel.serializer(), bodyString) }
+                ?: return Result(Status.BAD_REQUEST)
+
+        val newHardban = parsedHardban.copy(
+                reason = parsedHardban.reason.trim()
+        )
+
+        if (!member.hasPermission(Permission.BAN_MEMBERS)) {
+            return Result(Status.FORBIDDEN, "You don't have permissions to change hardban history!")
+        }
+
+        if (hardban.guildId != guild.idLong) {
+            return Result(Status.FORBIDDEN, "Given hardban id doesn't belong to your guild!")
+        }
+
+        if (hardban.id != newHardban.id ||
+                hardban.userId.toString() != newHardban.user.id ||
+                hardban.hardbanTime != newHardban.actionTime
+        ) {
+            return Result(Status.BAD_REQUEST, "Read only properties were modified!")
+        }
+
+        if (hardban.moderatorUserId.toString() != newHardban.moderatorUser.id) {
+            val moderator = guild.getMemberById(newHardban.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
+            if (!moderator.hasPermission(Permission.BAN_MEMBERS)) {
+                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
+            }
+        }
+
+        HardbansTable.updateHardban(hardban.copy(
+                moderatorUserId = newHardban.moderatorUser.id.toLong(),
+                reason = if (newHardban.reason.isBlank()) "No reason specified" else newHardban.reason
+        ))
+
+        return Result(Status.OK)
+    }
+
+    override val route: String = "/guilds/:guildId/hardbans/:hardbanId"
+    override val method: HttpMethod = HttpMethod.POST
+}

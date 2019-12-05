@@ -11,7 +11,7 @@ data class BanModel(
     val user: UserModel,
     val moderatorUser: UserModel,
     val actionTime: Long,
-    val expirationTime: Long?,
+    val expirationTime: Long,
     val unbanned: Boolean,
     val reason: String
 )

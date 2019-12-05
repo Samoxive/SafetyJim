@@ -11,7 +11,7 @@ data class MuteModel(
     val user: UserModel,
     val moderatorUser: UserModel,
     val actionTime: Long,
-    val expirationTime: Long?,
+    val expirationTime: Long,
     val unmuted: Boolean,
     val reason: String,
     val pardoned: Boolean
