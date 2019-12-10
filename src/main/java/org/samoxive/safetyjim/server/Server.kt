@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory
 class Server(val bot: DiscordBot, vertx: Vertx) {
     private val endpoints = listOf(
             LoginEndpoint(bot),
-            TestEndpoint(bot),
             SelfUserEndpoint(bot),
             GetGuildSettingsEndpoint(bot),
             PostGuildSettingsEndpoint(bot),
