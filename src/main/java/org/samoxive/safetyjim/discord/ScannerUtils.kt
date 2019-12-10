@@ -93,7 +93,7 @@ suspend fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<
     val mentionMatch = USER_MENTION_REGEX.matchEntire(input)
     if (mentionMatch != null) {
         val userId = mentionMatch.groupValues[1].toLong()
-        val member = guild.getMemberById(userId)
+        val member = guild.fetchMember(userId)
         return if (member != null) {
             SearchUserResult.EXACT to member.user
         } else {
@@ -108,7 +108,7 @@ suspend fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<
 
     val userId = input.toLongOrNull()
     if (userId != null) {
-        val member = guild.getMemberById(userId)
+        val member = guild.fetchMember(userId)
         if (member != null) {
             return SearchUserResult.EXACT to member.user
         } else {

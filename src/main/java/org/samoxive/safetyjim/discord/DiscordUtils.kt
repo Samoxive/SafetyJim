@@ -292,3 +292,16 @@ suspend fun executeModAction(actionId: Int, guild: Guild, channel: TextChannel?,
         else -> throw IllegalStateException()
     }
 }
+
+suspend fun Guild.fetchMember(id: Long): Member? {
+    return tryhardAsync { this.retrieveMemberById(id).await() }
+}
+
+suspend fun Guild.fetchMember(user: User): Member? {
+    return fetchMember(user.idLong)
+}
+
+suspend fun Guild.fetchMember(id: String): Member? {
+    val idLong = id.toLongOrNull() ?: return null
+    return fetchMember(idLong)
+}

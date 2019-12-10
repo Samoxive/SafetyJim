@@ -81,7 +81,7 @@ class Ban : Command() {
             message.askConfirmation(bot, banUser) ?: return false
         }
 
-        val banMember = guild.getMember(banUser)
+        val banMember = guild.fetchMember(banUser)
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
             message.failMessage("I don't have enough permissions to do that!")

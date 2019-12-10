@@ -132,7 +132,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
             if (enabled) {
                 val guildUser = shard.jda.retrieveUserById(user.userId).await()
-                val member = guild.getMember(guildUser)!!
+                val member = guild.fetchMember(guildUser)!!
                 val roleId = guildSettings.holdingRoomRoleId
                 val role = if (roleId != null) guild.getRoleById(roleId) else null
 
@@ -201,7 +201,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
             }
 
             val guildUser = shard.jda.retrieveUserById(user.userId).await()
-            val member = guild.getMember(guildUser)
+            val member = guild.fetchMember(guildUser)
             if (member == null) {
                 MutesTable.updateMute(user.copy(unmuted = true))
                 continue
@@ -243,7 +243,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
             }
 
             val channel = guild.getTextChannelById(channelId)
-            val member = guild.getMember(user)
+            val member = guild.fetchMember(user)
 
             val embed = EmbedBuilder()
             embed.setTitle("Reminder - #${reminder.id}")

@@ -53,6 +53,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                     .useSharding(shardId, config[JimConfig.shard_count])
                     .setDisabledCacheFlags(EnumSet.of(CacheFlag.ACTIVITY, CacheFlag.EMOTE, CacheFlag.VOICE_STATE))
                     .setActivity(Activity.playing("safetyjim.xyz $shardString"))
+                    .setGuildSubscriptionsEnabled(false)
                     .build()
                     .awaitReady()
         } catch (e: LoginException) {

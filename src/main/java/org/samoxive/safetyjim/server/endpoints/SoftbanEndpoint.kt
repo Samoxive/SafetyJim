@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SoftbansTable
 import org.samoxive.safetyjim.discord.DiscordBot
+import org.samoxive.safetyjim.discord.fetchMember
 import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.SoftbanModel
 import org.samoxive.safetyjim.server.models.toSoftbanModel
@@ -80,7 +81,7 @@ class UpdateSoftbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         if (softban.moderatorUserId.toString() != newSoftban.moderatorUser.id) {
-            val moderator = guild.getMemberById(newSoftban.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
+            val moderator = guild.fetchMember(newSoftban.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
             if (!moderator.hasPermission(Permission.BAN_MEMBERS)) {
                 return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
             }
