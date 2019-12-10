@@ -3,6 +3,7 @@ version = "5.0.0"
 token = "" # put your discord token here
 default_prefix = "-dev" # all guilds will use this prefix unless changed
 shard_count = 1 # amount of shards jim will create
+metrics = false
 
 # None of these need to be changed for development with Docker
 [database]

@@ -1,5 +1,6 @@
 package org.samoxive.safetyjim.discord
 
+import com.timgroup.statsd.StatsDClient
 import java.awt.Color
 import java.util.*
 import javax.security.auth.login.LoginException
@@ -34,7 +35,7 @@ import org.samoxive.safetyjim.tryhardAsync
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController) : ListenerAdapter() {
+class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController, val stats: StatsDClient) : ListenerAdapter() {
     private val log: Logger
     val jda: JDA
     val confirmationListener = ConfirmationListener()
@@ -65,6 +66,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     override fun onReady(event: ReadyEvent) {
         log.info("Shard is ready.")
+        stats.increment("shard_ready")
 
         GlobalScope.launch {
             onReadyAsync(event)
@@ -74,15 +76,19 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     private suspend fun onReadyAsync(event: ReadyEvent) {
         val shard = event.jda
 
+        var emptyGuildCount = 0
         for (guild in shard.guilds) {
             if (guild.textChannels.isEmpty()) {
+                emptyGuildCount++
                 tryhardAsync { guild.leave().await() }
                 continue
             }
         }
+        stats.count("left_empty_guilds", emptyGuildCount.toLong())
     }
 
     override fun onGuildMessageReceived(event: GuildMessageReceivedEvent) {
+        stats.increment("message_recv")
         GlobalScope.launch { onGuildMessageReceivedAsync(event) }
     }
 
@@ -188,6 +194,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     }
 
     override fun onGuildMessageDelete(event: GuildMessageDeleteEvent) {
+        stats.increment("message_delete")
         bot.processors.forEach { processor -> GlobalScope.launch { processor.onMessageDelete(bot, this@DiscordShard, event) } }
     }
 
@@ -196,6 +203,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     }
 
     override fun onGuildJoin(event: GuildJoinEvent) {
+        stats.increment("guild_join")
+
         GlobalScope.launch {
             val guild = event.guild
             if (guild.textChannels.isEmpty()) {
@@ -211,10 +220,14 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     }
 
     override fun onGuildLeave(event: GuildLeaveEvent) {
+        stats.increment("guild_leave")
+
         GlobalScope.launch { SettingsTable.deleteSettings(event.guild) }
     }
 
     override fun onGuildMemberJoin(event: GuildMemberJoinEvent) {
+        stats.increment("member_join")
+
         GlobalScope.launch { onGuildMemberJoinAsync(event) }
     }
 
@@ -279,12 +292,16 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     }
 
     override fun onGuildMemberLeave(event: GuildMemberLeaveEvent) {
+        stats.increment("member_leave")
+
         GlobalScope.launch {
             JoinsTable.deleteUserJoins(event.guild, event.user)
         }
     }
 
     private suspend fun executeCommand(event: GuildMessageReceivedEvent, settings: SettingsEntity, command: Command, commandName: String, args: String) {
+        stats.increment("command_$commandName")
+
         val shard = event.jda
         val message = event.message
         val channel = event.channel

@@ -1,5 +1,6 @@
 package org.samoxive.safetyjim.discord
 
+import com.timgroup.statsd.StatsDClient
 import com.uchuhimo.konf.Config
 import java.awt.Color
 import java.util.*
@@ -24,7 +25,7 @@ import org.samoxive.safetyjim.tryhard
 import org.samoxive.safetyjim.tryhardAsync
 import org.slf4j.LoggerFactory
 
-class DiscordBot(val config: Config) {
+class DiscordBot(val config: Config, val stats: StatsDClient) {
     private val log = LoggerFactory.getLogger(DiscordBot::class.java)
     val shards = ArrayList<DiscordShard>()
     val commands = mapOf(
@@ -63,7 +64,7 @@ class DiscordBot(val config: Config) {
     init {
         val sessionController = SessionControllerAdapter()
         for (i in 0 until config[JimConfig.shard_count]) {
-            val shard = DiscordShard(this, i, sessionController)
+            val shard = DiscordShard(this, i, sessionController, stats)
             shards.add(shard)
         }
 
@@ -112,6 +113,7 @@ class DiscordBot(val config: Config) {
 
     private suspend fun allowUsers() {
         val usersToBeAllowed = JoinsTable.fetchExpiredJoins()
+        stats.count("allowed_users_count", usersToBeAllowed.size.toLong())
 
         for (user in usersToBeAllowed) {
             val guildId = user.guildId
@@ -148,6 +150,7 @@ class DiscordBot(val config: Config) {
 
     private suspend fun unbanUsers() {
         val usersToBeUnbanned = BansTable.fetchExpiredBans()
+        stats.count("unbanned_users_count", usersToBeUnbanned.size.toLong())
 
         for (user in usersToBeUnbanned) {
             val guildId = user.guildId
@@ -183,6 +186,7 @@ class DiscordBot(val config: Config) {
 
     private suspend fun unmuteUsers() {
         val usersToBeUnmuted = MutesTable.fetchExpiredMutes()
+        stats.count("unmuted_users_count", usersToBeUnmuted.size.toLong())
 
         for (user in usersToBeUnmuted) {
             val guildId = user.guildId
@@ -222,6 +226,7 @@ class DiscordBot(val config: Config) {
 
     private suspend fun remindReminders() {
         val reminders = RemindersTable.fetchExpiredReminders()
+        stats.count("reminded_reminders_count", reminders.size.toLong())
 
         for (reminder in reminders) {
             val guildId = reminder.guildId

@@ -1,6 +1,9 @@
 package org.samoxive.safetyjim
 
+import com.timgroup.statsd.NoOpStatsDClient
+import com.timgroup.statsd.NonBlockingStatsDClient
 import com.uchuhimo.konf.Config
+import com.uchuhimo.konf.source.toml
 import java.io.OutputStreamWriter
 import kotlin.system.exitProcess
 import org.apache.log4j.*
@@ -24,9 +27,21 @@ fun main() {
         addSpec(ServerConfig)
     }.from.toml.file("config.toml")
 
+    val stats = if (config[JimConfig.metrics]) {
+        NonBlockingStatsDClient("jim", "localhost", 8125)
+    } else {
+        NoOpStatsDClient()
+    }
+
+    Runtime.getRuntime().addShutdownHook(object : Thread() {
+        override fun run() {
+            stats.close()
+        }
+    })
+
     initPgPool(config)
     initHttpClient()
-    val bot = DiscordBot(config)
+    val bot = DiscordBot(config, stats)
     Server(bot, vertx)
 }
 
@@ -40,7 +55,7 @@ fun setupLoggers() {
         DailyRollingFileAppender(layout, "logs/jim.log", "'.'yyyy-MM-dd")
     } catch (e: Exception) {
         log.error("Could not access log files!", e)
-        return exitProcess(1)
+        exitProcess(1)
     }
 
     Logger.getLogger("com.joestelmach.natty.Parser").level = Level.WARN

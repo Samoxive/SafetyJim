@@ -9,6 +9,7 @@ object JimConfig : ConfigSpec("jim") {
     val shard_count by required<Int>()
     val geocode_token by required<String>()
     val darksky_token by required<String>()
+    val metrics by required<Boolean>()
 }
 
 object DatabaseConfig : ConfigSpec("database") {
