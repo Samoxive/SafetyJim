@@ -94,7 +94,8 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
                 settingsEntity.warnThreshold,
                 settingsEntity.warnAction,
                 settingsEntity.warnActionDuration,
-                settingsEntity.warnActionDurationType
+                settingsEntity.warnActionDurationType,
+                settingsEntity.modsCanEditTags
         )
 
         response.endJson(Json.stringify(GuildSettingsModel.serializer(), settings))
@@ -319,7 +320,8 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                             warnThreshold = newSettings.warnThreshold,
                             warnAction = newSettings.warnAction,
                             warnActionDuration = newSettings.warnActionDuration,
-                            warnActionDurationType = newSettings.warnActionDurationType
+                            warnActionDurationType = newSettings.warnActionDurationType,
+                            modsCanEditTags = newSettings.modsCanEditTags
                     )
             )
         } ?: return Result(Status.SERVER_ERROR)

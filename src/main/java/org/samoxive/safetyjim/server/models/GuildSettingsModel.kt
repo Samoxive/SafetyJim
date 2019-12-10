@@ -49,5 +49,6 @@ data class GuildSettingsModel(
     val warnThreshold: Int,
     val warnAction: Int,
     val warnActionDuration: Int,
-    val warnActionDurationType: Int
+    val warnActionDurationType: Int,
+    val modsCanEditTags: Boolean
 )

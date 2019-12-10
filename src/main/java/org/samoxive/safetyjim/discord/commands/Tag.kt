@@ -56,12 +56,6 @@ class Tag : Command() {
     private suspend fun addTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
-        val member = event.member!!
-
-        if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            message.failMessage("You don't have enough permissions to use this command!")
-            return
-        }
 
         if (!messageIterator.hasNext()) {
             message.failMessage("Please provide a tag name and a response to create a new tag!")
@@ -99,12 +93,6 @@ class Tag : Command() {
     private suspend fun editTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
-        val member = event.member!!
-
-        if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            message.failMessage("You don't have enough permissions to use this command!")
-            return
-        }
 
         if (!messageIterator.hasNext()) {
             message.failMessage("Please provide a tag name and a response to edit tags!")
@@ -132,12 +120,6 @@ class Tag : Command() {
     private suspend fun deleteTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
         val guild = event.guild
         val message = event.message
-        val member = event.member!!
-
-        if (!member.hasPermission(Permission.ADMINISTRATOR)) {
-            message.failMessage("You don't have enough permissions to use this command!")
-            return
-        }
 
         if (!messageIterator.hasNext()) {
             message.failMessage("Please provide a tag name and a response to delete tags!")
@@ -161,27 +143,47 @@ class Tag : Command() {
         val guild = event.guild
         val message = event.message
         val channel = event.channel
+        val member = event.member!!
 
         if (!messageIterator.hasNext()) {
             return true
         }
 
-        when (val commandOrTag = messageIterator.next()) {
-            "list" -> displayTags(event)
-            "add" -> addTag(event, messageIterator)
-            "edit" -> editTag(event, messageIterator)
-            "remove" -> deleteTag(event, messageIterator)
-            else -> {
-                val record = TagsTable.fetchTagByName(guild, commandOrTag)
-                if (record == null) {
-                    message.failMessage("Could not find a tag with that name!")
-                    return false
-                }
-
-                message.successReact()
-                channel.trySendMessage(record.response)
+        val commandOrTag = messageIterator.next()
+        if (isSubcommand(commandOrTag)) {
+            if (commandOrTag == "list") {
+                displayTags(event)
+                return false
             }
+
+            val isMemberPermitted = if (settings.modsCanEditTags) {
+                member.isStaff()
+            } else {
+                member.hasPermission(Permission.ADMINISTRATOR)
+            }
+
+            if (!isMemberPermitted) {
+                message.failMessage("You don't have enough permissions to use this command!")
+                return false
+            }
+
+            when (commandOrTag) {
+                "add" -> addTag(event, messageIterator)
+                "edit" -> editTag(event, messageIterator)
+                "remove" -> deleteTag(event, messageIterator)
+            }
+
+            return false
         }
+
+        val record = TagsTable.fetchTagByName(guild, commandOrTag)
+        if (record == null) {
+            message.failMessage("Could not find a tag with that name!")
+            return false
+        }
+
+        message.successReact()
+        channel.trySendMessage(record.response)
 
         return false
     }

@@ -60,7 +60,8 @@ create table if not exists settings (
     warnthreshold integer not null,
     warnaction integer not null,
     warnactionduration integer not null,
-    warnactiondurationtype integer not null
+    warnactiondurationtype integer not null,
+    modscanedittags boolean not null
 );
 """
 
@@ -109,9 +110,10 @@ insert into settings (
     warnthreshold,
     warnaction,
     warnactionduration,
-    warnactiondurationtype
+    warnactiondurationtype,
+    modscanedittags
 )
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45)
 returning *;
 """
 
@@ -159,7 +161,8 @@ update settings set
     warnthreshold = $41,
     warnaction = $42,
     warnactionduration = $43,
-    warnactiondurationtype = $44
+    warnactiondurationtype = $44,
+    modscanedittags = $45
 where guildid = $1;
 """
 
@@ -222,7 +225,8 @@ object SettingsTable : AbstractTable {
                 warnThreshold = it.getInteger(40),
                 warnAction = it.getInteger(41),
                 warnActionDuration = it.getInteger(42),
-                warnActionDurationType = it.getInteger(43)
+                warnActionDurationType = it.getInteger(43),
+                modsCanEditTags = it.getBoolean(44)
         )
     }
 
@@ -395,7 +399,8 @@ data class SettingsEntity(
     val warnThreshold: Int = 0,
     val warnAction: Int = ACTION_NOTHING,
     val warnActionDuration: Int = 0,
-    val warnActionDurationType: Int = DURATION_TYPE_MINUTES
+    val warnActionDurationType: Int = DURATION_TYPE_MINUTES,
+    val modsCanEditTags: Boolean = false
 ) {
     companion object {
         const val SILENT_COMMANDS_MOD_ONLY = 0
@@ -463,7 +468,8 @@ data class SettingsEntity(
                 warnThreshold,
                 warnAction,
                 warnActionDuration,
-                warnActionDurationType
+                warnActionDurationType,
+                modsCanEditTags
         )
     }
 
