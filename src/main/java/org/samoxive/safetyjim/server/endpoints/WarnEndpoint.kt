@@ -1,11 +1,10 @@
 package org.samoxive.safetyjim.server.endpoints
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
@@ -18,7 +17,6 @@ import org.samoxive.safetyjim.server.models.WarnModel
 import org.samoxive.safetyjim.server.models.toWarnModel
 import org.samoxive.safetyjim.tryhard
 
-@Serializable
 data class GetWarnsEndpointResponse(
     val currentPage: Int,
     val totalPages: Int,
@@ -30,7 +28,7 @@ class GetWarnsEndpoint(bot: DiscordBot) : ModLogPaginationEndpoint(bot) {
         val warns = WarnsTable.fetchGuildWarns(guild, page).map { it.toWarnModel(bot) }
         val pageCount = (WarnsTable.fetchGuildWarnsCount(guild) / 10) + 1
         val body = GetWarnsEndpointResponse(page, pageCount, warns)
-        response.endJson(Json.stringify(GetWarnsEndpointResponse.serializer(), body))
+        response.endJson(objectMapper.writeValueAsString(body))
         return Result(Status.OK)
     }
 
@@ -44,7 +42,7 @@ class GetWarnEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
         val id = warnId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid warn id!")
         val warn = WarnsTable.fetchWarn(id) ?: return Result(Status.NOT_FOUND, "Warn with given id doesn't exist!")
 
-        response.endJson(Json.stringify(WarnModel.serializer(), warn.toWarnModel(bot)))
+        response.endJson(objectMapper.writeValueAsString(warn.toWarnModel(bot)))
         return Result(Status.OK)
     }
 
@@ -59,7 +57,7 @@ class UpdateWarnEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         val warn = WarnsTable.fetchWarn(id) ?: return Result(Status.NOT_FOUND, "Warn with given id doesn't exist!")
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val parsedWarn = tryhard { Json.parse(WarnModel.serializer(), bodyString) }
+        val parsedWarn = tryhard { objectMapper.readValue<WarnModel>(bodyString) }
                 ?: return Result(Status.BAD_REQUEST)
 
         val newWarn = parsedWarn.copy(

@@ -1,14 +1,15 @@
 package org.samoxive.safetyjim.discord
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.uchuhimo.konf.Config
 import io.vertx.core.MultiMap
 import io.vertx.kotlin.ext.web.client.sendAwait
 import io.vertx.kotlin.ext.web.client.sendFormAwait
-import kotlinx.serialization.json.Json
 import org.samoxive.safetyjim.config.OauthConfig
 import org.samoxive.safetyjim.discord.entities.DiscordSelfUser
 import org.samoxive.safetyjim.httpClient
 import org.samoxive.safetyjim.server.models.AccessTokenResponse
+import org.samoxive.safetyjim.server.objectMapper
 import org.samoxive.safetyjim.tryhardAsync
 
 object DiscordApi {
@@ -19,7 +20,7 @@ object DiscordApi {
                 .putHeader("Authorization", "Bearer $accessToken")
                 .sendAwait()
 
-        Json.nonstrict.parse(DiscordSelfUser.serializer(), response.bodyAsString())
+        objectMapper.readValue<DiscordSelfUser>(response.bodyAsString())
     }
 
     suspend fun getUserSecrets(config: Config, code: String): AccessTokenResponse? = tryhardAsync {
@@ -33,7 +34,7 @@ object DiscordApi {
         val response = httpClient.post(443, API_HOSTNAME, "/api/oauth2/token")
                 .sendFormAwait(formBody)
 
-        val tokenResponse = Json.parse(AccessTokenResponse.serializer(), response.bodyAsString())
+        val tokenResponse = objectMapper.readValue<AccessTokenResponse>(response.bodyAsString())
         if (tokenResponse.scope != "identify") {
             null
         } else {

@@ -1,11 +1,10 @@
 package org.samoxive.safetyjim.server.endpoints
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
@@ -18,7 +17,6 @@ import org.samoxive.safetyjim.server.models.HardbanModel
 import org.samoxive.safetyjim.server.models.toHardbanModel
 import org.samoxive.safetyjim.tryhard
 
-@Serializable
 data class GetHardbansEndpointResponse(
     val currentPage: Int,
     val totalPages: Int,
@@ -30,7 +28,7 @@ class GetHardbansEndpoint(bot: DiscordBot) : ModLogPaginationEndpoint(bot) {
         val hardbans = HardbansTable.fetchGuildHardbans(guild, page).map { it.toHardbanModel(bot) }
         val pageCount = (HardbansTable.fetchGuildHardbansCount(guild) / 10) + 1
         val body = GetHardbansEndpointResponse(page, pageCount, hardbans)
-        response.endJson(Json.stringify(GetHardbansEndpointResponse.serializer(), body))
+        response.endJson(objectMapper.writeValueAsString(body))
         return Result(Status.OK)
     }
 
@@ -44,7 +42,7 @@ class GetHardbanEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
         val id = hardbanId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid hardban id!")
         val hardban = HardbansTable.fetchHardban(id) ?: return Result(Status.NOT_FOUND, "Hardban with given id doesn't exist!")
 
-        response.endJson(Json.stringify(HardbanModel.serializer(), hardban.toHardbanModel(bot)))
+        response.endJson(objectMapper.writeValueAsString(hardban.toHardbanModel(bot)))
         return Result(Status.OK)
     }
 
@@ -59,7 +57,7 @@ class UpdateHardbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         val hardban = HardbansTable.fetchHardban(id) ?: return Result(Status.NOT_FOUND, "Hardban with given id doesn't exist!")
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val parsedHardban = tryhard { Json.parse(HardbanModel.serializer(), bodyString) }
+        val parsedHardban = tryhard { objectMapper.readValue<HardbanModel>(bodyString) }
                 ?: return Result(Status.BAD_REQUEST)
 
         val newHardban = parsedHardban.copy(

@@ -1,11 +1,9 @@
 package org.samoxive.safetyjim.server.models
 
-import kotlinx.serialization.Serializable
 import org.samoxive.safetyjim.database.HardbanEntity
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.await
 
-@Serializable
 data class HardbanModel(
     val id: Int,
     val user: UserModel,

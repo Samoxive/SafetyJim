@@ -1,8 +1,5 @@
 package org.samoxive.safetyjim.server.models
 
-import kotlinx.serialization.Serializable
-
-@Serializable
 data class GuildSettingsModel(
     val guild: GuildModel,
     val channels: List<ChannelModel>,

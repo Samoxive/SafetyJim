@@ -1,11 +1,9 @@
 package org.samoxive.safetyjim.server.models
 
-import kotlinx.serialization.Serializable
 import org.samoxive.safetyjim.database.WarnEntity
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.await
 
-@Serializable
 data class WarnModel(
     val id: Int,
     val user: UserModel,

@@ -1,11 +1,10 @@
 package org.samoxive.safetyjim.server.endpoints
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
@@ -18,7 +17,6 @@ import org.samoxive.safetyjim.server.models.MuteModel
 import org.samoxive.safetyjim.server.models.toMuteModel
 import org.samoxive.safetyjim.tryhard
 
-@Serializable
 data class GetMutesEndpointResponse(
     val currentPage: Int,
     val totalPages: Int,
@@ -30,7 +28,7 @@ class GetMutesEndpoint(bot: DiscordBot) : ModLogPaginationEndpoint(bot) {
         val mutes = MutesTable.fetchGuildMutes(guild, page).map { it.toMuteModel(bot) }
         val pageCount = (MutesTable.fetchGuildMutesCount(guild) / 10) + 1
         val body = GetMutesEndpointResponse(page, pageCount, mutes)
-        response.endJson(Json.stringify(GetMutesEndpointResponse.serializer(), body))
+        response.endJson(objectMapper.writeValueAsString(body))
         return Result(Status.OK)
     }
 
@@ -44,7 +42,7 @@ class GetMuteEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
         val id = muteId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid mute id!")
         val mute = MutesTable.fetchMute(id) ?: return Result(Status.NOT_FOUND, "Mute with given id doesn't exist!")
 
-        response.endJson(Json.stringify(MuteModel.serializer(), mute.toMuteModel(bot)))
+        response.endJson(objectMapper.writeValueAsString(mute.toMuteModel(bot)))
         return Result(Status.OK)
     }
 
@@ -59,7 +57,7 @@ class UpdateMuteEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         val mute = MutesTable.fetchMute(id) ?: return Result(Status.NOT_FOUND, "Mute with given id doesn't exist!")
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val parsedMute = tryhard { Json.parse(MuteModel.serializer(), bodyString) }
+        val parsedMute = tryhard { objectMapper.readValue<MuteModel>(bodyString) }
                 ?: return Result(Status.BAD_REQUEST)
 
         val newMute = parsedMute.copy(

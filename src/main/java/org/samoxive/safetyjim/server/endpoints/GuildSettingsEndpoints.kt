@@ -1,10 +1,10 @@
 package org.samoxive.safetyjim.server.endpoints
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
@@ -14,10 +14,7 @@ import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.database.getDelta
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.isStaff
-import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
-import org.samoxive.safetyjim.server.Result
-import org.samoxive.safetyjim.server.Status
-import org.samoxive.safetyjim.server.endJson
+import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.GuildSettingsModel
 import org.samoxive.safetyjim.server.models.toChannelModel
 import org.samoxive.safetyjim.server.models.toGuildModel
@@ -98,7 +95,7 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
                 settingsEntity.modsCanEditTags
         )
 
-        response.endJson(Json.stringify(GuildSettingsModel.serializer(), settings))
+        response.endJson(objectMapper.writeValueAsString(settings))
         return Result(Status.OK)
     }
 }
@@ -112,7 +109,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.FORBIDDEN, "You need to be an administrator to change server settings!")
         }
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val parsedSettings = tryhard { Json.parse(GuildSettingsModel.serializer(), bodyString) }
+        val parsedSettings = tryhard { objectMapper.readValue<GuildSettingsModel>(bodyString) }
                 ?: return Result(Status.BAD_REQUEST)
 
         val newSettings = parsedSettings.copy(

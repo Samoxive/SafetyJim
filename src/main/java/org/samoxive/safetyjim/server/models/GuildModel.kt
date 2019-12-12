@@ -1,9 +1,7 @@
 package org.samoxive.safetyjim.server.models
 
-import kotlinx.serialization.Serializable
 import net.dv8tion.jda.api.entities.Guild
 
-@Serializable
 data class GuildModel(
     val id: String,
     val name: String,
