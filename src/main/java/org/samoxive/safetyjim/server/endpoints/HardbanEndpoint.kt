@@ -41,7 +41,8 @@ class GetHardbanEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity): Result {
         val hardbanId = request.getParam("hardbanId") ?: return Result(Status.SERVER_ERROR, "How did this happen?")
         val id = hardbanId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid hardban id!")
-        val hardban = HardbansTable.fetchHardban(id) ?: return Result(Status.NOT_FOUND, "Hardban with given id doesn't exist!")
+        val hardban = HardbansTable.fetchHardban(id)
+            ?: return Result(Status.NOT_FOUND, "Hardban with given id doesn't exist!")
 
         response.endJson(objectMapper.writeValueAsString(hardban.toHardbanModel(bot)))
         return Result(Status.OK)
@@ -55,14 +56,15 @@ class UpdateHardbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
         val hardbanId = request.getParam("hardbanId") ?: return Result(Status.SERVER_ERROR, "How did this happen?")
         val id = hardbanId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid hardban id!")
-        val hardban = HardbansTable.fetchHardban(id) ?: return Result(Status.NOT_FOUND, "Hardban with given id doesn't exist!")
+        val hardban = HardbansTable.fetchHardban(id)
+            ?: return Result(Status.NOT_FOUND, "Hardban with given id doesn't exist!")
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
         val parsedHardban = tryhard { objectMapper.readValue<HardbanModel>(bodyString) }
-                ?: return Result(Status.BAD_REQUEST)
+            ?: return Result(Status.BAD_REQUEST)
 
         val newHardban = parsedHardban.copy(
-                reason = parsedHardban.reason.trim()
+            reason = parsedHardban.reason.trim()
         )
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
@@ -74,22 +76,15 @@ class UpdateHardbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         if (hardban.id != newHardban.id ||
-                hardban.userId.toString() != newHardban.user.id ||
-                hardban.hardbanTime != newHardban.actionTime
+            hardban.userId.toString() != newHardban.user.id ||
+            hardban.hardbanTime != newHardban.actionTime ||
+            hardban.moderatorUserId.toString() != newHardban.moderatorUser.id
         ) {
             return Result(Status.BAD_REQUEST, "Read only properties were modified!")
         }
 
-        if (hardban.moderatorUserId.toString() != newHardban.moderatorUser.id) {
-            val moderator = guild.fetchMember(newHardban.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
-            if (!moderator.hasPermission(Permission.BAN_MEMBERS)) {
-                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
-            }
-        }
-
         HardbansTable.updateHardban(hardban.copy(
-                moderatorUserId = newHardban.moderatorUser.id.toLong(),
-                reason = if (newHardban.reason.isBlank()) "No reason specified" else newHardban.reason
+            reason = if (newHardban.reason.isBlank()) "No reason specified" else newHardban.reason
         ))
 
         return Result(Status.OK)

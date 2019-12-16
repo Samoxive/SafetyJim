@@ -62,10 +62,10 @@ class UpdateBanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
         val parsedBan = tryhard { objectMapper.readValue<BanModel>(bodyString) }
-                ?: return Result(Status.BAD_REQUEST)
+            ?: return Result(Status.BAD_REQUEST)
 
         val newBan = parsedBan.copy(
-                reason = parsedBan.reason.trim()
+            reason = parsedBan.reason.trim()
         )
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
@@ -77,34 +77,25 @@ class UpdateBanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         if (ban.id != newBan.id ||
-                ban.userId.toString() != newBan.user.id ||
-                ban.banTime != newBan.actionTime
+            ban.userId.toString() != newBan.user.id ||
+            ban.banTime != newBan.actionTime ||
+            ban.moderatorUserId.toString() != newBan.moderatorUser.id
         ) {
             return Result(Status.BAD_REQUEST, "Read only properties were modified!")
         }
 
         if (ban.unbanned) { // expired
             if (!newBan.unbanned || // un-expiring the ban
-                    ban.expireTime != newBan.expirationTime) { // changing expiration time
+                ban.expireTime != newBan.expirationTime) { // changing expiration time
                 return Result(Status.BAD_REQUEST, "You can't change expiration property after user has been unbanned.")
             }
         }
 
-        if (ban.moderatorUserId.toString() != newBan.moderatorUser.id) {
-            // if original mod isn't in server that's fine, next changes should have a mod in server, next mods must be in server
-            // to get permission related information
-            val moderator = guild.fetchMember(newBan.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
-            if (!moderator.hasPermission(Permission.BAN_MEMBERS)) {
-                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
-            }
-        }
-
         BansTable.updateBan(ban.copy(
-                moderatorUserId = newBan.moderatorUser.id.toLong(),
-                expireTime = newBan.expirationTime,
-                expires = newBan.expirationTime != 0L,
-                unbanned = newBan.unbanned,
-                reason = if (newBan.reason.isBlank()) "No reason specified" else newBan.reason
+            expireTime = newBan.expirationTime,
+            expires = newBan.expirationTime != 0L,
+            unbanned = newBan.unbanned,
+            reason = if (newBan.reason.isBlank()) "No reason specified" else newBan.reason
         ))
 
         return Result(Status.OK)

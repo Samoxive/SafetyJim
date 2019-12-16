@@ -41,7 +41,8 @@ class GetSoftbanEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member, settings: SettingsEntity): Result {
         val softbanId = request.getParam("softbanId") ?: return Result(Status.SERVER_ERROR, "How did this happen?")
         val id = softbanId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid softban id!")
-        val softban = SoftbansTable.fetchSoftban(id) ?: return Result(Status.NOT_FOUND, "Softban with given id doesn't exist!")
+        val softban = SoftbansTable.fetchSoftban(id)
+            ?: return Result(Status.NOT_FOUND, "Softban with given id doesn't exist!")
 
         response.endJson(objectMapper.writeValueAsString(softban.toSoftbanModel(bot)))
         return Result(Status.OK)
@@ -55,14 +56,15 @@ class UpdateSoftbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
     override suspend fun handle(event: RoutingContext, request: HttpServerRequest, response: HttpServerResponse, user: User, guild: Guild, member: Member): Result {
         val softbanId = request.getParam("softbanId") ?: return Result(Status.SERVER_ERROR, "How did this happen?")
         val id = softbanId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid softban id!")
-        val softban = SoftbansTable.fetchSoftban(id) ?: return Result(Status.NOT_FOUND, "Softban with given id doesn't exist!")
+        val softban = SoftbansTable.fetchSoftban(id)
+            ?: return Result(Status.NOT_FOUND, "Softban with given id doesn't exist!")
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
         val parsedSoftban = tryhard { objectMapper.readValue<SoftbanModel>(bodyString) }
-                ?: return Result(Status.BAD_REQUEST)
+            ?: return Result(Status.BAD_REQUEST)
 
         val newSoftban = parsedSoftban.copy(
-                reason = parsedSoftban.reason.trim()
+            reason = parsedSoftban.reason.trim()
         )
 
         if (!member.hasPermission(Permission.BAN_MEMBERS)) {
@@ -74,17 +76,11 @@ class UpdateSoftbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         if (softban.id != newSoftban.id ||
-                softban.userId.toString() != newSoftban.user.id ||
-                softban.softbanTime != newSoftban.actionTime
+            softban.userId.toString() != newSoftban.user.id ||
+            softban.softbanTime != newSoftban.actionTime ||
+            softban.moderatorUserId.toString() != newSoftban.moderatorUser.id
         ) {
             return Result(Status.BAD_REQUEST, "Read only properties were modified!")
-        }
-
-        if (softban.moderatorUserId.toString() != newSoftban.moderatorUser.id) {
-            val moderator = guild.fetchMember(newSoftban.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
-            if (!moderator.hasPermission(Permission.BAN_MEMBERS)) {
-                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
-            }
         }
 
         if (softban.pardoned && !newSoftban.pardoned) {
@@ -92,9 +88,8 @@ class UpdateSoftbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         SoftbansTable.updateSoftban(softban.copy(
-                moderatorUserId = newSoftban.moderatorUser.id.toLong(),
-                reason = if (newSoftban.reason.isBlank()) "No reason specified" else newSoftban.reason,
-                pardoned = newSoftban.pardoned
+            reason = if (newSoftban.reason.isBlank()) "No reason specified" else newSoftban.reason,
+            pardoned = newSoftban.pardoned
         ))
 
         return Result(Status.OK)

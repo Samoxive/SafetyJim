@@ -59,10 +59,10 @@ class UpdateWarnEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
         val parsedWarn = tryhard { objectMapper.readValue<WarnModel>(bodyString) }
-                ?: return Result(Status.BAD_REQUEST)
+            ?: return Result(Status.BAD_REQUEST)
 
         val newWarn = parsedWarn.copy(
-                reason = parsedWarn.reason.trim()
+            reason = parsedWarn.reason.trim()
         )
 
         if (!member.hasPermission(Permission.KICK_MEMBERS)) {
@@ -74,17 +74,11 @@ class UpdateWarnEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         if (warn.id != newWarn.id ||
-                warn.userId.toString() != newWarn.user.id ||
-                warn.warnTime != newWarn.actionTime
+            warn.userId.toString() != newWarn.user.id ||
+            warn.warnTime != newWarn.actionTime ||
+            warn.moderatorUserId.toString() != newWarn.moderatorUser.id
         ) {
             return Result(Status.BAD_REQUEST, "Read only properties were modified!")
-        }
-
-        if (warn.moderatorUserId.toString() != newWarn.moderatorUser.id) {
-            val moderator = guild.fetchMember(newWarn.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
-            if (!moderator.hasPermission(Permission.KICK_MEMBERS)) {
-                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
-            }
         }
 
         if (warn.pardoned && !newWarn.pardoned) {
@@ -92,9 +86,8 @@ class UpdateWarnEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         WarnsTable.updateWarn(warn.copy(
-                moderatorUserId = newWarn.moderatorUser.id.toLong(),
-                reason = if (newWarn.reason.isBlank()) "No reason specified" else newWarn.reason,
-                pardoned = newWarn.pardoned
+            reason = if (newWarn.reason.isBlank()) "No reason specified" else newWarn.reason,
+            pardoned = newWarn.pardoned
         ))
 
         return Result(Status.OK)

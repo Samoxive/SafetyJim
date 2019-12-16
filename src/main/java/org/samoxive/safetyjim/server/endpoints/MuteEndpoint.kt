@@ -59,10 +59,10 @@ class UpdateMuteEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
         val parsedMute = tryhard { objectMapper.readValue<MuteModel>(bodyString) }
-                ?: return Result(Status.BAD_REQUEST)
+            ?: return Result(Status.BAD_REQUEST)
 
         val newMute = parsedMute.copy(
-                reason = parsedMute.reason.trim()
+            reason = parsedMute.reason.trim()
         )
 
         if (!member.hasPermission(Permission.MANAGE_ROLES)) {
@@ -74,34 +74,25 @@ class UpdateMuteEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         if (mute.id != newMute.id ||
-                mute.userId.toString() != newMute.user.id ||
-                mute.muteTime != newMute.actionTime
+            mute.userId.toString() != newMute.user.id ||
+            mute.muteTime != newMute.actionTime ||
+            mute.moderatorUserId.toString() != newMute.moderatorUser.id
         ) {
             return Result(Status.BAD_REQUEST, "Read only properties were modified!")
         }
 
         if (mute.unmuted) { // expired
             if (!newMute.unmuted || // un-expiring the mute
-                    mute.expireTime != newMute.expirationTime) { // changing expiration time
+                mute.expireTime != newMute.expirationTime) { // changing expiration time
                 return Result(Status.BAD_REQUEST, "You can't change expiration property after user has been unmutened.")
             }
         }
 
-        if (mute.moderatorUserId.toString() != newMute.moderatorUser.id) {
-            // if original mod isn't in server that's fine, next changes should have a mod in server, next mods must be in server
-            // to get permission related information
-            val moderator = guild.fetchMember(newMute.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
-            if (!moderator.hasPermission(Permission.MANAGE_ROLES)) {
-                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
-            }
-        }
-
         MutesTable.updateMute(mute.copy(
-                moderatorUserId = newMute.moderatorUser.id.toLong(),
-                expireTime = newMute.expirationTime,
-                expires = newMute.expirationTime != 0L,
-                unmuted = newMute.unmuted,
-                reason = if (newMute.reason.isBlank()) "No reason specified" else newMute.reason
+            expireTime = newMute.expirationTime,
+            expires = newMute.expirationTime != 0L,
+            unmuted = newMute.unmuted,
+            reason = if (newMute.reason.isBlank()) "No reason specified" else newMute.reason
         ))
 
         return Result(Status.OK)
