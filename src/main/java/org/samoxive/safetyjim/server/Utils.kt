@@ -34,10 +34,10 @@ fun createJWTFromUserId(config: Config, userId: String): String {
     val expiresAt = Date.from(Instant.now() + Duration.ofDays(7))
 
     return JWT.create()
-            .withClaim("userId", userId)
-            .withExpiresAt(expiresAt)
-            .withClaim("uuid", UUID.randomUUID().toString())
-            .sign(algorithm)
+        .withClaim("userId", userId)
+        .withExpiresAt(expiresAt)
+        .withClaim("uuid", UUID.randomUUID().toString())
+        .sign(algorithm)
 }
 
 suspend fun HttpServerResponse.endJsonString(string: String) {
