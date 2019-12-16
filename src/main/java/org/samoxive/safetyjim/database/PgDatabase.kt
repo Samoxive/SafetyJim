@@ -14,18 +14,19 @@ import org.slf4j.LoggerFactory
 lateinit var pgPool: PgPool
 
 private val tables = arrayOf(
-        BansTable,
-        HardbansTable,
-        JoinsTable,
-        KicksTable,
-        MutesTable,
-        RemindersTable,
-        RolesTable,
-        SettingsTable,
-        SoftbansTable,
-        TagsTable,
-        WarnsTable,
-        UUIDBlacklistTable
+    BansTable,
+    HardbansTable,
+    JoinsTable,
+    KicksTable,
+    MutesTable,
+    RemindersTable,
+    RolesTable,
+    SettingsTable,
+    SoftbansTable,
+    TagsTable,
+    WarnsTable,
+    UUIDBlacklistTable,
+    UserSecretsTable
 )
 
 fun initPgPool(config: Config) {
