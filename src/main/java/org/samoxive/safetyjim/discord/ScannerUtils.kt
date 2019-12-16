@@ -121,12 +121,7 @@ suspend fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<
         }
     }
 
-    val members = guild.members
-    val usernamesAndNicknames = members.asSequence().map { it.effectiveName }.plus(members.map { it.user.name }).toList()
-    val search = FuzzySearch.extractOne(input, usernamesAndNicknames)
-    val user = members[search.index % members.size].user
-
-    return if (search.score >= 75) SearchUserResult.GUESSED to user else SearchUserResult.NOT_FOUND to null
+    return SearchUserResult.NOT_FOUND to null
 }
 
 suspend fun Scanner.findBannedUser(message: Message): Pair<SearchUserResult, User?> {
