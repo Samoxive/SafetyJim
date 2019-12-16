@@ -2,6 +2,7 @@ package org.samoxive.safetyjim.server
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.uchuhimo.konf.Config
 import io.vertx.core.http.HttpServerResponse
@@ -14,6 +15,7 @@ import org.samoxive.safetyjim.database.UUIDBlacklistTable
 import org.samoxive.safetyjim.tryhardAsync
 
 val objectMapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
 suspend fun getUserIdFromToken(config: Config, token: String) = tryhardAsync {
     val algorithm = Algorithm.HMAC512(config[ServerConfig.secret])
