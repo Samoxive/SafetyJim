@@ -52,13 +52,13 @@ dependencies {
     compile 'com.auth0:java-jwt:3.8.3'
     compile 'com.google.code.gson:gson:2.8.6'
     compile 'log4j:log4j:1.2.17'
-    compile('net.dv8tion:JDA:4.0.0_73') {
+    compile('net.dv8tion:JDA:4.0.0_77') {
         exclude module: 'opus-java'
     }
     compile 'com.uchuhimo:konf:0.21.0'
     compile 'me.xdrop:fuzzywuzzy:1.2.0'
     compile 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0'
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2'
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3'
     compile 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'
     compile 'io.reactiverse:reactive-pg-client:0.11.4'
     compile 'org.json:json:20190722'
