@@ -12,7 +12,6 @@ import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.database.MutesTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.discord.fetchMember
 import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.MuteModel
 import org.samoxive.safetyjim.server.models.toMuteModel
