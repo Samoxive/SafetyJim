@@ -48,43 +48,43 @@ object WarnsTable : AbstractTable {
 
     private fun PgRowSet.toWarnEntities(): List<WarnEntity> = this.map {
         WarnEntity(
-                id = it.getInteger(0),
-                userId = it.getLong(1),
-                moderatorUserId = it.getLong(2),
-                guildId = it.getLong(3),
-                warnTime = it.getLong(4),
-                reason = it.getString(5),
-                pardoned = it.getBoolean(6)
+            id = it.getInteger(0),
+            userId = it.getLong(1),
+            moderatorUserId = it.getLong(2),
+            guildId = it.getLong(3),
+            warnTime = it.getLong(4),
+            reason = it.getString(5),
+            pardoned = it.getBoolean(6)
         )
     }
 
     suspend fun fetchWarn(id: Int): WarnEntity? {
         return pgPool.preparedQueryAwait("select * from warnlist where id = $1;", Tuple.of(id))
-                .toWarnEntities()
-                .firstOrNull()
+            .toWarnEntities()
+            .firstOrNull()
     }
 
     suspend fun fetchGuildWarns(guild: Guild, page: Int): List<WarnEntity> {
         return pgPool.preparedQueryAwait("select * from warnlist where guildid = $1 order by warntime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
-                .toWarnEntities()
+            .toWarnEntities()
     }
 
     suspend fun fetchGuildWarnsCount(guild: Guild): Int {
         return pgPool.preparedQueryAwait("select count(*) from warnlist where guildid = $1;", Tuple.of(guild.idLong))
-                .first()
-                .getInteger(0)
+            .first()
+            .getInteger(0)
     }
 
     suspend fun fetchUserActionableSoftbanCount(guild: Guild, user: User): Int {
         return pgPool.preparedQueryAwait("select count(*) from warnlist where guildid = $1 and userid = $2;", Tuple.of(guild.idLong, user.idLong))
-                .first()
-                .getInteger(0)
+            .first()
+            .getInteger(0)
     }
 
     suspend fun insertWarn(warn: WarnEntity): WarnEntity {
         return pgPool.preparedQueryAwait(insertSQL, warn.toTuple())
-                .toWarnEntities()
-                .first()
+            .toWarnEntities()
+            .first()
     }
 
     suspend fun updateWarn(newWarn: WarnEntity) {
@@ -103,24 +103,24 @@ data class WarnEntity(
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
-                userId,
-                moderatorUserId,
-                guildId,
-                warnTime,
-                reason,
-                pardoned
+            userId,
+            moderatorUserId,
+            guildId,
+            warnTime,
+            reason,
+            pardoned
         )
     }
 
     fun toTupleWithId(): Tuple {
         return Tuple.of(
-                id,
-                userId,
-                moderatorUserId,
-                guildId,
-                warnTime,
-                reason,
-                pardoned
+            id,
+            userId,
+            moderatorUserId,
+            guildId,
+            warnTime,
+            reason,
+            pardoned
         )
     }
 }

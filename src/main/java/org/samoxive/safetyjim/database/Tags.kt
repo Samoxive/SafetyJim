@@ -34,27 +34,27 @@ where id = $1;
 object TagsTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf(
-            "create index if not exists taglist_index_1 on taglist (guildid);"
+        "create index if not exists taglist_index_1 on taglist (guildid);"
     )
 
     private fun PgRowSet.toTagEntities(): List<TagEntity> = this.map {
         TagEntity(
-                id = it.getInteger(0),
-                guildId = it.getLong(1),
-                name = it.getString(2),
-                response = it.getString(3)
+            id = it.getInteger(0),
+            guildId = it.getLong(1),
+            name = it.getString(2),
+            response = it.getString(3)
         )
     }
 
     suspend fun fetchGuildTags(guild: Guild): List<TagEntity> {
         return pgPool.preparedQueryAwait("select * from taglist where guildid = $1;", Tuple.of(guild.idLong))
-                .toTagEntities()
+            .toTagEntities()
     }
 
     suspend fun fetchTagByName(guild: Guild, name: String): TagEntity? {
         return pgPool.preparedQueryAwait("select * from taglist where guildid = $1 and name = $2;", Tuple.of(guild.idLong, name))
-                .toTagEntities()
-                .firstOrNull()
+            .toTagEntities()
+            .firstOrNull()
     }
 
     suspend fun insertTag(tag: TagEntity) {
@@ -78,18 +78,18 @@ data class TagEntity(
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
-                guildId,
-                name,
-                response
+            guildId,
+            name,
+            response
         )
     }
 
     fun toTupleWithId(): Tuple {
         return Tuple.of(
-                id,
-                guildId,
-                name,
-                response
+            id,
+            guildId,
+            name,
+            response
         )
     }
 }

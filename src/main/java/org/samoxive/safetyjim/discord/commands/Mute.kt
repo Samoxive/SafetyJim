@@ -37,17 +37,17 @@ suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
     val expires = expirationDate != null
     MutesTable.invalidatePreviousUserMutes(guild, muteUser)
     val record = MutesTable.insertMute(
-            MuteEntity(
-                    userId = muteUser.idLong,
-                    moderatorUserId = modUser.idLong,
-                    guildId = guild.idLong,
-                    muteTime = now.time / 1000,
-                    expireTime = if (expirationDate == null) 0 else expirationDate.time / 1000,
-                    reason = reason,
-                    expires = expires,
-                    unmuted = false,
-                    pardoned = false
-            )
+        MuteEntity(
+            userId = muteUser.idLong,
+            moderatorUserId = modUser.idLong,
+            guildId = guild.idLong,
+            muteTime = now.time / 1000,
+            expireTime = if (expirationDate == null) 0 else expirationDate.time / 1000,
+            reason = reason,
+            expires = expires,
+            unmuted = false,
+            pardoned = false
+        )
     )
 
     createModLogEntry(guild, channel, settings, modUser, muteUser, reason, ModLogAction.Mute, record.id, expirationDate)
@@ -77,22 +77,22 @@ suspend fun setupMutedRole(guild: Guild): Role {
         // Muted role doesn't exist at all, so we need to create one
         // and create channel overrides for the role
         mutedRole = guild.createRole()
-                .setName("Muted")
-                .setPermissions(
-                        Permission.MESSAGE_READ,
-                        Permission.MESSAGE_HISTORY,
-                        Permission.VOICE_CONNECT
-                )
-                .await()
+            .setName("Muted")
+            .setPermissions(
+                Permission.MESSAGE_READ,
+                Permission.MESSAGE_HISTORY,
+                Permission.VOICE_CONNECT
+            )
+            .await()
 
         for (channel in channels) {
             channel.createPermissionOverride(mutedRole)
-                    .setDeny(
-                            Permission.MESSAGE_WRITE,
-                            Permission.MESSAGE_ADD_REACTION,
-                            Permission.VOICE_SPEAK
-                    )
-                    .await()
+                .setDeny(
+                    Permission.MESSAGE_WRITE,
+                    Permission.MESSAGE_ADD_REACTION,
+                    Permission.VOICE_SPEAK
+                )
+                .await()
         }
     }
 
@@ -109,12 +109,12 @@ suspend fun setupMutedRole(guild: Guild): Role {
         // or its permissions were played with, so we should set it straight
         if (override == null) {
             channel.createPermissionOverride(mutedRole!!)
-                    .setDeny(
-                            Permission.MESSAGE_WRITE,
-                            Permission.MESSAGE_ADD_REACTION,
-                            Permission.VOICE_SPEAK
-                    )
-                    .await()
+                .setDeny(
+                    Permission.MESSAGE_WRITE,
+                    Permission.MESSAGE_ADD_REACTION,
+                    Permission.VOICE_SPEAK
+                )
+                .await()
         }
     }
 

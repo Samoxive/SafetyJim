@@ -23,9 +23,9 @@ class Xkcd : Command() {
         }
 
         val response = httpClient.get(443, "duckduckgo.com", "/html/")
-                .putHeader("User-Agent", userAgent)
-                .addQueryParam("q", searchQuery)
-                .sendAwait()
+            .putHeader("User-Agent", userAgent)
+            .addQueryParam("q", searchQuery)
+            .sendAwait()
 
         val htmlBody = response.bodyAsString()
         if (htmlBody == null) {

@@ -48,43 +48,43 @@ object SoftbansTable : AbstractTable {
 
     private fun PgRowSet.toSoftbanEntities(): List<SoftbanEntity> = this.map {
         SoftbanEntity(
-                id = it.getInteger(0),
-                userId = it.getLong(1),
-                moderatorUserId = it.getLong(2),
-                guildId = it.getLong(3),
-                softbanTime = it.getLong(4),
-                reason = it.getString(5),
-                pardoned = it.getBoolean(6)
+            id = it.getInteger(0),
+            userId = it.getLong(1),
+            moderatorUserId = it.getLong(2),
+            guildId = it.getLong(3),
+            softbanTime = it.getLong(4),
+            reason = it.getString(5),
+            pardoned = it.getBoolean(6)
         )
     }
 
     suspend fun fetchSoftban(id: Int): SoftbanEntity? {
         return pgPool.preparedQueryAwait("select * from softbanlist where id = $1;", Tuple.of(id))
-                .toSoftbanEntities()
-                .firstOrNull()
+            .toSoftbanEntities()
+            .firstOrNull()
     }
 
     suspend fun fetchGuildSoftbans(guild: Guild, page: Int): List<SoftbanEntity> {
         return pgPool.preparedQueryAwait("select * from softbanlist where guildid = $1 order by softbantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
-                .toSoftbanEntities()
+            .toSoftbanEntities()
     }
 
     suspend fun fetchGuildSoftbansCount(guild: Guild): Int {
         return pgPool.preparedQueryAwait("select count(*) from softbanlist where guildid = $1;", Tuple.of(guild.idLong))
-                .first()
-                .getInteger(0)
+            .first()
+            .getInteger(0)
     }
 
     suspend fun fetchUserActionableSoftbanCount(guild: Guild, user: User): Int {
         return pgPool.preparedQueryAwait("select count(*) from softbanlist where guildid = $1 and userid = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
-                .first()
-                .getInteger(0)
+            .first()
+            .getInteger(0)
     }
 
     suspend fun insertSoftban(softban: SoftbanEntity): SoftbanEntity {
         return pgPool.preparedQueryAwait(insertSQL, softban.toTuple())
-                .toSoftbanEntities()
-                .first()
+            .toSoftbanEntities()
+            .first()
     }
 
     suspend fun updateSoftban(newSoftban: SoftbanEntity) {
@@ -103,24 +103,24 @@ data class SoftbanEntity(
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
-                userId,
-                moderatorUserId,
-                guildId,
-                softbanTime,
-                reason,
-                pardoned
+            userId,
+            moderatorUserId,
+            guildId,
+            softbanTime,
+            reason,
+            pardoned
         )
     }
 
     fun toTupleWithId(): Tuple {
         return Tuple.of(
-                id,
-                userId,
-                moderatorUserId,
-                guildId,
-                softbanTime,
-                reason,
-                pardoned
+            id,
+            userId,
+            moderatorUserId,
+            guildId,
+            softbanTime,
+            reason,
+            pardoned
         )
     }
 }

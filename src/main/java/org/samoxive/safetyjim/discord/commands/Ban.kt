@@ -33,16 +33,16 @@ suspend fun banAction(guild: Guild, channel: TextChannel?, settings: SettingsEnt
 
     BansTable.invalidatePreviousUserBans(guild, banUser)
     val record = BansTable.insertBan(
-            BanEntity(
-                    userId = banUser.idLong,
-                    moderatorUserId = modUser.idLong,
-                    guildId = guild.idLong,
-                    banTime = now.time / 1000,
-                    expireTime = if (expirationDate != null) expirationDate.time / 1000 else 0,
-                    reason = reason,
-                    expires = expires,
-                    unbanned = false
-            )
+        BanEntity(
+            userId = banUser.idLong,
+            moderatorUserId = modUser.idLong,
+            guildId = guild.idLong,
+            banTime = now.time / 1000,
+            expireTime = if (expirationDate != null) expirationDate.time / 1000 else 0,
+            reason = reason,
+            expires = expires,
+            unbanned = false
+        )
     )
 
     val banId = record.id

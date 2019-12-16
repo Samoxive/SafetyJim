@@ -171,62 +171,62 @@ object SettingsTable : AbstractTable {
     override val createIndexStatements = arrayOf<String>()
 
     private val settingsCache: Cache<Long, SettingsEntity> = CacheBuilder.newBuilder()
-            .expireAfterAccess(1, TimeUnit.MINUTES)
-            .expireAfterWrite(1, TimeUnit.MINUTES)
-            .build()
+        .expireAfterAccess(1, TimeUnit.MINUTES)
+        .expireAfterWrite(1, TimeUnit.MINUTES)
+        .build()
 
     private val wordFilterCache: Cache<Long, Trie> = CacheBuilder.newBuilder()
-            .expireAfterAccess(1, TimeUnit.MINUTES)
-            .expireAfterWrite(1, TimeUnit.MINUTES)
-            .build()
+        .expireAfterAccess(1, TimeUnit.MINUTES)
+        .expireAfterWrite(1, TimeUnit.MINUTES)
+        .build()
 
     private fun PgRowSet.toSettingsEntities(): List<SettingsEntity> = this.map {
         SettingsEntity(
-                guildId = it.getLong(0),
-                modLog = it.getBoolean(1),
-                modLogChannelId = it.getLong(2),
-                holdingRoom = it.getBoolean(3),
-                holdingRoomRoleId = it.getLong(4),
-                holdingRoomMinutes = it.getInteger(5),
-                inviteLinkRemover = it.getBoolean(6),
-                welcomeMessage = it.getBoolean(7),
-                message = it.getString(8),
-                welcomeMessageChannelId = it.getLong(9),
-                prefix = it.getString(10),
-                silentCommands = it.getBoolean(11),
-                noSpacePrefix = it.getBoolean(12),
-                statistics = it.getBoolean(13),
-                joinCaptcha = it.getBoolean(14),
-                silentCommandsLevel = it.getInteger(15),
-                modActionConfirmationMessage = it.getBoolean(16),
-                wordFilter = it.getBoolean(17),
-                wordFilterBlacklist = it.getString(18),
-                wordFilterLevel = it.getInteger(19),
-                wordFilterAction = it.getInteger(20),
-                wordFilterActionDuration = it.getInteger(21),
-                wordFilterActionDurationType = it.getInteger(22),
-                inviteLinkRemoverAction = it.getInteger(23),
-                inviteLinkRemoverActionDuration = it.getInteger(24),
-                inviteLinkRemoverActionDurationType = it.getInteger(25),
-                privacySettings = it.getInteger(26),
-                privacyModLog = it.getInteger(27),
-                softbanThreshold = it.getInteger(28),
-                softbanAction = it.getInteger(29),
-                softbanActionDuration = it.getInteger(30),
-                softbanActionDurationType = it.getInteger(31),
-                kickThreshold = it.getInteger(32),
-                kickAction = it.getInteger(33),
-                kickActionDuration = it.getInteger(34),
-                kickActionDurationType = it.getInteger(35),
-                muteThreshold = it.getInteger(36),
-                muteAction = it.getInteger(37),
-                muteActionDuration = it.getInteger(38),
-                muteActionDurationType = it.getInteger(39),
-                warnThreshold = it.getInteger(40),
-                warnAction = it.getInteger(41),
-                warnActionDuration = it.getInteger(42),
-                warnActionDurationType = it.getInteger(43),
-                modsCanEditTags = it.getBoolean(44)
+            guildId = it.getLong(0),
+            modLog = it.getBoolean(1),
+            modLogChannelId = it.getLong(2),
+            holdingRoom = it.getBoolean(3),
+            holdingRoomRoleId = it.getLong(4),
+            holdingRoomMinutes = it.getInteger(5),
+            inviteLinkRemover = it.getBoolean(6),
+            welcomeMessage = it.getBoolean(7),
+            message = it.getString(8),
+            welcomeMessageChannelId = it.getLong(9),
+            prefix = it.getString(10),
+            silentCommands = it.getBoolean(11),
+            noSpacePrefix = it.getBoolean(12),
+            statistics = it.getBoolean(13),
+            joinCaptcha = it.getBoolean(14),
+            silentCommandsLevel = it.getInteger(15),
+            modActionConfirmationMessage = it.getBoolean(16),
+            wordFilter = it.getBoolean(17),
+            wordFilterBlacklist = it.getString(18),
+            wordFilterLevel = it.getInteger(19),
+            wordFilterAction = it.getInteger(20),
+            wordFilterActionDuration = it.getInteger(21),
+            wordFilterActionDurationType = it.getInteger(22),
+            inviteLinkRemoverAction = it.getInteger(23),
+            inviteLinkRemoverActionDuration = it.getInteger(24),
+            inviteLinkRemoverActionDurationType = it.getInteger(25),
+            privacySettings = it.getInteger(26),
+            privacyModLog = it.getInteger(27),
+            softbanThreshold = it.getInteger(28),
+            softbanAction = it.getInteger(29),
+            softbanActionDuration = it.getInteger(30),
+            softbanActionDurationType = it.getInteger(31),
+            kickThreshold = it.getInteger(32),
+            kickAction = it.getInteger(33),
+            kickActionDuration = it.getInteger(34),
+            kickActionDurationType = it.getInteger(35),
+            muteThreshold = it.getInteger(36),
+            muteAction = it.getInteger(37),
+            muteActionDuration = it.getInteger(38),
+            muteActionDurationType = it.getInteger(39),
+            warnThreshold = it.getInteger(40),
+            warnAction = it.getInteger(41),
+            warnActionDuration = it.getInteger(42),
+            warnActionDurationType = it.getInteger(43),
+            modsCanEditTags = it.getBoolean(44)
         )
     }
 
@@ -249,28 +249,28 @@ object SettingsTable : AbstractTable {
 
     private suspend fun fetchGuildSettings(guild: Guild): SettingsEntity? {
         return pgPool.preparedQueryAwait("select * from settings where guildid = $1;", Tuple.of(guild.idLong))
-                .toSettingsEntities()
-                .firstOrNull()
+            .toSettingsEntities()
+            .firstOrNull()
     }
 
     suspend fun insertDefaultGuildSettings(config: Config, guild: Guild): SettingsEntity? {
         val defaultChannel = guild.getDefaultChannelTalkable()
         return tryhardAsync {
             insertSettings(
-                    SettingsEntity(
-                            guildId = guild.idLong,
-                            modLogChannelId = defaultChannel.idLong,
-                            welcomeMessageChannelId = defaultChannel.idLong,
-                            prefix = config[JimConfig.default_prefix]
-                    )
+                SettingsEntity(
+                    guildId = guild.idLong,
+                    modLogChannelId = defaultChannel.idLong,
+                    welcomeMessageChannelId = defaultChannel.idLong,
+                    prefix = config[JimConfig.default_prefix]
+                )
             )
         }
     }
 
     private suspend fun insertSettings(settings: SettingsEntity): SettingsEntity {
         val updatedSettings = pgPool.preparedQueryAwait(insertSQL, settings.toTuple())
-                .toSettingsEntities()
-                .first()
+            .toSettingsEntities()
+            .first()
         settingsCache.put(settings.guildId, settings)
         wordFilterCache.invalidate(settings.guildId)
         return updatedSettings
@@ -303,13 +303,13 @@ object SettingsTable : AbstractTable {
         }
 
         val newFilterBuilder = Trie.builder()
-                .addKeywords(
-                        settings.wordFilterBlacklist.split(",")
-                                .map { it.toLowerCase().trim() }
-                                .filter { it.isNotEmpty() }
-                )
-                .ignoreCase()
-                .stopOnHit()
+            .addKeywords(
+                settings.wordFilterBlacklist.split(",")
+                    .map { it.toLowerCase().trim() }
+                    .filter { it.isNotEmpty() }
+            )
+            .ignoreCase()
+            .stopOnHit()
 
         val newFilter = if (settings.wordFilterLevel == SettingsEntity.WORD_FILTER_LEVEL_LOW) {
             newFilterBuilder.onlyWholeWords().build()
@@ -425,51 +425,51 @@ data class SettingsEntity(
 
     fun toTuple(): Tuple {
         return Tuple.of(
-                guildId,
-                modLog,
-                modLogChannelId,
-                holdingRoom,
-                holdingRoomRoleId,
-                holdingRoomMinutes,
-                inviteLinkRemover,
-                welcomeMessage,
-                message,
-                welcomeMessageChannelId,
-                prefix,
-                silentCommands,
-                noSpacePrefix,
-                statistics,
-                joinCaptcha,
-                silentCommandsLevel,
-                modActionConfirmationMessage,
-                wordFilter,
-                wordFilterBlacklist,
-                wordFilterLevel,
-                wordFilterAction,
-                wordFilterActionDuration,
-                wordFilterActionDurationType,
-                inviteLinkRemoverAction,
-                inviteLinkRemoverActionDuration,
-                inviteLinkRemoverActionDurationType,
-                privacySettings,
-                privacyModLog,
-                softbanThreshold,
-                softbanAction,
-                softbanActionDuration,
-                softbanActionDurationType,
-                kickThreshold,
-                kickAction,
-                kickActionDuration,
-                kickActionDurationType,
-                muteThreshold,
-                muteAction,
-                muteActionDuration,
-                muteActionDurationType,
-                warnThreshold,
-                warnAction,
-                warnActionDuration,
-                warnActionDurationType,
-                modsCanEditTags
+            guildId,
+            modLog,
+            modLogChannelId,
+            holdingRoom,
+            holdingRoomRoleId,
+            holdingRoomMinutes,
+            inviteLinkRemover,
+            welcomeMessage,
+            message,
+            welcomeMessageChannelId,
+            prefix,
+            silentCommands,
+            noSpacePrefix,
+            statistics,
+            joinCaptcha,
+            silentCommandsLevel,
+            modActionConfirmationMessage,
+            wordFilter,
+            wordFilterBlacklist,
+            wordFilterLevel,
+            wordFilterAction,
+            wordFilterActionDuration,
+            wordFilterActionDurationType,
+            inviteLinkRemoverAction,
+            inviteLinkRemoverActionDuration,
+            inviteLinkRemoverActionDurationType,
+            privacySettings,
+            privacyModLog,
+            softbanThreshold,
+            softbanAction,
+            softbanActionDuration,
+            softbanActionDurationType,
+            kickThreshold,
+            kickAction,
+            kickActionDuration,
+            kickActionDurationType,
+            muteThreshold,
+            muteAction,
+            muteActionDuration,
+            muteActionDurationType,
+            warnThreshold,
+            warnAction,
+            warnActionDuration,
+            warnActionDurationType,
+            modsCanEditTags
         )
     }
 

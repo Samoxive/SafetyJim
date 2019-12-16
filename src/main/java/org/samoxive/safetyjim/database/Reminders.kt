@@ -49,27 +49,27 @@ object RemindersTable : AbstractTable {
 
     private fun PgRowSet.toReminderEntities(): List<ReminderEntity> = this.map {
         ReminderEntity(
-                id = it.getInteger(0),
-                userId = it.getLong(1),
-                channelId = it.getLong(2),
-                guildId = it.getLong(3),
-                createTime = it.getLong(4),
-                remindTime = it.getLong(5),
-                reminded = it.getBoolean(6),
-                message = it.getString(7)
+            id = it.getInteger(0),
+            userId = it.getLong(1),
+            channelId = it.getLong(2),
+            guildId = it.getLong(3),
+            createTime = it.getLong(4),
+            remindTime = it.getLong(5),
+            reminded = it.getBoolean(6),
+            message = it.getString(7)
         )
     }
 
     suspend fun fetchExpiredReminders(): List<ReminderEntity> {
         val time = System.currentTimeMillis() / 1000
         return pgPool.preparedQueryAwait("select * from reminderlist where reminded = false and remindtime < $1;", Tuple.of(time))
-                .toReminderEntities()
+            .toReminderEntities()
     }
 
     suspend fun insertReminder(reminder: ReminderEntity): ReminderEntity {
         return pgPool.preparedQueryAwait(insertSQL, reminder.toTuple())
-                .toReminderEntities()
-                .first()
+            .toReminderEntities()
+            .first()
     }
 
     suspend fun updateReminder(newReminder: ReminderEntity) {
@@ -89,26 +89,26 @@ data class ReminderEntity(
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
-                userId,
-                channelId,
-                guildId,
-                createTime,
-                remindTime,
-                reminded,
-                message
+            userId,
+            channelId,
+            guildId,
+            createTime,
+            remindTime,
+            reminded,
+            message
         )
     }
 
     fun toTupleWithId(): Tuple {
         return Tuple.of(
-                id,
-                userId,
-                channelId,
-                guildId,
-                createTime,
-                remindTime,
-                reminded,
-                message
+            id,
+            userId,
+            channelId,
+            guildId,
+            createTime,
+            remindTime,
+            reminded,
+            message
         )
     }
 }

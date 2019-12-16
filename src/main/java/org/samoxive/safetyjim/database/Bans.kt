@@ -51,56 +51,56 @@ where id = $1;
 object BansTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf(
-            "create index if not exists banlist_bantime_index on banlist (bantime desc);"
+        "create index if not exists banlist_bantime_index on banlist (bantime desc);"
     )
 
     private fun PgRowSet.toBanEntities(): List<BanEntity> = this.map {
         BanEntity(
-                id = it.getInteger(0),
-                userId = it.getLong(1),
-                moderatorUserId = it.getLong(2),
-                guildId = it.getLong(3),
-                banTime = it.getLong(4),
-                expireTime = it.getLong(5),
-                reason = it.getString(6),
-                expires = it.getBoolean(7),
-                unbanned = it.getBoolean(8)
+            id = it.getInteger(0),
+            userId = it.getLong(1),
+            moderatorUserId = it.getLong(2),
+            guildId = it.getLong(3),
+            banTime = it.getLong(4),
+            expireTime = it.getLong(5),
+            reason = it.getString(6),
+            expires = it.getBoolean(7),
+            unbanned = it.getBoolean(8)
         )
     }
 
     suspend fun fetchBan(id: Int): BanEntity? {
         return pgPool.preparedQueryAwait("select * from banlist where id = $1;", Tuple.of(id))
-                .toBanEntities()
-                .firstOrNull()
+            .toBanEntities()
+            .firstOrNull()
     }
 
     suspend fun fetchGuildBans(guild: Guild, page: Int): List<BanEntity> {
         return pgPool.preparedQueryAwait("select * from banlist where guildid = $1 order by bantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
-                .toBanEntities()
+            .toBanEntities()
     }
 
     suspend fun fetchGuildBansCount(guild: Guild): Int {
         return pgPool.preparedQueryAwait("select count(*) from banlist where guildid = $1;", Tuple.of(guild.idLong))
-                .first()
-                .getInteger(0)
+            .first()
+            .getInteger(0)
     }
 
     suspend fun fetchExpiredBans(): List<BanEntity> {
         val time = System.currentTimeMillis() / 1000
         return pgPool.preparedQueryAwait("select * from banlist where unbanned = false and expires = true and expiretime < $1;", Tuple.of(time))
-                .toBanEntities()
+            .toBanEntities()
     }
 
     suspend fun fetchGuildLastBan(guild: Guild): BanEntity? {
         return pgPool.preparedQueryAwait("select * from banlist where guildid = $1 order by bantime desc limit 1;", Tuple.of(guild.idLong))
-                .toBanEntities()
-                .firstOrNull()
+            .toBanEntities()
+            .firstOrNull()
     }
 
     suspend fun insertBan(ban: BanEntity): BanEntity {
         return pgPool.preparedQueryAwait(insertSQL, ban.toTuple())
-                .toBanEntities()
-                .first()
+            .toBanEntities()
+            .first()
     }
 
     suspend fun updateBan(newBan: BanEntity) {
@@ -125,28 +125,28 @@ data class BanEntity(
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
-                userId,
-                moderatorUserId,
-                guildId,
-                banTime,
-                expireTime,
-                reason,
-                expires,
-                unbanned
+            userId,
+            moderatorUserId,
+            guildId,
+            banTime,
+            expireTime,
+            reason,
+            expires,
+            unbanned
         )
     }
 
     fun toTupleWithId(): Tuple {
         return Tuple.of(
-                id,
-                userId,
-                moderatorUserId,
-                guildId,
-                banTime,
-                expireTime,
-                reason,
-                expires,
-                unbanned
+            id,
+            userId,
+            moderatorUserId,
+            guildId,
+            banTime,
+            expireTime,
+            reason,
+            expires,
+            unbanned
         )
     }
 }

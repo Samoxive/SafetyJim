@@ -21,25 +21,25 @@ class WordFilter : MessageProcessor() {
     init {
         runBlocking {
             val blacklist = httpClient.getAbs(DEFAULT_BLACKLIST_URL)
-                    .sendAwait()
-                    .bodyAsString()
+                .sendAwait()
+                .bodyAsString()
             val blacklistWords = blacklist.split("\n")
-                    .map { it.toLowerCase().trim() }
-                    .filter { it.isNotEmpty() }
+                .map { it.toLowerCase().trim() }
+                .filter { it.isNotEmpty() }
             defaultWordFilterLow = Trie.builder()
-                    .addKeywords(
-                            blacklistWords
-                    )
-                    .ignoreCase()
-                    .onlyWholeWords()
-                    .stopOnHit()
-                    .build()
+                .addKeywords(
+                    blacklistWords
+                )
+                .ignoreCase()
+                .onlyWholeWords()
+                .stopOnHit()
+                .build()
             defaultWordFilterHigh = Trie.builder()
-                    .addKeywords(
-                            blacklistWords
-                    )
-                    .ignoreCase()
-                    .build()
+                .addKeywords(
+                    blacklistWords
+                )
+                .ignoreCase()
+                .build()
         }
     }
 

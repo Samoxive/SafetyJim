@@ -48,14 +48,14 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val builder = JDABuilder(AccountType.BOT)
         this.jda = try {
             builder.setToken(config[JimConfig.token])
-                    .addEventListeners(this, confirmationListener)
-                    .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
-                    .useSharding(shardId, config[JimConfig.shard_count])
-                    .setDisabledCacheFlags(EnumSet.of(CacheFlag.ACTIVITY, CacheFlag.EMOTE, CacheFlag.VOICE_STATE))
-                    .setActivity(Activity.playing("safetyjim.xyz $shardString"))
-                    .setGuildSubscriptionsEnabled(false)
-                    .build()
-                    .awaitReady()
+                .addEventListeners(this, confirmationListener)
+                .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
+                .useSharding(shardId, config[JimConfig.shard_count])
+                .setDisabledCacheFlags(EnumSet.of(CacheFlag.ACTIVITY, CacheFlag.EMOTE, CacheFlag.VOICE_STATE))
+                .setActivity(Activity.playing("safetyjim.xyz $shardString"))
+                .setGuildSubscriptionsEnabled(false)
+                .build()
+                .awaitReady()
         } catch (e: LoginException) {
             log.error("Invalid token.", e)
             exitProcess(1)
@@ -116,8 +116,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
             val embed = EmbedBuilder()
             embed.setAuthor("Safety Jim - Prefix", null, self.avatarUrl)
-                    .setDescription("This guild's prefix is: $prefix")
-                    .setColor(Color(0x4286F4))
+                .setDescription("This guild's prefix is: $prefix")
+                .setColor(Color(0x4286F4))
 
             message.textChannel.trySendMessage(embed.build())
             return
@@ -251,8 +251,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             val channel = shard.getTextChannelById(textChannelId)
             if (channel != null) {
                 var message = guildSettings.message
-                        .replace("\$user", member.asMention)
-                        .replace("\$guild", guild.name)
+                    .replace("\$user", member.asMention)
+                    .replace("\$guild", guild.name)
                 if (guildSettings.holdingRoom) {
                     val waitTime = guildSettings.holdingRoomMinutes.toString()
                     message = message.replace("\$minute", waitTime)
@@ -267,13 +267,13 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             val currentTime = System.currentTimeMillis() / 1000
 
             JoinsTable.insertJoin(
-                    JoinEntity(
-                            userId = member.user.idLong,
-                            guildId = guild.idLong,
-                            joinTime = currentTime,
-                            allowTime = currentTime + waitTime * 60,
-                            allowed = false
-                    )
+                JoinEntity(
+                    userId = member.user.idLong,
+                    guildId = guild.idLong,
+                    joinTime = currentTime,
+                    allowTime = currentTime + waitTime * 60,
+                    allowed = false
+                )
             )
         }
 
@@ -323,8 +323,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
             val embed = EmbedBuilder()
             embed.setAuthor("Safety Jim - \"$commandName\" Syntax", null, shard.selfUser.avatarUrl)
-                    .setDescription(getUsageString(prefix, usages))
-                    .setColor(Color(0x4286F4))
+                .setDescription(getUsageString(prefix, usages))
+                .setColor(Color(0x4286F4))
 
             message.failReact()
             channel.trySendMessage(embed.build())

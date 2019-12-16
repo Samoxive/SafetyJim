@@ -42,15 +42,15 @@ class Remind : Command() {
         remindTime = remindTime ?: Date(now + 1000 * 60 * 60 * 24)
 
         RemindersTable.insertReminder(
-                ReminderEntity(
-                        userId = user.idLong,
-                        channelId = channel.idLong,
-                        guildId = guild.idLong,
-                        createTime = now / 1000,
-                        remindTime = remindTime.time / 1000,
-                        message = reminder,
-                        reminded = false
-                )
+            ReminderEntity(
+                userId = user.idLong,
+                channelId = channel.idLong,
+                guildId = guild.idLong,
+                createTime = now / 1000,
+                remindTime = remindTime.time / 1000,
+                message = reminder,
+                reminded = false
+            )
         )
 
         message.successReact()

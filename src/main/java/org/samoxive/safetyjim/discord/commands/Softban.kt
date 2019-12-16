@@ -32,14 +32,14 @@ suspend fun softbanAction(guild: Guild, channel: TextChannel?, settings: Setting
     guild.unban(softbanUser).await()
 
     val record = SoftbansTable.insertSoftban(
-            SoftbanEntity(
-                    userId = softbanUser.idLong,
-                    moderatorUserId = modUser.idLong,
-                    guildId = guild.idLong,
-                    softbanTime = now.time / 1000,
-                    reason = reason,
-                    pardoned = false
-            )
+        SoftbanEntity(
+            userId = softbanUser.idLong,
+            moderatorUserId = modUser.idLong,
+            guildId = guild.idLong,
+            softbanTime = now.time / 1000,
+            reason = reason,
+            pardoned = false
+        )
     )
 
     createModLogEntry(guild, channel, settings, modUser, softbanUser, reason, ModLogAction.Softban, record.id)

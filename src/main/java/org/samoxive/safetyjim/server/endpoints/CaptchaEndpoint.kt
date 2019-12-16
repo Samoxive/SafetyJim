@@ -72,10 +72,10 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
 
         val captchaBody = request.formAttributes().get("g-recaptcha-response") ?: return Result(Status.BAD_REQUEST)
         val captchaResponse = httpClient.post(443, "google.com", "/recaptcha/api/siteverify")
-                .putHeader("Content-Length", "0")
-                .addQueryParam("secret", bot.config[ServerConfig.recaptcha_secret])
-                .addQueryParam("response", captchaBody)
-                .sendAwait()
+            .putHeader("Content-Length", "0")
+            .addQueryParam("secret", bot.config[ServerConfig.recaptcha_secret])
+            .addQueryParam("response", captchaBody)
+            .sendAwait()
 
         val responseObject = JSONObject(captchaResponse.bodyAsString())
         if (responseObject.has("success")) {
@@ -89,9 +89,9 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
 
         val settings = SettingsTable.getGuildSettings(guild, bot.config)
         val holdingRoomRoleId = settings.holdingRoomRoleId
-                ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up!")
+            ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up!")
         val holdingRoomRole = guild.getRoleById(holdingRoomRoleId)
-                ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up correctly!")
+            ?: return Result(Status.BAD_REQUEST, "Holding room role isn't set up correctly!")
         tryhardAsync { guild.addRoleToMember(member, holdingRoomRole).await() }
         response.end("You have been approved to join! You can close this window.")
         return Result(Status.OK)

@@ -29,28 +29,28 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
     private val log = LoggerFactory.getLogger(DiscordBot::class.java)
     val shards = ArrayList<DiscordShard>()
     val commands = mapOf(
-            "ping" to Ping(),
-            "unmute" to Unmute(),
-            "invite" to Invite(),
-            "ban" to Ban(),
-            "kick" to Kick(),
-            "mute" to Mute(),
-            "warn" to Warn(),
-            "help" to Help(),
-            "clean" to Clean(),
-            "tag" to Tag(),
-            "remind" to Remind(),
-            "info" to Info(),
-            "settings" to Settings(),
-            "softban" to Softban(),
-            "unban" to Unban(),
-            "server" to Server(),
-            "iam" to Iam(),
-            "role" to RoleCommand(),
-            "hardban" to Hardban(),
-            "melo" to Melo(),
-            "xkcd" to Xkcd(),
-            "weather" to Weather()
+        "ping" to Ping(),
+        "unmute" to Unmute(),
+        "invite" to Invite(),
+        "ban" to Ban(),
+        "kick" to Kick(),
+        "mute" to Mute(),
+        "warn" to Warn(),
+        "help" to Help(),
+        "clean" to Clean(),
+        "tag" to Tag(),
+        "remind" to Remind(),
+        "info" to Info(),
+        "settings" to Settings(),
+        "softban" to Softban(),
+        "unban" to Unban(),
+        "server" to Server(),
+        "iam" to Iam(),
+        "role" to RoleCommand(),
+        "hardban" to Hardban(),
+        "melo" to Melo(),
+        "xkcd" to Xkcd(),
+        "weather" to Weather()
     )
 
     val processors = listOf(InviteLink(), MessageStats(), WordFilter())
@@ -58,8 +58,8 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
     val guildCount: Long
         get() = shards.asSequence().map { shard -> shard.jda }
-                .map { shard -> shard.guildCache.size() }
-                .sum()
+            .map { shard -> shard.guildCache.size() }
+            .sum()
 
     init {
         val sessionController = SessionControllerAdapter()
@@ -74,13 +74,13 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
         scheduleJob(10, 5, "remindReminders") { remindReminders() }
 
         val inviteLink = shards[0].jda.getInviteUrl(
-                Permission.KICK_MEMBERS,
-                Permission.BAN_MEMBERS,
-                Permission.MESSAGE_ADD_REACTION,
-                Permission.MESSAGE_READ,
-                Permission.MESSAGE_WRITE,
-                Permission.MESSAGE_MANAGE,
-                Permission.MANAGE_ROLES
+            Permission.KICK_MEMBERS,
+            Permission.BAN_MEMBERS,
+            Permission.MESSAGE_ADD_REACTION,
+            Permission.MESSAGE_READ,
+            Permission.MESSAGE_WRITE,
+            Permission.MESSAGE_MANAGE,
+            Permission.MANAGE_ROLES
         )
         log.info("All shards ready.")
         log.info("Bot invite link: $inviteLink")
@@ -172,7 +172,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
             }
 
             val banRecord = tryhardAsync { guild.retrieveBanList().await() }
-                    ?.firstOrNull { ban -> ban.user.id == guildUser.id }
+                ?.firstOrNull { ban -> ban.user.id == guildUser.id }
 
             if (banRecord == null) {
                 BansTable.updateBan(user.copy(unbanned = true))
