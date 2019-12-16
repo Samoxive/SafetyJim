@@ -1,11 +1,10 @@
 package org.samoxive.safetyjim.server.endpoints
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
@@ -18,7 +17,6 @@ import org.samoxive.safetyjim.server.models.KickModel
 import org.samoxive.safetyjim.server.models.toKickModel
 import org.samoxive.safetyjim.tryhard
 
-@Serializable
 data class GetKicksEndpointResponse(
     val currentPage: Int,
     val totalPages: Int,
@@ -30,7 +28,7 @@ class GetKicksEndpoint(bot: DiscordBot) : ModLogPaginationEndpoint(bot) {
         val kicks = KicksTable.fetchGuildKicks(guild, page).map { it.toKickModel(bot) }
         val pageCount = (KicksTable.fetchGuildKicksCount(guild) / 10) + 1
         val body = GetKicksEndpointResponse(page, pageCount, kicks)
-        response.endJson(Json.stringify(GetKicksEndpointResponse.serializer(), body))
+        response.endJson(objectMapper.writeValueAsString(body))
         return Result(Status.OK)
     }
 
@@ -44,7 +42,7 @@ class GetKickEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
         val id = kickId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid kick id!")
         val kick = KicksTable.fetchKick(id) ?: return Result(Status.NOT_FOUND, "Kick with given id doesn't exist!")
 
-        response.endJson(Json.stringify(KickModel.serializer(), kick.toKickModel(bot)))
+        response.endJson(objectMapper.writeValueAsString(kick.toKickModel(bot)))
         return Result(Status.OK)
     }
 
@@ -59,7 +57,7 @@ class UpdateKickEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         val kick = KicksTable.fetchKick(id) ?: return Result(Status.NOT_FOUND, "Kick with given id doesn't exist!")
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val parsedKick = tryhard { Json.parse(KickModel.serializer(), bodyString) }
+        val parsedKick = tryhard { objectMapper.readValue<KickModel>(bodyString) }
                 ?: return Result(Status.BAD_REQUEST)
 
         val newKick = parsedKick.copy(

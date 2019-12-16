@@ -4,21 +4,15 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
-import org.samoxive.safetyjim.server.Result
-import org.samoxive.safetyjim.server.Status
-import org.samoxive.safetyjim.server.endJson
+import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.UserModel
 import org.samoxive.safetyjim.server.models.toUserModel
 
-@Serializable
 data class GetModsResponse(
     val banMods: List<UserModel>,
     val kickMods: List<UserModel>,
@@ -33,7 +27,7 @@ class GetModsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
                 guild.members.filter { it.hasPermission(Permission.MANAGE_ROLES) }.map { it.user.toUserModel() }
         )
 
-        response.endJson(Json.stringify(GetModsResponse.serializer(), body))
+        response.endJson(objectMapper.writeValueAsString(body))
         return Result(Status.OK)
     }
 

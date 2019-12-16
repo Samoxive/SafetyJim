@@ -1,11 +1,10 @@
 package org.samoxive.safetyjim.server.endpoints
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
@@ -18,7 +17,6 @@ import org.samoxive.safetyjim.server.models.SoftbanModel
 import org.samoxive.safetyjim.server.models.toSoftbanModel
 import org.samoxive.safetyjim.tryhard
 
-@Serializable
 data class GetSoftbansEndpointResponse(
     val currentPage: Int,
     val totalPages: Int,
@@ -30,7 +28,7 @@ class GetSoftbansEndpoint(bot: DiscordBot) : ModLogPaginationEndpoint(bot) {
         val softbans = SoftbansTable.fetchGuildSoftbans(guild, page).map { it.toSoftbanModel(bot) }
         val pageCount = (SoftbansTable.fetchGuildSoftbansCount(guild) / 10) + 1
         val body = GetSoftbansEndpointResponse(page, pageCount, softbans)
-        response.endJson(Json.stringify(GetSoftbansEndpointResponse.serializer(), body))
+        response.endJson(objectMapper.writeValueAsString(body))
         return Result(Status.OK)
     }
 
@@ -44,7 +42,7 @@ class GetSoftbanEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
         val id = softbanId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid softban id!")
         val softban = SoftbansTable.fetchSoftban(id) ?: return Result(Status.NOT_FOUND, "Softban with given id doesn't exist!")
 
-        response.endJson(Json.stringify(SoftbanModel.serializer(), softban.toSoftbanModel(bot)))
+        response.endJson(objectMapper.writeValueAsString(softban.toSoftbanModel(bot)))
         return Result(Status.OK)
     }
 
@@ -59,7 +57,7 @@ class UpdateSoftbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         val softban = SoftbansTable.fetchSoftban(id) ?: return Result(Status.NOT_FOUND, "Softban with given id doesn't exist!")
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val parsedSoftban = tryhard { Json.parse(SoftbanModel.serializer(), bodyString) }
+        val parsedSoftban = tryhard { objectMapper.readValue<SoftbanModel>(bodyString) }
                 ?: return Result(Status.BAD_REQUEST)
 
         val newSoftban = parsedSoftban.copy(

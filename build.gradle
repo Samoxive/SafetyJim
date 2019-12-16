@@ -26,8 +26,9 @@ version '3.1.1'
 apply plugin: 'application'
 apply plugin: 'java'
 apply plugin: 'kotlin'
-apply plugin: 'kotlinx-serialization'
 apply plugin: 'org.jlleitschuh.gradle.ktlint'
+apply plugin: 'project-report'
+
 mainClassName = 'org.samoxive.safetyjim.MainKt'
 
 sourceCompatibility = 1.8
@@ -37,7 +38,6 @@ repositories {
     jcenter()
     maven {
         url 'https://dl.bintray.com/kotlin/exposed'
-        maven { url 'https://kotlin.bintray.com/kotlinx' }
     }
 }
 
@@ -50,14 +50,12 @@ dependencies {
     compile 'io.vertx:vertx-lang-kotlin:3.8.0'
     compile 'io.vertx:vertx-lang-kotlin-coroutines:3.8.0'
     compile 'com.auth0:java-jwt:3.8.3'
-    compile 'com.google.code.gson:gson:2.8.6'
     compile 'log4j:log4j:1.2.17'
     compile('net.dv8tion:JDA:4.0.0_77') {
         exclude module: 'opus-java'
     }
     compile 'com.uchuhimo:konf:0.21.0'
     compile 'me.xdrop:fuzzywuzzy:1.2.0'
-    compile 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0'
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3'
     compile 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'
     compile 'io.reactiverse:reactive-pg-client:0.11.4'
@@ -66,6 +64,7 @@ dependencies {
     compile 'com.google.guava:guava:28.1-jre'
     compile 'org.ahocorasick:ahocorasick:0.4.0'
     compile 'com.datadoghq:java-dogstatsd-client:2.8.1'
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.10.1"
 }
 
 jar {

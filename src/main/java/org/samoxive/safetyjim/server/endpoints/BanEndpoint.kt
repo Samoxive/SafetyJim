@@ -1,11 +1,10 @@
 package org.samoxive.safetyjim.server.endpoints
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
@@ -18,7 +17,6 @@ import org.samoxive.safetyjim.server.models.BanModel
 import org.samoxive.safetyjim.server.models.toBanModel
 import org.samoxive.safetyjim.tryhard
 
-@Serializable
 data class GetBansEndpointResponse(
     val currentPage: Int,
     val totalPages: Int,
@@ -30,7 +28,7 @@ class GetBansEndpoint(bot: DiscordBot) : ModLogPaginationEndpoint(bot) {
         val bans = BansTable.fetchGuildBans(guild, page).map { it.toBanModel(bot) }
         val pageCount = (BansTable.fetchGuildBansCount(guild) / 10) + 1
         val body = GetBansEndpointResponse(page, pageCount, bans)
-        response.endJson(Json.stringify(GetBansEndpointResponse.serializer(), body))
+        response.endJson(objectMapper.writeValueAsString(body))
         return Result(Status.OK)
     }
 
@@ -44,7 +42,7 @@ class GetBanEndpoint(bot: DiscordBot) : ModLogEndpoint(bot) {
         val id = banId.toIntOrNull() ?: return Result(Status.BAD_REQUEST, "Invalid ban id!")
         val ban = BansTable.fetchBan(id) ?: return Result(Status.NOT_FOUND, "Ban with given id doesn't exist!")
 
-        response.endJson(Json.stringify(BanModel.serializer(), ban.toBanModel(bot)))
+        response.endJson(objectMapper.writeValueAsString(ban.toBanModel(bot)))
         return Result(Status.OK)
     }
 
@@ -62,7 +60,7 @@ class UpdateBanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         val ban = BansTable.fetchBan(id) ?: return Result(Status.NOT_FOUND, "Ban with given id doesn't exist!")
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
-        val parsedBan = tryhard { Json.parse(BanModel.serializer(), bodyString) }
+        val parsedBan = tryhard { objectMapper.readValue<BanModel>(bodyString) }
                 ?: return Result(Status.BAD_REQUEST)
 
         val newBan = parsedBan.copy(

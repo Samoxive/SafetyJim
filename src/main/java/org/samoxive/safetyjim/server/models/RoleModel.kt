@@ -1,10 +1,8 @@
 package org.samoxive.safetyjim.server.models
 
 import java.awt.Color
-import kotlinx.serialization.Serializable
 import net.dv8tion.jda.api.entities.Role
 
-@Serializable
 data class RoleModel(
     val id: String,
     val name: String,
