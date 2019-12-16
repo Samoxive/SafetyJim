@@ -3,19 +3,22 @@ package org.samoxive.safetyjim.database
 import io.reactiverse.kotlin.pgclient.preparedQueryAwait
 import io.reactiverse.pgclient.PgRowSet
 import io.reactiverse.pgclient.Tuple
+import java.util.*
 
 private const val createSQL = """
 create table if not exists usersecrets (
     userid bigint not null primary key,
-    accesstoken text not null
+    accesstoken text not null,
+    updated bigint not null
 );
 """
 
 private const val upsertSQL = """
 insert into usersecrets (
-    userid, accesstoken
-) values ($1, $2) on conflict (userid)
-do update set accesstoken = excluded.accesstoken; 
+    userid, accesstoken, updated
+) values ($1, $2, $3)
+on conflict (userid) do update
+set accesstoken = excluded.accesstoken, updated = excluded.updated; 
 """
 
 object UserSecretsTable : AbstractTable {
@@ -36,15 +39,11 @@ object UserSecretsTable : AbstractTable {
     }
 
     suspend fun upsertUserSecrets(userSecrets: UserSecretsEntity) {
-        pgPool.preparedQueryAwait(upsertSQL, userSecrets.toTuple())
+        pgPool.preparedQueryAwait(upsertSQL, Tuple.of(userSecrets.userId, userSecrets.accessToken, Date().time / 1000))
     }
 }
 
 data class UserSecretsEntity(
     val userId: Long,
     val accessToken: String
-) {
-    fun toTuple(): Tuple {
-        return Tuple.of(userId, accessToken)
-    }
-}
+)
