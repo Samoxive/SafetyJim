@@ -1,7 +1,6 @@
 package org.samoxive.safetyjim.discord
 
 import com.timgroup.statsd.StatsDClient
-import com.uchuhimo.konf.Config
 import java.awt.Color
 import java.util.*
 import kotlin.collections.ArrayList
@@ -14,7 +13,7 @@ import net.dv8tion.jda.api.MessageBuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.utils.SessionControllerAdapter
-import org.samoxive.safetyjim.config.JimConfig
+import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.database.SettingsTable.getGuildSettings
 import org.samoxive.safetyjim.discord.commands.*
@@ -63,7 +62,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
     init {
         val sessionController = SessionControllerAdapter()
-        for (i in 0 until config[JimConfig.shard_count]) {
+        for (i in 0 until config.jim.shard_count) {
             val shard = DiscordShard(this, i, sessionController, stats)
             shards.add(shard)
         }
@@ -117,7 +116,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
         for (user in usersToBeAllowed) {
             val guildId = user.guildId
-            val shardId = getShardIdFromGuildId(guildId, config[JimConfig.shard_count])
+            val shardId = getShardIdFromGuildId(guildId, config.jim.shard_count)
             val shard = shards[shardId]
             val shardClient = shard.jda
             val guild = shardClient.getGuildById(guildId)
@@ -154,7 +153,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
         for (user in usersToBeUnbanned) {
             val guildId = user.guildId
-            val shardId = getShardIdFromGuildId(guildId, config[JimConfig.shard_count])
+            val shardId = getShardIdFromGuildId(guildId, config.jim.shard_count)
             val shard = shards[shardId]
             val shardClient = shard.jda
             val guild = shardClient.getGuildById(guildId)
@@ -190,7 +189,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
         for (user in usersToBeUnmuted) {
             val guildId = user.guildId
-            val shardId = getShardIdFromGuildId(guildId, config[JimConfig.shard_count])
+            val shardId = getShardIdFromGuildId(guildId, config.jim.shard_count)
             val shard = shards[shardId]
             val shardClient = shard.jda
             val guild = shardClient.getGuildById(guildId)
@@ -232,7 +231,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
             val guildId = reminder.guildId
             val channelId = reminder.channelId
             val userId = reminder.userId
-            val shardId = getShardIdFromGuildId(guildId, config[JimConfig.shard_count])
+            val shardId = getShardIdFromGuildId(guildId, config.jim.shard_count)
             val shard = shards[shardId].jda
             val guild = shard.getGuildById(guildId)
             val user = shard.retrieveUserById(userId).await()

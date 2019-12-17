@@ -1,5 +1,8 @@
 package org.samoxive.safetyjim
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.vertx.core.Vertx
 import io.vertx.ext.web.client.WebClient
 import io.vertx.ext.web.client.WebClientOptions
@@ -30,3 +33,6 @@ suspend fun <T> tryhardAsync(block: suspend () -> T): T? = try {
 fun dateFromNow(seconds: Int): Date {
     return Date.from(Instant.now() + Duration.ofSeconds(seconds.toLong()))
 }
+
+val objectMapper: ObjectMapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

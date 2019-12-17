@@ -1,0 +1,29 @@
+{
+    "jim": {
+        "version": "5.0.0",
+        "token": "",
+        "default_prefix": "-dev",
+        "shard_count": 1,
+        "metrics": false,
+        "darksky_token": "",
+        "geocode_token": ""
+    },
+    "database": {
+        "user": "postgres",
+        "pass": "",
+        "host": "database",
+        "port": 5432,
+        "database": "postgres"
+    },
+    "oauth": {
+        "client_id": "",
+        "client_secret": "",
+        "redirect_uri": ""
+    },
+    "server": {
+        "self_url": "http://localhost:8080/",
+        "recaptcha_secret": "",
+        "secret": "",
+        "port": 8080
+    }
+}

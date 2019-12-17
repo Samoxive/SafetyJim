@@ -2,7 +2,6 @@ package org.samoxive.safetyjim.database
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
-import com.uchuhimo.konf.Config
 import io.reactiverse.kotlin.pgclient.preparedQueryAwait
 import io.reactiverse.pgclient.PgRowSet
 import io.reactiverse.pgclient.Tuple
@@ -10,7 +9,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import net.dv8tion.jda.api.entities.Guild
 import org.ahocorasick.trie.Trie
-import org.samoxive.safetyjim.config.JimConfig
+import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.dateFromNow
 import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
 import org.samoxive.safetyjim.tryhardAsync
@@ -261,7 +260,7 @@ object SettingsTable : AbstractTable {
                             guildId = guild.idLong,
                             modLogChannelId = defaultChannel.idLong,
                             welcomeMessageChannelId = defaultChannel.idLong,
-                            prefix = config[JimConfig.default_prefix]
+                            prefix = config.jim.default_prefix
                     )
             )
         }

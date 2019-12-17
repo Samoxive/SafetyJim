@@ -8,7 +8,6 @@ import java.time.format.DateTimeFormatter
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.json.JSONObject
-import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.Command
 import org.samoxive.safetyjim.discord.DiscordBot
@@ -43,7 +42,7 @@ class Weather : Command() {
         }
 
         val geocodeResponse = httpClient.get(443, "maps.googleapis.com", "/maps/api/geocode/json")
-                .addQueryParam("key", bot.config[JimConfig.geocode_token])
+                .addQueryParam("key", bot.config.jim.geocode_token)
                 .addQueryParam("address", args)
                 .sendAwait()
 
@@ -59,7 +58,7 @@ class Weather : Command() {
         val lat = geometryObject.getJSONObject("location").getFloat("lat")
         val lng = geometryObject.getJSONObject("location").getFloat("lng")
 
-        val darkskyResponse = httpClient.get(443, "api.darksky.net", "/forecast/${bot.config[JimConfig.darksky_token]}/$lat,$lng")
+        val darkskyResponse = httpClient.get(443, "api.darksky.net", "/forecast/${bot.config.jim.darksky_token}/$lat,$lng")
                 .sendAwait()
 
         val weatherObject = JSONObject(darkskyResponse.bodyAsString())

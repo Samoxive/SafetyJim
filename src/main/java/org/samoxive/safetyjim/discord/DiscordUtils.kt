@@ -11,7 +11,6 @@ import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.requests.RestAction
-import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.commands.*
 import org.samoxive.safetyjim.tryhardAsync
@@ -32,7 +31,7 @@ enum class ModLogAction(val embedColor: Color, val expirationString: String? = n
 
 suspend fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message? {
     val jimMessage = channel.trySendMessage("You selected user ${targetUser.getUserTagAndId()}. Confirm? (type yes/no)")
-    val discordShard = bot.shards[getShardIdFromGuildId(guild.idLong, bot.config[JimConfig.shard_count])]
+    val discordShard = bot.shards[getShardIdFromGuildId(guild.idLong, bot.config.jim.shard_count)]
     val confirmationMessage = discordShard.confirmationListener.submitConfirmation(textChannel, author)
     if (confirmationMessage == null) {
         failReact()

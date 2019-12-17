@@ -5,7 +5,6 @@ import java.util.*
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.ocpsoft.prettytime.PrettyTime
-import org.samoxive.safetyjim.config.JimConfig
 import org.samoxive.safetyjim.database.BansTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
@@ -59,7 +58,7 @@ class Info : Command() {
         }
 
         val embed = EmbedBuilder()
-        embed.setAuthor("Safety Jim - v${config[JimConfig.version]} - Shard $shardString", null, selfUser.avatarUrl)
+        embed.setAuthor("Safety Jim - v${config.jim.version} - Shard $shardString", null, selfUser.avatarUrl)
         embed.setDescription("Lifting the :hammer: since $uptimeString")
         embed.addField("Server Count", guildCount.toString(), true)
         embed.addField("User Count", userCount.toString(), true)

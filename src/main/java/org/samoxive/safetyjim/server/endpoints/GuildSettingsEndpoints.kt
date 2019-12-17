@@ -14,7 +14,11 @@ import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.database.getDelta
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.isStaff
-import org.samoxive.safetyjim.server.*
+import org.samoxive.safetyjim.objectMapper
+import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
+import org.samoxive.safetyjim.server.Result
+import org.samoxive.safetyjim.server.Status
+import org.samoxive.safetyjim.server.endJson
 import org.samoxive.safetyjim.server.models.GuildSettingsModel
 import org.samoxive.safetyjim.server.models.toChannelModel
 import org.samoxive.safetyjim.server.models.toGuildModel

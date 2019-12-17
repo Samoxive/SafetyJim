@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SoftbansTable
 import org.samoxive.safetyjim.discord.DiscordBot
+import org.samoxive.safetyjim.objectMapper
 import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.SoftbanModel
 import org.samoxive.safetyjim.server.models.toSoftbanModel

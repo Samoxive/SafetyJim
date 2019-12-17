@@ -1,34 +1,39 @@
 package org.samoxive.safetyjim.config
 
-import com.uchuhimo.konf.ConfigSpec
+data class Config(
+    val jim: JimConfig,
+    val database: DatabaseConfig,
+    val oauth: OauthConfig,
+    val server: ServerConfig
+)
 
-object JimConfig : ConfigSpec("jim") {
-    val version by required<String>()
-    val token by required<String>()
-    val default_prefix by required<String>()
-    val shard_count by required<Int>()
-    val geocode_token by required<String>()
-    val darksky_token by required<String>()
-    val metrics by required<Boolean>()
-}
+data class JimConfig(
+    val version: String,
+    val token: String,
+    val default_prefix: String,
+    val shard_count: Int,
+    val geocode_token: String,
+    val darksky_token: String,
+    val metrics: Boolean
+)
 
-object DatabaseConfig : ConfigSpec("database") {
-    val user by required<String>()
-    val pass by required<String>()
-    val host by required<String>()
-    val port by required<Int>()
-    val database by required<String>()
-}
+data class DatabaseConfig(
+    val user: String,
+    val pass: String,
+    val host: String,
+    val port: Int,
+    val database: String
+)
 
-object OauthConfig : ConfigSpec("oauth") {
-    val client_id by required<String>()
-    val client_secret by required<String>()
-    val redirect_uri by required<String>()
-}
+data class OauthConfig(
+    val client_id: String,
+    val client_secret: String,
+    val redirect_uri: String
+)
 
-object ServerConfig : ConfigSpec("server") {
-    val self_url by required<String>()
-    val recaptcha_secret by required<String>()
-    val secret by required<String>()
-    val port by required<Int>()
-}
+data class ServerConfig(
+    val self_url: String,
+    val recaptcha_secret: String,
+    val secret: String,
+    val port: Int
+)

@@ -6,7 +6,6 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.ext.web.client.sendAwait
 import org.json.JSONObject
-import org.samoxive.safetyjim.config.ServerConfig
 import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.discord.await
@@ -72,7 +71,7 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
         val captchaBody = request.formAttributes().get("g-recaptcha-response") ?: return Result(Status.BAD_REQUEST)
         val captchaResponse = httpClient.post(443, "google.com", "/recaptcha/api/siteverify")
                 .putHeader("Content-Length", "0")
-                .addQueryParam("secret", bot.config[ServerConfig.recaptcha_secret])
+                .addQueryParam("secret", bot.config.server.recaptcha_secret)
                 .addQueryParam("response", captchaBody)
                 .sendAwait()
 

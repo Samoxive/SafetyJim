@@ -9,7 +9,6 @@ buildscript {
 
     dependencies {
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.61'
-        classpath 'org.jetbrains.kotlin:kotlin-serialization:1.3.61'
         classpath "org.jlleitschuh.gradle:ktlint-gradle:9.1.1"
     }
 }
@@ -54,7 +53,6 @@ dependencies {
     compile('net.dv8tion:JDA:4.0.0_77') {
         exclude module: 'opus-java'
     }
-    compile 'com.uchuhimo:konf:0.21.0'
     compile 'me.xdrop:fuzzywuzzy:1.2.0'
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3'
     compile 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'

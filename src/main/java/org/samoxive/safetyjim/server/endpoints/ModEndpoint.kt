@@ -9,7 +9,11 @@ import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.discord.DiscordBot
-import org.samoxive.safetyjim.server.*
+import org.samoxive.safetyjim.objectMapper
+import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
+import org.samoxive.safetyjim.server.Result
+import org.samoxive.safetyjim.server.Status
+import org.samoxive.safetyjim.server.endJson
 import org.samoxive.safetyjim.server.models.UserModel
 import org.samoxive.safetyjim.server.models.toUserModel
 

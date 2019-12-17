@@ -1,16 +1,13 @@
 package org.samoxive.safetyjim
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.timgroup.statsd.NoOpStatsDClient
 import com.timgroup.statsd.NonBlockingStatsDClient
-import com.uchuhimo.konf.Config
-import com.uchuhimo.konf.source.toml
+import java.io.File
 import java.io.OutputStreamWriter
 import kotlin.system.exitProcess
 import org.apache.log4j.*
-import org.samoxive.safetyjim.config.DatabaseConfig
-import org.samoxive.safetyjim.config.JimConfig
-import org.samoxive.safetyjim.config.OauthConfig
-import org.samoxive.safetyjim.config.ServerConfig
+import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.database.initPgPool
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.Server
@@ -20,14 +17,9 @@ fun main() {
     System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory")
     setupLoggers()
 
-    val config = Config {
-        addSpec(JimConfig)
-        addSpec(DatabaseConfig)
-        addSpec(OauthConfig)
-        addSpec(ServerConfig)
-    }.from.toml.file("config.toml")
+    val config: Config = objectMapper.readValue(File("./config.json"))
 
-    val stats = if (config[JimConfig.metrics]) {
+    val stats = if (config.jim.metrics) {
         NonBlockingStatsDClient("jim", "localhost", 8125)
     } else {
         NoOpStatsDClient()

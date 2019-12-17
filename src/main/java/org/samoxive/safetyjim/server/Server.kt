@@ -4,7 +4,6 @@ import io.vertx.core.Vertx
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.CorsHandler
-import org.samoxive.safetyjim.config.ServerConfig
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.endpoints.*
 import org.slf4j.LoggerFactory
@@ -47,7 +46,7 @@ class Server(val bot: DiscordBot, vertx: Vertx) {
             router.route(endpoint.method, endpoint.route).handler(endpoint)
         }
         val server = vertx.createHttpServer()
-        server.requestHandler(router).listen(bot.config[ServerConfig.port])
+        server.requestHandler(router).listen(bot.config.server.port)
         LoggerFactory.getLogger(this::class.java).info("Server ready.")
     }
 }

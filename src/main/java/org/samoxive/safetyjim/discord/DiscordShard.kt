@@ -25,8 +25,6 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.utils.SessionController
 import net.dv8tion.jda.api.utils.cache.CacheFlag
-import org.samoxive.safetyjim.config.JimConfig
-import org.samoxive.safetyjim.config.ServerConfig
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.database.SettingsTable.getGuildSettings
 import org.samoxive.safetyjim.discord.commands.setupMutedRole
@@ -42,15 +40,15 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     init {
         val config = bot.config
-        val shardString = getShardString(shardId, config[JimConfig.shard_count])
+        val shardString = getShardString(shardId, config.jim.shard_count)
         log = LoggerFactory.getLogger("DiscordShard $shardString")
 
         val builder = JDABuilder(AccountType.BOT)
         this.jda = try {
-            builder.setToken(config[JimConfig.token])
+            builder.setToken(config.jim.token)
                     .addEventListeners(this, confirmationListener)
                     .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
-                    .useSharding(shardId, config[JimConfig.shard_count])
+                    .useSharding(shardId, config.jim.shard_count)
                     .setDisabledCacheFlags(EnumSet.of(CacheFlag.ACTIVITY, CacheFlag.EMOTE, CacheFlag.VOICE_STATE))
                     .setActivity(Activity.playing("safetyjim.xyz $shardString"))
                     .build()
@@ -212,7 +210,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 return@launch
             }
 
-            val defaultPrefix = bot.config[JimConfig.default_prefix]
+            val defaultPrefix = bot.config.jim.default_prefix
             val message = "Hello! I am Safety Jim, `$defaultPrefix` is my default prefix! Visit https://safetyjim.xyz/commands to see available commands.\nYou can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help."
             guild.getDefaultChannelTalkable().trySendMessage(message)
             SettingsTable.insertDefaultGuildSettings(bot.config, guild)
@@ -277,7 +275,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         }
 
         if (guildSettings.joinCaptcha) {
-            val captchaUrl = "${bot.config[ServerConfig.self_url]}captcha/${guild.id}/${user.id}"
+            val captchaUrl = "${bot.config.server.self_url}captcha/${guild.id}/${user.id}"
             user.trySendMessage("Welcome to ${guild.name}! To enter you must complete this captcha.\n$captchaUrl")
         }
 
