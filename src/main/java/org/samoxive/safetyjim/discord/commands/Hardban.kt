@@ -75,7 +75,7 @@ class Hardban : Command() {
             message.askConfirmation(bot, hardbanUser) ?: return false
         }
 
-        val hardbanMember = guild.getMember(hardbanUser)
+        val hardbanMember = guild.fetchMember(hardbanUser)
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
             message.failMessage("I don't have enough permissions to do that!")

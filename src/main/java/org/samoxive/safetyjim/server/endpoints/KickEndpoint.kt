@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.database.KicksTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.DiscordBot
+import org.samoxive.safetyjim.discord.fetchMember
 import org.samoxive.safetyjim.objectMapper
 import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.KickModel
@@ -79,6 +80,13 @@ class UpdateKickEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
             kick.moderatorUserId.toString() != newKick.moderatorUser.id
         ) {
             return Result(Status.BAD_REQUEST, "Read only properties were modified!")
+        }
+
+        if (kick.moderatorUserId.toString() != newKick.moderatorUser.id) {
+            val moderator = guild.fetchMember(newKick.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
+            if (!moderator.hasPermission(Permission.KICK_MEMBERS)) {
+                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
+            }
         }
 
         if (kick.pardoned && !newKick.pardoned) {

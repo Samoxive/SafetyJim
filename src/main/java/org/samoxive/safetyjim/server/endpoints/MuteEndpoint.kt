@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.database.MutesTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.DiscordBot
+import org.samoxive.safetyjim.discord.fetchMember
 import org.samoxive.safetyjim.objectMapper
 import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.MuteModel
@@ -85,6 +86,15 @@ class UpdateMuteEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
             if (!newMute.unmuted || // un-expiring the mute
                 mute.expireTime != newMute.expirationTime) { // changing expiration time
                 return Result(Status.BAD_REQUEST, "You can't change expiration property after user has been unmutened.")
+            }
+        }
+
+        if (mute.moderatorUserId.toString() != newMute.moderatorUser.id) {
+            // if original mod isn't in server that's fine, next changes should have a mod in server, next mods must be in server
+            // to get permission related information
+            val moderator = guild.fetchMember(newMute.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
+            if (!moderator.hasPermission(Permission.MANAGE_ROLES)) {
+                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
             }
         }
 

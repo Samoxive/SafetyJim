@@ -85,7 +85,7 @@ class Kick : Command() {
             message.askConfirmation(bot, kickUser) ?: return false
         }
 
-        val kickMember = guild.getMember(kickUser)
+        val kickMember = guild.fetchMember(kickUser)
 
         if (!selfMember.hasPermission(Permission.KICK_MEMBERS)) {
             message.failMessage("I don't have enough permissions to do that!")

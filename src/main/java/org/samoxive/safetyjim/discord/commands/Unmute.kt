@@ -47,7 +47,7 @@ class Unmute : Command() {
         }
 
         val muteRole = mutedRoles[0]
-        val unmuteMember = guild.getMember(unmuteUser)!!
+        val unmuteMember = guild.fetchMember(unmuteUser)!!
         try {
             guild.removeRoleFromMember(unmuteMember, muteRole).await()
         } catch (e: Exception) {

@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.database.BansTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.DiscordBot
+import org.samoxive.safetyjim.discord.fetchMember
 import org.samoxive.safetyjim.objectMapper
 import org.samoxive.safetyjim.server.*
 import org.samoxive.safetyjim.server.models.BanModel
@@ -88,6 +89,15 @@ class UpdateBanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
             if (!newBan.unbanned || // un-expiring the ban
                 ban.expireTime != newBan.expirationTime) { // changing expiration time
                 return Result(Status.BAD_REQUEST, "You can't change expiration property after user has been unbanned.")
+            }
+        }
+
+        if (ban.moderatorUserId.toString() != newBan.moderatorUser.id) {
+            // if original mod isn't in server that's fine, next changes should have a mod in server, next mods must be in server
+            // to get permission related information
+            val moderator = guild.fetchMember(newBan.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
+            if (!moderator.hasPermission(Permission.BAN_MEMBERS)) {
+                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
             }
         }
 
