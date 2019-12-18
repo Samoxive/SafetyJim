@@ -59,10 +59,10 @@ class UpdateKickEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
 
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
         val parsedKick = tryhard { objectMapper.readValue<KickModel>(bodyString) }
-                ?: return Result(Status.BAD_REQUEST)
+            ?: return Result(Status.BAD_REQUEST)
 
         val newKick = parsedKick.copy(
-                reason = parsedKick.reason.trim()
+            reason = parsedKick.reason.trim()
         )
 
         if (!member.hasPermission(Permission.KICK_MEMBERS)) {
@@ -74,17 +74,11 @@ class UpdateKickEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         if (kick.id != newKick.id ||
-                kick.userId.toString() != newKick.user.id ||
-                kick.kickTime != newKick.actionTime
+            kick.userId.toString() != newKick.user.id ||
+            kick.kickTime != newKick.actionTime ||
+            kick.moderatorUserId.toString() != newKick.moderatorUser.id
         ) {
             return Result(Status.BAD_REQUEST, "Read only properties were modified!")
-        }
-
-        if (kick.moderatorUserId.toString() != newKick.moderatorUser.id) {
-            val moderator = guild.getMemberById(newKick.moderatorUser.id) ?: return Result(Status.BAD_REQUEST, "Given moderator isn't in the guild!")
-            if (!moderator.hasPermission(Permission.KICK_MEMBERS)) {
-                return Result(Status.BAD_REQUEST, "Selected moderator isn't privileged enough to issue this action!")
-            }
         }
 
         if (kick.pardoned && !newKick.pardoned) {
@@ -92,9 +86,8 @@ class UpdateKickEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
         }
 
         KicksTable.updateKick(kick.copy(
-                moderatorUserId = newKick.moderatorUser.id.toLong(),
-                reason = if (newKick.reason.isBlank()) "No reason specified" else newKick.reason,
-                pardoned = newKick.pardoned
+            reason = if (newKick.reason.isBlank()) "No reason specified" else newKick.reason,
+            pardoned = newKick.pardoned
         ))
 
         return Result(Status.OK)
