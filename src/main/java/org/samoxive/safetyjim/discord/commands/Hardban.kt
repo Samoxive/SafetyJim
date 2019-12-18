@@ -30,13 +30,13 @@ suspend fun hardbanAction(guild: Guild, channel: TextChannel?, settings: Setting
     guild.ban(hardbanUser, 7, auditLogReason).await()
 
     val record = HardbansTable.insertHardban(
-            HardbanEntity(
-                    userId = hardbanUser.idLong,
-                    moderatorUserId = modUser.idLong,
-                    guildId = guild.idLong,
-                    hardbanTime = now.time / 1000,
-                    reason = reason
-            )
+        HardbanEntity(
+            userId = hardbanUser.idLong,
+            moderatorUserId = modUser.idLong,
+            guildId = guild.idLong,
+            hardbanTime = now.time / 1000,
+            reason = reason
+        )
     )
 
     val banId = record.id

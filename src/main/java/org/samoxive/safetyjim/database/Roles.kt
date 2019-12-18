@@ -25,26 +25,26 @@ values ($1, $2);
 object RolesTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf(
-            "create unique index if not exists rolelist_index_1 on rolelist (guildid, roleid);"
+        "create unique index if not exists rolelist_index_1 on rolelist (guildid, roleid);"
     )
 
     private fun PgRowSet.toRoleEntities(): List<RoleEntity> = this.map {
         RoleEntity(
-                id = it.getInteger(0),
-                guildId = it.getLong(1),
-                roleId = it.getLong(2)
+            id = it.getInteger(0),
+            guildId = it.getLong(1),
+            roleId = it.getLong(2)
         )
     }
 
     suspend fun fetchRole(guild: Guild, role: Role): RoleEntity? {
         return pgPool.preparedQueryAwait("select * from rolelist where guildid = $1 and roleid = $2;", Tuple.of(guild.idLong, role.idLong))
-                .toRoleEntities()
-                .firstOrNull()
+            .toRoleEntities()
+            .firstOrNull()
     }
 
     suspend fun fetchGuildRoles(guild: Guild): List<RoleEntity> {
         return pgPool.preparedQueryAwait("select * from rolelist where guildid = $1;", Tuple.of(guild.idLong))
-                .toRoleEntities()
+            .toRoleEntities()
     }
 
     suspend fun isSelfAssignable(guild: Guild, role: Role): Boolean = fetchRole(guild, role) != null
@@ -65,8 +65,8 @@ data class RoleEntity(
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
-                guildId,
-                roleId
+            guildId,
+            roleId
         )
     }
 }

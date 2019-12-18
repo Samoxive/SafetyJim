@@ -78,11 +78,11 @@ class Tag : Command() {
 
         try {
             TagsTable.insertTag(
-                    TagEntity(
-                            guildId = guild.idLong,
-                            name = tagName,
-                            response = response
-                    )
+                TagEntity(
+                    guildId = guild.idLong,
+                    name = tagName,
+                    response = response
+                )
             )
             message.successReact()
         } catch (e: Exception) {

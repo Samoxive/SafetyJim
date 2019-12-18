@@ -48,55 +48,55 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
 
         val holdingRoomRole = if (settingsEntity.holdingRoomRoleId != null) guild.getRoleById(settingsEntity.holdingRoomRoleId) else null
         val settings = GuildSettingsModel(
-                guild.toGuildModel(),
-                guild.textChannels.map { it.toChannelModel() },
-                guild.roles.map { it.toRoleModel() },
-                settingsEntity.modLog,
-                guild.getTextChannelById(settingsEntity.modLogChannelId)?.toChannelModel()
-                        ?: return Result(Status.SERVER_ERROR),
-                settingsEntity.holdingRoom,
-                holdingRoomRole?.toRoleModel(),
-                settingsEntity.holdingRoomMinutes,
-                settingsEntity.inviteLinkRemover,
-                settingsEntity.welcomeMessage,
-                settingsEntity.message,
-                guild.getTextChannelById(settingsEntity.welcomeMessageChannelId)?.toChannelModel()
-                        ?: return Result(Status.SERVER_ERROR),
-                settingsEntity.prefix,
-                settingsEntity.silentCommands,
-                settingsEntity.noSpacePrefix,
-                settingsEntity.statistics,
-                settingsEntity.joinCaptcha,
-                settingsEntity.silentCommandsLevel,
-                settingsEntity.modActionConfirmationMessage,
-                settingsEntity.wordFilter,
-                settingsEntity.wordFilterBlacklist,
-                settingsEntity.wordFilterLevel,
-                settingsEntity.wordFilterAction,
-                settingsEntity.wordFilterActionDuration,
-                settingsEntity.wordFilterActionDurationType,
-                settingsEntity.inviteLinkRemoverAction,
-                settingsEntity.inviteLinkRemoverActionDuration,
-                settingsEntity.inviteLinkRemoverActionDurationType,
-                settingsEntity.privacySettings,
-                settingsEntity.privacyModLog,
-                settingsEntity.softbanThreshold,
-                settingsEntity.softbanAction,
-                settingsEntity.softbanActionDuration,
-                settingsEntity.softbanActionDurationType,
-                settingsEntity.kickThreshold,
-                settingsEntity.kickAction,
-                settingsEntity.kickActionDuration,
-                settingsEntity.kickActionDurationType,
-                settingsEntity.muteThreshold,
-                settingsEntity.muteAction,
-                settingsEntity.muteActionDuration,
-                settingsEntity.muteActionDurationType,
-                settingsEntity.warnThreshold,
-                settingsEntity.warnAction,
-                settingsEntity.warnActionDuration,
-                settingsEntity.warnActionDurationType,
-                settingsEntity.modsCanEditTags
+            guild.toGuildModel(),
+            guild.textChannels.map { it.toChannelModel() },
+            guild.roles.map { it.toRoleModel() },
+            settingsEntity.modLog,
+            guild.getTextChannelById(settingsEntity.modLogChannelId)?.toChannelModel()
+                ?: return Result(Status.SERVER_ERROR),
+            settingsEntity.holdingRoom,
+            holdingRoomRole?.toRoleModel(),
+            settingsEntity.holdingRoomMinutes,
+            settingsEntity.inviteLinkRemover,
+            settingsEntity.welcomeMessage,
+            settingsEntity.message,
+            guild.getTextChannelById(settingsEntity.welcomeMessageChannelId)?.toChannelModel()
+                ?: return Result(Status.SERVER_ERROR),
+            settingsEntity.prefix,
+            settingsEntity.silentCommands,
+            settingsEntity.noSpacePrefix,
+            settingsEntity.statistics,
+            settingsEntity.joinCaptcha,
+            settingsEntity.silentCommandsLevel,
+            settingsEntity.modActionConfirmationMessage,
+            settingsEntity.wordFilter,
+            settingsEntity.wordFilterBlacklist,
+            settingsEntity.wordFilterLevel,
+            settingsEntity.wordFilterAction,
+            settingsEntity.wordFilterActionDuration,
+            settingsEntity.wordFilterActionDurationType,
+            settingsEntity.inviteLinkRemoverAction,
+            settingsEntity.inviteLinkRemoverActionDuration,
+            settingsEntity.inviteLinkRemoverActionDurationType,
+            settingsEntity.privacySettings,
+            settingsEntity.privacyModLog,
+            settingsEntity.softbanThreshold,
+            settingsEntity.softbanAction,
+            settingsEntity.softbanActionDuration,
+            settingsEntity.softbanActionDurationType,
+            settingsEntity.kickThreshold,
+            settingsEntity.kickAction,
+            settingsEntity.kickActionDuration,
+            settingsEntity.kickActionDurationType,
+            settingsEntity.muteThreshold,
+            settingsEntity.muteAction,
+            settingsEntity.muteActionDuration,
+            settingsEntity.muteActionDurationType,
+            settingsEntity.warnThreshold,
+            settingsEntity.warnAction,
+            settingsEntity.warnActionDuration,
+            settingsEntity.warnActionDurationType,
+            settingsEntity.modsCanEditTags
         )
 
         response.endJson(objectMapper.writeValueAsString(settings))
@@ -114,22 +114,22 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
         }
         val bodyString = event.bodyAsString ?: return Result(Status.BAD_REQUEST)
         val parsedSettings = tryhard { objectMapper.readValue<GuildSettingsModel>(bodyString) }
-                ?: return Result(Status.BAD_REQUEST)
+            ?: return Result(Status.BAD_REQUEST)
 
         val newSettings = parsedSettings.copy(
-                message = parsedSettings.message.trim(),
-                prefix = parsedSettings.prefix.trim(),
-                wordFilterBlacklist = parsedSettings.wordFilterBlacklist?.trim()
+            message = parsedSettings.message.trim(),
+            prefix = parsedSettings.prefix.trim(),
+            wordFilterBlacklist = parsedSettings.wordFilterBlacklist?.trim()
         )
 
         guild.textChannels.find { it.id == newSettings.modLogChannel.id }
-                ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
+            ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
         guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id }
-                ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")
+            ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")
 
         if (newSettings.holdingRoomRole != null) {
             guild.roles.find { it.id == newSettings.holdingRoomRole.id }
-                    ?: return Result(Status.BAD_REQUEST, "Selected holding room role doesn't exist!")
+                ?: return Result(Status.BAD_REQUEST, "Selected holding room role doesn't exist!")
         } else {
             if (newSettings.joinCaptcha || newSettings.holdingRoom) {
                 return Result(Status.BAD_REQUEST, "You can't enable join captcha or holding room without setting a holding room role!")
@@ -277,53 +277,53 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
 
         tryhardAsync {
             SettingsTable.updateSettings(
-                    SettingsEntity(
-                            guildId = guild.idLong,
-                            modLog = newSettings.modLog,
-                            modLogChannelId = newSettings.modLogChannel.id.toLong(),
-                            holdingRoom = newSettings.holdingRoom,
-                            holdingRoomRoleId = newSettings.holdingRoomRole?.id?.toLong(),
-                            holdingRoomMinutes = newSettings.holdingRoomMinutes,
-                            inviteLinkRemover = newSettings.inviteLinkRemover,
-                            welcomeMessage = newSettings.welcomeMessage,
-                            message = newSettings.message,
-                            welcomeMessageChannelId = newSettings.welcomeMessageChannel.id.toLong(),
-                            prefix = newSettings.prefix,
-                            silentCommands = newSettings.silentCommands,
-                            noSpacePrefix = newSettings.noSpacePrefix,
-                            statistics = newSettings.statistics,
-                            joinCaptcha = newSettings.joinCaptcha,
-                            silentCommandsLevel = newSettings.silentCommandsLevel,
-                            modActionConfirmationMessage = newSettings.modActionConfirmationMessage,
-                            wordFilter = newSettings.wordFilter,
-                            wordFilterBlacklist = wordFilterBlacklist,
-                            wordFilterLevel = newSettings.wordFilterLevel,
-                            wordFilterAction = newSettings.wordFilterAction,
-                            wordFilterActionDuration = newSettings.wordFilterActionDuration,
-                            wordFilterActionDurationType = newSettings.wordFilterActionDurationType,
-                            inviteLinkRemoverAction = newSettings.inviteLinkRemoverAction,
-                            inviteLinkRemoverActionDuration = newSettings.inviteLinkRemoverActionDuration,
-                            inviteLinkRemoverActionDurationType = newSettings.inviteLinkRemoverActionDurationType,
-                            privacySettings = newSettings.privacySettings,
-                            privacyModLog = newSettings.privacyModLog,
-                            softbanThreshold = newSettings.softbanThreshold,
-                            softbanAction = newSettings.softbanAction,
-                            softbanActionDuration = newSettings.softbanActionDuration,
-                            softbanActionDurationType = newSettings.softbanActionDurationType,
-                            kickThreshold = newSettings.kickThreshold,
-                            kickAction = newSettings.kickAction,
-                            kickActionDuration = newSettings.kickActionDuration,
-                            kickActionDurationType = newSettings.kickActionDurationType,
-                            muteThreshold = newSettings.muteThreshold,
-                            muteAction = newSettings.muteAction,
-                            muteActionDuration = newSettings.muteActionDuration,
-                            muteActionDurationType = newSettings.muteActionDurationType,
-                            warnThreshold = newSettings.warnThreshold,
-                            warnAction = newSettings.warnAction,
-                            warnActionDuration = newSettings.warnActionDuration,
-                            warnActionDurationType = newSettings.warnActionDurationType,
-                            modsCanEditTags = newSettings.modsCanEditTags
-                    )
+                SettingsEntity(
+                    guildId = guild.idLong,
+                    modLog = newSettings.modLog,
+                    modLogChannelId = newSettings.modLogChannel.id.toLong(),
+                    holdingRoom = newSettings.holdingRoom,
+                    holdingRoomRoleId = newSettings.holdingRoomRole?.id?.toLong(),
+                    holdingRoomMinutes = newSettings.holdingRoomMinutes,
+                    inviteLinkRemover = newSettings.inviteLinkRemover,
+                    welcomeMessage = newSettings.welcomeMessage,
+                    message = newSettings.message,
+                    welcomeMessageChannelId = newSettings.welcomeMessageChannel.id.toLong(),
+                    prefix = newSettings.prefix,
+                    silentCommands = newSettings.silentCommands,
+                    noSpacePrefix = newSettings.noSpacePrefix,
+                    statistics = newSettings.statistics,
+                    joinCaptcha = newSettings.joinCaptcha,
+                    silentCommandsLevel = newSettings.silentCommandsLevel,
+                    modActionConfirmationMessage = newSettings.modActionConfirmationMessage,
+                    wordFilter = newSettings.wordFilter,
+                    wordFilterBlacklist = wordFilterBlacklist,
+                    wordFilterLevel = newSettings.wordFilterLevel,
+                    wordFilterAction = newSettings.wordFilterAction,
+                    wordFilterActionDuration = newSettings.wordFilterActionDuration,
+                    wordFilterActionDurationType = newSettings.wordFilterActionDurationType,
+                    inviteLinkRemoverAction = newSettings.inviteLinkRemoverAction,
+                    inviteLinkRemoverActionDuration = newSettings.inviteLinkRemoverActionDuration,
+                    inviteLinkRemoverActionDurationType = newSettings.inviteLinkRemoverActionDurationType,
+                    privacySettings = newSettings.privacySettings,
+                    privacyModLog = newSettings.privacyModLog,
+                    softbanThreshold = newSettings.softbanThreshold,
+                    softbanAction = newSettings.softbanAction,
+                    softbanActionDuration = newSettings.softbanActionDuration,
+                    softbanActionDurationType = newSettings.softbanActionDurationType,
+                    kickThreshold = newSettings.kickThreshold,
+                    kickAction = newSettings.kickAction,
+                    kickActionDuration = newSettings.kickActionDuration,
+                    kickActionDurationType = newSettings.kickActionDurationType,
+                    muteThreshold = newSettings.muteThreshold,
+                    muteAction = newSettings.muteAction,
+                    muteActionDuration = newSettings.muteActionDuration,
+                    muteActionDurationType = newSettings.muteActionDurationType,
+                    warnThreshold = newSettings.warnThreshold,
+                    warnAction = newSettings.warnAction,
+                    warnActionDuration = newSettings.warnActionDuration,
+                    warnActionDurationType = newSettings.warnActionDurationType,
+                    modsCanEditTags = newSettings.modsCanEditTags
+                )
             )
         } ?: return Result(Status.SERVER_ERROR)
 

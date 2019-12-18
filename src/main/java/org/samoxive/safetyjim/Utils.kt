@@ -35,4 +35,4 @@ fun dateFromNow(seconds: Int): Date {
 }
 
 val objectMapper: ObjectMapper = jacksonObjectMapper()
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

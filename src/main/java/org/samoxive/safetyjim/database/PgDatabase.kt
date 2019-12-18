@@ -31,12 +31,12 @@ private val tables = arrayOf(
 
 fun initPgPool(config: Config) {
     pgPool = PgClient.pool(
-            PgPoolOptions()
-                    .setPort(config.database.port)
-                    .setHost(config.database.host)
-                    .setDatabase(config.database.database)
-                    .setUser(config.database.user)
-                    .setPassword(config.database.pass)
+        PgPoolOptions()
+            .setPort(config.database.port)
+            .setHost(config.database.host)
+            .setDatabase(config.database.database)
+            .setUser(config.database.user)
+            .setPassword(config.database.pass)
     )
 
     runBlocking {

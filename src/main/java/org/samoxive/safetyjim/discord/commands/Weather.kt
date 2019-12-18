@@ -16,16 +16,16 @@ import org.samoxive.safetyjim.discord.trySendMessage
 import org.samoxive.safetyjim.httpClient
 
 private val iconEmojis = mapOf(
-        "clear-day" to ":sunny:",
-        "clear-night" to ":crescent_moon:",
-        "rain" to ":cloud_rain:",
-        "snow" to ":cloud_snow:",
-        "sleet" to ":cloud_snow:",
-        "partly-cloudy-day" to ":partly_sunny:",
-        "partly-cloudy-night" to ":partly_sunny:",
-        "fog" to ":fog:",
-        "cloudy" to ":cloud:",
-        "wind" to ":wind_blowing_face:"
+    "clear-day" to ":sunny:",
+    "clear-night" to ":crescent_moon:",
+    "rain" to ":cloud_rain:",
+    "snow" to ":cloud_snow:",
+    "sleet" to ":cloud_snow:",
+    "partly-cloudy-day" to ":partly_sunny:",
+    "partly-cloudy-night" to ":partly_sunny:",
+    "fog" to ":fog:",
+    "cloudy" to ":cloud:",
+    "wind" to ":wind_blowing_face:"
 )
 private val dateFormatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT' ").withZone(ZoneOffset.UTC)
 
@@ -42,9 +42,9 @@ class Weather : Command() {
         }
 
         val geocodeResponse = httpClient.get(443, "maps.googleapis.com", "/maps/api/geocode/json")
-                .addQueryParam("key", bot.config.jim.geocode_token)
-                .addQueryParam("address", args)
-                .sendAwait()
+            .addQueryParam("key", bot.config.jim.geocode_token)
+            .addQueryParam("address", args)
+            .sendAwait()
 
         val geocodeObject = JSONObject(geocodeResponse.bodyAsString())
         if (geocodeObject.getString("status") != "OK") {
@@ -59,7 +59,7 @@ class Weather : Command() {
         val lng = geometryObject.getJSONObject("location").getFloat("lng")
 
         val darkskyResponse = httpClient.get(443, "api.darksky.net", "/forecast/${bot.config.jim.darksky_token}/$lat,$lng")
-                .sendAwait()
+            .sendAwait()
 
         val weatherObject = JSONObject(darkskyResponse.bodyAsString())
         val localTimeOffset = weatherObject.getInt("offset")
@@ -79,13 +79,13 @@ class Weather : Command() {
         val icon = currentWeatherObject.getString("icon")
 
         val embedBuilder = EmbedBuilder()
-                .setColor(Color(0x4286F4))
-                .setTitle("Weather in $address")
-                .setFooter("Local Time: $localDateString", null)
-                .addField("Summary", summary, false)
-                .addField("Temperature", "$tempC °C / $tempF °F", true)
-                .addField("Humidity", "$humidity%", true)
-                .setDescription(iconEmojis[icon])
+            .setColor(Color(0x4286F4))
+            .setTitle("Weather in $address")
+            .setFooter("Local Time: $localDateString", null)
+            .addField("Summary", summary, false)
+            .addField("Temperature", "$tempC °C / $tempF °F", true)
+            .addField("Humidity", "$humidity%", true)
+            .setDescription(iconEmojis[icon])
         channel.trySendMessage(embedBuilder.build())
         return false
     }

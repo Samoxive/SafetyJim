@@ -45,30 +45,30 @@ object JoinsTable : AbstractTable {
 
     private fun PgRowSet.toJoinEntities(): List<JoinEntity> = this.map {
         JoinEntity(
-                id = it.getInteger(0),
-                userId = it.getLong(1),
-                guildId = it.getLong(2),
-                joinTime = it.getLong(3),
-                allowTime = it.getLong(4),
-                allowed = it.getBoolean(5)
+            id = it.getInteger(0),
+            userId = it.getLong(1),
+            guildId = it.getLong(2),
+            joinTime = it.getLong(3),
+            allowTime = it.getLong(4),
+            allowed = it.getBoolean(5)
         )
     }
 
     suspend fun fetchGuildJoins(guild: Guild): List<JoinEntity> {
         return pgPool.preparedQueryAwait("select * from joinlist where guildid = $1;", Tuple.of(guild.idLong))
-                .toJoinEntities()
+            .toJoinEntities()
     }
 
     suspend fun fetchExpiredJoins(): List<JoinEntity> {
         val time = System.currentTimeMillis() / 1000
         return pgPool.preparedQueryAwait("select * from joinlist where allowed = false and allowtime < $1;", Tuple.of(time))
-                .toJoinEntities()
+            .toJoinEntities()
     }
 
     suspend fun insertJoin(join: JoinEntity): JoinEntity {
         return pgPool.preparedQueryAwait(insertSQL, join.toTuple())
-                .toJoinEntities()
-                .first()
+            .toJoinEntities()
+            .first()
     }
 
     suspend fun updateJoin(newJoin: JoinEntity) {
@@ -90,22 +90,22 @@ data class JoinEntity(
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
-                userId,
-                guildId,
-                joinTime,
-                allowTime,
-                allowed
+            userId,
+            guildId,
+            joinTime,
+            allowTime,
+            allowed
         )
     }
 
     fun toTupleWithId(): Tuple {
         return Tuple.of(
-                id,
-                userId,
-                guildId,
-                joinTime,
-                allowTime,
-                allowed
+            id,
+            userId,
+            guildId,
+            joinTime,
+            allowTime,
+            allowed
         )
     }
 }

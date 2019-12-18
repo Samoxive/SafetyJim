@@ -20,7 +20,7 @@ class Iam : Command() {
         val channel = event.channel
 
         val roleName = messageIterator.seekToEnd()
-                .toLowerCase()
+            .toLowerCase()
 
         if (roleName == "") {
             return true
@@ -35,7 +35,7 @@ class Iam : Command() {
             }
 
             val rolesText = roles.mapNotNull { guild.getRoleById(it.roleId) }
-                    .joinToString("\n") { "\u2022 `${it.name}`" }
+                .joinToString("\n") { "\u2022 `${it.name}`" }
 
             val embed = EmbedBuilder()
             embed.setAuthor("Safety Jim", null, event.jda.selfUser.avatarUrl)
@@ -48,7 +48,7 @@ class Iam : Command() {
         }
 
         val matchingRoles = guild.roles
-                .filter { role -> role.name.toLowerCase() == roleName }
+            .filter { role -> role.name.toLowerCase() == roleName }
 
         if (matchingRoles.isEmpty()) {
             message.failMessage("Could not find a role with specified name!")

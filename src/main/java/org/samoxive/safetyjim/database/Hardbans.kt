@@ -41,41 +41,41 @@ where id = $1;
 object HardbansTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf(
-            "create index if not exists hardbanlist_hardbantime_index on hardbanlist (hardbantime desc);"
+        "create index if not exists hardbanlist_hardbantime_index on hardbanlist (hardbantime desc);"
     )
 
     private fun PgRowSet.toHardbanEntities(): List<HardbanEntity> = this.map {
         HardbanEntity(
-                id = it.getInteger(0),
-                userId = it.getLong(1),
-                moderatorUserId = it.getLong(2),
-                guildId = it.getLong(3),
-                hardbanTime = it.getLong(4),
-                reason = it.getString(5)
+            id = it.getInteger(0),
+            userId = it.getLong(1),
+            moderatorUserId = it.getLong(2),
+            guildId = it.getLong(3),
+            hardbanTime = it.getLong(4),
+            reason = it.getString(5)
         )
     }
 
     suspend fun fetchHardban(id: Int): HardbanEntity? {
         return pgPool.preparedQueryAwait("select * from hardbanlist where id = $1;", Tuple.of(id))
-                .toHardbanEntities()
-                .firstOrNull()
+            .toHardbanEntities()
+            .firstOrNull()
     }
 
     suspend fun fetchGuildHardbans(guild: Guild, page: Int): List<HardbanEntity> {
         return pgPool.preparedQueryAwait("select * from hardbanlist where guildid = $1 order by hardbantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
-                .toHardbanEntities()
+            .toHardbanEntities()
     }
 
     suspend fun fetchGuildHardbansCount(guild: Guild): Int {
         return pgPool.preparedQueryAwait("select count(*) from hardbanlist where guildid = $1;", Tuple.of(guild.idLong))
-                .first()
-                .getInteger(0)
+            .first()
+            .getInteger(0)
     }
 
     suspend fun insertHardban(hardban: HardbanEntity): HardbanEntity {
         return pgPool.preparedQueryAwait(insertSQL, hardban.toTuple())
-                .toHardbanEntities()
-                .first()
+            .toHardbanEntities()
+            .first()
     }
 
     suspend fun updateHardban(newHardban: HardbanEntity) {
@@ -93,21 +93,21 @@ data class HardbanEntity(
 ) {
     fun toTuple(): Tuple {
         return Tuple.of(
-                userId,
-                moderatorUserId,
-                guildId,
-                hardbanTime,
-                reason
+            userId,
+            moderatorUserId,
+            guildId,
+            hardbanTime,
+            reason
         )
     }
 
     fun toTupleWithId(): Tuple {
         return Tuple.of(id,
-                userId,
-                moderatorUserId,
-                guildId,
-                hardbanTime,
-                reason
+            userId,
+            moderatorUserId,
+            guildId,
+            hardbanTime,
+            reason
         )
     }
 }

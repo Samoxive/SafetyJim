@@ -121,8 +121,8 @@ fun Member.isBannableBy(banner: Member): Boolean {
 }
 
 fun Member.isOnline(): Boolean = onlineStatus == OnlineStatus.ONLINE ||
-        onlineStatus == OnlineStatus.DO_NOT_DISTURB ||
-        onlineStatus == OnlineStatus.IDLE
+    onlineStatus == OnlineStatus.DO_NOT_DISTURB ||
+    onlineStatus == OnlineStatus.IDLE
 
 suspend fun Message.successReact() {
     react(SUCCESS_EMOTE_NAME, SUCCESS_EMOTE_ID)
@@ -189,7 +189,7 @@ suspend fun TextChannel.fetchFullHistoryBeforeMessage(beforeMessage: Message): M
     var lastMessageReceived = false
     while (!lastMessageReceived) {
         val fetchedMessages = tryhardAsync { getHistoryBefore(lastFetchedMessage, 100).await() }
-                ?.retrievedHistory ?: return mutableListOf()
+            ?.retrievedHistory ?: return mutableListOf()
 
         messages.addAll(fetchedMessages)
 
@@ -210,7 +210,7 @@ suspend fun TextChannel.fetchFullHistoryAfterMessage(afterMessage: Message): Lis
     var lastMessageReceived = false
     while (!lastMessageReceived) {
         val fetchedMessages = tryhardAsync { getHistoryAfter(lastFetchedMessage, 100).await() }
-                ?.retrievedHistory ?: return listOf()
+            ?.retrievedHistory ?: return listOf()
 
         messages.addAll(fetchedMessages)
 
@@ -239,8 +239,8 @@ private fun Member.getHighestRole() = if (roles.size == 0) {
 }
 
 fun getUsageString(prefix: String, usages: Array<String>): String =
-        usages.map { usage -> usage.split(" - ") }
-                .joinToString("\n") { "`$prefix ${it[0]}` - ${it[1]}" }
+    usages.map { usage -> usage.split(" - ") }
+        .joinToString("\n") { "`$prefix ${it[0]}` - ${it[1]}" }
 
 fun User.getTag(): String = "$name#$discriminator"
 

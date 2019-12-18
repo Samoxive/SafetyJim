@@ -41,7 +41,7 @@ class RoleCommand : Command() {
         }
 
         val matchingRoles = guild.roles
-                .filter { role -> role.name.toLowerCase() == roleName }
+            .filter { role -> role.name.toLowerCase() == roleName }
 
         if (matchingRoles.isEmpty()) {
             message.failMessage("Could not find a role with specified name!")
@@ -54,10 +54,10 @@ class RoleCommand : Command() {
         if (subcommand == "add") {
             if (record == null) {
                 RolesTable.insertRole(
-                        RoleEntity(
-                                guildId = guild.idLong,
-                                roleId = matchedRole.idLong
-                        )
+                    RoleEntity(
+                        guildId = guild.idLong,
+                        roleId = matchedRole.idLong
+                    )
                 )
                 message.successReact()
             } else {

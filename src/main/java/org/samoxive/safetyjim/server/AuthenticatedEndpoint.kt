@@ -13,7 +13,7 @@ abstract class AuthenticatedEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
         val token = request.getHeader("token") ?: return Result(Status.BAD_REQUEST)
         val userId = getUserIdFromToken(bot.config, token) ?: return Result(Status.UNAUTHORIZED, "Invalid token!")
         val user = tryhardAsync { bot.shards[0].jda.retrieveUserById(userId).await() }
-                ?: return Result(Status.UNAUTHORIZED)
+            ?: return Result(Status.UNAUTHORIZED)
         return handle(event, request, response, user)
     }
 

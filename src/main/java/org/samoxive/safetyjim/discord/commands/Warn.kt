@@ -28,14 +28,14 @@ suspend fun warnAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
 
     warnUser.trySendMessage(embed.build())
     val record = WarnsTable.insertWarn(
-            WarnEntity(
-                    userId = warnUser.idLong,
-                    moderatorUserId = modUser.idLong,
-                    guildId = guild.idLong,
-                    warnTime = now.time / 1000,
-                    reason = reason,
-                    pardoned = false
-            )
+        WarnEntity(
+            userId = warnUser.idLong,
+            moderatorUserId = modUser.idLong,
+            guildId = guild.idLong,
+            warnTime = now.time / 1000,
+            reason = reason,
+            pardoned = false
+        )
     )
 
     createModLogEntry(guild, channel, settings, modUser, warnUser, reason, ModLogAction.Warn, record.id)

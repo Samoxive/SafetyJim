@@ -32,14 +32,14 @@ suspend fun kickAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
     guild.kick(kickUser.id, auditLogReason).await()
 
     val record = KicksTable.insertKick(
-            KickEntity(
-                    userId = kickUser.idLong,
-                    moderatorUserId = modUser.idLong,
-                    guildId = guild.idLong,
-                    kickTime = now.time / 1000,
-                    reason = reason,
-                    pardoned = false
-            )
+        KickEntity(
+            userId = kickUser.idLong,
+            moderatorUserId = modUser.idLong,
+            guildId = guild.idLong,
+            kickTime = now.time / 1000,
+            reason = reason,
+            pardoned = false
+        )
     )
 
     createModLogEntry(guild, channel, settings, modUser, kickUser, reason, ModLogAction.Kick, record.id)

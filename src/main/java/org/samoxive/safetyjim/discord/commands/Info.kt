@@ -34,14 +34,14 @@ class Info : Command() {
 
         val guildCount = bot.guildCount
         val userCount = shards
-                .asSequence()
-                .map { shard -> shard.users.size }
-                .sum()
+            .asSequence()
+            .map { shard -> shard.users.size }
+            .sum()
         val pingShard = currentShard.gatewayPing
         val pingAverage = shards
-                .asSequence()
-                .map { shard -> shard.gatewayPing }
-                .sum() / shardCount
+            .asSequence()
+            .map { shard -> shard.gatewayPing }
+            .sum() / shardCount
 
         val runtime = Runtime.getRuntime()
         val ramTotal = runtime.totalMemory() / (1024 * 1024)

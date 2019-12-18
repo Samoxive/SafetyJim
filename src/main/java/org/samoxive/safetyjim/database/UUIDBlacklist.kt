@@ -16,6 +16,6 @@ object UUIDBlacklistTable : AbstractTable {
 
     suspend fun isUUIDBlacklisted(id: UUID): Boolean {
         return pgPool.preparedQueryAwait("select * from uuidblacklist where id = $1;", Tuple.of(id))
-                .any()
+            .any()
     }
 }
