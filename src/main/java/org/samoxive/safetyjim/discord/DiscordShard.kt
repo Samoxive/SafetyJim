@@ -23,6 +23,7 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent
 import net.dv8tion.jda.api.events.message.guild.GuildMessageDeleteEvent
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.utils.ChunkingFilter
 import net.dv8tion.jda.api.utils.SessionController
 import net.dv8tion.jda.api.utils.cache.CacheFlag
 import org.samoxive.safetyjim.database.*
@@ -51,6 +52,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 .useSharding(shardId, config.jim.shard_count)
                 .setDisabledCacheFlags(EnumSet.of(CacheFlag.ACTIVITY, CacheFlag.EMOTE, CacheFlag.VOICE_STATE))
                 .setActivity(Activity.playing("safetyjim.xyz $shardString"))
+                .setChunkingFilter(ChunkingFilter.NONE)
                 .build()
                 .awaitReady()
         } catch (e: LoginException) {
