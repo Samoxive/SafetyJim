@@ -241,7 +241,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
                 continue
             }
 
-            val channel = guild.getTextChannelById(channelId)
+            val channel = tryhardAsync { guild.retrieveTextChannelById(channelId).await() }
             val member = guild.fetchMember(user)
 
             val embed = EmbedBuilder()

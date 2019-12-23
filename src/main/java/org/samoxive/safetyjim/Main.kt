@@ -54,5 +54,5 @@ fun setupLoggers() {
     Logger.getLogger("org.jooq.Constants").level = Level.WARN
     Logger.getRootLogger().addAppender(fa)
     Logger.getRootLogger().addAppender(ca)
-    Logger.getRootLogger().level = Level.INFO
+    Logger.getRootLogger().level = Level.ALL
 }

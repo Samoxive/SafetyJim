@@ -8,6 +8,7 @@ import io.reactiverse.pgclient.Tuple
 import java.util.*
 import java.util.concurrent.TimeUnit
 import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.TextChannel
 import org.ahocorasick.trie.Trie
 import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.dateFromNow
@@ -252,8 +253,8 @@ object SettingsTable : AbstractTable {
             .firstOrNull()
     }
 
-    suspend fun insertDefaultGuildSettings(config: Config, guild: Guild): SettingsEntity? {
-        val defaultChannel = guild.getDefaultChannelTalkable()
+    suspend fun insertDefaultGuildSettings(config: Config, guild: Guild, textChannels: List<TextChannel>? = null): SettingsEntity? {
+        val defaultChannel = guild.getDefaultChannelTalkable(textChannels)
         return tryhardAsync {
             insertSettings(
                 SettingsEntity(

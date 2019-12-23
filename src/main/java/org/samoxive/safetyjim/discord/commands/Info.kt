@@ -33,10 +33,6 @@ class Info : Command() {
         val uptimeString = prettyTime.format(bot.startTime)
 
         val guildCount = bot.guildCount
-        val userCount = shards
-            .asSequence()
-            .map { shard -> shard.users.size }
-            .sum()
         val pingShard = currentShard.gatewayPing
         val pingAverage = shards
             .asSequence()
@@ -61,7 +57,6 @@ class Info : Command() {
         embed.setAuthor("Safety Jim - v${config.jim.version} - Shard $shardString", null, selfUser.avatarUrl)
         embed.setDescription("Lifting the :hammer: since $uptimeString")
         embed.addField("Server Count", guildCount.toString(), true)
-        embed.addField("User Count", userCount.toString(), true)
         embed.addBlankField(true)
         embed.addField("Websocket Ping", "Shard $shardString: ${pingShard}ms\nAverage: ${pingAverage}ms", true)
         embed.addField("RAM usage", "${ramUsed}MB / ${ramTotal}MB", true)

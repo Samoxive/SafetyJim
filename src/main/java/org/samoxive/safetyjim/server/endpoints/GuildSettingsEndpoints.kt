@@ -13,6 +13,7 @@ import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.database.getDelta
 import org.samoxive.safetyjim.discord.DiscordBot
+import org.samoxive.safetyjim.discord.await
 import org.samoxive.safetyjim.discord.isStaff
 import org.samoxive.safetyjim.objectMapper
 import org.samoxive.safetyjim.server.AuthenticatedGuildEndpoint
@@ -46,22 +47,24 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
             return Result(Status.FORBIDDEN, "You are not allowed to view server settings!")
         }
 
+        val channels = guild.retrieveTextChannels()
+            .await()
+            .map { it.toChannelModel() }
+
         val holdingRoomRole = if (settingsEntity.holdingRoomRoleId != null) guild.getRoleById(settingsEntity.holdingRoomRoleId) else null
         val settings = GuildSettingsModel(
             guild.toGuildModel(),
-            guild.textChannels.map { it.toChannelModel() },
+            channels,
             guild.roles.map { it.toRoleModel() },
             settingsEntity.modLog,
-            guild.getTextChannelById(settingsEntity.modLogChannelId)?.toChannelModel()
-                ?: return Result(Status.SERVER_ERROR),
+            channels.find { it.id == settingsEntity.modLogChannelId.toString() } ?: return Result(Status.SERVER_ERROR), // todo send dummy channel if one does not exist
             settingsEntity.holdingRoom,
             holdingRoomRole?.toRoleModel(),
             settingsEntity.holdingRoomMinutes,
             settingsEntity.inviteLinkRemover,
             settingsEntity.welcomeMessage,
             settingsEntity.message,
-            guild.getTextChannelById(settingsEntity.welcomeMessageChannelId)?.toChannelModel()
-                ?: return Result(Status.SERVER_ERROR),
+            channels.find { it.id == settingsEntity.welcomeMessageChannelId.toString() } ?: return Result(Status.SERVER_ERROR),
             settingsEntity.prefix,
             settingsEntity.silentCommands,
             settingsEntity.noSpacePrefix,
@@ -122,9 +125,12 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             wordFilterBlacklist = parsedSettings.wordFilterBlacklist?.trim()
         )
 
-        guild.textChannels.find { it.id == newSettings.modLogChannel.id }
+        val textChannels = guild.retrieveTextChannels()
+            .await()
+
+        textChannels.find { it.id == newSettings.modLogChannel.id }
             ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
-        guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id }
+        textChannels.find { it.id == newSettings.welcomeMessageChannel.id }
             ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")
 
         if (newSettings.holdingRoomRole != null) {

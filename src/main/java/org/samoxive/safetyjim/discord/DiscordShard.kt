@@ -5,9 +5,7 @@ import java.awt.Color
 import java.util.*
 import javax.security.auth.login.LoginException
 import kotlin.system.exitProcess
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import net.dv8tion.jda.api.AccountType
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
@@ -67,24 +65,6 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     override fun onReady(event: ReadyEvent) {
         log.info("Shard is ready.")
         stats.increment("shard_ready")
-
-        GlobalScope.launch {
-            onReadyAsync(event)
-        }
-    }
-
-    private suspend fun onReadyAsync(event: ReadyEvent) {
-        val shard = event.jda
-
-        var emptyGuildCount = 0
-        for (guild in shard.guilds) {
-            if (guild.textChannels.isEmpty()) {
-                emptyGuildCount++
-                tryhardAsync { guild.leave().await() }
-                continue
-            }
-        }
-        stats.count("left_empty_guilds", emptyGuildCount.toLong())
     }
 
     override fun onGuildMessageReceived(event: GuildMessageReceivedEvent) {
@@ -207,15 +187,16 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         GlobalScope.launch {
             val guild = event.guild
-            if (guild.textChannels.isEmpty()) {
+            val textChannels = guild.retrieveTextChannels().await()
+            if (textChannels.isEmpty()) {
                 guild.leave().await()
                 return@launch
             }
 
             val defaultPrefix = bot.config.jim.default_prefix
             val message = "Hello! I am Safety Jim, `$defaultPrefix` is my default prefix! Visit https://safetyjim.xyz/commands to see available commands.\nYou can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help."
-            guild.getDefaultChannelTalkable().trySendMessage(message)
-            SettingsTable.insertDefaultGuildSettings(bot.config, guild)
+            guild.getDefaultChannelTalkable(textChannels).trySendMessage(message)
+            SettingsTable.insertDefaultGuildSettings(bot.config, guild, textChannels)
         }
     }
 
@@ -247,7 +228,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
         if (guildSettings.welcomeMessage) {
             val textChannelId = guildSettings.welcomeMessageChannelId
-            val channel = shard.getTextChannelById(textChannelId)
+            val channel = tryhardAsync { guild.retrieveTextChannelById(textChannelId).await() }
             if (channel != null) {
                 var message = guildSettings.message
                     .replace("\$user", member.asMention)

@@ -50,7 +50,7 @@ suspend fun createModLogEntry(guild: Guild, channel: TextChannel?, settings: Set
         return
     }
 
-    val modLogChannel = guild.getTextChannelById(settings.modLogChannelId)
+    val modLogChannel = tryhardAsync { guild.retrieveTextChannelById(settings.modLogChannelId).await() }
     if (modLogChannel == null) {
         channel?.trySendMessage("Invalid moderator log channel in guild configuration, set a proper one via web dashboard.\n\nhttps://safetyjim.xyz/dashboard/${guild.id}/settings")
         return
@@ -244,14 +244,15 @@ fun getUsageString(prefix: String, usages: Array<String>): String =
 
 fun User.getTag(): String = "$name#$discriminator"
 
-fun Guild.getDefaultChannelTalkable(): TextChannel {
-    for (channel in textChannels) {
+suspend fun Guild.getDefaultChannelTalkable(textChans: List<TextChannel>? = null): TextChannel {
+    val textChans = textChans ?: retrieveTextChannels().await()
+    for (channel in textChans) {
         if (channel.canTalk()) {
             return channel
         }
     }
 
-    return textChannels[0]
+    return textChans[0]
 }
 
 // (guild_id >> 22) % num_shards == shard_id

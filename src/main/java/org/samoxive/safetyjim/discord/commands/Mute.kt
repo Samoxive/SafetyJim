@@ -62,7 +62,7 @@ suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
 }
 
 suspend fun setupMutedRole(guild: Guild): Role {
-    val channels = guild.textChannels
+    val channels = guild.retrieveTextChannels().await()
     val roleList = guild.roles
     var mutedRole: Role? = null
 
