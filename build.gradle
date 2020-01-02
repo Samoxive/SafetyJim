@@ -50,7 +50,7 @@ dependencies {
     compile 'io.vertx:vertx-lang-kotlin-coroutines:3.8.0'
     compile 'com.auth0:java-jwt:3.8.3'
     compile 'log4j:log4j:1.2.17'
-    compile('net.dv8tion:JDA:4.1.0_86') {
+    compile('net.dv8tion:JDA:4.1.0_90') {
         exclude module: 'opus-java'
     }
     compile 'me.xdrop:fuzzywuzzy:1.2.0'
@@ -59,7 +59,7 @@ dependencies {
     compile 'io.reactiverse:reactive-pg-client:0.11.4'
     compile 'org.json:json:20190722'
     compile 'org.jsoup:jsoup:1.12.1'
-    compile 'com.google.guava:guava:28.1-jre'
+    compile 'com.google.guava:guava:28.2-jre'
     compile 'org.ahocorasick:ahocorasick:0.4.0'
     compile 'com.datadoghq:java-dogstatsd-client:2.8.1'
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.10.1"
