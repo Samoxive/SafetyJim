@@ -43,14 +43,14 @@ repositories {
 dependencies {
     compile 'org.slf4j:slf4j-log4j12:1.7.26'
     compile 'com.joestelmach:natty:0.13'
-    compile 'org.ocpsoft.prettytime:prettytime:4.0.2.Final'
+    compile 'org.ocpsoft.prettytime:prettytime:4.0.3.Final'
     compile 'io.vertx:vertx-web:3.8.0'
     compile 'io.vertx:vertx-web-client:3.8.0'
     compile 'io.vertx:vertx-lang-kotlin:3.8.0'
     compile 'io.vertx:vertx-lang-kotlin-coroutines:3.8.0'
-    compile 'com.auth0:java-jwt:3.8.3'
+    compile 'com.auth0:java-jwt:3.9.0'
     compile 'log4j:log4j:1.2.17'
-    compile('net.dv8tion:JDA:4.1.0_90') {
+    compile('net.dv8tion:JDA:4.1.1_108') {
         exclude module: 'opus-java'
     }
     compile 'me.xdrop:fuzzywuzzy:1.2.0'
@@ -58,11 +58,11 @@ dependencies {
     compile 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'
     compile 'io.reactiverse:reactive-pg-client:0.11.4'
     compile 'org.json:json:20190722'
-    compile 'org.jsoup:jsoup:1.12.1'
+    compile 'org.jsoup:jsoup:1.12.2'
     compile 'com.google.guava:guava:28.2-jre'
     compile 'org.ahocorasick:ahocorasick:0.4.0'
     compile 'com.datadoghq:java-dogstatsd-client:2.8.1'
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.10.1"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2"
 }
 
 jar {
