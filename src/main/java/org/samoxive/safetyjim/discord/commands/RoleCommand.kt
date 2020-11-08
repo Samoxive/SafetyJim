@@ -1,12 +1,12 @@
 package org.samoxive.safetyjim.discord.commands
 
-import java.util.*
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.RoleEntity
 import org.samoxive.safetyjim.database.RolesTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
+import java.util.*
 
 class RoleCommand : Command() {
     override val usages = arrayOf("role add <roleName> - adds a new self-assignable role", "role remove <roleName> - removes a self-assignable role")

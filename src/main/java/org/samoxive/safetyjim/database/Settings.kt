@@ -2,19 +2,20 @@ package org.samoxive.safetyjim.database
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.PgRowSet
-import io.reactiverse.pgclient.Tuple
-import java.util.*
-import java.util.concurrent.TimeUnit
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 import net.dv8tion.jda.api.entities.Guild
 import org.ahocorasick.trie.Trie
 import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.dateFromNow
 import org.samoxive.safetyjim.discord.getDefaultChannelTalkable
 import org.samoxive.safetyjim.tryhardAsync
+import java.util.*
+import java.util.concurrent.TimeUnit
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists settings (
     guildid bigint not null primary key,
     modlog boolean not null,
@@ -64,7 +65,8 @@ create table if not exists settings (
 );
 """
 
-private const val insertSQL = """
+private const val insertSQL =
+    """
 insert into settings (
     guildid,
     modlog,
@@ -116,7 +118,8 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $
 returning *;
 """
 
-private const val updateSQL = """
+private const val updateSQL =
+    """
 update settings set
     modlog = $2,
     modlogchannelid = $3,
@@ -179,7 +182,7 @@ object SettingsTable : AbstractTable {
         .expireAfterWrite(1, TimeUnit.MINUTES)
         .build()
 
-    private fun PgRowSet.toSettingsEntities(): List<SettingsEntity> = this.map {
+    private fun RowSet<Row>.toSettingsEntities(): List<SettingsEntity> = this.map {
         SettingsEntity(
             guildId = it.getLong(0),
             modLog = it.getBoolean(1),

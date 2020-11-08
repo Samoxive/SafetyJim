@@ -1,12 +1,13 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.PgRowSet
-import io.reactiverse.pgclient.Tuple
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.User
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists joinlist (
     id serial not null primary key,
     userid bigint not null,
@@ -17,7 +18,8 @@ create table if not exists joinlist (
 );
 """
 
-private const val insertSQL = """
+private const val insertSQL =
+    """
 insert into joinlist (
     userid,
     guildid,
@@ -29,7 +31,8 @@ values ($1, $2, $3, $4, $5)
 returning *;
 """
 
-private const val updateSQL = """
+private const val updateSQL =
+    """
 update joinlist set
     userid = $2,
     guildid = $3,
@@ -43,7 +46,7 @@ object JoinsTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf<String>()
 
-    private fun PgRowSet.toJoinEntities(): List<JoinEntity> = this.map {
+    private fun RowSet<Row>.toJoinEntities(): List<JoinEntity> = this.map {
         JoinEntity(
             id = it.getInteger(0),
             userId = it.getLong(1),

@@ -1,11 +1,11 @@
 package org.samoxive.safetyjim.discord.commands
 
-import java.util.*
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.ReminderEntity
 import org.samoxive.safetyjim.database.RemindersTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
+import java.util.*
 
 class Remind : Command() {
     override val usages = arrayOf("remind message - sets a timer to remind you a message in a day", "remind message | time - sets a timer to remind you a message in specified time period")

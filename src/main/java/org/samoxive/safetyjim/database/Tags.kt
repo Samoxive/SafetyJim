@@ -1,11 +1,12 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.PgRowSet
-import io.reactiverse.pgclient.Tuple
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 import net.dv8tion.jda.api.entities.Guild
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists taglist (
     id serial not null primary key,
     guildid bigint not null,
@@ -14,7 +15,8 @@ create table if not exists taglist (
 );
 """
 
-private const val insertSQL = """
+private const val insertSQL =
+    """
 insert into taglist (
     guildid,
     "name",
@@ -23,7 +25,8 @@ insert into taglist (
 values ($1, $2, $3);
 """
 
-private const val updateSQL = """
+private const val updateSQL =
+    """
 update taglist set
     guildid = $2,
     "name" = $3,
@@ -37,7 +40,7 @@ object TagsTable : AbstractTable {
         "create index if not exists taglist_index_1 on taglist (guildid);"
     )
 
-    private fun PgRowSet.toTagEntities(): List<TagEntity> = this.map {
+    private fun RowSet<Row>.toTagEntities(): List<TagEntity> = this.map {
         TagEntity(
             id = it.getInteger(0),
             guildId = it.getLong(1),

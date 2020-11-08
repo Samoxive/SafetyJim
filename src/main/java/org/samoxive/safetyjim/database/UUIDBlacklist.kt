@@ -1,10 +1,10 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.Tuple
+import io.vertx.sqlclient.Tuple
 import java.util.*
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists uuidblacklist (
     id uuid not null primary key
 );

@@ -1,14 +1,9 @@
 package org.samoxive.safetyjim.discord
 
 import com.timgroup.statsd.StatsDClient
-import java.awt.Color
-import java.util.*
-import javax.security.auth.login.LoginException
-import kotlin.system.exitProcess
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import net.dv8tion.jda.api.AccountType
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
@@ -19,10 +14,12 @@ import net.dv8tion.jda.api.events.ReadyEvent
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent
-import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent
 import net.dv8tion.jda.api.events.message.guild.GuildMessageDeleteEvent
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.utils.ChunkingFilter
 import net.dv8tion.jda.api.utils.SessionController
 import net.dv8tion.jda.api.utils.cache.CacheFlag
 import org.samoxive.safetyjim.database.*
@@ -32,6 +29,10 @@ import org.samoxive.safetyjim.discord.processors.isInviteLinkBlacklisted
 import org.samoxive.safetyjim.tryhardAsync
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.awt.Color
+import java.util.*
+import javax.security.auth.login.LoginException
+import kotlin.system.exitProcess
 
 class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController, val stats: StatsDClient) : ListenerAdapter() {
     private val log: Logger
@@ -43,13 +44,24 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val shardString = getShardString(shardId, config.jim.shard_count)
         log = LoggerFactory.getLogger("DiscordShard $shardString")
 
-        val builder = JDABuilder(AccountType.BOT)
         this.jda = try {
-            builder.setToken(config.jim.token)
+            JDABuilder.create(
+                config.jim.token,
+                GatewayIntent.GUILD_MEMBERS,
+                GatewayIntent.GUILD_MESSAGES
+            )
+                .setChunkingFilter(ChunkingFilter.ALL)
                 .addEventListeners(this, confirmationListener)
                 .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
                 .useSharding(shardId, config.jim.shard_count)
-                .setDisabledCacheFlags(EnumSet.of(CacheFlag.ACTIVITY, CacheFlag.EMOTE, CacheFlag.VOICE_STATE))
+                .disableCache(
+                    EnumSet.of(
+                        CacheFlag.ACTIVITY,
+                        CacheFlag.VOICE_STATE,
+                        CacheFlag.EMOTE,
+                        CacheFlag.CLIENT_STATUS
+                    )
+                )
                 .setActivity(Activity.playing("safetyjim.xyz $shardString"))
                 .build()
                 .awaitReady()
@@ -289,7 +301,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         tryhardAsync { guild.addRoleToMember(member, mutedRole).await() }
     }
 
-    override fun onGuildMemberLeave(event: GuildMemberLeaveEvent) {
+    override fun onGuildMemberRemove(event: GuildMemberRemoveEvent) {
         stats.increment("member_leave")
 
         GlobalScope.launch {

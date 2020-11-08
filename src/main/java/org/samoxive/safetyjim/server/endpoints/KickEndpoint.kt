@@ -85,10 +85,12 @@ class UpdateKickEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
             return Result(Status.BAD_REQUEST, "You can't un-pardon a kick!")
         }
 
-        KicksTable.updateKick(kick.copy(
-            reason = if (newKick.reason.isBlank()) "No reason specified" else newKick.reason,
-            pardoned = newKick.pardoned
-        ))
+        KicksTable.updateKick(
+            kick.copy(
+                reason = if (newKick.reason.isBlank()) "No reason specified" else newKick.reason,
+                pardoned = newKick.pardoned
+            )
+        )
 
         return Result(Status.OK)
     }

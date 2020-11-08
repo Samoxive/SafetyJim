@@ -6,7 +6,6 @@ import com.google.common.cache.CacheBuilder
 import io.vertx.core.MultiMap
 import io.vertx.kotlin.ext.web.client.sendAwait
 import io.vertx.kotlin.ext.web.client.sendFormAwait
-import java.util.concurrent.TimeUnit
 import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.database.UserSecretsTable
 import org.samoxive.safetyjim.discord.entities.DiscordPartialGuild
@@ -15,6 +14,7 @@ import org.samoxive.safetyjim.httpClient
 import org.samoxive.safetyjim.objectMapper
 import org.samoxive.safetyjim.server.models.AccessTokenResponse
 import org.samoxive.safetyjim.tryhardAsync
+import java.util.concurrent.TimeUnit
 
 object DiscordApi {
     private const val API_HOSTNAME = "discordapp.com"

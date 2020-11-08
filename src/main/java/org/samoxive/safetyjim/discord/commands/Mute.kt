@@ -1,7 +1,5 @@
 package org.samoxive.safetyjim.discord.commands
 
-import java.awt.Color
-import java.util.*
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.*
@@ -10,6 +8,8 @@ import org.samoxive.safetyjim.database.MuteEntity
 import org.samoxive.safetyjim.database.MutesTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
+import java.awt.Color
+import java.util.*
 
 private const val ACTION_REASON = "Mute threshold exceeded."
 

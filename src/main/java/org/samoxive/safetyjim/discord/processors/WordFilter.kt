@@ -15,8 +15,8 @@ private const val DEFAULT_BLACKLIST_URL = "https://raw.githubusercontent.com/Sam
 private const val ACTION_REASON = "Using blacklisted word(s)."
 
 class WordFilter : MessageProcessor() {
-    private lateinit var defaultWordFilterLow: Trie
-    private lateinit var defaultWordFilterHigh: Trie
+    private var defaultWordFilterLow: Trie
+    private var defaultWordFilterHigh: Trie
 
     init {
         runBlocking {

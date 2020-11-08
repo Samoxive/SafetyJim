@@ -1,11 +1,12 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.PgRowSet
-import io.reactiverse.pgclient.Tuple
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 import net.dv8tion.jda.api.entities.Guild
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists hardbanlist (
     id serial not null primary key,
     userid bigint not null,
@@ -16,7 +17,8 @@ create table if not exists hardbanlist (
 );
 """
 
-private const val insertSQL = """
+private const val insertSQL =
+    """
 insert into hardbanlist (
     userid,
     moderatoruserid,
@@ -28,7 +30,8 @@ values ($1, $2, $3, $4, $5)
 returning *;
 """
 
-private const val updateSQL = """
+private const val updateSQL =
+    """
 update hardbanlist set
     userid = $2,
     moderatoruserid = $3,
@@ -44,7 +47,7 @@ object HardbansTable : AbstractTable {
         "create index if not exists hardbanlist_hardbantime_index on hardbanlist (hardbantime desc);"
     )
 
-    private fun PgRowSet.toHardbanEntities(): List<HardbanEntity> = this.map {
+    private fun RowSet<Row>.toHardbanEntities(): List<HardbanEntity> = this.map {
         HardbanEntity(
             id = it.getInteger(0),
             userId = it.getLong(1),
@@ -102,7 +105,8 @@ data class HardbanEntity(
     }
 
     fun toTupleWithId(): Tuple {
-        return Tuple.of(id,
+        return Tuple.of(
+            id,
             userId,
             moderatorUserId,
             guildId,

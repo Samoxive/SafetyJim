@@ -1,7 +1,5 @@
 package org.samoxive.safetyjim.discord.commands
 
-import java.awt.Color
-import java.util.*
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
@@ -12,6 +10,8 @@ import org.samoxive.safetyjim.database.BanEntity
 import org.samoxive.safetyjim.database.BansTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
+import java.awt.Color
+import java.util.*
 
 suspend fun banAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, banUser: User, reason: String, expirationDate: Date?) {
     val now = Date()

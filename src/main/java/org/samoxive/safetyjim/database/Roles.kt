@@ -1,12 +1,13 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.PgRowSet
-import io.reactiverse.pgclient.Tuple
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Role
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists rolelist (
     id serial not null primary key,
     guildid bigint not null,
@@ -14,7 +15,8 @@ create table if not exists rolelist (
 );
 """
 
-private const val insertSQL = """
+private const val insertSQL =
+    """
 insert into rolelist (
     guildid,
     roleid
@@ -28,7 +30,7 @@ object RolesTable : AbstractTable {
         "create unique index if not exists rolelist_index_1 on rolelist (guildid, roleid);"
     )
 
-    private fun PgRowSet.toRoleEntities(): List<RoleEntity> = this.map {
+    private fun RowSet<Row>.toRoleEntities(): List<RoleEntity> = this.map {
         RoleEntity(
             id = it.getInteger(0),
             guildId = it.getLong(1),

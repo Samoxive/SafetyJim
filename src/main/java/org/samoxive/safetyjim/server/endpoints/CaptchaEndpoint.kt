@@ -15,7 +15,8 @@ import org.samoxive.safetyjim.server.Result
 import org.samoxive.safetyjim.server.Status
 import org.samoxive.safetyjim.tryhardAsync
 
-const val captcha_template = """
+const val captcha_template =
+    """
 <html>
 
 <head>

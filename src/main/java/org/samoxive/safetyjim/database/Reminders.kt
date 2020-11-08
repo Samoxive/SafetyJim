@@ -1,10 +1,11 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.PgRowSet
-import io.reactiverse.pgclient.Tuple
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists reminderlist (
     id serial not null primary key,
     userid bigint not null,
@@ -17,7 +18,8 @@ create table if not exists reminderlist (
 );
 """
 
-private const val insertSQL = """
+private const val insertSQL =
+    """
 insert into reminderlist (
     userid,
     channelid,
@@ -31,7 +33,8 @@ values ($1, $2, $3, $4, $5, $6, $7)
 returning *;
 """
 
-private const val updateSQL = """
+private const val updateSQL =
+    """
 update reminderlist set
     userid = $2,
     channelid = $3,
@@ -47,7 +50,7 @@ object RemindersTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf<String>()
 
-    private fun PgRowSet.toReminderEntities(): List<ReminderEntity> = this.map {
+    private fun RowSet<Row>.toReminderEntities(): List<ReminderEntity> = this.map {
         ReminderEntity(
             id = it.getInteger(0),
             userId = it.getLong(1),

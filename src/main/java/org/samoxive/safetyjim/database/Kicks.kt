@@ -1,12 +1,13 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.PgRowSet
-import io.reactiverse.pgclient.Tuple
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.User
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists kicklist (
     id serial not null primary key,
     userid bigint not null,
@@ -18,7 +19,8 @@ create table if not exists kicklist (
 );
 """
 
-private const val insertSQL = """
+private const val insertSQL =
+    """
 insert into kicklist (
     userid,
     moderatoruserid,
@@ -31,7 +33,8 @@ values ($1, $2, $3, $4, $5, $6)
 returning *;
 """
 
-private const val updateSQL = """
+private const val updateSQL =
+    """
 update kicklist set
     userid = $2,
     moderatoruserid = $3,
@@ -46,7 +49,7 @@ object KicksTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf<String>()
 
-    private fun PgRowSet.toKickEntities(): List<KickEntity> = this.map {
+    private fun RowSet<Row>.toKickEntities(): List<KickEntity> = this.map {
         KickEntity(
             id = it.getInteger(0),
             userId = it.getLong(1),

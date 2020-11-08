@@ -1,7 +1,7 @@
 package org.samoxive.safetyjim.server.models
 
-import java.awt.Color
 import net.dv8tion.jda.api.entities.Role
+import java.awt.Color
 
 data class RoleModel(
     val id: String,

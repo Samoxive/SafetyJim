@@ -1,12 +1,13 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.PgRowSet
-import io.reactiverse.pgclient.Tuple
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.User
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists banlist (
     id              serial  not null primary key,
     userid          bigint  not null,
@@ -20,7 +21,8 @@ create table if not exists banlist (
 );
 """
 
-private const val insertSQL = """
+private const val insertSQL =
+    """
 insert into banlist (
     userid,
     moderatoruserid,
@@ -35,7 +37,8 @@ values ($1, $2, $3, $4, $5, $6, $7, $8)
 returning *;
 """
 
-private const val updateSQL = """
+private const val updateSQL =
+    """
 update banlist set
     userid = $2,
     moderatoruserid = $3,
@@ -54,7 +57,7 @@ object BansTable : AbstractTable {
         "create index if not exists banlist_bantime_index on banlist (bantime desc);"
     )
 
-    private fun PgRowSet.toBanEntities(): List<BanEntity> = this.map {
+    private fun RowSet<Row>.toBanEntities(): List<BanEntity> = this.map {
         BanEntity(
             id = it.getInteger(0),
             userId = it.getLong(1),

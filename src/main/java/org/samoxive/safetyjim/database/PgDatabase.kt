@@ -1,15 +1,19 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.commitAwait
-import io.reactiverse.kotlin.pgclient.getConnectionAwait
-import io.reactiverse.kotlin.pgclient.queryAwait
-import io.reactiverse.pgclient.PgClient
-import io.reactiverse.pgclient.PgPool
-import io.reactiverse.pgclient.PgPoolOptions
-import kotlin.system.exitProcess
+import io.vertx.kotlin.coroutines.await
+import io.vertx.kotlin.sqlclient.commitAwait
+import io.vertx.kotlin.sqlclient.executeAwait
+import io.vertx.kotlin.sqlclient.getConnectionAwait
+import io.vertx.pgclient.PgConnectOptions
+import io.vertx.pgclient.PgPool
+import io.vertx.sqlclient.PoolOptions
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 import kotlinx.coroutines.runBlocking
 import org.samoxive.safetyjim.config.Config
 import org.slf4j.LoggerFactory
+import kotlin.system.exitProcess
 
 lateinit var pgPool: PgPool
 
@@ -30,25 +34,26 @@ private val tables = arrayOf(
 )
 
 fun initPgPool(config: Config) {
-    pgPool = PgClient.pool(
-        PgPoolOptions()
-            .setPort(config.database.port)
-            .setHost(config.database.host)
-            .setDatabase(config.database.database)
-            .setUser(config.database.user)
-            .setPassword(config.database.pass)
-    )
+    val connectOptions = PgConnectOptions()
+        .setPort(config.database.port)
+        .setHost(config.database.host)
+        .setDatabase(config.database.database)
+        .setUser(config.database.user)
+        .setPassword(config.database.pass)
+
+    val poolOptions = PoolOptions().setMaxSize(5)
+    pgPool = PgPool.pool(connectOptions, poolOptions)
 
     runBlocking {
         try {
             val conn = pgPool.getConnectionAwait()
-            val tx = conn.begin()
+            val tx = conn.begin().await()
 
-            conn.queryAwait("set local client_min_messages = error;")
+            conn.query("set local client_min_messages = error;").executeAwait()
             for (table in tables) {
-                conn.queryAwait(table.createStatement)
+                conn.query(table.createStatement).executeAwait()
                 for (indexStatement in table.createIndexStatements) {
-                    conn.queryAwait(indexStatement)
+                    conn.query(indexStatement).executeAwait()
                 }
             }
 
@@ -59,4 +64,8 @@ fun initPgPool(config: Config) {
             exitProcess(1)
         }
     }
+}
+
+suspend fun PgPool.preparedQueryAwait(query: String, parameters: Tuple): RowSet<Row> {
+    return preparedQuery(query).executeAwait(parameters)
 }

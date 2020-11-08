@@ -87,10 +87,12 @@ class UpdateSoftbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
             return Result(Status.BAD_REQUEST, "You can't un-pardon a softban!")
         }
 
-        SoftbansTable.updateSoftban(softban.copy(
-            reason = if (newSoftban.reason.isBlank()) "No reason specified" else newSoftban.reason,
-            pardoned = newSoftban.pardoned
-        ))
+        SoftbansTable.updateSoftban(
+            softban.copy(
+                reason = if (newSoftban.reason.isBlank()) "No reason specified" else newSoftban.reason,
+                pardoned = newSoftban.pardoned
+            )
+        )
 
         return Result(Status.OK)
     }

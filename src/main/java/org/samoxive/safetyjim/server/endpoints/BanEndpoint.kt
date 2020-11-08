@@ -86,17 +86,20 @@ class UpdateBanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
 
         if (ban.unbanned) { // expired
             if (!newBan.unbanned || // un-expiring the ban
-                ban.expireTime != newBan.expirationTime) { // changing expiration time
+                ban.expireTime != newBan.expirationTime
+            ) { // changing expiration time
                 return Result(Status.BAD_REQUEST, "You can't change expiration property after user has been unbanned.")
             }
         }
 
-        BansTable.updateBan(ban.copy(
-            expireTime = newBan.expirationTime,
-            expires = newBan.expirationTime != 0L,
-            unbanned = newBan.unbanned,
-            reason = if (newBan.reason.isBlank()) "No reason specified" else newBan.reason
-        ))
+        BansTable.updateBan(
+            ban.copy(
+                expireTime = newBan.expirationTime,
+                expires = newBan.expirationTime != 0L,
+                unbanned = newBan.unbanned,
+                reason = if (newBan.reason.isBlank()) "No reason specified" else newBan.reason
+            )
+        )
 
         return Result(Status.OK)
     }

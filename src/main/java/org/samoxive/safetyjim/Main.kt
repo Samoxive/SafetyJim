@@ -2,16 +2,16 @@ package org.samoxive.safetyjim
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.timgroup.statsd.NoOpStatsDClient
-import com.timgroup.statsd.NonBlockingStatsDClient
-import java.io.File
-import java.io.OutputStreamWriter
-import kotlin.system.exitProcess
+import com.timgroup.statsd.NonBlockingStatsDClientBuilder
 import org.apache.log4j.*
 import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.database.initPgPool
 import org.samoxive.safetyjim.discord.DiscordBot
 import org.samoxive.safetyjim.server.Server
 import org.slf4j.LoggerFactory
+import java.io.File
+import java.io.OutputStreamWriter
+import kotlin.system.exitProcess
 
 fun main() {
     System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory")
@@ -20,16 +20,22 @@ fun main() {
     val config: Config = objectMapper.readValue(File("./config.json"))
 
     val stats = if (config.jim.metrics) {
-        NonBlockingStatsDClient("jim", "localhost", 8125)
+        NonBlockingStatsDClientBuilder()
+            .prefix("jim")
+            .hostname("localhost")
+            .port(8125)
+            .build()
     } else {
         NoOpStatsDClient()
     }
 
-    Runtime.getRuntime().addShutdownHook(object : Thread() {
-        override fun run() {
-            stats.close()
+    Runtime.getRuntime().addShutdownHook(
+        object : Thread() {
+            override fun run() {
+                stats.close()
+            }
         }
-    })
+    )
 
     initPgPool(config)
     initHttpClient()

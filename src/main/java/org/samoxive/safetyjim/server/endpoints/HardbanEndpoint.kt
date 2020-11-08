@@ -83,9 +83,11 @@ class UpdateHardbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
             return Result(Status.BAD_REQUEST, "Read only properties were modified!")
         }
 
-        HardbansTable.updateHardban(hardban.copy(
-            reason = if (newHardban.reason.isBlank()) "No reason specified" else newHardban.reason
-        ))
+        HardbansTable.updateHardban(
+            hardban.copy(
+                reason = if (newHardban.reason.isBlank()) "No reason specified" else newHardban.reason
+            )
+        )
 
         return Result(Status.OK)
     }

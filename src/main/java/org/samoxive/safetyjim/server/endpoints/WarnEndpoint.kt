@@ -85,10 +85,12 @@ class UpdateWarnEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
             return Result(Status.BAD_REQUEST, "You can't un-pardon a warn!")
         }
 
-        WarnsTable.updateWarn(warn.copy(
-            reason = if (newWarn.reason.isBlank()) "No reason specified" else newWarn.reason,
-            pardoned = newWarn.pardoned
-        ))
+        WarnsTable.updateWarn(
+            warn.copy(
+                reason = if (newWarn.reason.isBlank()) "No reason specified" else newWarn.reason,
+                pardoned = newWarn.pardoned
+            )
+        )
 
         return Result(Status.OK)
     }

@@ -1,7 +1,5 @@
 package org.samoxive.safetyjim.discord.commands
 
-import java.awt.Color
-import java.util.*
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
@@ -9,6 +7,8 @@ import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.TagEntity
 import org.samoxive.safetyjim.database.TagsTable
 import org.samoxive.safetyjim.discord.*
+import java.awt.Color
+import java.util.*
 
 class Tag : Command() {
     override val usages = arrayOf("tag list - Shows all tags and responses to user", "tag <name> - Responds with reponse of the given tag", "tag add <name> <response> - Adds a tag with the given name and response", "tag edit <name> <response> - Changes response of tag with given name", "tag remove <name> - Deletes tag with the given name")

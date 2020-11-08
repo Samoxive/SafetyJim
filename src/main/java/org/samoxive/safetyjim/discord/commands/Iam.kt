@@ -1,12 +1,12 @@
 package org.samoxive.safetyjim.discord.commands
 
-import java.awt.Color
-import java.util.*
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.RolesTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
+import java.awt.Color
+import java.util.*
 
 class Iam : Command() {
     override val usages = arrayOf("iam <roleName> - self assigns specified role, removes role if it is already assigned", "iam list - lists available self-assignable roles")

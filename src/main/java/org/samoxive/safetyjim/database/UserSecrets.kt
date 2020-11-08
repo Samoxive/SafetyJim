@@ -1,11 +1,12 @@
 package org.samoxive.safetyjim.database
 
-import io.reactiverse.kotlin.pgclient.preparedQueryAwait
-import io.reactiverse.pgclient.PgRowSet
-import io.reactiverse.pgclient.Tuple
+import io.vertx.sqlclient.Row
+import io.vertx.sqlclient.RowSet
+import io.vertx.sqlclient.Tuple
 import java.util.*
 
-private const val createSQL = """
+private const val createSQL =
+    """
 create table if not exists usersecrets (
     userid bigint not null primary key,
     accesstoken text not null,
@@ -13,7 +14,8 @@ create table if not exists usersecrets (
 );
 """
 
-private const val upsertSQL = """
+private const val upsertSQL =
+    """
 insert into usersecrets (
     userid, accesstoken, updated
 ) values ($1, $2, $3)
@@ -25,7 +27,7 @@ object UserSecretsTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf<String>()
 
-    private fun PgRowSet.toUserSecretsEntities(): List<UserSecretsEntity> = this.map {
+    private fun RowSet<Row>.toUserSecretsEntities(): List<UserSecretsEntity> = this.map {
         UserSecretsEntity(
             userId = it.getLong(0),
             accessToken = it.getString(1)

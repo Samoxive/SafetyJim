@@ -1,11 +1,11 @@
 package org.samoxive.safetyjim.discord.commands
 
-import java.util.*
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.BansTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
+import java.util.*
 
 class Unban : Command() {
     override val usages = arrayOf("unban @user - unbans specified user")

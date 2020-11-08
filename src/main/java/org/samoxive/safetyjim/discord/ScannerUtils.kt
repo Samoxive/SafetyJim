@@ -1,12 +1,12 @@
 package org.samoxive.safetyjim.discord
 
 import com.joestelmach.natty.Parser
-import java.util.*
-import java.util.regex.Pattern
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.tryhardAsync
+import java.util.*
+import java.util.regex.Pattern
 
 val USER_MENTION_REGEX = Regex("<@!?([0-9]+)>")
 val CHANNEL_MENTION_REGEX = Regex("<#!?([0-9]+)>")
