@@ -49,7 +49,7 @@ class Invite : Command() {
         }
 
         message.successReact()
-        channel.trySendMessage(embed!!)
+        channel.trySendMessage(embed!!, message)
 
         return false
     }

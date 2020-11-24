@@ -30,7 +30,7 @@ enum class ModLogAction(val embedColor: Color, val expirationString: String? = n
 }
 
 suspend fun Message.askConfirmation(bot: DiscordBot, targetUser: User): Message? {
-    val jimMessage = channel.trySendMessage("You selected user ${targetUser.getUserTagAndId()}. Confirm? (type yes/no)")
+    val jimMessage = channel.trySendMessage("You selected user ${targetUser.getUserTagAndId()}. Confirm? (type yes/no)", this)
     val discordShard = bot.shards[getShardIdFromGuildId(guild.idLong, bot.config.jim.shard_count)]
     val confirmationMessage = discordShard.confirmationListener.submitConfirmation(textChannel, author)
     if (confirmationMessage == null) {
@@ -130,7 +130,7 @@ suspend fun Message.successReact() {
 
 suspend fun Message.failMessage(errorMessage: String) {
     failReact()
-    textChannel.trySendMessage(errorMessage)
+    textChannel.trySendMessage(errorMessage, this)
 }
 
 suspend fun Message.failReact() {
@@ -143,6 +143,24 @@ suspend fun Message.meloReact() {
 
 private suspend fun Message.react(emoteName: String, emoteId: String) {
     addReaction("$emoteName:$emoteId").await()
+}
+
+suspend fun MessageChannel.trySendMessage(message: String, replyMessage: Message): Message? {
+    return tryhardAsync {
+        sendMessage(message)
+            .reference(replyMessage)
+            .mentionRepliedUser(false)
+            .await()
+    }
+}
+
+suspend fun MessageChannel.trySendMessage(embed: MessageEmbed, replyMessage: Message): Message? {
+    return tryhardAsync {
+        sendMessage(embed)
+            .reference(replyMessage)
+            .mentionRepliedUser(false)
+            .await()
+    }
 }
 
 suspend fun MessageChannel.trySendMessage(message: String): Message? {

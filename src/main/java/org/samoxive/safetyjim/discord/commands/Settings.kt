@@ -15,7 +15,7 @@ class Settings : Command() {
         val channel = event.channel
         val guild = event.guild
 
-        channel.trySendMessage("This command has been deprecated! Visit https://safetyjim.xyz/dashboard/${guild.id}/settings to change settings.")
+        channel.trySendMessage("This command has been deprecated! Visit https://safetyjim.xyz/dashboard/${guild.id}/settings to change settings.", message)
 
         message.successReact()
         return false

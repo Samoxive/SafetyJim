@@ -16,7 +16,7 @@ class Ping : Command() {
         embed.setDescription(":ping_pong: Ping: ${shard.gatewayPing}ms")
         embed.setColor(Color(0x4286F4))
         event.message.successReact()
-        event.channel.trySendMessage(embed.build())
+        event.channel.trySendMessage(embed.build(), event.message)
         return false
     }
 }

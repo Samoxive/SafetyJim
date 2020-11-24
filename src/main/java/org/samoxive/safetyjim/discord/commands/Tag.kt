@@ -34,7 +34,7 @@ class Tag : Command() {
 
         if (records.isEmpty()) {
             message.successReact()
-            channel.trySendMessage("No tags have been added yet!")
+            channel.trySendMessage("No tags have been added yet!", message)
             return
         }
 
@@ -50,7 +50,7 @@ class Tag : Command() {
         embed.setColor(Color(0x4286F4))
 
         message.successReact()
-        channel.trySendMessage(embed.build())
+        channel.trySendMessage(embed.build(), message)
     }
 
     private suspend fun addTag(event: GuildMessageReceivedEvent, messageIterator: Scanner) {
@@ -183,7 +183,7 @@ class Tag : Command() {
         }
 
         message.successReact()
-        channel.trySendMessage(record.response)
+        channel.trySendMessage(record.response, message)
 
         return false
     }

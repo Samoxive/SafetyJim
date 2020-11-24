@@ -128,7 +128,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 .setDescription("This guild's prefix is: $prefix")
                 .setColor(Color(0x4286F4))
 
-            message.textChannel.trySendMessage(embed.build())
+            message.textChannel.trySendMessage(embed.build(), message)
             return
         }
 
@@ -321,7 +321,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             showUsage = command.run(bot, event, settings, args)
         } catch (e: Exception) {
             message.failReact()
-            channel.trySendMessage("There was an error running your command, this incident has been logged.")
+            channel.trySendMessage("There was an error running your command, this incident has been logged.", message)
             log.error("$commandName failed with arguments $args in guild ${event.guild.name} - ${event.guild.id}", e)
         }
 
@@ -336,7 +336,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 .setColor(Color(0x4286F4))
 
             message.failReact()
-            channel.trySendMessage(embed.build())
+            channel.trySendMessage(embed.build(), message)
         } else {
             message.deleteCommandMessage(settings, commandName)
         }

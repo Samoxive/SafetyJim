@@ -39,7 +39,7 @@ class Server : Command() {
         embed.addField("Emojis", emojiString, false)
 
         message.successReact()
-        channel.trySendMessage(embed.build())
+        channel.trySendMessage(embed.build(), message)
 
         return false
     }

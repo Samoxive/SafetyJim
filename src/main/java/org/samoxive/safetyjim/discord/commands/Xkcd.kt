@@ -38,7 +38,7 @@ class Xkcd : Command() {
             val href = link.attr("href") ?: continue
             if (xkcdURLPattern.matches(href)) {
                 message.successReact()
-                channel.trySendMessage(href)
+                channel.trySendMessage(href, message)
                 return false
             }
         }

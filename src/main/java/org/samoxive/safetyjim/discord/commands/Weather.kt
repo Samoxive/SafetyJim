@@ -86,7 +86,7 @@ class Weather : Command() {
             .addField("Temperature", "$tempC °C / $tempF °F", true)
             .addField("Humidity", "$humidity%", true)
             .setDescription(iconEmojis[icon])
-        channel.trySendMessage(embedBuilder.build())
+        channel.trySendMessage(embedBuilder.build(), message)
         return false
     }
 }

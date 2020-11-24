@@ -30,7 +30,7 @@ class Iam : Command() {
             val roles = RolesTable.fetchGuildRoles(guild)
             if (roles.isEmpty()) {
                 message.successReact()
-                channel.trySendMessage("No self-assignable roles have been added yet!")
+                channel.trySendMessage("No self-assignable roles have been added yet!", message)
                 return false
             }
 
@@ -43,7 +43,7 @@ class Iam : Command() {
             embed.setColor(Color(0x4286F4))
 
             message.successReact()
-            channel.trySendMessage(embed.build())
+            channel.trySendMessage(embed.build(), message)
             return false
         }
 
