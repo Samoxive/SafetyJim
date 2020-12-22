@@ -1,6 +1,6 @@
 package org.samoxive.safetyjim.discord.processors
 
-import io.vertx.kotlin.ext.web.client.sendAwait
+import io.vertx.kotlin.coroutines.await
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.events.message.guild.GuildMessageDeleteEvent
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
@@ -21,7 +21,8 @@ class WordFilter : MessageProcessor() {
     init {
         runBlocking {
             val blacklist = httpClient.getAbs(DEFAULT_BLACKLIST_URL)
-                .sendAwait()
+                .send()
+                .await()
                 .bodyAsString()
             val blacklistWords = blacklist.split("\n")
                 .map { it.toLowerCase().trim() }

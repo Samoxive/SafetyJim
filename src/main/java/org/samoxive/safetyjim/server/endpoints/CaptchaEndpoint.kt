@@ -4,7 +4,7 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.web.RoutingContext
-import io.vertx.kotlin.ext.web.client.sendAwait
+import io.vertx.kotlin.coroutines.await
 import org.json.JSONObject
 import org.samoxive.safetyjim.database.SettingsTable
 import org.samoxive.safetyjim.discord.DiscordBot
@@ -74,7 +74,8 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
             .putHeader("Content-Length", "0")
             .addQueryParam("secret", bot.config.server.recaptcha_secret)
             .addQueryParam("response", captchaBody)
-            .sendAwait()
+            .send()
+            .await()
 
         val responseObject = JSONObject(captchaResponse.bodyAsString())
         if (responseObject.has("success")) {

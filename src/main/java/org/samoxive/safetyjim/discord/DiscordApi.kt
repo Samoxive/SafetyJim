@@ -4,8 +4,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.vertx.core.MultiMap
-import io.vertx.kotlin.ext.web.client.sendAwait
-import io.vertx.kotlin.ext.web.client.sendFormAwait
+import io.vertx.kotlin.coroutines.await
 import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.database.UserSecretsTable
 import org.samoxive.safetyjim.discord.entities.DiscordPartialGuild
@@ -27,7 +26,8 @@ object DiscordApi {
     suspend fun fetchSelfUser(accessToken: String): DiscordSelfUser? = tryhardAsync {
         val response = httpClient.get(443, API_HOSTNAME, "/api/users/@me")
             .putHeader("Authorization", "Bearer $accessToken")
-            .sendAwait()
+            .send()
+            .await()
 
         objectMapper.readValue<DiscordSelfUser>(response.bodyAsString())
     }
@@ -35,7 +35,8 @@ object DiscordApi {
     private suspend fun fetchSelfUserGuilds(accessToken: String): List<Long>? = tryhardAsync {
         val response = httpClient.get(443, API_HOSTNAME, "/api/users/@me/guilds")
             .putHeader("Authorization", "Bearer $accessToken")
-            .sendAwait()
+            .send()
+            .await()
 
         objectMapper.readValue<List<DiscordPartialGuild>>(response.bodyAsString())
             .map { it.id.toLong() }
@@ -66,7 +67,8 @@ object DiscordApi {
         formBody.set("redirect_uri", config.oauth.redirect_uri)
 
         val response = httpClient.post(443, API_HOSTNAME, "/api/oauth2/token")
-            .sendFormAwait(formBody)
+            .sendForm(formBody)
+            .await()
 
         val tokenResponse = objectMapper.readValue<AccessTokenResponse>(response.bodyAsString())
         if (tokenResponse.scope != "identify guilds") {

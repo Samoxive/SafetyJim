@@ -1,6 +1,6 @@
 package org.samoxive.safetyjim.discord.commands
 
-import io.vertx.kotlin.ext.web.client.sendAwait
+import io.vertx.kotlin.coroutines.await
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.jsoup.Jsoup
 import org.samoxive.safetyjim.database.SettingsEntity
@@ -25,7 +25,8 @@ class Xkcd : Command() {
         val response = httpClient.get(443, "duckduckgo.com", "/html/")
             .putHeader("User-Agent", userAgent)
             .addQueryParam("q", searchQuery)
-            .sendAwait()
+            .send()
+            .await()
 
         val htmlBody = response.bodyAsString()
         if (htmlBody == null) {

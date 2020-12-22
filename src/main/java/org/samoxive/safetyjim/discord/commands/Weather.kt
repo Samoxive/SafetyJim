@@ -1,6 +1,6 @@
 package org.samoxive.safetyjim.discord.commands
 
-import io.vertx.kotlin.ext.web.client.sendAwait
+import io.vertx.kotlin.coroutines.await
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.json.JSONObject
@@ -44,7 +44,8 @@ class Weather : Command() {
         val geocodeResponse = httpClient.get(443, "maps.googleapis.com", "/maps/api/geocode/json")
             .addQueryParam("key", bot.config.jim.geocode_token)
             .addQueryParam("address", args)
-            .sendAwait()
+            .send()
+            .await()
 
         val geocodeObject = JSONObject(geocodeResponse.bodyAsString())
         if (geocodeObject.getString("status") != "OK") {
@@ -59,7 +60,8 @@ class Weather : Command() {
         val lng = geometryObject.getJSONObject("location").getFloat("lng")
 
         val darkskyResponse = httpClient.get(443, "api.darksky.net", "/forecast/${bot.config.jim.darksky_token}/$lat,$lng")
-            .sendAwait()
+            .send()
+            .await()
 
         val weatherObject = JSONObject(darkskyResponse.bodyAsString())
         val localTimeOffset = weatherObject.getInt("offset")

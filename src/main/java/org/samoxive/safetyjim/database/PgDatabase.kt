@@ -1,9 +1,6 @@
 package org.samoxive.safetyjim.database
 
 import io.vertx.kotlin.coroutines.await
-import io.vertx.kotlin.sqlclient.commitAwait
-import io.vertx.kotlin.sqlclient.executeAwait
-import io.vertx.kotlin.sqlclient.getConnectionAwait
 import io.vertx.pgclient.PgConnectOptions
 import io.vertx.pgclient.PgPool
 import io.vertx.sqlclient.PoolOptions
@@ -46,18 +43,18 @@ fun initPgPool(config: Config) {
 
     runBlocking {
         try {
-            val conn = pgPool.getConnectionAwait()
+            val conn = pgPool.connection.await()
             val tx = conn.begin().await()
 
-            conn.query("set local client_min_messages = error;").executeAwait()
+            conn.query("set local client_min_messages = error;").execute().await()
             for (table in tables) {
-                conn.query(table.createStatement).executeAwait()
+                conn.query(table.createStatement).execute().await()
                 for (indexStatement in table.createIndexStatements) {
-                    conn.query(indexStatement).executeAwait()
+                    conn.query(indexStatement).execute().await()
                 }
             }
 
-            tx.commitAwait()
+            tx.commit().await()
             conn.close()
         } catch (e: Throwable) {
             LoggerFactory.getLogger("PgPool").error("Failed to initiate tables!", e)
@@ -67,5 +64,5 @@ fun initPgPool(config: Config) {
 }
 
 suspend fun PgPool.preparedQueryAwait(query: String, parameters: Tuple): RowSet<Row> {
-    return preparedQuery(query).executeAwait(parameters)
+    return preparedQuery(query).execute(parameters).await()
 }

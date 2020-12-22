@@ -3,7 +3,7 @@ package org.samoxive.safetyjim.server
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.vertx.core.http.HttpServerResponse
-import io.vertx.kotlin.core.http.endAwait
+import io.vertx.kotlin.coroutines.await
 import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.database.UUIDBlacklistTable
 import org.samoxive.safetyjim.tryhardAsync
@@ -42,10 +42,10 @@ fun createJWTFromUserId(config: Config, userId: String): String {
 
 suspend fun HttpServerResponse.endJsonString(string: String) {
     putHeader("Content-Type", "application/json")
-    endAwait("\"$string\"")
+    end("\"$string\"").await()
 }
 
 suspend fun HttpServerResponse.endJson(json: String) {
     putHeader("Content-Type", "application/json")
-    endAwait(json)
+    end(json).await()
 }
