@@ -1,8 +1,6 @@
 package org.samoxive.safetyjim
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.timgroup.statsd.NoOpStatsDClient
-import com.timgroup.statsd.NonBlockingStatsDClientBuilder
 import org.apache.log4j.*
 import org.samoxive.safetyjim.config.Config
 import org.samoxive.safetyjim.database.initPgPool
@@ -19,27 +17,9 @@ fun main() {
 
     val config: Config = objectMapper.readValue(File("./config.json"))
 
-    val stats = if (config.jim.metrics) {
-        NonBlockingStatsDClientBuilder()
-            .prefix("jim")
-            .hostname("localhost")
-            .port(8125)
-            .build()
-    } else {
-        NoOpStatsDClient()
-    }
-
-    Runtime.getRuntime().addShutdownHook(
-        object : Thread() {
-            override fun run() {
-                stats.close()
-            }
-        }
-    )
-
     initPgPool(config)
     initHttpClient()
-    val bot = DiscordBot(config, stats)
+    val bot = DiscordBot(config)
     Server(bot, vertx)
 }
 
@@ -57,7 +37,6 @@ fun setupLoggers() {
     }
 
     Logger.getLogger("com.joestelmach.natty.Parser").level = Level.WARN
-    Logger.getLogger("org.jooq.Constants").level = Level.WARN
     Logger.getRootLogger().addAppender(fa)
     Logger.getRootLogger().addAppender(ca)
     Logger.getRootLogger().level = Level.INFO

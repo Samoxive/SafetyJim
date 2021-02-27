@@ -8,13 +8,11 @@ data class Config(
 )
 
 data class JimConfig(
-    val version: String,
     val token: String,
     val default_prefix: String,
     val shard_count: Int,
     val geocode_token: String,
     val darksky_token: String,
-    val metrics: Boolean
 )
 
 data class DatabaseConfig(

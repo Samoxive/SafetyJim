@@ -1,10 +1,8 @@
 {
     "jim": {
-        "version": "5.0.0",
         "token": "",
         "default_prefix": "-dev",
         "shard_count": 1,
-        "metrics": false,
         "darksky_token": "",
         "geocode_token": ""
     },
