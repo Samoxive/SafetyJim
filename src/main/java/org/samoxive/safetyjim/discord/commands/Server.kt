@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
+import org.samoxive.safetyjim.tryhardAsync
 import java.awt.Color
 
 class Server : Command() {
@@ -11,7 +12,7 @@ class Server : Command() {
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val guild = event.guild
-        val owner = guild.owner?.user
+        val owner = tryhardAsync { guild.retrieveOwner().await() }?.user
         val channel = event.channel
         val message = event.message
         val memberCount = guild.memberCount
@@ -33,7 +34,7 @@ class Server : Command() {
         val embed = EmbedBuilder()
         embed.setAuthor(guild.name, null, guild.iconUrl)
         embed.setColor(Color(0x4286F4))
-        embed.addField("Server Owner", owner?.getTag(), true)
+        embed.addField("Server Owner", owner?.getTag() ?: "N/A", true)
         embed.addField("Member Count", memberCount.toString(), true)
         embed.addField("Creation Date", creationDate, true)
         embed.addField("Emojis", emojiString, false)
