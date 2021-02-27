@@ -51,7 +51,7 @@ class Info : Command() {
 
         val embed = EmbedBuilder()
         embed.setAuthor("Safety Jim - Shard $shardString", null, selfUser.avatarUrl)
-        embed.setDescription("Lifting the :hammer: since ${bot.startTime}")
+        embed.setDescription("Lifting the :hammer: since ${bot.startTime.time}")
         embed.addField("Server Count", guildCount.toString(), true)
         embed.addField("User Count", userCount.toString(), true)
         embed.addBlankField(true)
