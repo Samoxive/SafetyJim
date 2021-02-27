@@ -10,6 +10,7 @@ import org.samoxive.safetyjim.database.KickEntity
 import org.samoxive.safetyjim.database.KicksTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
+import org.samoxive.safetyjim.tryhardAsync
 import java.awt.Color
 import java.util.*
 
@@ -85,7 +86,7 @@ class Kick : Command() {
             message.askConfirmation(bot, kickUser) ?: return false
         }
 
-        val kickMember = guild.getMember(kickUser)
+        val kickMember = tryhardAsync { guild.retrieveMember(kickUser, true).await() }
 
         if (!selfMember.hasPermission(Permission.KICK_MEMBERS)) {
             message.failMessage("I don't have enough permissions to do that!")

@@ -51,7 +51,7 @@ class CaptchaPageEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
         val guildId = request.getParam("guildId") ?: return Result(Status.SERVER_ERROR)
         val guild = bot.getGuild(guildId) ?: return Result(Status.NOT_FOUND)
         val userId = request.getParam("userId") ?: return Result(Status.SERVER_ERROR)
-        val member = guild.getMemberById(userId) ?: return Result(Status.NOT_FOUND)
+        val member = tryhardAsync { guild.retrieveMemberById(userId, true).await() } ?: return Result(Status.NOT_FOUND)
 
         response.putHeader("Content-Type", "text/html")
         response.end(captcha_template.replace("#guildId", guild.id).replace("#userId", member.user.id))
@@ -67,7 +67,7 @@ class CaptchaSubmitEndpoint(bot: DiscordBot) : AbstractEndpoint(bot) {
         val guildId = request.getParam("guildId") ?: return Result(Status.SERVER_ERROR)
         val guild = bot.getGuild(guildId) ?: return Result(Status.NOT_FOUND)
         val userId = request.getParam("userId") ?: return Result(Status.SERVER_ERROR)
-        val member = guild.getMemberById(userId) ?: return Result(Status.NOT_FOUND)
+        val member = tryhardAsync { guild.retrieveMemberById(userId, true).await() } ?: return Result(Status.NOT_FOUND)
 
         val captchaBody = request.formAttributes().get("g-recaptcha-response") ?: return Result(Status.BAD_REQUEST)
         val captchaResponse = httpClient.post(443, "google.com", "/recaptcha/api/siteverify")

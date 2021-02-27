@@ -1,6 +1,5 @@
 package org.samoxive.safetyjim.discord
 
-import com.timgroup.statsd.StatsDClient
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -20,6 +19,7 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.ChunkingFilter
+import net.dv8tion.jda.api.utils.MemberCachePolicy
 import net.dv8tion.jda.api.utils.SessionController
 import net.dv8tion.jda.api.utils.cache.CacheFlag
 import org.samoxive.safetyjim.database.*
@@ -34,7 +34,7 @@ import java.util.*
 import javax.security.auth.login.LoginException
 import kotlin.system.exitProcess
 
-class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController, val stats: StatsDClient) : ListenerAdapter() {
+class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController) : ListenerAdapter() {
     private val log: Logger
     val jda: JDA
     val confirmationListener = ConfirmationListener()
@@ -50,7 +50,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 GatewayIntent.GUILD_MEMBERS,
                 GatewayIntent.GUILD_MESSAGES
             )
-                .setChunkingFilter(ChunkingFilter.ALL)
+                .setChunkingFilter(ChunkingFilter.NONE)
                 .addEventListeners(this, confirmationListener)
                 .setSessionController(sessionController) // needed to prevent shards trying to reconnect too soon
                 .useSharding(shardId, config.jim.shard_count)
@@ -62,6 +62,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                         CacheFlag.CLIENT_STATUS
                     )
                 )
+                .setMemberCachePolicy(MemberCachePolicy.NONE)
                 .setActivity(Activity.playing("safetyjim.xyz $shardString"))
                 .build()
                 .awaitReady()
@@ -76,7 +77,6 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     override fun onReady(event: ReadyEvent) {
         log.info("Shard is ready.")
-        stats.increment("shard_ready")
 
         GlobalScope.launch {
             onReadyAsync(event)
@@ -94,11 +94,9 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 continue
             }
         }
-        stats.count("left_empty_guilds", emptyGuildCount.toLong())
     }
 
     override fun onGuildMessageReceived(event: GuildMessageReceivedEvent) {
-        stats.increment("message_recv")
         GlobalScope.launch { onGuildMessageReceivedAsync(event) }
     }
 
@@ -204,7 +202,6 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     }
 
     override fun onGuildMessageDelete(event: GuildMessageDeleteEvent) {
-        stats.increment("message_delete")
         bot.processors.forEach { processor -> GlobalScope.launch { processor.onMessageDelete(bot, this@DiscordShard, event) } }
     }
 
@@ -213,8 +210,6 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     }
 
     override fun onGuildJoin(event: GuildJoinEvent) {
-        stats.increment("guild_join")
-
         GlobalScope.launch {
             val guild = event.guild
             if (guild.textChannels.isEmpty()) {
@@ -230,14 +225,10 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     }
 
     override fun onGuildLeave(event: GuildLeaveEvent) {
-        stats.increment("guild_leave")
-
         GlobalScope.launch { SettingsTable.deleteSettings(event.guild) }
     }
 
     override fun onGuildMemberJoin(event: GuildMemberJoinEvent) {
-        stats.increment("member_join")
-
         GlobalScope.launch { onGuildMemberJoinAsync(event) }
     }
 
@@ -302,16 +293,12 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     }
 
     override fun onGuildMemberRemove(event: GuildMemberRemoveEvent) {
-        stats.increment("member_leave")
-
         GlobalScope.launch {
             JoinsTable.deleteUserJoins(event.guild, event.user)
         }
     }
 
     private suspend fun executeCommand(event: GuildMessageReceivedEvent, settings: SettingsEntity, command: Command, commandName: String, args: String) {
-        stats.increment("command_$commandName")
-
         val shard = event.jda
         val message = event.message
         val channel = event.channel

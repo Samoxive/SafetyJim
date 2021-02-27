@@ -10,6 +10,7 @@ import org.samoxive.safetyjim.database.BanEntity
 import org.samoxive.safetyjim.database.BansTable
 import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
+import org.samoxive.safetyjim.tryhardAsync
 import java.awt.Color
 import java.util.*
 
@@ -81,7 +82,7 @@ class Ban : Command() {
             message.askConfirmation(bot, banUser) ?: return false
         }
 
-        val banMember = guild.getMember(banUser)
+        val banMember = tryhardAsync { guild.retrieveMember(banUser, true).await() }
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
             message.failMessage("I don't have enough permissions to do that!")

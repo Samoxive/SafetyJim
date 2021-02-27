@@ -18,7 +18,7 @@ suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
 }
 
 suspend fun muteAction(guild: Guild, channel: TextChannel?, settings: SettingsEntity, modUser: User, muteUser: User, mutedRole: Role, reason: String, expirationDate: Date?, callDepth: Int = 0) {
-    val muteMember = guild.getMember(muteUser)!!
+    val muteMember = guild.retrieveMember(muteUser, true).await()
     val now = Date()
 
     val embed = EmbedBuilder()

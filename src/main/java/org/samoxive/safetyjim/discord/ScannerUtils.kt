@@ -90,43 +90,27 @@ suspend fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<
         return SearchUserResult.NOT_FOUND to null
     }
 
+    val userIdInput = input.toLongOrNull()
     val mentionMatch = USER_MENTION_REGEX.matchEntire(input)
-    if (mentionMatch != null) {
-        val userId = mentionMatch.groupValues[1].toLong()
-        val member = guild.getMemberById(userId)
-        return if (member != null) {
+
+    val userId = userIdInput
+        ?: if (mentionMatch != null) {
+            mentionMatch.groupValues[1].toLong()
+        } else {
+            return SearchUserResult.NOT_FOUND to null
+        }
+
+    return if (isForBan) {
+        val user = tryhardAsync { jda.retrieveUserById(userId).await() }
+        (if (user != null) SearchUserResult.EXACT else SearchUserResult.NOT_FOUND) to user
+    } else {
+        val member = tryhardAsync { guild.retrieveMemberById(userId, true).await() }
+        if (member != null) {
             SearchUserResult.EXACT to member.user
         } else {
-            if (isForBan) {
-                val user = tryhardAsync { jda.retrieveUserById(userId).await() }
-                (if (user != null) SearchUserResult.EXACT else SearchUserResult.NOT_FOUND) to user
-            } else {
-                SearchUserResult.NOT_FOUND to null
-            }
+            SearchUserResult.NOT_FOUND to null
         }
     }
-
-    val userId = input.toLongOrNull()
-    if (userId != null) {
-        val member = guild.getMemberById(userId)
-        if (member != null) {
-            return SearchUserResult.EXACT to member.user
-        } else {
-            if (isForBan) {
-                val user = tryhardAsync { jda.retrieveUserById(userId).await() }
-                if (user != null) {
-                    return SearchUserResult.EXACT to user
-                }
-            }
-        }
-    }
-
-    val members = guild.members
-    val usernamesAndNicknames = members.asSequence().map { it.effectiveName }.plus(members.map { it.user.name }).toList()
-    val search = FuzzySearch.extractOne(input, usernamesAndNicknames)
-    val user = members[search.index % members.size].user
-
-    return if (search.score >= 75) SearchUserResult.GUESSED to user else SearchUserResult.NOT_FOUND to null
 }
 
 suspend fun Scanner.findBannedUser(message: Message): Pair<SearchUserResult, User?> {

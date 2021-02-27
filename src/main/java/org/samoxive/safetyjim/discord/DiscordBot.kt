@@ -1,6 +1,5 @@
 package org.samoxive.safetyjim.discord
 
-import com.timgroup.statsd.StatsDClient
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -24,7 +23,7 @@ import java.awt.Color
 import java.util.*
 import kotlin.collections.ArrayList
 
-class DiscordBot(val config: Config, val stats: StatsDClient) {
+class DiscordBot(val config: Config) {
     private val log = LoggerFactory.getLogger(DiscordBot::class.java)
     val shards = ArrayList<DiscordShard>()
     val commands = mapOf(
@@ -63,7 +62,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
     init {
         val sessionController = SessionControllerAdapter()
         for (i in 0 until config.jim.shard_count) {
-            val shard = DiscordShard(this, i, sessionController, stats)
+            val shard = DiscordShard(this, i, sessionController)
             shards.add(shard)
         }
 
@@ -112,7 +111,6 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
     private suspend fun allowUsers() {
         val usersToBeAllowed = JoinsTable.fetchExpiredJoins()
-        stats.count("allowed_users_count", usersToBeAllowed.size.toLong())
 
         for (user in usersToBeAllowed) {
             val guildId = user.guildId
@@ -131,7 +129,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
             if (enabled) {
                 val guildUser = shard.jda.retrieveUserById(user.userId).await()
-                val member = guild.getMember(guildUser)!!
+                val member = tryhardAsync { guild.retrieveMember(guildUser, true).await() }
                 val roleId = guildSettings.holdingRoomRoleId
                 val role = if (roleId != null) guild.getRoleById(roleId) else null
 
@@ -140,7 +138,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
                     continue
                 }
 
-                tryhardAsync { guild.addRoleToMember(member, role).await() }
+                tryhardAsync { guild.addRoleToMember(member!!, role).await() }
             }
 
             JoinsTable.updateJoin(user.copy(allowed = true))
@@ -149,7 +147,6 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
     private suspend fun unbanUsers() {
         val usersToBeUnbanned = BansTable.fetchExpiredBans()
-        stats.count("unbanned_users_count", usersToBeUnbanned.size.toLong())
 
         for (user in usersToBeUnbanned) {
             val guildId = user.guildId
@@ -185,7 +182,6 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
     private suspend fun unmuteUsers() {
         val usersToBeUnmuted = MutesTable.fetchExpiredMutes()
-        stats.count("unmuted_users_count", usersToBeUnmuted.size.toLong())
 
         for (user in usersToBeUnmuted) {
             val guildId = user.guildId
@@ -200,7 +196,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
             }
 
             val guildUser = shard.jda.retrieveUserById(user.userId).await()
-            val member = guild.getMember(guildUser)
+            val member = tryhardAsync { guild.retrieveMember(guildUser, true).await() }
             if (member == null) {
                 MutesTable.updateMute(user.copy(unmuted = true))
                 continue
@@ -225,7 +221,6 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
 
     private suspend fun remindReminders() {
         val reminders = RemindersTable.fetchExpiredReminders()
-        stats.count("reminded_reminders_count", reminders.size.toLong())
 
         for (reminder in reminders) {
             val guildId = reminder.guildId
@@ -242,7 +237,7 @@ class DiscordBot(val config: Config, val stats: StatsDClient) {
             }
 
             val channel = guild.getTextChannelById(channelId)
-            val member = guild.getMember(user)
+            val member = tryhardAsync { guild.retrieveMember(user, true).await() }
 
             val embed = EmbedBuilder()
             embed.setTitle("Reminder - #${reminder.id}")

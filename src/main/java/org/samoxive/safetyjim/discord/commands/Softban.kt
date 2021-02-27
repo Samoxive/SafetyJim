@@ -10,6 +10,7 @@ import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.database.SoftbanEntity
 import org.samoxive.safetyjim.database.SoftbansTable
 import org.samoxive.safetyjim.discord.*
+import org.samoxive.safetyjim.tryhardAsync
 import java.awt.Color
 import java.util.*
 
@@ -85,7 +86,7 @@ class Softban : Command() {
             message.askConfirmation(bot, softbanUser) ?: return false
         }
 
-        val softbanMember = guild.getMember(softbanUser)
+        val softbanMember = tryhardAsync { guild.retrieveMember(softbanUser, true).await() }
 
         if (!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
             message.failMessage("I don't have enough permissions to do that!")

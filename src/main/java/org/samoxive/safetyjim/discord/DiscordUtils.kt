@@ -2,7 +2,6 @@ package org.samoxive.safetyjim.discord
 
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.requests.RestAction
@@ -119,10 +118,6 @@ fun Member.isBannableBy(banner: Member): Boolean {
         highestRoleSelf.position < highestRoleBanner.position
     }
 }
-
-fun Member.isOnline(): Boolean = onlineStatus == OnlineStatus.ONLINE ||
-    onlineStatus == OnlineStatus.DO_NOT_DISTURB ||
-    onlineStatus == OnlineStatus.IDLE
 
 suspend fun Message.successReact() {
     react(SUCCESS_EMOTE_NAME, SUCCESS_EMOTE_ID)

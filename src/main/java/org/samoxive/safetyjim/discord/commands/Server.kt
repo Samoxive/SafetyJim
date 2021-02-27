@@ -14,7 +14,7 @@ class Server : Command() {
         val owner = guild.owner?.user
         val channel = event.channel
         val message = event.message
-        val memberCount = guild.memberCache.size()
+        val memberCount = guild.memberCount
         val creationDate = guild.timeCreated.toLocalDate().toString()
         val emojis = StringBuilder()
 
