@@ -34,14 +34,14 @@ class RoleCommand : Command() {
             return false
         }
 
-        val roleName = messageIterator.seekToEnd().toLowerCase()
+        val roleName = messageIterator.seekToEnd().lowercase()
 
         if (roleName == "") {
             return true
         }
 
         val matchingRoles = guild.roles
-            .filter { role -> role.name.toLowerCase() == roleName }
+            .filter { role -> role.name.lowercase() == roleName }
 
         if (matchingRoles.isEmpty()) {
             message.failMessage("Could not find a role with specified name!")

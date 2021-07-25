@@ -307,7 +307,7 @@ object SettingsTable : AbstractTable {
         val newFilterBuilder = Trie.builder()
             .addKeywords(
                 settings.wordFilterBlacklist.split(",")
-                    .map { it.toLowerCase().trim() }
+                    .map { it.lowercase().trim() }
                     .filter { it.isNotEmpty() }
             )
             .ignoreCase()

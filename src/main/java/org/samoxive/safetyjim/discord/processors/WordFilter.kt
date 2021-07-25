@@ -25,7 +25,7 @@ class WordFilter : MessageProcessor() {
                 .await()
                 .bodyAsString()
             val blacklistWords = blacklist.split("\n")
-                .map { it.toLowerCase().trim() }
+                .map { it.lowercase().trim() }
                 .filter { it.isNotEmpty() }
             defaultWordFilterLow = Trie.builder()
                 .addKeywords(

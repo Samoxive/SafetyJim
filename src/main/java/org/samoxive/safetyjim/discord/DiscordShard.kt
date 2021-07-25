@@ -59,7 +59,8 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                         CacheFlag.ACTIVITY,
                         CacheFlag.VOICE_STATE,
                         CacheFlag.EMOTE,
-                        CacheFlag.CLIENT_STATUS
+                        CacheFlag.CLIENT_STATUS,
+                        CacheFlag.ONLINE_STATUS
                     )
                 )
                 .setMemberCachePolicy(MemberCachePolicy.NONE)
@@ -146,11 +147,11 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             return
         }
 
-        val prefix = guildSettings.prefix.toLowerCase()
+        val prefix = guildSettings.prefix.lowercase()
 
         // 0 = prefix, 1 = command, rest are accepted as arguments
         val splitContent = content.trim().split(" ").toTypedArray()
-        val firstWord = splitContent[0].toLowerCase()
+        val firstWord = splitContent[0].lowercase()
         val command: Command?
         val commandName: String
 
@@ -166,7 +167,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             }
 
             // We also want commands to be case insensitive
-            commandName = splitContent[1].toLowerCase()
+            commandName = splitContent[1].lowercase()
             command = bot.commands[commandName]
         } else {
             if (!firstWord.startsWith(prefix)) {

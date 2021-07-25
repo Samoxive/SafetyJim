@@ -20,7 +20,7 @@ class ConfirmationListener : ListenerAdapter() {
         confirmations[pair]?.resume(null)
         confirmations[pair] = cont
         GlobalScope.launch {
-            delay(30 * 1000)
+            delay(30000L)
             val confirmation = confirmations[pair]
             if (confirmation === cont) {
                 confirmation.resume(null)
@@ -35,7 +35,7 @@ class ConfirmationListener : ListenerAdapter() {
         val message = event.message
         val confirmation = confirmations[channel to author] ?: return
 
-        val completed = when (message.contentRaw.toLowerCase()) {
+        val completed = when (message.contentRaw.lowercase()) {
             "y", "ye", "yep", "yes", "yeah", "yea" -> {
                 confirmation.resume(message)
                 true
