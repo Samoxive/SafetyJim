@@ -48,7 +48,9 @@ class DiscordBot(val config: Config) {
         "hardban" to Hardban(),
         "melo" to Melo(),
         "xkcd" to Xkcd(),
-        "weather" to Weather()
+        "weather" to Weather(),
+        "whois" to Whois(),
+        "massban" to MassBan()
     )
 
     val processors = listOf(InviteLink(), MessageStats(), WordFilter())

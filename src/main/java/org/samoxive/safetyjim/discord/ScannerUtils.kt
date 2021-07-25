@@ -6,11 +6,19 @@ import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import org.samoxive.safetyjim.tryhardAsync
 import java.util.*
-import java.util.regex.Pattern
 
 val USER_MENTION_REGEX = Regex("<@!?([0-9]+)>")
-val CHANNEL_MENTION_REGEX = Regex("<#!?([0-9]+)>")
-val CHANNEL_MENTION_PATTERN: Pattern = CHANNEL_MENTION_REGEX.toPattern()
+
+fun getMentionId(input: String): Long? {
+    val idInput = input.toLongOrNull()
+    val mentionMatch = USER_MENTION_REGEX.matchEntire(input)
+
+    return idInput ?: if (mentionMatch != null) {
+        mentionMatch.groupValues[1].toLong()
+    } else {
+        null
+    }
+}
 
 fun truncateForEmbed(s: String): String {
     return if (s.length < 1024) {
@@ -90,15 +98,7 @@ suspend fun Scanner.findUser(message: Message, isForBan: Boolean = false): Pair<
         return SearchUserResult.NOT_FOUND to null
     }
 
-    val userIdInput = input.toLongOrNull()
-    val mentionMatch = USER_MENTION_REGEX.matchEntire(input)
-
-    val userId = userIdInput
-        ?: if (mentionMatch != null) {
-            mentionMatch.groupValues[1].toLong()
-        } else {
-            return SearchUserResult.NOT_FOUND to null
-        }
+    val userId = getMentionId(input) ?: return SearchUserResult.NOT_FOUND to null
 
     return if (isForBan) {
         val user = tryhardAsync { jda.retrieveUserById(userId).await() }
@@ -126,18 +126,7 @@ suspend fun Scanner.findBannedUser(message: Message): Pair<SearchUserResult, Use
         return SearchUserResult.NOT_FOUND to null
     }
 
-    val mentionMatch = USER_MENTION_REGEX.matchEntire(input)
-    if (mentionMatch != null) {
-        val userId = mentionMatch.groupValues[1].toLong()
-        val user = banList.firstOrNull { it.idLong == userId }
-        return if (user != null) {
-            SearchUserResult.EXACT to user
-        } else {
-            SearchUserResult.NOT_FOUND to null
-        }
-    }
-
-    val userId = input.toLongOrNull()
+    val userId = getMentionId(input)
     if (userId != null) {
         val user = banList.firstOrNull { it.idLong == userId }
         if (user != null) {
