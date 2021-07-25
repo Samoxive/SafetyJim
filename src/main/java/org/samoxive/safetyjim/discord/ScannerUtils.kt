@@ -21,10 +21,10 @@ fun getMentionId(input: String): Long? {
 }
 
 fun truncateForEmbed(s: String): String {
-    return if (s.length < 1024) {
+    return if (s.length < 4096) {
         s
     } else {
-        s.substring(0, 1021) + "..."
+        s.substring(0, 4093) + "..."
     }
 }
 
