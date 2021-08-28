@@ -142,7 +142,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             }
         }.map { it.await() }.reduce { acc, elem -> acc || elem }
 
-        // If processors return true, that means they deleted the original message so we don't need to continue further
+        // If processors return true, that means they deleted the original message, so we don't need to continue further
         if (processorResult) {
             return
         }
@@ -166,7 +166,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
                 return
             }
 
-            // We also want commands to be case insensitive
+            // We also want commands to be case-insensitive
             commandName = splitContent[1].lowercase()
             command = bot.commands[commandName]
         } else {

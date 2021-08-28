@@ -84,11 +84,7 @@ class Whois : Command() {
         val userId = getMentionId(input) ?: return true
 
         val member = tryhardAsync { guild.retrieveMemberById(userId, true).await() }
-        val user = if (member != null) {
-            member.user
-        } else {
-            tryhardAsync { jda.retrieveUserById(userId, true).await() }
-        }
+        val user = member?.user ?: tryhardAsync { jda.retrieveUserById(userId, true).await() }
 
         if (user == null) {
             message.failMessage("Could not find user to query!")

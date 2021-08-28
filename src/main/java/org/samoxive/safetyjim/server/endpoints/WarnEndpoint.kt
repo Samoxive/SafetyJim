@@ -87,7 +87,7 @@ class UpdateWarnEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
 
         WarnsTable.updateWarn(
             warn.copy(
-                reason = if (newWarn.reason.isBlank()) "No reason specified" else newWarn.reason,
+                reason = newWarn.reason.ifBlank { "No reason specified" },
                 pardoned = newWarn.pardoned
             )
         )

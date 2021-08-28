@@ -89,7 +89,7 @@ class UpdateSoftbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
 
         SoftbansTable.updateSoftban(
             softban.copy(
-                reason = if (newSoftban.reason.isBlank()) "No reason specified" else newSoftban.reason,
+                reason = newSoftban.reason.ifBlank { "No reason specified" },
                 pardoned = newSoftban.pardoned
             )
         )

@@ -97,7 +97,7 @@ class UpdateBanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
                 expireTime = newBan.expirationTime,
                 expires = newBan.expirationTime != 0L,
                 unbanned = newBan.unbanned,
-                reason = if (newBan.reason.isBlank()) "No reason specified" else newBan.reason
+                reason = newBan.reason.ifBlank { "No reason specified" }
             )
         )
 

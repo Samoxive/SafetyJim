@@ -85,7 +85,7 @@ class UpdateHardbanEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
 
         HardbansTable.updateHardban(
             hardban.copy(
-                reason = if (newHardban.reason.isBlank()) "No reason specified" else newHardban.reason
+                reason = newHardban.reason.ifBlank { "No reason specified" }
             )
         )
 

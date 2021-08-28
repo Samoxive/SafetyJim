@@ -87,7 +87,7 @@ class UpdateKickEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
 
         KicksTable.updateKick(
             kick.copy(
-                reason = if (newKick.reason.isBlank()) "No reason specified" else newKick.reason,
+                reason = newKick.reason.ifBlank { "No reason specified" },
                 pardoned = newKick.pardoned
             )
         )

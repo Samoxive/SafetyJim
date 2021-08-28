@@ -94,7 +94,7 @@ class UpdateMuteEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
                 expireTime = newMute.expirationTime,
                 expires = newMute.expirationTime != 0L,
                 unmuted = newMute.unmuted,
-                reason = if (newMute.reason.isBlank()) "No reason specified" else newMute.reason
+                reason = newMute.reason.ifBlank { "No reason specified" }
             )
         )
 

@@ -8,7 +8,7 @@ import org.samoxive.safetyjim.tryhardAsync
 private val blacklistedHosts = arrayOf("discord.gg/")
 private const val ACTION_REASON = "Sending invite links"
 
-fun isInviteLinkBlacklisted(str: String) = blacklistedHosts.map { str.contains(it) }.filter { it }.any()
+fun isInviteLinkBlacklisted(str: String) = blacklistedHosts.map { str.contains(it) }.any { it }
 
 class InviteLink : MessageProcessor() {
     override suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent, settings: SettingsEntity): Boolean {
