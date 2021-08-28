@@ -52,16 +52,14 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
             guild.textChannels.map { it.toChannelModel() },
             guild.roles.map { it.toRoleModel() },
             settingsEntity.modLog,
-            guild.getTextChannelById(settingsEntity.modLogChannelId)?.toChannelModel()
-                ?: return Result(Status.SERVER_ERROR),
+            guild.getTextChannelById(settingsEntity.modLogChannelId)?.toChannelModel(),
             settingsEntity.holdingRoom,
             holdingRoomRole?.toRoleModel(),
             settingsEntity.holdingRoomMinutes,
             settingsEntity.inviteLinkRemover,
             settingsEntity.welcomeMessage,
             settingsEntity.message,
-            guild.getTextChannelById(settingsEntity.welcomeMessageChannelId)?.toChannelModel()
-                ?: return Result(Status.SERVER_ERROR),
+            guild.getTextChannelById(settingsEntity.welcomeMessageChannelId)?.toChannelModel(),
             settingsEntity.prefix,
             settingsEntity.silentCommands,
             settingsEntity.noSpacePrefix,
@@ -122,10 +120,15 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             wordFilterBlacklist = parsedSettings.wordFilterBlacklist?.trim()
         )
 
-        guild.textChannels.find { it.id == newSettings.modLogChannel.id }
-            ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
-        guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id }
-            ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")
+        if (newSettings.modLogChannel?.id != null) {
+            guild.textChannels.find { it.id == newSettings.modLogChannel.id }
+                ?: return Result(Status.BAD_REQUEST, "Selected moderator log channel doesn't exist!")
+        }
+
+        if (newSettings.welcomeMessageChannel?.id != null) {
+            guild.textChannels.find { it.id == newSettings.welcomeMessageChannel.id }
+                ?: return Result(Status.BAD_REQUEST, "Selected welcome message channel doesn't exist!")
+        }
 
         if (newSettings.holdingRoomRole != null) {
             guild.roles.find { it.id == newSettings.holdingRoomRole.id }
@@ -266,10 +269,8 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
         }
 
         val wordFilterBlacklist = if (newSettings.wordFilterBlacklist != null) {
-            if (newSettings.wordFilterBlacklist.isEmpty()) {
+            newSettings.wordFilterBlacklist.ifEmpty {
                 null
-            } else {
-                newSettings.wordFilterBlacklist
             }
         } else {
             null
@@ -280,14 +281,14 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                 SettingsEntity(
                     guildId = guild.idLong,
                     modLog = newSettings.modLog,
-                    modLogChannelId = newSettings.modLogChannel.id.toLong(),
+                    modLogChannelId = newSettings.modLogChannel?.id?.toLong() ?: 0,
                     holdingRoom = newSettings.holdingRoom,
                     holdingRoomRoleId = newSettings.holdingRoomRole?.id?.toLong(),
                     holdingRoomMinutes = newSettings.holdingRoomMinutes,
                     inviteLinkRemover = newSettings.inviteLinkRemover,
                     welcomeMessage = newSettings.welcomeMessage,
                     message = newSettings.message,
-                    welcomeMessageChannelId = newSettings.welcomeMessageChannel.id.toLong(),
+                    welcomeMessageChannelId = newSettings.welcomeMessageChannel?.id?.toLong() ?: 0,
                     prefix = newSettings.prefix,
                     silentCommands = newSettings.silentCommands,
                     noSpacePrefix = newSettings.noSpacePrefix,
