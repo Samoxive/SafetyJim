@@ -79,7 +79,7 @@ object KicksTable : AbstractTable {
     }
 
     suspend fun fetchUserActionableKickCount(guild: Guild, user: User): Int {
-        return pgPool.preparedQueryAwait("select count(*) from kicklist where guildid = $1 and userid = $2;", Tuple.of(guild.idLong, user.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from kicklist where guildid = $1 and userid = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
             .first()
             .getInteger(0)
     }

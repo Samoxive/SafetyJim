@@ -41,7 +41,7 @@ suspend fun warnAction(guild: Guild, channel: TextChannel?, settings: SettingsEn
     createModLogEntry(guild, channel, settings, modUser, warnUser, reason, ModLogAction.Warn, record.id)
 
     if (settings.warnThreshold != 0) {
-        val warnCount = WarnsTable.fetchUserActionableSoftbanCount(guild, warnUser)
+        val warnCount = WarnsTable.fetchUserActionableWarnCount(guild, warnUser)
         if (warnCount >= settings.warnThreshold) {
             val expirationDate = settings.getWarnActionExpirationDate()
             executeModAction(settings.warnAction, guild, channel, settings, modUser, warnUser, ACTION_REASON, expirationDate, callDepth)
