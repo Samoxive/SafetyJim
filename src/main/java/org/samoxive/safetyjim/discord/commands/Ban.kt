@@ -94,6 +94,13 @@ class Ban : Command() {
             return false
         }
 
+        // Sanity check: Jim cannot ban itself.
+        // c.f. https://discord.com/channels/238666723824238602/238666723824238602/902275716299776090
+        if (banMember != null && banMember == selfMember) {
+            message.failMessage("I'm sorry, Dave. I'm afraid I can't do that.")
+            return false;
+        }
+
         if (banMember != null && !banMember.isBannableBy(selfMember)) {
             message.failMessage("I don't have enough permissions to do that!")
             return false
