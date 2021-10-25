@@ -57,11 +57,6 @@ object JoinsTable : AbstractTable {
         )
     }
 
-    suspend fun fetchGuildJoins(guild: Guild): List<JoinEntity> {
-        return pgPool.preparedQueryAwait("select * from joinlist where guildid = $1;", Tuple.of(guild.idLong))
-            .toJoinEntities()
-    }
-
     suspend fun fetchExpiredJoins(): List<JoinEntity> {
         val time = System.currentTimeMillis() / 1000
         return pgPool.preparedQueryAwait("select * from joinlist where allowed = false and allowtime < $1;", Tuple.of(time))
