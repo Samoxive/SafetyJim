@@ -11,7 +11,6 @@ import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.events.ExceptionEvent
 import net.dv8tion.jda.api.events.ReadyEvent
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent
-import net.dv8tion.jda.api.events.guild.GuildLeaveEvent
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent
 import net.dv8tion.jda.api.events.message.guild.GuildMessageDeleteEvent
@@ -78,23 +77,6 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
 
     override fun onReady(event: ReadyEvent) {
         log.info("Shard is ready.")
-
-        GlobalScope.launch {
-            onReadyAsync(event)
-        }
-    }
-
-    private suspend fun onReadyAsync(event: ReadyEvent) {
-        val shard = event.jda
-
-        var emptyGuildCount = 0
-        for (guild in shard.guilds) {
-            if (guild.textChannels.isEmpty()) {
-                emptyGuildCount++
-                tryhardAsync { guild.leave().await() }
-                continue
-            }
-        }
     }
 
     override fun onGuildMessageReceived(event: GuildMessageReceivedEvent) {
@@ -213,20 +195,12 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
     override fun onGuildJoin(event: GuildJoinEvent) {
         GlobalScope.launch {
             val guild = event.guild
-            if (guild.textChannels.isEmpty()) {
-                guild.leave().await()
-                return@launch
-            }
 
             val defaultPrefix = bot.config.jim.default_prefix
             val message = "Hello! I am Safety Jim, `$defaultPrefix` is my default prefix! Visit https://safetyjim.xyz/commands to see available commands.\nYou can join the support server at https://discord.io/safetyjim or contact Samoxive#8634 for help."
-            guild.getDefaultChannelTalkable().trySendMessage(message)
+            guild.getDefaultChannelTalkable()?.trySendMessage(message)
             SettingsTable.insertDefaultGuildSettings(bot.config, guild)
         }
-    }
-
-    override fun onGuildLeave(event: GuildLeaveEvent) {
-        GlobalScope.launch { SettingsTable.deleteSettings(event.guild) }
     }
 
     override fun onGuildMemberJoin(event: GuildMemberJoinEvent) {

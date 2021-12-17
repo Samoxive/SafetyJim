@@ -255,7 +255,7 @@ class DiscordBot(val config: Config) {
                 try {
                     val builder = MessageBuilder()
                     builder.append(user.asMention)
-                    builder.setEmbed(embed.build())
+                    builder.setEmbeds(embed.build())
 
                     channel.sendMessage(builder.build()).await()
                 } catch (e: Exception) {

@@ -151,7 +151,7 @@ suspend fun MessageChannel.trySendMessage(message: String, replyMessage: Message
 
 suspend fun MessageChannel.trySendMessage(embed: MessageEmbed, replyMessage: Message): Message? {
     return tryhardAsync {
-        sendMessage(embed)
+        sendMessageEmbeds(embed)
             .reference(replyMessage)
             .mentionRepliedUser(false)
             .await()
@@ -163,7 +163,7 @@ suspend fun MessageChannel.trySendMessage(message: String): Message? {
 }
 
 suspend fun MessageChannel.trySendMessage(embed: MessageEmbed): Message? {
-    return tryhardAsync { sendMessage(embed).await() }
+    return tryhardAsync { sendMessageEmbeds(embed).await() }
 }
 
 suspend fun MessageChannel.sendModActionConfirmationMessage(settings: SettingsEntity, message: String) {
@@ -257,14 +257,14 @@ fun getUsageString(prefix: String, usages: Array<String>): String =
 
 fun User.getTag(): String = "$name#$discriminator"
 
-fun Guild.getDefaultChannelTalkable(): TextChannel {
+fun Guild.getDefaultChannelTalkable(): TextChannel? {
     for (channel in textChannels) {
         if (channel.canTalk()) {
             return channel
         }
     }
 
-    return textChannels[0]
+    return null
 }
 
 // (guild_id >> 22) % num_shards == shard_id

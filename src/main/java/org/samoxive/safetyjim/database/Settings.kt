@@ -261,8 +261,8 @@ object SettingsTable : AbstractTable {
             insertSettings(
                 SettingsEntity(
                     guildId = guild.idLong,
-                    modLogChannelId = defaultChannel.idLong,
-                    welcomeMessageChannelId = defaultChannel.idLong,
+                    modLogChannelId = defaultChannel?.idLong ?: 0,
+                    welcomeMessageChannelId = defaultChannel?.idLong ?: 0,
                     prefix = config.jim.default_prefix
                 )
             )
