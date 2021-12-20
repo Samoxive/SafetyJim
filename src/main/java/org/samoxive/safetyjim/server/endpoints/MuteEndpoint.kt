@@ -85,7 +85,7 @@ class UpdateMuteEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot) {
             if (!newMute.unmuted || // un-expiring the mute
                 mute.expireTime != newMute.expirationTime
             ) { // changing expiration time
-                return Result(Status.BAD_REQUEST, "You can't change expiration property after user has been unmutened.")
+                return Result(Status.BAD_REQUEST, "You can't change expiration property after user has been unmuted.")
             }
         }
 
