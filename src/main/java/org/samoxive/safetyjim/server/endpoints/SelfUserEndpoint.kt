@@ -35,7 +35,7 @@ class SelfUserEndpoint(bot: DiscordBot) : AuthenticatedEndpoint(bot) {
                 SelfUserModel(
                     user.id,
                     user.getTag(),
-                    user.avatarUrl,
+                    user.effectiveAvatarUrl,
                     guilds.map { it.toGuildModel() }
                 )
             )
