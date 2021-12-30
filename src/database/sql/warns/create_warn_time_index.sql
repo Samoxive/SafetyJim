@@ -1,0 +1,1 @@
+create index if not exists warns_warn_time_index on warns (warn_time desc);

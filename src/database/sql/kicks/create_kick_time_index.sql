@@ -1,0 +1,1 @@
+create index if not exists kicks_kick_time_index on kicks (kick_time desc);

@@ -1,0 +1,19 @@
+{
+    "discord_token": "",
+    "geocode_token": "",
+    "darksky_token": "",
+    "database_user": "postgres",
+    "database_pass": "postgres",
+    "database_host": "localhost",
+    "database_port": 5432,
+    "database_name": "jim",
+    "oauth_client_id": "",
+    "oauth_client_secret": "",
+    "oauth_redirect_uri": "http://localhost:3000/login",
+    "self_url": "http://localhost:8080",
+    "recaptcha_secret": "",
+    "server_secret": "secret",
+    "server_port": 8080,
+    "cors_origin": "http://localhost:3000"
+  }
+  

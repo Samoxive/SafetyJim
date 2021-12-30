@@ -1,0 +1,1 @@
+create unique index if not exists tags_guild_id_name_unique_index on tags (guild_id, name);

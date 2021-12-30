@@ -1,0 +1,24 @@
+<html>
+
+<head>
+    <link rel="shortcut icon" href="https://safetyjim.xyz/favicon.ico">
+    <title>Safety Jim</title>
+    <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+</head>
+
+<body style="background-color:#222">
+<div style="display:flex;justify-content:center;align-items:center;height:100%">
+    <div>
+        <form action="" method="POST" id="captcha-form">
+            <div class="g-recaptcha" data-sitekey="6LdH5IsUAAAAAPt5tQVPWUFKPGynkFh2lq5jNVun" data-callback="onSuccess" data-theme="dark"></div>
+        </form>
+    </div>
+</div>
+<script>
+    function onSuccess(res) {
+        document.getElementById("captcha-form").submit();
+    }
+</script>
+</body>
+
+</html>

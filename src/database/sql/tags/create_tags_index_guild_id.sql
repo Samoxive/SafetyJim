@@ -1,0 +1,1 @@
+create index if not exists tags_guild_id_index on tags (guild_id);

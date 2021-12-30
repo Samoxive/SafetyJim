@@ -1,0 +1,37 @@
+[package]
+name = "safetyjim"
+version = "5.0.0"
+edition = "2021"
+
+[dependencies]
+actix-cors = "0.6.0-beta.7"
+actix-web = "4.0.0-beta.16"
+anyhow = { version = "1.0.52", features = ["backtrace"] }
+argh = "0.1.7"
+async-recursion = "0.3.2"
+async-trait = "0.1.52"
+chrono = "0.4.19"
+humantime = "2.1.0"
+jsonwebtoken = "7.2.0"
+lazy_static = "1.4.0"
+moka = { version = "0.6.2", features = ["future"] }
+once_cell = "1.9.0"
+reqwest = { version = "0.11.8", default-features = false, features = ["rustls-tls-native-roots", "gzip", "json"] }
+serde = { version = "1.0.132", features = ["derive"] }
+serde_json = "1.0.73"
+serenity = { git = "https://github.com/serenity-rs/serenity/", branch = "next", default-features = false, features = ["rustls_backend", "builder", "client", "gateway", "http", "model", "unstable_discord_api"] }
+smol_str = "0.1.21"
+sqlx = { version = "0.5.9", features = ["postgres", "runtime-tokio-rustls", "uuid"] }
+thiserror = "1.0.30"
+tokio = { version = "1.15.0", features = ["full"] }
+tracing = "0.1.29"
+tracing-appender = "0.2.0"
+tracing-futures = "0.2.5"
+tracing-subscriber = { version = "0.3.4", features = ["json", "registry", "env-filter"] }
+typemap_rev = "0.1.5"
+uuid = { version = "0.8.2", features = ["serde", "v4"] }
+
+[profile.release]
+debug = 0
+lto = "fat"
+panic = "abort"

@@ -1,0 +1,1 @@
+create index if not exists softbans_softban_time_index on softbans (softban_time desc);
