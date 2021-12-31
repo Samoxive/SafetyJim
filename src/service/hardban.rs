@@ -1,4 +1,3 @@
-use serenity::model::prelude::{GuildId, User};
 use std::num::NonZeroU32;
 use typemap_rev::TypeMapKey;
 
@@ -9,7 +8,8 @@ use crate::discord::util::user_dm::{notify_user_for_mod_action, ModActionKind};
 use crate::discord::util::SerenityErrorExt;
 use crate::util::now;
 use serenity::http::Http;
-use serenity::model::id::{ChannelId, UserId};
+use serenity::model::id::{ChannelId, GuildId, UserId};
+use serenity::model::user::User;
 use tracing::error;
 
 impl TypeMapKey for HardbanService {

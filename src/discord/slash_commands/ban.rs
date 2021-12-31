@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandOptionType,
+    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
 
 use typemap_rev::TypeMap;
@@ -22,7 +22,6 @@ use crate::service::ban::{BanFailure, BanService};
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
 use anyhow::bail;
-use serenity::model::prelude::application_command::ApplicationCommandInteractionData;
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use std::time::Duration;

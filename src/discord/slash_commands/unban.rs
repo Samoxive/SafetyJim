@@ -5,8 +5,6 @@ use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::discord::slash_commands::unban::UnbanCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
@@ -19,6 +17,7 @@ use crate::service::ban::{BanService, UnbanFailure};
 use anyhow::bail;
 use serenity::model::user::User;
 use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 pub struct UnbanCommand;
 

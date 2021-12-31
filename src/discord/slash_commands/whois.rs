@@ -5,8 +5,6 @@ use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::constants::EMBED_COLOR;
 use crate::discord::slash_commands::whois::WhoisCommandOptionFailure::MissingOption;
@@ -17,10 +15,12 @@ use crate::discord::util::{
 use crate::service::guild::{CachedGuild, GuildService};
 use anyhow::bail;
 use serenity::model::guild::PartialMember;
-use serenity::model::interactions::InteractionResponseType;
-use serenity::model::prelude::InteractionApplicationCommandCallbackDataFlags;
+use serenity::model::interactions::{
+    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
+};
 use serenity::model::user::User;
 use tracing::error;
+use typemap_rev::TypeMap;
 
 pub struct WhoisCommand;
 

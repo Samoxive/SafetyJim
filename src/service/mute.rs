@@ -1,5 +1,4 @@
-use serenity::model::id::{ChannelId, RoleId, UserId};
-use serenity::model::prelude::GuildId;
+use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
 use std::num::NonZeroU32;
 use typemap_rev::{TypeMap, TypeMapKey};
 
@@ -275,7 +274,12 @@ impl MuteService {
 
         if let Some((role_id, _)) = muted_role {
             match http
-                .remove_member_role(guild_id.0, target_user_id.0, role_id.0, Some(&audit_log_reason))
+                .remove_member_role(
+                    guild_id.0,
+                    target_user_id.0,
+                    role_id.0,
+                    Some(&audit_log_reason),
+                )
                 .await
             {
                 Ok(_) => (),

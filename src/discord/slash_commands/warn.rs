@@ -5,9 +5,6 @@ use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
 
-use anyhow::bail;
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::constants::JIM_ID;
 use crate::discord::slash_commands::warn::WarnCommandOptionFailure::MissingOption;
@@ -20,8 +17,10 @@ use crate::discord::util::{
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
 use crate::service::warn::{WarnFailure, WarnService};
+use anyhow::bail;
 use serenity::model::user::User;
 use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 pub struct WarnCommand;
 

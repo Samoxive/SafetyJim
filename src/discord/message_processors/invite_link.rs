@@ -11,8 +11,8 @@ use serenity::model::channel::Message;
 use serenity::model::guild::PartialMember;
 use serenity::model::id::GuildId;
 use serenity::model::Permissions;
-use serenity::prelude::TypeMap;
 use tracing::error;
+use typemap_rev::TypeMap;
 
 const REASON: &str = "Sending invite links";
 

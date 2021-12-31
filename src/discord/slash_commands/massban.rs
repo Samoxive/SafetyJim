@@ -6,12 +6,14 @@ use serenity::model::interactions::application_command::{
 };
 use std::num::ParseIntError;
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::constants::JIM_ID;
 use crate::discord::slash_commands::SlashCommand;
-use crate::discord::util::{invisible_failure_reply, invisible_success_reply, unauthorized_reply, verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction, SerenityErrorExt, UserExt, edit_interaction_response};
+use crate::discord::util::{
+    edit_interaction_response, invisible_failure_reply, unauthorized_reply,
+    verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
+    SerenityErrorExt, UserExt,
+};
 use crate::service::guild::GuildService;
 use crate::service::hardban::{HardbanFailure, HardbanService};
 use crate::service::setting::SettingService;
@@ -19,6 +21,7 @@ use anyhow::bail;
 use serenity::model::id::UserId;
 use serenity::model::interactions::InteractionResponseType;
 use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 pub struct MassbanCommand;
 

@@ -1,5 +1,4 @@
-use serenity::model::id::{ChannelId, UserId};
-use serenity::model::prelude::GuildId;
+use serenity::model::id::{ChannelId, GuildId, UserId};
 use std::num::NonZeroU32;
 use typemap_rev::{TypeMap, TypeMapKey};
 

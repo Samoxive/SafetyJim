@@ -5,13 +5,14 @@ use anyhow::bail;
 use serenity::http::{Http, HttpError};
 use serenity::model::channel::{Message, PartialChannel};
 use serenity::model::guild::{Member, PartialMember, Role};
-use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId};
+use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId, UserId};
 use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandInteractionData,
     ApplicationCommandInteractionDataOptionValue,
 };
-use serenity::model::interactions::InteractionResponseType;
-use serenity::model::prelude::{InteractionApplicationCommandCallbackDataFlags, UserId};
+use serenity::model::interactions::{
+    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
+};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use serenity::Error;

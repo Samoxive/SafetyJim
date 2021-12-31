@@ -5,8 +5,6 @@ use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::discord::slash_commands::tag::TagCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
@@ -16,6 +14,7 @@ use crate::discord::util::{
 };
 use crate::service::tag::TagService;
 use anyhow::bail;
+use typemap_rev::TypeMap;
 
 pub struct TagCommand;
 

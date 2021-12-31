@@ -4,10 +4,9 @@ use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
+use typemap_rev::TypeMap;
 
 mod ban;
 mod clean;

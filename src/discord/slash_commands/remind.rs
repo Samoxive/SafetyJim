@@ -5,8 +5,6 @@ use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::discord::slash_commands::remind::RemindCommandFailure::{
     DurationParseError, MissingOption,
@@ -19,6 +17,7 @@ use crate::discord::util::{
 use crate::service::reminder::ReminderService;
 use anyhow::bail;
 use std::time::Duration;
+use typemap_rev::TypeMap;
 
 pub struct RemindCommand;
 

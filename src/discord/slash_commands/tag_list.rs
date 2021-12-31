@@ -3,8 +3,6 @@ use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
 use crate::discord::slash_commands::SlashCommand;
@@ -13,9 +11,11 @@ use crate::discord::util::{
 };
 use crate::service::tag::TagService;
 use anyhow::bail;
-use serenity::model::interactions::InteractionResponseType;
-use serenity::model::prelude::InteractionApplicationCommandCallbackDataFlags;
+use serenity::model::interactions::{
+    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
+};
 use tracing::error;
+use typemap_rev::TypeMap;
 
 pub struct TagListCommand;
 

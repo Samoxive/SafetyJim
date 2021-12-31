@@ -5,8 +5,6 @@ use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::constants::JIM_ID;
 use crate::discord::slash_commands::kick::KickCommandOptionFailure::MissingOption;
@@ -22,6 +20,7 @@ use crate::service::setting::SettingService;
 use anyhow::bail;
 use serenity::model::user::User;
 use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 pub struct KickCommand;
 

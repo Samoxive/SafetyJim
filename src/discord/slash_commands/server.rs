@@ -3,8 +3,6 @@ use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
 use crate::discord::slash_commands::SlashCommand;
@@ -15,6 +13,7 @@ use serenity::model::interactions::{
     InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
 };
 use tracing::error;
+use typemap_rev::TypeMap;
 
 pub struct ServerCommand;
 

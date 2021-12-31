@@ -5,8 +5,6 @@ use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::constants::JIM_ID;
 use crate::discord::slash_commands::mute::MuteCommandOptionFailure::{
@@ -25,6 +23,7 @@ use anyhow::bail;
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use std::time::Duration;
+use typemap_rev::TypeMap;
 
 pub struct MuteCommand;
 

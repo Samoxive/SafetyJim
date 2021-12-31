@@ -10,7 +10,7 @@ use tracing::Level;
 use crate::config::{get_config, Config};
 use crate::flags::Flags;
 use crate::service::create_services;
-use tracing_subscriber::{filter::LevelFilter, fmt, prelude::*, EnvFilter};
+use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter, Layer};
 
 mod config;
 mod constants;
@@ -27,6 +27,7 @@ use crate::discord::discord_bot::DiscordBot;
 use crate::server::run_server;
 use tokio::spawn;
 use tracing_appender::non_blocking::WorkerGuard;
+use tracing_subscriber::layer::SubscriberExt;
 
 fn setup_logging(flags: &Flags) -> WorkerGuard {
     let file_appender = tracing_appender::rolling::daily(&flags.logs_path, "jim.log");

@@ -13,11 +13,11 @@ use serenity::model::channel::Message;
 use serenity::model::guild::PartialMember;
 use serenity::model::id::GuildId;
 use serenity::model::Permissions;
-use serenity::prelude::TypeMap;
 use smol_str::SmolStr;
 
 use anyhow::anyhow;
 use tracing::{error, warn};
+use typemap_rev::TypeMap;
 
 const REASON: &str = "Using blocklisted word(s).";
 

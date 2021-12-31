@@ -2,8 +2,6 @@ use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::constants::AVATAR_URL;
 use crate::discord::slash_commands::SlashCommand;
@@ -11,10 +9,12 @@ use crate::service::shard_statistic::ShardStatisticService;
 use anyhow::bail;
 use serenity::client::bridge::gateway::ShardId;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::model::interactions::InteractionResponseType;
-use serenity::model::prelude::InteractionApplicationCommandCallbackDataFlags;
+use serenity::model::interactions::{
+    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
+};
 use serenity::utils::Colour;
 use tracing::error;
+use typemap_rev::TypeMap;
 
 pub struct PingCommand;
 

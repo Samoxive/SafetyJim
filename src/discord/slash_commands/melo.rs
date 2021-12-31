@@ -2,12 +2,11 @@ use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::reply_with_str;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
+use typemap_rev::TypeMap;
 
 pub struct MeloCommand;
 

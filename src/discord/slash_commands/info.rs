@@ -2,8 +2,6 @@ use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 
-use serenity::prelude::TypeMap;
-
 use crate::config::Config;
 use crate::constants::{
     AVATAR_URL, GITHUB_LINK, INVITE_LINK, START_EPOCH, SUPPORT_SERVER_INVITE_LINK,
@@ -16,11 +14,12 @@ use crate::util::now;
 use anyhow::bail;
 use serenity::client::bridge::gateway::ShardId;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::model::prelude::{
+use serenity::model::interactions::{
     InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
 };
 use serenity::utils::Colour;
 use tracing::error;
+use typemap_rev::TypeMap;
 
 pub struct InfoCommand;
 
