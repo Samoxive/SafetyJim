@@ -3,11 +3,11 @@ use std::process::exit;
 use std::sync::Arc;
 
 use serenity::async_trait;
-use serenity::client::bridge::gateway::{GatewayIntents, ShardManager};
+use serenity::client::bridge::gateway::ShardManager;
 use serenity::client::EventHandler;
 use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
 use serenity::model::event::GuildMemberUpdateEvent;
-use serenity::model::gateway::Activity;
+use serenity::model::gateway::{Activity, GatewayIntents};
 use serenity::model::guild::{Guild, GuildUnavailable, Member, PartialGuild, Role};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
 use serenity::model::prelude::application_command::ApplicationCommand;
