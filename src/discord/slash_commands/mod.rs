@@ -58,13 +58,14 @@ pub struct SlashCommands(pub HashMap<&'static str, Box<dyn SlashCommand + Send +
 pub fn get_all_commands() -> SlashCommands {
     let mut commands_map: HashMap<&'static str, Box<dyn SlashCommand + Send + Sync>> =
         HashMap::new();
-    let commands: [Box<dyn SlashCommand + Send + Sync>; 27] = [
+    let commands: [Box<dyn SlashCommand + Send + Sync>; 28] = [
         Box::new(ban::BanCommand),
         Box::new(clean::CleanCommand),
         Box::new(clean_bot::CleanBotCommand),
         Box::new(clean_user::CleanUserCommand),
         Box::new(hardban::HardbanCommand),
         Box::new(iam::IAMCommand),
+        Box::new(iam_not::IAMNotCommand),
         Box::new(info::InfoCommand),
         Box::new(invite::InviteCommand),
         Box::new(kick::KickCommand),

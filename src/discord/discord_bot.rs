@@ -16,7 +16,7 @@ use serenity::model::user::{CurrentUser, User};
 use serenity::prelude::Mentionable;
 use serenity::Client;
 use tokio::sync::Mutex;
-use tracing::error;
+use tracing::{error, warn};
 use typemap_rev::TypeMap;
 
 use crate::config::Config;
@@ -117,15 +117,17 @@ async fn initialize_slash_commands(
     ctx: &Context,
     slash_commands: &SlashCommands,
 ) -> Result<(), serenity::Error> {
-    ApplicationCommand::set_global_application_commands(&ctx.http, |commands| {
+    warn!("initializing slash commands");
+    let _ = ApplicationCommand::set_global_application_commands(&ctx.http, |commands| {
         for (&_name, slash_command) in &slash_commands.0 {
             commands
                 .create_application_command(move |command| slash_command.create_command(command));
         }
         commands
     })
-    .await
-    .map(|_| ())
+    .await?;
+
+    Ok(())
 }
 
 #[async_trait]
