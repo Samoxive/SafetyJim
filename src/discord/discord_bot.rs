@@ -195,7 +195,7 @@ impl EventHandler for DiscordEventHandler {
         if setting.welcome_message {
             let content = setting
                 .message
-                .replace("$user", &format!("{:?}", new_member.mention()))
+                .replace("$user", &format!("{}", new_member.mention()))
                 .replace("$guild", &guild.name);
 
             let content = if setting.holding_room {
@@ -385,7 +385,7 @@ impl EventHandler for DiscordEventHandler {
             return;
         }
 
-        if message.kind != MessageType::Regular || message.kind != MessageType::InlineReply {
+        if message.kind != MessageType::Regular && message.kind != MessageType::InlineReply {
             return;
         }
 
@@ -411,7 +411,7 @@ impl EventHandler for DiscordEventHandler {
         };
 
         let permissions =
-            if let Ok(permissions) = guild_service.get_permissions(&member.roles, guild_id).await {
+            if let Ok(permissions) = guild_service.get_permissions(message.author.id, &member.roles, guild_id).await {
                 permissions
             } else {
                 return;
