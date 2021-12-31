@@ -11,16 +11,13 @@ use serenity::prelude::TypeMap;
 use crate::config::Config;
 use crate::constants::JIM_ID;
 use crate::discord::slash_commands::SlashCommand;
-use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
-    SerenityErrorExt, UserExt,
-};
+use crate::discord::util::{invisible_failure_reply, invisible_success_reply, unauthorized_reply, verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction, SerenityErrorExt, UserExt, edit_interaction_response};
 use crate::service::guild::GuildService;
 use crate::service::hardban::{HardbanFailure, HardbanService};
 use crate::service::setting::SettingService;
 use anyhow::bail;
 use serenity::model::id::UserId;
+use serenity::model::interactions::InteractionResponseType;
 use serenity::model::Permissions;
 
 pub struct MassbanCommand;
@@ -182,6 +179,12 @@ impl SlashCommand for MassbanCommand {
             bail!("couldn't get setting service!");
         };
 
+        interaction
+            .create_interaction_response(&context.http, |response| {
+                response.kind(InteractionResponseType::DeferredChannelMessageWithSource)
+            })
+            .await?;
+
         let setting = setting_service.get_setting(guild_id).await;
 
         let mut mod_log_failure = None;
@@ -193,7 +196,7 @@ impl SlashCommand for MassbanCommand {
                 Ok(user) => user,
                 Err(err) => match err.discord_error_code() {
                     Some(10013) => {
-                        invisible_failure_reply(
+                        edit_interaction_response(
                             &*context.http,
                             interaction,
                             &format!("Couldn't find user for given id: {}.", target_user_id.0),
@@ -221,7 +224,7 @@ impl SlashCommand for MassbanCommand {
             {
                 Ok(_) => (),
                 Err(HardbanFailure::Unauthorized) => {
-                    invisible_failure_reply(
+                    edit_interaction_response(
                         &context.http,
                         interaction,
                         "I don't have enough permissions to do this action!",
@@ -233,7 +236,7 @@ impl SlashCommand for MassbanCommand {
                     mod_log_failure = Some(err);
                 }
                 Err(HardbanFailure::Unknown) => {
-                    invisible_failure_reply(
+                    edit_interaction_response(
                         &context.http,
                         interaction,
                         "Could not massban one of specified users for unknown reasons, this incident has been logged.",
@@ -245,12 +248,12 @@ impl SlashCommand for MassbanCommand {
         }
 
         if let Some(err) = mod_log_failure {
-            invisible_failure_reply(&context.http, interaction, err.to_interaction_response())
+            edit_interaction_response(&context.http, interaction, err.to_interaction_response())
                 .await;
             return Ok(());
         }
 
-        invisible_success_reply(&context.http, interaction, "Success.").await;
+        edit_interaction_response(&context.http, interaction, "Success.").await;
         Ok(())
     }
 }
