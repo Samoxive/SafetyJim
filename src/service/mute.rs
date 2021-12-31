@@ -251,25 +251,31 @@ impl MuteService {
     pub async fn unmute(
         &self,
         http: &Http,
+        services: &TypeMap,
         guild_id: GuildId,
-        user_id: UserId,
+        target_user_id: UserId,
+        mod_user_tag_and_id: &str,
     ) -> Result<(), UnmuteFailure> {
         // use cached roles
-        let muted_role = match guild_id.roles(http).await {
-            Ok(roles) => roles.into_values().find(|role| role.name == "Muted"),
-            Err(_) => {
-                return Err(UnmuteFailure::Unknown);
-            }
+        let guild_service = if let Some(service) = services.get::<GuildService>() {
+            service
+        } else {
+            error!("couldn't get guild service!");
+            return Err(UnmuteFailure::Unknown);
         };
 
-        if let Some(role) = muted_role {
+        let roles = match guild_service.get_roles(guild_id).await {
+            Ok(roles) => roles,
+            Err(GetRolesFailure::FetchFailed) => return Err(UnmuteFailure::Unknown),
+        };
+
+        let muted_role = roles.iter().find(|(_, role)| role.name == "Muted");
+
+        let audit_log_reason = format!("Unmuted by {}", mod_user_tag_and_id);
+
+        if let Some((role_id, _)) = muted_role {
             match http
-                .remove_member_role(
-                    guild_id.0,
-                    user_id.0,
-                    role.id.0,
-                    Some("Unmuting user because of unmute command"),
-                )
+                .remove_member_role(guild_id.0, target_user_id.0, role_id.0, Some(&audit_log_reason))
                 .await
             {
                 Ok(_) => (),
@@ -284,7 +290,8 @@ impl MuteService {
                 }
             }
 
-            self.invalidate_previous_user_mutes(guild_id, user_id).await;
+            self.invalidate_previous_user_mutes(guild_id, target_user_id)
+                .await;
         } else {
             return Err(UnmuteFailure::RoleNotFound);
         }
