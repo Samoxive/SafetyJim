@@ -190,12 +190,14 @@ pub async fn is_guild_endpoint(
 
     let member = guild_service.get_member(guild_id, user_id).await.ok()?;
 
-    let permissions =
-        if let Ok(permissions) = guild_service.get_permissions(user_id, &member.roles, guild_id).await {
-            permissions
-        } else {
-            return None;
-        };
+    let permissions = if let Ok(permissions) = guild_service
+        .get_permissions(user_id, &member.roles, guild_id)
+        .await
+    {
+        permissions
+    } else {
+        return None;
+    };
 
     Some((member, permissions))
 }

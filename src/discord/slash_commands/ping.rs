@@ -60,8 +60,7 @@ impl SlashCommand for PingCommand {
                                         author
                                             .name(format!(
                                                 "Safety Jim [{} / {}]",
-                                                shard_id,
-                                                shard_info.total_shard_count
+                                                shard_id, shard_info.total_shard_count
                                             ))
                                             .icon_url(AVATAR_URL)
                                     })

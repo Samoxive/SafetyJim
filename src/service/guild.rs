@@ -153,8 +153,14 @@ impl GuildService {
             Err(_) => return Err(GetPermissionsFailure::FetchFailed),
         };
 
-        get_permissions(member_id, member_roles, guild_id, &*guild_roles, guild_owner_id)
-            .ok_or(GetPermissionsFailure::Calculation)
+        get_permissions(
+            member_id,
+            member_roles,
+            guild_id,
+            &*guild_roles,
+            guild_owner_id,
+        )
+        .ok_or(GetPermissionsFailure::Calculation)
     }
 
     pub async fn get_member(

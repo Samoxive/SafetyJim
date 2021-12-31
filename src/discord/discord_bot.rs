@@ -410,12 +410,14 @@ impl EventHandler for DiscordEventHandler {
             return;
         };
 
-        let permissions =
-            if let Ok(permissions) = guild_service.get_permissions(message.author.id, &member.roles, guild_id).await {
-                permissions
-            } else {
-                return;
-            };
+        let permissions = if let Ok(permissions) = guild_service
+            .get_permissions(message.author.id, &member.roles, guild_id)
+            .await
+        {
+            permissions
+        } else {
+            return;
+        };
 
         for (i, processor) in self.message_processors.0.iter().enumerate() {
             match processor
