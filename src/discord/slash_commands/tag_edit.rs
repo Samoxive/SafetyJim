@@ -77,6 +77,7 @@ impl SlashCommand for TagEditCommand {
                     .description("tag name to edit")
                     .kind(ApplicationCommandOptionType::String)
                     .required(true)
+                    .set_autocomplete(true)
             })
             .create_option(|option| {
                 option

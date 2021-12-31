@@ -70,6 +70,7 @@ impl SlashCommand for TagRemoveCommand {
                     .description("tag name to remove")
                     .kind(ApplicationCommandOptionType::String)
                     .required(true)
+                    .set_autocomplete(true)
             })
     }
 
