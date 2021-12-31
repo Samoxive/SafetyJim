@@ -133,10 +133,16 @@ pub fn is_staff(permissions: Permissions) -> bool {
 }
 
 pub fn get_permissions(
+    member_id: UserId,
     member_roles: &[RoleId],
     guild_id: GuildId,
     guild_roles: &HashMap<RoleId, CachedRole>,
+    guild_owner_id: UserId,
 ) -> Option<Permissions> {
+    if member_id == guild_owner_id {
+        return Some(Permissions::ADMINISTRATOR);
+    }
+
     let everyone = match guild_roles.get(&RoleId(guild_id.0)) {
         Some(everyone) => everyone,
         None => {
@@ -149,7 +155,7 @@ pub fn get_permissions(
     for role in member_roles {
         if let Some(role) = guild_roles.get(role) {
             if role.permissions.contains(Permissions::ADMINISTRATOR) {
-                return None;
+                return Some(Permissions::ADMINISTRATOR);
             }
 
             permissions |= role.permissions;
