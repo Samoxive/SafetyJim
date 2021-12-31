@@ -130,9 +130,14 @@ impl BanService {
         &self,
         http: &Http,
         guild_id: GuildId,
-        user_id: UserId,
+        target_user_id: UserId,
+        mod_user_tag_and_id: &str,
     ) -> Result<(), UnbanFailure> {
-        match guild_id.unban(http, user_id).await {
+        let audit_log_reason = format!("Unbanned by {}", mod_user_tag_and_id);
+        match http
+            .remove_ban(guild_id.0, target_user_id.0, Some(&audit_log_reason))
+            .await
+        {
             Ok(_) => (),
             Err(err) => {
                 return match err.discord_error_code() {
@@ -146,7 +151,8 @@ impl BanService {
             }
         }
 
-        self.invalidate_previous_user_bans(guild_id, user_id).await;
+        self.invalidate_previous_user_bans(guild_id, target_user_id)
+            .await;
         Ok(())
     }
 

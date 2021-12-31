@@ -13,6 +13,7 @@ use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     invisible_failure_reply, invisible_success_reply, unauthorized_reply,
     verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
+    UserExt,
 };
 use crate::service::ban::{BanService, UnbanFailure};
 use anyhow::bail;
@@ -81,6 +82,8 @@ impl SlashCommand for UnbanCommand {
             permissions,
         } = verify_guild_slash_command(interaction)?;
 
+        let mod_user = &interaction.user;
+
         if !is_authorized(permissions) {
             unauthorized_reply(&*context.http, interaction, Permissions::BAN_MEMBERS).await;
             return Ok(());
@@ -100,7 +103,12 @@ impl SlashCommand for UnbanCommand {
         };
 
         match ban_service
-            .unban(&context.http, guild_id, options.target_user.id)
+            .unban(
+                &context.http,
+                guild_id,
+                options.target_user.id,
+                &mod_user.tag_and_id(),
+            )
             .await
         {
             Ok(_) => {
