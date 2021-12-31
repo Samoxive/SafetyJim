@@ -79,7 +79,7 @@ impl SlashCommand for InfoCommand {
             "\u{221E}".to_string()
         };
 
-        let shard_string = format!("[{} / {}]", shard_id + 1, shard_info.total_shard_count);
+        let shard_string = format!("[{} / {}]", shard_id, shard_info.total_shard_count);
 
         interaction
             .create_interaction_response(&context.http, |response| {
