@@ -6,6 +6,7 @@ use std::time::Duration;
 use tracing::warn;
 
 const DEFAULT_WELCOME_MESSAGE: &str = "Welcome to $guild $user!";
+const DEFAULT_PREFIX: &str = "-mod";
 
 pub const SILENT_COMMANDS_MOD_ONLY: i32 = 0;
 pub const SILENT_COMMANDS_ALL: i32 = 1;
@@ -119,7 +120,7 @@ impl Setting {
             welcome_message: false,
             message: DEFAULT_WELCOME_MESSAGE.into(),
             welcome_message_channel_id: 0,
-            prefix: String::new(),
+            prefix: DEFAULT_PREFIX.into(),
             silent_commands: false,
             no_space_prefix: false,
             statistics: false,
