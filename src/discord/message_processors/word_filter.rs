@@ -145,7 +145,7 @@ impl MessageProcessor for WordFilterProcessor {
                     }
                 }
                 Ok(false)
-            },
+            }
         }
     }
 }

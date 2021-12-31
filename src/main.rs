@@ -22,11 +22,11 @@ mod service;
 mod util;
 
 use crate::constants::initialize_statics;
+use crate::database::setup_database_pool;
 use crate::discord::discord_bot::DiscordBot;
 use crate::server::run_server;
 use tokio::spawn;
 use tracing_appender::non_blocking::WorkerGuard;
-use crate::database::setup_database_pool;
 
 fn setup_logging(flags: &Flags) -> WorkerGuard {
     let file_appender = tracing_appender::rolling::daily(&flags.logs_path, "jim.log");
@@ -50,8 +50,6 @@ fn setup_logging(flags: &Flags) -> WorkerGuard {
 
     guard
 }
-
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

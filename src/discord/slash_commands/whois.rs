@@ -14,13 +14,13 @@ use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
 };
+use crate::service::guild::{CachedGuild, GuildService};
 use anyhow::bail;
 use serenity::model::guild::PartialMember;
 use serenity::model::interactions::InteractionResponseType;
 use serenity::model::prelude::InteractionApplicationCommandCallbackDataFlags;
 use serenity::model::user::User;
 use tracing::error;
-use crate::service::guild::{CachedGuild, GuildService};
 
 pub struct WhoisCommand;
 

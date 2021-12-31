@@ -89,7 +89,7 @@ impl MessageProcessor for InviteLinkProcessor {
                     }
                 }
                 Ok(false)
-            },
+            }
         }
     }
 }

@@ -9,12 +9,12 @@ use crate::config::Config;
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{verify_guild_slash_command, GuildSlashCommandInteraction};
+use crate::service::guild::GuildService;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
 use serenity::model::interactions::{
     InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
 };
 use tracing::error;
-use crate::service::guild::GuildService;
 
 pub struct ServerCommand;
 
@@ -86,7 +86,11 @@ impl SlashCommand for ServerCommand {
                                             )
                                     })
                                     .colour(EMBED_COLOR)
-                                    .field("Server Owner", format!("{} ({})", owner.tag, guild.owner_id), true)
+                                    .field(
+                                        "Server Owner",
+                                        format!("{} ({})", owner.tag, guild.owner_id),
+                                        true,
+                                    )
                                     .field(
                                         "Member Count",
                                         format!("{}", guild.approximate_member_count.unwrap_or(0)),

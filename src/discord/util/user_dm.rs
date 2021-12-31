@@ -65,13 +65,10 @@ pub async fn notify_user_for_mod_action(
     guild_name: &str,
     mod_user_tag_and_id: &str,
 ) {
-    let dm_channel_result = user
-        .create_dm_channel(http)
-        .await
-        .map_err(|err| {
-            error!("failed to create DM channel {}", err);
-            err
-        });
+    let dm_channel_result = user.create_dm_channel(http).await.map_err(|err| {
+        error!("failed to create DM channel {}", err);
+        err
+    });
 
     if let Ok(channel) = dm_channel_result {
         let _ = channel

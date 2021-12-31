@@ -156,12 +156,7 @@ impl SlashCommand for MuteCommand {
         }
 
         if options.target_user.id == JIM_ID {
-            invisible_failure_reply(
-                &*context.http,
-                interaction,
-                "Now that's just rude.",
-            )
-            .await;
+            invisible_failure_reply(&*context.http, interaction, "Now that's just rude.").await;
             return Ok(());
         }
 

@@ -6,9 +6,9 @@ use serenity::model::Permissions;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
+use thiserror::Error;
 use tokio::sync::RwLock;
 use typemap_rev::TypeMapKey;
-use thiserror::Error;
 
 impl TypeMapKey for GuildService {
     type Value = GuildService;

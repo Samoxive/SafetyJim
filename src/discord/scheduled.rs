@@ -214,13 +214,10 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
         }
 
         if is_dm_required {
-            let dm_channel_result = user_id
-                .create_dm_channel(http)
-                .await
-                .map_err(|err| {
-                    error!("failed to create DM channel {}", err);
-                    err
-                });
+            let dm_channel_result = user_id.create_dm_channel(http).await.map_err(|err| {
+                error!("failed to create DM channel {}", err);
+                err
+            });
             if let Ok(dm_channel) = dm_channel_result {
                 let _ = dm_channel
                     .send_message(http, |message| {
