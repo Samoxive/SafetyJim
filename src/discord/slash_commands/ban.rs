@@ -8,6 +8,7 @@ use serenity::model::interactions::application_command::{
 use typemap_rev::TypeMap;
 
 use crate::config::Config;
+use crate::constants::JIM_ID;
 use crate::discord::slash_commands::ban::BanCommandOptionFailure::{
     DurationParseError, MissingOption,
 };
@@ -18,6 +19,7 @@ use crate::discord::util::{
     UserExt,
 };
 use crate::service::ban::{BanFailure, BanService};
+use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
 use anyhow::bail;
 use serenity::model::prelude::application_command::ApplicationCommandInteractionData;
@@ -144,6 +146,46 @@ impl SlashCommand for BanCommand {
             }
         };
 
+        if options.target_user.id == mod_user.id {
+            invisible_failure_reply(
+                &*context.http,
+                interaction,
+                "You can't ban yourself, dummy!",
+            )
+            .await;
+            return Ok(());
+        }
+
+        if options.target_user.id == JIM_ID {
+            // Sanity check: Jim cannot ban itself.
+            // c.f. https://discord.com/channels/238666723824238602/238666723824238602/902275716299776090
+            invisible_failure_reply(
+                &*context.http,
+                interaction,
+                "I'm sorry, Dave. I'm afraid I can't do that.",
+            )
+            .await;
+            return Ok(());
+        }
+
+        let guild_service = if let Some(service) = services.get::<GuildService>() {
+            service
+        } else {
+            bail!("couldn't get guild service!");
+        };
+
+        let guild = guild_service.get_guild(guild_id).await?;
+
+        if options.target_user.id == guild.owner_id {
+            invisible_failure_reply(
+                &*context.http,
+                interaction,
+                "You can't ban owner of the server!",
+            )
+            .await;
+            return Ok(());
+        }
+
         let ban_service = if let Some(service) = services.get::<BanService>() {
             service
         } else {
@@ -158,12 +200,10 @@ impl SlashCommand for BanCommand {
 
         let setting = setting_service.get_setting(guild_id).await;
 
-        let guild = context.http.get_guild(guild_id.0).await?;
-
         match ban_service
             .issue_ban(
                 &context.http,
-                guild.id,
+                guild_id,
                 &guild.name,
                 &setting,
                 Some(channel_id),

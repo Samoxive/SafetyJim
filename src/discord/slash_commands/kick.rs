@@ -8,6 +8,7 @@ use serenity::model::interactions::application_command::{
 use serenity::prelude::TypeMap;
 
 use crate::config::Config;
+use crate::constants::JIM_ID;
 use crate::discord::slash_commands::kick::KickCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
@@ -15,6 +16,7 @@ use crate::discord::util::{
     verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
     UserExt,
 };
+use crate::service::guild::GuildService;
 use crate::service::kick::{KickFailure, KickService};
 use crate::service::setting::SettingService;
 use anyhow::bail;
@@ -111,6 +113,44 @@ impl SlashCommand for KickCommand {
             }
         };
 
+        if options.target_user.id == mod_user.id {
+            invisible_failure_reply(
+                &*context.http,
+                interaction,
+                "You can't kick yourself, dummy!",
+            )
+            .await;
+            return Ok(());
+        }
+
+        if options.target_user.id == JIM_ID {
+            invisible_failure_reply(
+                &*context.http,
+                interaction,
+                "I'm sorry, Dave. I'm afraid I can't do that.",
+            )
+            .await;
+            return Ok(());
+        }
+
+        let guild_service = if let Some(service) = services.get::<GuildService>() {
+            service
+        } else {
+            bail!("couldn't get guild service!");
+        };
+
+        let guild = guild_service.get_guild(guild_id).await?;
+
+        if options.target_user.id == guild.owner_id {
+            invisible_failure_reply(
+                &*context.http,
+                interaction,
+                "You can't kick owner of the server!",
+            )
+            .await;
+            return Ok(());
+        }
+
         let kick_service = if let Some(service) = services.get::<KickService>() {
             service
         } else {
@@ -125,12 +165,10 @@ impl SlashCommand for KickCommand {
 
         let setting = setting_service.get_setting(guild_id).await;
 
-        let guild = context.http.get_guild(guild_id.0).await?;
-
         match kick_service
             .issue_kick(
                 &context.http,
-                guild.id,
+                guild_id,
                 &guild.name,
                 &setting,
                 services,

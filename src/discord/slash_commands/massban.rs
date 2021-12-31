@@ -4,22 +4,24 @@ use serenity::client::Context;
 use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
+use std::num::ParseIntError;
 
 use serenity::prelude::TypeMap;
 
 use crate::config::Config;
+use crate::constants::JIM_ID;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     invisible_failure_reply, invisible_success_reply, unauthorized_reply,
     verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
     SerenityErrorExt, UserExt,
 };
+use crate::service::guild::GuildService;
 use crate::service::hardban::{HardbanFailure, HardbanService};
 use crate::service::setting::SettingService;
 use anyhow::bail;
 use serenity::model::id::UserId;
 use serenity::model::Permissions;
-use crate::service::guild::GuildService;
 
 pub struct MassbanCommand;
 
@@ -41,20 +43,17 @@ fn generate_options(
         return Err(MassbanCommandOptionFailure::MissingOption);
     };
 
-    let (user_ids, errors): (Vec<_>, Vec<_>) = users_str
+    let user_ids = match users_str
         .split(',')
+        .map(|element| element.trim())
         .map(|element| element.parse::<u64>())
-        .partition(Result::is_ok);
+        .collect::<Result<Vec<u64>, ParseIntError>>()
+    {
+        Ok(ids) => ids,
+        Err(_) => return Err(MassbanCommandOptionFailure::UserIdParsingFailed),
+    };
 
-    if !errors.is_empty() {
-        return Err(MassbanCommandOptionFailure::UserIdParsingFailed);
-    }
-
-    let user_ids: Vec<UserId> = user_ids
-        .into_iter()
-        .map(|result| result.unwrap())
-        .map(UserId)
-        .collect();
+    let user_ids: Vec<UserId> = user_ids.into_iter().map(UserId).collect();
 
     Ok(MassbanCommandOptions {
         target_users: user_ids,
@@ -125,6 +124,52 @@ impl SlashCommand for MassbanCommand {
             }
         };
 
+        if options
+            .target_users
+            .iter()
+            .any(|target| *target == mod_user.id)
+        {
+            invisible_failure_reply(
+                &*context.http,
+                interaction,
+                "You can't massban yourself, dummy!",
+            )
+            .await;
+            return Ok(());
+        }
+
+        if options.target_users.iter().any(|target| *target == JIM_ID) {
+            invisible_failure_reply(
+                &*context.http,
+                interaction,
+                "I'm sorry, Dave. I'm afraid I can't do that.",
+            )
+            .await;
+            return Ok(());
+        }
+
+        let guild_service = if let Some(service) = services.get::<GuildService>() {
+            service
+        } else {
+            bail!("couldn't get guild service!");
+        };
+
+        let guild = guild_service.get_guild(guild_id).await?;
+
+        if options
+            .target_users
+            .iter()
+            .any(|target| *target == guild.owner_id)
+        {
+            invisible_failure_reply(
+                &*context.http,
+                interaction,
+                "You can't massban owner of the server!",
+            )
+            .await;
+            return Ok(());
+        }
+
         let hardban_service = if let Some(service) = services.get::<HardbanService>() {
             service
         } else {
@@ -137,15 +182,7 @@ impl SlashCommand for MassbanCommand {
             bail!("couldn't get setting service!");
         };
 
-        let guild_service = if let Some(service) = services.get::<GuildService>() {
-            service
-        } else {
-            bail!("couldn't get guild service!");
-        };
-
         let setting = setting_service.get_setting(guild_id).await;
-
-        let guild = guild_service.get_guild(guild_id).await?;
 
         let mut mod_log_failure = None;
         for target_user_id in options.target_users {
