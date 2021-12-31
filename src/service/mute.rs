@@ -156,12 +156,13 @@ impl MuteService {
             }
         };
 
+        let audit_log_reason = format!("Muted by {} - {}", mod_user_tag_and_id, reason);
         match http
             .add_member_role(
                 guild_id.0,
                 target_user.id.0,
                 role.0,
-                Some("Muting member because of mute command"),
+                Some(&audit_log_reason),
             )
             .await
         {
