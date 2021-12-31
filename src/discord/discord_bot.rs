@@ -250,7 +250,10 @@ impl EventHandler for DiscordEventHandler {
             return;
         }
 
-        let role = match mute_service.fetch_muted_role(&ctx.http, guild_id).await {
+        let role = match mute_service
+            .fetch_muted_role(&ctx.http, &*self.services, guild_id)
+            .await
+        {
             Ok(role) => role,
             Err(_) => {
                 return;

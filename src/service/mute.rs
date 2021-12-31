@@ -8,6 +8,7 @@ use crate::database::settings::{get_action_duration_for_auto_mod_action, Setting
 use crate::discord::util::mod_log::{create_mod_log_entry, CreateModLogEntryError, ModLogAction};
 use crate::discord::util::user_dm::{notify_user_for_mod_action, ModActionKind};
 use crate::discord::util::{execute_mod_action, SerenityErrorExt};
+use crate::service::guild::{GetRolesFailure, GuildService};
 use crate::util::now;
 use serenity::http::Http;
 use serenity::model::channel::{PermissionOverwrite, PermissionOverwriteType};
@@ -43,24 +44,24 @@ impl MuteService {
     pub async fn fetch_muted_role(
         &self,
         http: &Http,
+        services: &TypeMap,
         guild_id: GuildId,
     ) -> Result<RoleId, MuteFailure> {
-        let roles = match guild_id.roles(http).await {
-            Ok(roles) => roles,
-            Err(err) => {
-                return match err.discord_error_code() {
-                    Some(50013) => Err(MuteFailure::UnauthorizedFetchRoles),
-                    _ => {
-                        error!("failed to fetch roles of guild: {} {}", guild_id, err);
-                        Err(MuteFailure::Unknown)
-                    }
-                };
-            }
+        let guild_service = if let Some(service) = services.get::<GuildService>() {
+            service
+        } else {
+            error!("couldn't get guild service!");
+            return Err(MuteFailure::Unknown);
         };
 
-        for (id, role) in roles {
+        let roles = match guild_service.get_roles(guild_id).await {
+            Ok(roles) => roles,
+            Err(GetRolesFailure::FetchFailed) => return Err(MuteFailure::UnauthorizedFetchRoles),
+        };
+
+        for (id, role) in roles.iter() {
             if role.name == "Muted" {
-                return Ok(id);
+                return Ok(*id);
             }
         }
 
@@ -149,7 +150,7 @@ impl MuteService {
         )
         .await;
 
-        let role = match self.fetch_muted_role(http, guild_id).await {
+        let role = match self.fetch_muted_role(http, services, guild_id).await {
             Ok(role) => role,
             Err(err) => {
                 return Err(err);
