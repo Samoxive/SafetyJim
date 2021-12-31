@@ -42,7 +42,7 @@ fn generate_options(
 #[async_trait]
 impl SlashCommand for IAMNotCommand {
     fn command_name(&self) -> &'static str {
-        "iam"
+        "iam-not"
     }
 
     fn create_command<'a>(
