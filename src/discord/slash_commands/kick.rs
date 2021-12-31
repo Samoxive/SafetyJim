@@ -50,7 +50,7 @@ fn generate_options(
 }
 
 fn is_authorized(permissions: Permissions) -> bool {
-    permissions.kick_members()
+    permissions.administrator() || permissions.kick_members()
 }
 
 #[async_trait]

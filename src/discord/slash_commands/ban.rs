@@ -67,7 +67,7 @@ fn generate_options(
 }
 
 fn is_authorized(permissions: Permissions) -> bool {
-    permissions.ban_members()
+    permissions.administrator() || permissions.ban_members()
 }
 
 #[async_trait]

@@ -62,7 +62,7 @@ fn generate_options(
 }
 
 fn is_authorized(permissions: Permissions) -> bool {
-    permissions.manage_messages()
+    permissions.administrator() || permissions.manage_messages()
 }
 
 #[async_trait]

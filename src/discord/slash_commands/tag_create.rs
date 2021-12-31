@@ -116,10 +116,11 @@ impl SlashCommand for TagCreateCommand {
         let setting = setting_service.get_setting(guild_id).await;
 
         if !is_authorized(&setting, permissions) {
+            // TODO(sam): use unauthorized reply function
             invisible_failure_reply(
                 &*context.http,
                 interaction,
-                "You don't have enough permissions to execute this command! ",
+                "You don't have enough permissions to execute this command!",
             )
             .await;
             return Ok(());
