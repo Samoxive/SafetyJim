@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub discord_token: String,
-    pub geocode_token: Option<String>,
-    pub darksky_token: Option<String>,
+    pub geocode_token: String,
+    pub darksky_token: String,
     pub database_user: String,
     pub database_pass: String,
     pub database_host: String,

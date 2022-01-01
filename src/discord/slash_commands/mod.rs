@@ -35,7 +35,9 @@ mod tag_remove;
 mod unban;
 mod unmute;
 mod warn;
+mod weather;
 mod whois;
+mod xkcd;
 
 #[async_trait]
 pub trait SlashCommand {
@@ -58,7 +60,7 @@ pub struct SlashCommands(pub HashMap<&'static str, Box<dyn SlashCommand + Send +
 pub fn get_all_commands() -> SlashCommands {
     let mut commands_map: HashMap<&'static str, Box<dyn SlashCommand + Send + Sync>> =
         HashMap::new();
-    let commands: [Box<dyn SlashCommand + Send + Sync>; 28] = [
+    let commands: [Box<dyn SlashCommand + Send + Sync>; 30] = [
         Box::new(ban::BanCommand),
         Box::new(clean::CleanCommand),
         Box::new(clean_bot::CleanBotCommand),
@@ -87,6 +89,8 @@ pub fn get_all_commands() -> SlashCommands {
         Box::new(role_create::RoleCreateCommand),
         Box::new(role_remove::RoleRemoveCommand),
         Box::new(melo::MeloCommand),
+        Box::new(weather::WeatherCommand::new()),
+        Box::new(xkcd::XkcdCommand::new()),
     ];
 
     for command in commands {
