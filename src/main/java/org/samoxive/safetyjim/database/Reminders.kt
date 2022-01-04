@@ -6,26 +6,26 @@ import io.vertx.sqlclient.Tuple
 
 private const val createSQL =
     """
-create table if not exists reminderlist (
-    id serial not null primary key,
-    userid bigint not null,
-    channelid bigint not null,
-    guildid bigint not null,
-    createtime bigint not null,
-    remindtime bigint not null,
-    reminded boolean not null,
-    message text not null
+create table if not exists reminders (
+    id          serial not null primary key,
+    user_id     bigint not null,
+    channel_id  bigint not null,
+    guild_id    bigint not null,
+    create_time bigint not null,
+    remind_time bigint not null,
+    reminded    boolean not null,
+    message     text not null
 );
 """
 
 private const val insertSQL =
     """
-insert into reminderlist (
-    userid,
-    channelid,
-    guildid,
-    createtime,
-    remindtime,
+insert into reminders (
+    user_id,
+    channel_id,
+    guild_id,
+    create_time,
+    remind_time,
     reminded,
     message
 )
@@ -35,12 +35,12 @@ returning *;
 
 private const val updateSQL =
     """
-update reminderlist set
-    userid = $2,
-    channelid = $3,
-    guildid = $4,
-    createtime = $5,
-    remindtime = $6,
+update reminders set
+    user_id = $2,
+    channel_id = $3,
+    guild_id = $4,
+    create_time = $5,
+    remind_time = $6,
     reminded = $7,
     message = $8
 where id = $1;
@@ -65,7 +65,7 @@ object RemindersTable : AbstractTable {
 
     suspend fun fetchExpiredReminders(): List<ReminderEntity> {
         val time = System.currentTimeMillis() / 1000
-        return pgPool.preparedQueryAwait("select * from reminderlist where reminded = false and remindtime < $1;", Tuple.of(time))
+        return pgPool.preparedQueryAwait("select * from reminders where reminded = false and remind_time < $1;", Tuple.of(time))
             .toReminderEntities()
     }
 

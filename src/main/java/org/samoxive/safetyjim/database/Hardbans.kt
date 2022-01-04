@@ -7,23 +7,23 @@ import net.dv8tion.jda.api.entities.Guild
 
 private const val createSQL =
     """
-create table if not exists hardbanlist (
-    id serial not null primary key,
-    userid bigint not null,
-    moderatoruserid bigint not null,
-    guildid bigint not null,
-    hardbantime bigint not null,
-    reason text not null
+create table if not exists hardbans (
+    id                serial not null primary key,
+    user_id           bigint not null,
+    moderator_user_id bigint not null,
+    guild_id          bigint not null,
+    hardban_time      bigint not null,
+    reason            text not null
 );
 """
 
 private const val insertSQL =
     """
-insert into hardbanlist (
-    userid,
-    moderatoruserid,
-    guildid,
-    hardbantime,
+insert into hardbans (
+    user_id,
+    moderator_user_id,
+    guild_id,
+    hardban_time,
     reason
 )
 values ($1, $2, $3, $4, $5)
@@ -32,11 +32,11 @@ returning *;
 
 private const val updateSQL =
     """
-update hardbanlist set
-    userid = $2,
-    moderatoruserid = $3,
-    guildid = $4,
-    hardbantime = $5,
+update hardbans set
+    user_id = $2,
+    moderator_user_id = $3,
+    guild_id = $4,
+    hardban_time = $5,
     reason = $6
 where id = $1;
 """
@@ -44,7 +44,7 @@ where id = $1;
 object HardbansTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf(
-        "create index if not exists hardbanlist_hardbantime_index on hardbanlist (hardbantime desc);"
+        "create index if not exists hardbans_hardban_time_index on hardbans (hardban_time desc);"
     )
 
     private fun RowSet<Row>.toHardbanEntities(): List<HardbanEntity> = this.map {
@@ -59,18 +59,18 @@ object HardbansTable : AbstractTable {
     }
 
     suspend fun fetchHardban(id: Int): HardbanEntity? {
-        return pgPool.preparedQueryAwait("select * from hardbanlist where id = $1;", Tuple.of(id))
+        return pgPool.preparedQueryAwait("select * from hardbans where id = $1;", Tuple.of(id))
             .toHardbanEntities()
             .firstOrNull()
     }
 
     suspend fun fetchGuildHardbans(guild: Guild, page: Int): List<HardbanEntity> {
-        return pgPool.preparedQueryAwait("select * from hardbanlist where guildid = $1 order by hardbantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
+        return pgPool.preparedQueryAwait("select * from hardbans where guild_id = $1 order by hardban_time desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
             .toHardbanEntities()
     }
 
     suspend fun fetchGuildHardbansCount(guild: Guild): Int {
-        return pgPool.preparedQueryAwait("select count(*) from hardbanlist where guildid = $1;", Tuple.of(guild.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from hardbans where guild_id = $1;", Tuple.of(guild.idLong))
             .first()
             .getInteger(0)
     }

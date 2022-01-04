@@ -7,20 +7,20 @@ import java.util.*
 
 private const val createSQL =
     """
-create table if not exists usersecrets (
-    userid bigint not null primary key,
-    accesstoken text not null,
-    updated bigint not null
+create table if not exists user_secrets (
+    user_id      bigint not null primary key,
+    access_token text not null,
+    update_time  bigint not null
 );
 """
 
 private const val upsertSQL =
     """
-insert into usersecrets (
-    userid, accesstoken, updated
+insert into user_secrets (
+    user_id, access_token, update_time
 ) values ($1, $2, $3)
-on conflict (userid) do update
-set accesstoken = excluded.accesstoken, updated = excluded.updated; 
+on conflict (user_id) do update
+set access_token = excluded.access_token, update_time = excluded.update_time; 
 """
 
 object UserSecretsTable : AbstractTable {
@@ -35,7 +35,7 @@ object UserSecretsTable : AbstractTable {
     }
 
     suspend fun fetchUserSecrets(userId: Long): UserSecretsEntity? {
-        return pgPool.preparedQueryAwait("select * from usersecrets where userid = $1;", Tuple.of(userId))
+        return pgPool.preparedQueryAwait("select * from user_secrets where user_id = $1;", Tuple.of(userId))
             .toUserSecretsEntities()
             .firstOrNull()
     }

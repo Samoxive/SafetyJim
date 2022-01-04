@@ -8,24 +8,24 @@ import net.dv8tion.jda.api.entities.User
 
 private const val createSQL =
     """
-create table if not exists warnlist (
-    id serial not null primary key,
-    userid bigint not null,
-    moderatoruserid bigint not null,
-    guildid bigint not null,
-    warntime bigint not null,
-    reason text not null,
-    pardoned boolean not null
+create table if not exists warns (
+    id                serial not null primary key,
+    user_id           bigint not null,
+    moderator_user_id bigint not null,
+    guild_id          bigint not null,
+    warn_time         bigint not null,
+    reason            text not null,
+    pardoned          boolean not null
 );
 """
 
 private const val insertSQL =
     """
-insert into warnlist (
-    userid,
-    moderatoruserid,
-    guildid,
-    warntime,
+insert into warns (
+    user_id,
+    moderator_user_id,
+    guild_id,
+    warn_time,
     reason,
     pardoned
 )
@@ -35,11 +35,11 @@ returning *;
 
 private const val updateSQL =
     """
-update warnlist set
-    userid = $2,
-    moderatoruserid = $3,
-    guildid = $4,
-    warntime = $5,
+update warns set
+    user_id = $2,
+    moderator_user_id = $3,
+    guild_id = $4,
+    warn_time = $5,
     reason = $6,
     pardoned = $7
 where id = $1;
@@ -62,24 +62,24 @@ object WarnsTable : AbstractTable {
     }
 
     suspend fun fetchWarn(id: Int): WarnEntity? {
-        return pgPool.preparedQueryAwait("select * from warnlist where id = $1;", Tuple.of(id))
+        return pgPool.preparedQueryAwait("select * from warns where id = $1;", Tuple.of(id))
             .toWarnEntities()
             .firstOrNull()
     }
 
     suspend fun fetchGuildWarns(guild: Guild, page: Int): List<WarnEntity> {
-        return pgPool.preparedQueryAwait("select * from warnlist where guildid = $1 order by warntime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
+        return pgPool.preparedQueryAwait("select * from warns where guild_id = $1 order by warn_time desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
             .toWarnEntities()
     }
 
     suspend fun fetchGuildWarnsCount(guild: Guild): Int {
-        return pgPool.preparedQueryAwait("select count(*) from warnlist where guildid = $1;", Tuple.of(guild.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from warns where guild_id = $1;", Tuple.of(guild.idLong))
             .first()
             .getInteger(0)
     }
 
     suspend fun fetchUserActionableWarnCount(guild: Guild, user: User): Int {
-        return pgPool.preparedQueryAwait("select count(*) from warnlist where guildid = $1 and userid = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from warns where guild_id = $1 and user_id = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
             .first()
             .getInteger(0)
     }

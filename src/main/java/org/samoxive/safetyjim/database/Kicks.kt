@@ -8,24 +8,24 @@ import net.dv8tion.jda.api.entities.User
 
 private const val createSQL =
     """
-create table if not exists kicklist (
-    id serial not null primary key,
-    userid bigint not null,
-    moderatoruserid bigint not null,
-    guildid bigint not null,
-    kicktime bigint not null,
-    reason text not null,
-    pardoned boolean not null
+create table if not exists kicks (
+    id                serial not null primary key,
+    user_id           bigint not null,
+    moderator_user_id bigint not null,
+    guild_id          bigint not null,
+    kick_time         bigint not null,
+    reason            text not null,
+    pardoned          boolean not null
 );
 """
 
 private const val insertSQL =
     """
-insert into kicklist (
-    userid,
-    moderatoruserid,
-    guildid,
-    kicktime,
+insert into kicks (
+    user_id,
+    moderator_user_id,
+    guild_id,
+    kick_time,
     reason,
     pardoned
 )
@@ -35,11 +35,11 @@ returning *;
 
 private const val updateSQL =
     """
-update kicklist set
-    userid = $2,
-    moderatoruserid = $3,
-    guildid = $4,
-    kicktime = $5,
+update kicks set
+    user_id = $2,
+    moderator_user_id = $3,
+    guild_id = $4,
+    kick_time = $5,
     reason = $6,
     pardoned = $7
 where id = $1;
@@ -62,24 +62,24 @@ object KicksTable : AbstractTable {
     }
 
     suspend fun fetchKick(id: Int): KickEntity? {
-        return pgPool.preparedQueryAwait("select * from kicklist where id = $1;", Tuple.of(id))
+        return pgPool.preparedQueryAwait("select * from kicks where id = $1;", Tuple.of(id))
             .toKickEntities()
             .firstOrNull()
     }
 
     suspend fun fetchGuildKicks(guild: Guild, page: Int): List<KickEntity> {
-        return pgPool.preparedQueryAwait("select * from kicklist where guildid = $1 order by kicktime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
+        return pgPool.preparedQueryAwait("select * from kicks where guild_id = $1 order by kick_time desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
             .toKickEntities()
     }
 
     suspend fun fetchGuildKicksCount(guild: Guild): Int {
-        return pgPool.preparedQueryAwait("select count(*) from kicklist where guildid = $1;", Tuple.of(guild.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from kicks where guild_id = $1;", Tuple.of(guild.idLong))
             .first()
             .getInteger(0)
     }
 
     suspend fun fetchUserActionableKickCount(guild: Guild, user: User): Int {
-        return pgPool.preparedQueryAwait("select count(*) from kicklist where guildid = $1 and userid = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from kicks where guild_id = $1 and user_id = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
             .first()
             .getInteger(0)
     }

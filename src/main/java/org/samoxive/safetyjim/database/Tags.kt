@@ -7,18 +7,18 @@ import net.dv8tion.jda.api.entities.Guild
 
 private const val createSQL =
     """
-create table if not exists taglist (
-    id serial not null primary key,
-    guildid bigint not null,
-    name text not null,
+create table if not exists tags (
+    id       serial not null primary key,
+    guild_id bigint not null,
+    name     text not null,
     response text not null
 );
 """
 
 private const val insertSQL =
     """
-insert into taglist (
-    guildid,
+insert into tags (
+    guild_id,
     "name",
     response
 )
@@ -27,8 +27,8 @@ values ($1, $2, $3);
 
 private const val updateSQL =
     """
-update taglist set
-    guildid = $2,
+update tags set
+    guild_id = $2,
     "name" = $3,
     response = $4
 where id = $1;
@@ -37,7 +37,7 @@ where id = $1;
 object TagsTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf(
-        "create index if not exists taglist_index_1 on taglist (guildid);"
+        "create index if not exists tags_guild_id_name_unique_index on tags (guild_id);"
     )
 
     private fun RowSet<Row>.toTagEntities(): List<TagEntity> = this.map {
@@ -50,12 +50,12 @@ object TagsTable : AbstractTable {
     }
 
     suspend fun fetchGuildTags(guild: Guild): List<TagEntity> {
-        return pgPool.preparedQueryAwait("select * from taglist where guildid = $1;", Tuple.of(guild.idLong))
+        return pgPool.preparedQueryAwait("select * from tags where guild_id = $1;", Tuple.of(guild.idLong))
             .toTagEntities()
     }
 
     suspend fun fetchTagByName(guild: Guild, name: String): TagEntity? {
-        return pgPool.preparedQueryAwait("select * from taglist where guildid = $1 and name = $2;", Tuple.of(guild.idLong, name))
+        return pgPool.preparedQueryAwait("select * from tags where guild_id = $1 and name = $2;", Tuple.of(guild.idLong, name))
             .toTagEntities()
             .firstOrNull()
     }
@@ -69,7 +69,7 @@ object TagsTable : AbstractTable {
     }
 
     suspend fun deleteTag(tag: TagEntity) {
-        pgPool.preparedQueryAwait("delete from taglist where id = $1;", Tuple.of(tag.id))
+        pgPool.preparedQueryAwait("delete from tags where id = $1;", Tuple.of(tag.id))
     }
 }
 

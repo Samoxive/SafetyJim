@@ -8,23 +8,23 @@ import net.dv8tion.jda.api.entities.User
 
 private const val createSQL =
     """
-create table if not exists joinlist (
-    id serial not null primary key,
-    userid bigint not null,
-    guildid bigint not null,
-    jointime bigint not null,
-    allowtime bigint not null,
-    allowed boolean not null
+create table if not exists joins (
+    id         serial not null primary key,
+    user_id    bigint not null,
+    guild_id   bigint not null,
+    join_time  bigint not null,
+    allow_time bigint not null,
+    allowed    boolean not null
 );
 """
 
 private const val insertSQL =
     """
-insert into joinlist (
-    userid,
-    guildid,
-    jointime,
-    allowtime,
+insert into joins (
+    user_id,
+    guild_id,
+    join_time,
+    allow_time,
     allowed
 )
 values ($1, $2, $3, $4, $5)
@@ -33,11 +33,11 @@ returning *;
 
 private const val updateSQL =
     """
-update joinlist set
-    userid = $2,
-    guildid = $3,
-    jointime = $4,
-    allowtime = $5,
+update joins set
+    user_id = $2,
+    guild_id = $3,
+    join_time = $4,
+    allow_time = $5,
     allowed = $6
 where id = $1;
 """
@@ -59,7 +59,7 @@ object JoinsTable : AbstractTable {
 
     suspend fun fetchExpiredJoins(): List<JoinEntity> {
         val time = System.currentTimeMillis() / 1000
-        return pgPool.preparedQueryAwait("select * from joinlist where allowed = false and allowtime < $1;", Tuple.of(time))
+        return pgPool.preparedQueryAwait("select * from joins where allowed = false and allow_time < $1;", Tuple.of(time))
             .toJoinEntities()
     }
 
@@ -74,7 +74,7 @@ object JoinsTable : AbstractTable {
     }
 
     suspend fun deleteUserJoins(guild: Guild, user: User) {
-        pgPool.preparedQueryAwait("delete from joinlist where guildid = $1 and userid = $2;", Tuple.of(guild.idLong, user.idLong))
+        pgPool.preparedQueryAwait("delete from joins where guild_id = $1 and user_id = $2;", Tuple.of(guild.idLong, user.idLong))
     }
 }
 

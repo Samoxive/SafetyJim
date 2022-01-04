@@ -8,24 +8,24 @@ import net.dv8tion.jda.api.entities.User
 
 private const val createSQL =
     """
-create table if not exists softbanlist (
-    id serial not null primary key,
-    userid bigint not null,
-    moderatoruserid bigint not null,
-    guildid bigint not null,
-    softbantime bigint not null,
-    reason text not null,
-    pardoned boolean not null
+create table if not exists softbans (
+    id                serial not null primary key,
+    user_id           bigint not null,
+    moderator_user_id bigint not null,
+    guild_id          bigint not null,
+    softban_time      bigint not null,
+    reason            text not null,
+    pardoned          boolean not null
 );
 """
 
 private const val insertSQL =
     """
-insert into softbanlist (
-    userid,
-    moderatoruserid,
-    guildid,
-    softbantime,
+insert into softbans (
+    user_id,
+    moderator_user_id,
+    guild_id,
+    softban_time,
     reason,
     pardoned
 )
@@ -35,11 +35,11 @@ returning *;
 
 private const val updateSQL =
     """
-update softbanlist set
-    userid = $2,
-    moderatoruserid = $3,
-    guildid = $4,
-    softbantime = $5,
+update softbans set
+    user_id = $2,
+    moderator_user_id = $3,
+    guild_id = $4,
+    softban_time = $5,
     reason = $6,
     pardoned = $7
 where id = $1;
@@ -62,24 +62,24 @@ object SoftbansTable : AbstractTable {
     }
 
     suspend fun fetchSoftban(id: Int): SoftbanEntity? {
-        return pgPool.preparedQueryAwait("select * from softbanlist where id = $1;", Tuple.of(id))
+        return pgPool.preparedQueryAwait("select * from softbans where id = $1;", Tuple.of(id))
             .toSoftbanEntities()
             .firstOrNull()
     }
 
     suspend fun fetchGuildSoftbans(guild: Guild, page: Int): List<SoftbanEntity> {
-        return pgPool.preparedQueryAwait("select * from softbanlist where guildid = $1 order by softbantime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
+        return pgPool.preparedQueryAwait("select * from softbans where guild_id = $1 order by softban_time desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
             .toSoftbanEntities()
     }
 
     suspend fun fetchGuildSoftbansCount(guild: Guild): Int {
-        return pgPool.preparedQueryAwait("select count(*) from softbanlist where guildid = $1;", Tuple.of(guild.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from softbans where guild_id = $1;", Tuple.of(guild.idLong))
             .first()
             .getInteger(0)
     }
 
     suspend fun fetchUserActionableSoftbanCount(guild: Guild, user: User): Int {
-        return pgPool.preparedQueryAwait("select count(*) from softbanlist where guildid = $1 and userid = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from softbans where guild_id = $1 and user_id = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
             .first()
             .getInteger(0)
     }

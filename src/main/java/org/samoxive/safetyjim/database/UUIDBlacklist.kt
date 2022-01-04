@@ -5,7 +5,7 @@ import java.util.*
 
 private const val createSQL =
     """
-create table if not exists uuidblacklist (
+create table if not exists invalid_uuids (
     id uuid not null primary key
 );
 """
@@ -15,7 +15,7 @@ object UUIDBlacklistTable : AbstractTable {
     override val createIndexStatements = arrayOf<String>()
 
     suspend fun isUUIDBlacklisted(id: UUID): Boolean {
-        return pgPool.preparedQueryAwait("select * from uuidblacklist where id = $1;", Tuple.of(id))
+        return pgPool.preparedQueryAwait("select * from invalid_uuids where id = $1;", Tuple.of(id))
             .any()
     }
 }

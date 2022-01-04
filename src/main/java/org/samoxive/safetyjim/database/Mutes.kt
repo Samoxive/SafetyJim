@@ -8,28 +8,28 @@ import net.dv8tion.jda.api.entities.User
 
 private const val createSQL =
     """
-create table if not exists mutelist (
-    id serial not null primary key,
-    userid bigint not null,
-    moderatoruserid bigint not null,
-    guildid bigint not null,
-    mutetime bigint not null,
-    expiretime bigint not null,
-    reason text not null,
-    expires boolean not null,
-    unmuted boolean not null,
-    pardoned boolean not null
+create table if not exists mutes (
+    id                serial not null primary key,
+    user_id           bigint not null,
+    moderator_user_id bigint not null,
+    guild_id          bigint not null,
+    mute_time         bigint not null,
+    expire_time       bigint not null,
+    reason            text not null,
+    expires           boolean not null,
+    unmuted           boolean not null,
+    pardoned          boolean not null
 );
 """
 
 private const val insertSQL =
     """
-insert into mutelist (
-    userid,
-    moderatoruserid,
-    guildid,
-    mutetime,
-    expiretime,
+insert into mutes (
+    user_id,
+    moderator_user_id,
+    guild_id,
+    mute_time,
+    expire_time,
     reason,
     expires,
     unmuted,
@@ -41,12 +41,12 @@ returning *;
 
 private const val updateSQL =
     """
-update mutelist set
-    userid = $2,
-    moderatoruserid = $3,
-    guildid = $4,
-    mutetime = $5,
-    expiretime = $6,
+update mutes set
+    user_id = $2,
+    moderator_user_id = $3,
+    guild_id = $4,
+    mute_time = $5,
+    expire_time = $6,
     reason = $7,
     expires = $8,
     unmuted = $9,
@@ -74,35 +74,35 @@ object MutesTable : AbstractTable {
     }
 
     suspend fun fetchMute(id: Int): MuteEntity? {
-        return pgPool.preparedQueryAwait("select * from mutelist where id = $1;", Tuple.of(id))
+        return pgPool.preparedQueryAwait("select * from mutes where id = $1;", Tuple.of(id))
             .toMuteEntities()
             .firstOrNull()
     }
 
     suspend fun fetchGuildMutes(guild: Guild, page: Int): List<MuteEntity> {
-        return pgPool.preparedQueryAwait("select * from mutelist where guildid = $1 order by mutetime desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
+        return pgPool.preparedQueryAwait("select * from mutes where guild_id = $1 order by mute_time desc limit 10 offset $2;", Tuple.of(guild.idLong, (page - 1) * 10))
             .toMuteEntities()
     }
 
     suspend fun fetchGuildMutesCount(guild: Guild): Int {
-        return pgPool.preparedQueryAwait("select count(*) from mutelist where guildid = $1;", Tuple.of(guild.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from mutes where guild_id = $1;", Tuple.of(guild.idLong))
             .first()
             .getInteger(0)
     }
 
     suspend fun fetchExpiredMutes(): List<MuteEntity> {
         val time = System.currentTimeMillis() / 1000
-        return pgPool.preparedQueryAwait("select * from mutelist where unmuted = false and expires = true and expiretime < $1;", Tuple.of(time))
+        return pgPool.preparedQueryAwait("select * from mutes where unmuted = false and expires = true and expire_time < $1;", Tuple.of(time))
             .toMuteEntities()
     }
 
     suspend fun fetchValidUserMutes(guild: Guild, user: User): List<MuteEntity> {
-        return pgPool.preparedQueryAwait("select * from mutelist where guildid = $1 and userid = $2 and unmuted = false;", Tuple.of(guild.idLong, user.idLong))
+        return pgPool.preparedQueryAwait("select * from mutes where guild_id = $1 and user_id = $2 and unmuted = false;", Tuple.of(guild.idLong, user.idLong))
             .toMuteEntities()
     }
 
     suspend fun fetchUserActionableMuteCount(guild: Guild, user: User): Int {
-        return pgPool.preparedQueryAwait("select count(*) from mutelist where guildid = $1 and userid = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
+        return pgPool.preparedQueryAwait("select count(*) from mutes where guild_id = $1 and user_id = $2 and pardoned = false;", Tuple.of(guild.idLong, user.idLong))
             .first()
             .getInteger(0)
     }
@@ -118,7 +118,7 @@ object MutesTable : AbstractTable {
     }
 
     suspend fun invalidatePreviousUserMutes(guild: Guild, user: User) {
-        pgPool.preparedQueryAwait("update mutelist set unmuted = true where guildid = $1 and userid = $2;", Tuple.of(guild.idLong, user.idLong))
+        pgPool.preparedQueryAwait("update mutes set unmuted = true where guild_id = $1 and user_id = $2;", Tuple.of(guild.idLong, user.idLong))
     }
 }
 

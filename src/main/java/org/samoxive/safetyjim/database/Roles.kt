@@ -8,18 +8,18 @@ import net.dv8tion.jda.api.entities.Role
 
 private const val createSQL =
     """
-create table if not exists rolelist (
-    id serial not null primary key,
-    guildid bigint not null,
-    roleid bigint not null
+create table if not exists iam_roles (
+    id       serial not null primary key,
+    guild_id bigint not null,
+    role_id  bigint not null
 );
 """
 
 private const val insertSQL =
     """
-insert into rolelist (
-    guildid,
-    roleid
+insert into iam_roles (
+    guild_id,
+    role_id
 )
 values ($1, $2);
 """
@@ -27,7 +27,7 @@ values ($1, $2);
 object RolesTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf(
-        "create unique index if not exists rolelist_index_1 on rolelist (guildid, roleid);"
+        "create unique index if not exists iam_roles_guild_id_role_id_index on iam_roles (guild_id, role_id);"
     )
 
     private fun RowSet<Row>.toRoleEntities(): List<RoleEntity> = this.map {
@@ -39,13 +39,13 @@ object RolesTable : AbstractTable {
     }
 
     suspend fun fetchRole(guild: Guild, role: Role): RoleEntity? {
-        return pgPool.preparedQueryAwait("select * from rolelist where guildid = $1 and roleid = $2;", Tuple.of(guild.idLong, role.idLong))
+        return pgPool.preparedQueryAwait("select * from iam_roles where guild_id = $1 and role_id = $2;", Tuple.of(guild.idLong, role.idLong))
             .toRoleEntities()
             .firstOrNull()
     }
 
     suspend fun fetchGuildRoles(guild: Guild): List<RoleEntity> {
-        return pgPool.preparedQueryAwait("select * from rolelist where guildid = $1;", Tuple.of(guild.idLong))
+        return pgPool.preparedQueryAwait("select * from iam_roles where guild_id = $1;", Tuple.of(guild.idLong))
             .toRoleEntities()
     }
 
@@ -56,7 +56,7 @@ object RolesTable : AbstractTable {
     }
 
     suspend fun deleteRole(role: RoleEntity) {
-        pgPool.preparedQueryAwait("delete from rolelist where id = $1;", Tuple.of(role.id))
+        pgPool.preparedQueryAwait("delete from iam_roles where id = $1;", Tuple.of(role.id))
     }
 }
 
