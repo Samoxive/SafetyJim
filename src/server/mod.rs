@@ -336,7 +336,7 @@ pub async fn run_server(config: Arc<Config>, services: Arc<TypeMap>) -> Result<(
                     .max_age(None),
             )
     })
-    .bind((Ipv4Addr::LOCALHOST, 8080))?
+    .bind((Ipv4Addr::LOCALHOST, config.server_port))?
     .run()
     .await?;
 
