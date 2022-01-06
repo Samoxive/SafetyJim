@@ -24,7 +24,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag
 import org.samoxive.safetyjim.database.*
 import org.samoxive.safetyjim.database.SettingsTable.getGuildSettings
 import org.samoxive.safetyjim.discord.commands.setupMutedRole
-import org.samoxive.safetyjim.discord.processors.isInviteLinkBlacklisted
+import org.samoxive.safetyjim.discord.processors.isInviteLinkBlocklisted
 import org.samoxive.safetyjim.tryhardAsync
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -32,6 +32,12 @@ import java.awt.Color
 import java.util.*
 import javax.security.auth.login.LoginException
 import kotlin.system.exitProcess
+
+const val DEPRECATION_NOTICE = "Due to Discord's changes, the old way of implementing commands as text messages has been deprecated.\n" +
+        "Safety Jim will migrate to slash commands on 8th of January after much work rewriting most of the project to adapt to changes.\n" +
+        "For this migration there is no action needed, however if you invited Jim after 24th of March, 2021 you need to kick him and invite back for slash commands to appear in your server.\n" +
+        "You can use the whois command with Jim to find when you invited him.\n\n" +
+        "To check out the new slash commands before migration and report potential bugs and feedback, feel free to head to the support Discord server."
 
 class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController) : ListenerAdapter() {
     private val log: Logger
@@ -215,7 +221,7 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
         val guildSettings = getGuildSettings(guild, bot.config)
 
         if (guildSettings.inviteLinkRemover) {
-            if (isInviteLinkBlacklisted(user.name)) {
+            if (isInviteLinkBlocklisted(user.name)) {
                 tryhardAsync { guild.kick(member).await() }
                 return
             }
@@ -301,6 +307,12 @@ class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController:
             channel.trySendMessage(embed.build(), message)
         } else {
             message.deleteCommandMessage(settings, commandName)
+        }
+
+        val guildId = event.guild.idLong
+        if (!bot.notifiedGuilds.contains(guildId)) {
+            bot.notifiedGuilds.add(guildId)
+            channel.trySendMessage(DEPRECATION_NOTICE)
         }
     }
 }

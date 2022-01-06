@@ -61,6 +61,8 @@ class DiscordBot(val config: Config) {
             .map { shard -> shard.guildCache.size() }
             .sum()
 
+    val notifiedGuilds = mutableSetOf<Long>()
+
     init {
         val sessionController = SessionControllerAdapter()
         for (i in 0 until config.jim.shard_count) {
