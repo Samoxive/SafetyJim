@@ -34,10 +34,10 @@ import javax.security.auth.login.LoginException
 import kotlin.system.exitProcess
 
 const val DEPRECATION_NOTICE = "Due to Discord's changes, the old way of implementing commands as text messages has been deprecated.\n" +
-        "Safety Jim will migrate to slash commands on 8th of January after much work rewriting most of the project to adapt to changes.\n" +
-        "For this migration there is no action needed, however if you invited Jim after 24th of March, 2021 you need to kick him and invite back for slash commands to appear in your server.\n" +
-        "You can use the whois command with Jim to find when you invited him.\n\n" +
-        "To check out the new slash commands before migration and report potential bugs and feedback, feel free to head to the support Discord server."
+    "Safety Jim will migrate to slash commands on 8th of January after much work rewriting most of the project to adapt to changes.\n" +
+    "For this migration there is no action needed, however if you invited Jim after 24th of March, 2021 you need to kick him and invite back for slash commands to appear in your server.\n" +
+    "You can use the whois command with Jim to find when you invited him.\n\n" +
+    "To check out the new slash commands before migration and report potential bugs and feedback, feel free to head to the support Discord server."
 
 class DiscordShard(private val bot: DiscordBot, shardId: Int, sessionController: SessionController) : ListenerAdapter() {
     private val log: Logger
