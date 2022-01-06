@@ -12,7 +12,7 @@ class Info : Command() {
     override val usages = arrayOf("info - displays some information about the bot")
     private val supportServer = "https://discord.io/safetyjim"
     private val githubLink = "https://github.com/samoxive/safetyjim"
-    private val botInviteLink = "https://discordapp.com/oauth2/authorize?client_id=313749262687141888&permissions=268446790&scope=bot"
+    private val botInviteLink = "https://discord.com/api/oauth2/authorize?client_id=313749262687141888&permissions=1099918552278&scope=applications.commands%20bot"
 
     override suspend fun run(bot: DiscordBot, event: GuildMessageReceivedEvent, settings: SettingsEntity, args: String): Boolean {
         val currentShard = event.jda

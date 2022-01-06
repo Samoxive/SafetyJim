@@ -15,7 +15,7 @@ class Invite : Command() {
     private val embedBuilder = EmbedBuilder()
     private var embed: MessageEmbed? = null
     private var embedHasAvatarURL = false
-    private val botLink = "https://discordapp.com/oauth2/authorize?client_id=313749262687141888&permissions=268446790&scope=bot"
+    private val botLink = "https://discord.com/api/oauth2/authorize?client_id=313749262687141888&permissions=1099918552278&scope=applications.commands%20bot"
     private val inviteLink = "https://discord.io/safetyjim"
     /*
     * private embed = {
