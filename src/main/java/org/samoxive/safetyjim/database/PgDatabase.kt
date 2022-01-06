@@ -26,7 +26,7 @@ private val tables = arrayOf(
     SoftbansTable,
     TagsTable,
     WarnsTable,
-    UUIDBlacklistTable,
+    UUIDBlocklistTable,
     UserSecretsTable
 )
 

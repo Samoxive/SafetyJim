@@ -5,7 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.kotlin.coroutines.await
 import org.samoxive.safetyjim.config.Config
-import org.samoxive.safetyjim.database.UUIDBlacklistTable
+import org.samoxive.safetyjim.database.UUIDBlocklistTable
 import org.samoxive.safetyjim.tryhardAsync
 import java.time.Duration
 import java.time.Instant
@@ -22,7 +22,7 @@ suspend fun getUserIdFromToken(config: Config, token: String) = tryhardAsync {
 
     val uuidString = decodedToken.getClaim("uuid").asString()
     val uuid = UUID.fromString(uuidString)
-    if (UUIDBlacklistTable.isUUIDBlacklisted(uuid)) {
+    if (UUIDBlocklistTable.isUUIDBlocklisted(uuid)) {
         return@tryhardAsync null
     }
 

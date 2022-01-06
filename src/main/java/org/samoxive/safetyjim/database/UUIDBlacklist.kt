@@ -10,11 +10,11 @@ create table if not exists invalid_uuids (
 );
 """
 
-object UUIDBlacklistTable : AbstractTable {
+object UUIDBlocklistTable : AbstractTable {
     override val createStatement = createSQL
     override val createIndexStatements = arrayOf<String>()
 
-    suspend fun isUUIDBlacklisted(id: UUID): Boolean {
+    suspend fun isUUIDBlocklisted(id: UUID): Boolean {
         return pgPool.preparedQueryAwait("select * from invalid_uuids where id = $1;", Tuple.of(id))
             .any()
     }

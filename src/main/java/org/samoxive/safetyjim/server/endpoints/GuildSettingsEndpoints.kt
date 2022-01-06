@@ -68,7 +68,7 @@ class GetGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bot
             settingsEntity.silentCommandsLevel,
             settingsEntity.modActionConfirmationMessage,
             settingsEntity.wordFilter,
-            settingsEntity.wordFilterBlacklist,
+            settingsEntity.wordFilterBlocklist,
             settingsEntity.wordFilterLevel,
             settingsEntity.wordFilterAction,
             settingsEntity.wordFilterActionDuration,
@@ -117,7 +117,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
         val newSettings = parsedSettings.copy(
             message = parsedSettings.message.trim(),
             prefix = parsedSettings.prefix.trim(),
-            wordFilterBlacklist = parsedSettings.wordFilterBlacklist?.trim()
+            wordFilterBlocklist = parsedSettings.wordFilterBlocklist?.trim()
         )
 
         if (newSettings.modLogChannel?.id != null) {
@@ -173,8 +173,8 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST, "Invalid value for silent commands level!")
         }
 
-        if (newSettings.wordFilterBlacklist != null && newSettings.wordFilterBlacklist.length > 2000) {
-            return Result(Status.BAD_REQUEST, "Word filter blacklist cannot be too long!")
+        if (newSettings.wordFilterBlocklist != null && newSettings.wordFilterBlocklist.length > 2000) {
+            return Result(Status.BAD_REQUEST, "Word filter blocklist cannot be too long!")
         }
 
         if (newSettings.wordFilterLevel != SettingsEntity.WORD_FILTER_LEVEL_LOW && newSettings.wordFilterLevel != SettingsEntity.WORD_FILTER_LEVEL_HIGH) {
@@ -268,8 +268,8 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
             return Result(Status.BAD_REQUEST)
         }
 
-        val wordFilterBlacklist = if (newSettings.wordFilterBlacklist != null) {
-            newSettings.wordFilterBlacklist.ifEmpty {
+        val wordFilterBlocklist = if (newSettings.wordFilterBlocklist != null) {
+            newSettings.wordFilterBlocklist.ifEmpty {
                 null
             }
         } else {
@@ -297,7 +297,7 @@ class PostGuildSettingsEndpoint(bot: DiscordBot) : AuthenticatedGuildEndpoint(bo
                     silentCommandsLevel = newSettings.silentCommandsLevel,
                     modActionConfirmationMessage = newSettings.modActionConfirmationMessage,
                     wordFilter = newSettings.wordFilter,
-                    wordFilterBlacklist = wordFilterBlacklist,
+                    wordFilterBlocklist = wordFilterBlocklist,
                     wordFilterLevel = newSettings.wordFilterLevel,
                     wordFilterAction = newSettings.wordFilterAction,
                     wordFilterActionDuration = newSettings.wordFilterActionDuration,

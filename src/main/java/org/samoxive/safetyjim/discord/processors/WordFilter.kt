@@ -11,8 +11,8 @@ import org.samoxive.safetyjim.discord.*
 import org.samoxive.safetyjim.httpClient
 import org.samoxive.safetyjim.tryhardAsync
 
-private const val DEFAULT_BLACKLIST_URL = "https://raw.githubusercontent.com/Samoxive/Google-profanity-words/master/list.txt"
-private const val ACTION_REASON = "Using blacklisted word(s)."
+private const val DEFAULT_BLOCKLIST_URL = "https://raw.githubusercontent.com/Samoxive/Google-profanity-words/master/list.txt"
+private const val ACTION_REASON = "Using blocklisted word(s)."
 
 class WordFilter : MessageProcessor() {
     private var defaultWordFilterLow: Trie
@@ -20,16 +20,16 @@ class WordFilter : MessageProcessor() {
 
     init {
         runBlocking {
-            val blacklist = httpClient.getAbs(DEFAULT_BLACKLIST_URL)
+            val blocklist = httpClient.getAbs(DEFAULT_BLOCKLIST_URL)
                 .send()
                 .await()
                 .bodyAsString()
-            val blacklistWords = blacklist.split("\n")
+            val blocklistWords = blocklist.split("\n")
                 .map { it.lowercase().trim() }
                 .filter { it.isNotEmpty() }
             defaultWordFilterLow = Trie.builder()
                 .addKeywords(
-                    blacklistWords
+                    blocklistWords
                 )
                 .ignoreCase()
                 .onlyWholeWords()
@@ -37,7 +37,7 @@ class WordFilter : MessageProcessor() {
                 .build()
             defaultWordFilterHigh = Trie.builder()
                 .addKeywords(
-                    blacklistWords
+                    blocklistWords
                 )
                 .ignoreCase()
                 .build()
@@ -60,7 +60,7 @@ class WordFilter : MessageProcessor() {
             return false
         }
 
-        val filter = if (settings.wordFilterBlacklist != null) {
+        val filter = if (settings.wordFilterBlocklist != null) {
             SettingsTable.getWordFilter(settings)
         } else {
             when (settings.wordFilterLevel) {
@@ -70,8 +70,8 @@ class WordFilter : MessageProcessor() {
             }
         }
 
-        val blacklistHits = filter.parseText(event.message.contentRaw)
-        if (blacklistHits.isEmpty()) {
+        val blocklistHits = filter.parseText(event.message.contentRaw)
+        if (blocklistHits.isEmpty()) {
             return false
         }
 

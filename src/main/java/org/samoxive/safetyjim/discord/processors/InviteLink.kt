@@ -5,10 +5,10 @@ import org.samoxive.safetyjim.database.SettingsEntity
 import org.samoxive.safetyjim.discord.*
 import org.samoxive.safetyjim.tryhardAsync
 
-private val blacklistedHosts = arrayOf("discord.gg/")
+private val blocklistedHosts = arrayOf("discord.gg/")
 private const val ACTION_REASON = "Sending invite links"
 
-fun isInviteLinkBlacklisted(str: String) = blacklistedHosts.map { str.contains(it) }.any { it }
+fun isInviteLinkBlocklisted(str: String) = blocklistedHosts.map { str.contains(it) }.any { it }
 
 class InviteLink : MessageProcessor() {
     override suspend fun onMessage(bot: DiscordBot, shard: DiscordShard, event: GuildMessageReceivedEvent, settings: SettingsEntity): Boolean {
@@ -28,7 +28,7 @@ class InviteLink : MessageProcessor() {
         }
 
         val content = message.contentRaw
-        if (!isInviteLinkBlacklisted(content)) {
+        if (!isInviteLinkBlocklisted(content)) {
             return false
         }
 
