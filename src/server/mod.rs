@@ -296,6 +296,7 @@ async fn index() -> impl Responder {
 }
 
 pub async fn run_server(config: Arc<Config>, services: Arc<TypeMap>) -> Result<(), Box<dyn Error>> {
+    let port = config.server_port;
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::from(config.clone()))
@@ -336,7 +337,7 @@ pub async fn run_server(config: Arc<Config>, services: Arc<TypeMap>) -> Result<(
                     .max_age(None),
             )
     })
-    .bind((Ipv4Addr::LOCALHOST, config.server_port))?
+    .bind((Ipv4Addr::LOCALHOST, port))?
     .run()
     .await?;
 
