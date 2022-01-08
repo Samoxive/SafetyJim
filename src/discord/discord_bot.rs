@@ -6,7 +6,7 @@ use serenity::async_trait;
 use serenity::client::bridge::gateway::ShardManager;
 use serenity::client::{Context, EventHandler};
 use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
-use serenity::model::event::GuildMemberUpdateEvent;
+use serenity::model::event::{GuildMemberUpdateEvent, MessageUpdateEvent};
 use serenity::model::gateway::{Activity, GatewayIntents, Ready};
 use serenity::model::guild::{Guild, GuildUnavailable, Member, PartialGuild, Role};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
@@ -24,7 +24,10 @@ use crate::discord;
 use crate::discord::message_processors::{get_all_processors, MessageProcessors};
 use crate::discord::scheduled::run_scheduled_tasks;
 use crate::discord::slash_commands::SlashCommands;
-use crate::discord::util::{invisible_success_reply, verify_guild_message, GuildMessage};
+use crate::discord::util::{
+    invisible_success_reply, verify_guild_message_create, verify_guild_message_update,
+    GuildMessageCreated, GuildMessageUpdated,
+};
 use crate::flags::Flags;
 use crate::service::guild::GuildService;
 use crate::service::guild_statistic::GuildStatisticService;
@@ -126,6 +129,7 @@ async fn initialize_slash_commands(
         commands
     })
     .await?;
+    warn!("initialized slash commands!");
 
     Ok(())
 }
@@ -392,12 +396,13 @@ impl EventHandler for DiscordEventHandler {
             return;
         }
 
-        let (guild_id, member) =
-            if let Ok(GuildMessage { guild_id, member }) = verify_guild_message(&message) {
-                (guild_id, member)
-            } else {
-                return;
-            };
+        let (guild_id, member) = if let Some(GuildMessageCreated { guild_id, member }) =
+            verify_guild_message_create(&message)
+        {
+            (guild_id, member)
+        } else {
+            return;
+        };
 
         let setting_service = if let Some(service) = self.services.get::<SettingService>() {
             service
@@ -426,12 +431,102 @@ impl EventHandler for DiscordEventHandler {
             match processor
                 .handle_message(
                     &ctx,
-                    &message,
+                    &message.content,
                     guild_id,
-                    member,
+                    message.channel_id,
+                    message.id,
+                    &message.author,
                     permissions,
                     &*setting,
-                    &*self.config,
+                    &*self.services,
+                )
+                .await
+            {
+                Ok(true) => break,
+                Ok(false) => continue,
+                Err(err) => {
+                    error!("failed to run message processor id: {}, err: {}", i, err);
+                    break;
+                }
+            }
+        }
+
+        if setting.prefix.is_empty() {
+            return;
+        }
+
+        if message.content.starts_with(&setting.prefix) {
+            guild_service
+                .notify_deprecation(guild_id, message.channel_id, message.id)
+                .await;
+        }
+
+        return;
+    }
+
+    async fn message_update(&self, ctx: Context, message: MessageUpdateEvent) {
+        let author = if let Some(author) = &message.author {
+            author
+        } else {
+            return;
+        };
+
+        let (guild_id, content) = if let Some(GuildMessageUpdated { guild_id, content }) =
+            verify_guild_message_update(&message)
+        {
+            (guild_id, content)
+        } else {
+            return;
+        };
+
+        if author.bot {
+            return;
+        }
+
+        if content.is_empty() {
+            return;
+        }
+
+        let setting_service = if let Some(service) = self.services.get::<SettingService>() {
+            service
+        } else {
+            return;
+        };
+
+        let setting = setting_service.get_setting(guild_id).await;
+
+        let guild_service = if let Some(service) = self.services.get::<GuildService>() {
+            service
+        } else {
+            return;
+        };
+
+        let member = if let Ok(member) = guild_service.get_member(guild_id, author.id).await {
+            member
+        } else {
+            return;
+        };
+
+        let permissions = if let Ok(permissions) = guild_service
+            .get_permissions(author.id, &member.roles, guild_id)
+            .await
+        {
+            permissions
+        } else {
+            return;
+        };
+
+        for (i, processor) in self.message_processors.0.iter().enumerate() {
+            match processor
+                .handle_message(
+                    &ctx,
+                    content,
+                    guild_id,
+                    message.channel_id,
+                    message.id,
+                    author,
+                    permissions,
+                    &*setting,
                     &*self.services,
                 )
                 .await

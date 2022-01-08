@@ -1,4 +1,3 @@
-use crate::config::Config;
 use crate::constants::{JIM_ID, JIM_ID_AND_TAG};
 use crate::database::settings::{get_action_duration_for_auto_mod_action, Setting};
 use crate::discord::message_processors::MessageProcessor;
@@ -7,9 +6,8 @@ use crate::service::guild::GuildService;
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::client::Context;
-use serenity::model::channel::Message;
-use serenity::model::guild::PartialMember;
-use serenity::model::id::GuildId;
+use serenity::model::id::{ChannelId, GuildId, MessageId};
+use serenity::model::user::User;
 use serenity::model::Permissions;
 use tracing::error;
 use typemap_rev::TypeMap;
@@ -23,12 +21,13 @@ impl MessageProcessor for InviteLinkProcessor {
     async fn handle_message(
         &self,
         context: &Context,
-        message: &Message,
+        message_content: &str,
         guild_id: GuildId,
-        _member: &PartialMember,
+        channel_id: ChannelId,
+        message_id: MessageId,
+        author: &User,
         permissions: Permissions,
         setting: &Setting,
-        _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<bool> {
         if !setting.invite_link_remover {
@@ -39,7 +38,7 @@ impl MessageProcessor for InviteLinkProcessor {
             return Ok(false);
         }
 
-        if !message.content.contains("discord.gg/") {
+        if !message_content.contains("discord.gg/") {
             return Ok(false);
         }
 
@@ -61,7 +60,7 @@ impl MessageProcessor for InviteLinkProcessor {
             setting.invite_link_remover_action_duration,
         );
 
-        match message.delete(&context.http).await {
+        match channel_id.delete_message(&context.http, message_id).await {
             Ok(_) => {
                 execute_mod_action(
                     setting.invite_link_remover_action,
@@ -70,10 +69,10 @@ impl MessageProcessor for InviteLinkProcessor {
                     &guild.name,
                     setting,
                     services,
-                    Some(message.channel_id),
+                    Some(channel_id),
                     JIM_ID,
                     JIM_ID_AND_TAG,
-                    &message.author,
+                    author,
                     REASON.into(),
                     duration,
                     0,

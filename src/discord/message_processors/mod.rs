@@ -4,12 +4,10 @@ mod word_filter;
 use crate::database::settings::Setting;
 use crate::discord::message_processors::invite_link::InviteLinkProcessor;
 use crate::discord::message_processors::word_filter::WordFilterProcessor;
-use crate::Config;
 use async_trait::async_trait;
 use serenity::client::Context;
-use serenity::model::channel::Message;
-use serenity::model::guild::PartialMember;
-use serenity::model::id::GuildId;
+use serenity::model::id::{ChannelId, GuildId, MessageId};
+use serenity::model::user::User;
 use serenity::model::Permissions;
 use typemap_rev::TypeMap;
 
@@ -27,12 +25,13 @@ pub trait MessageProcessor {
     async fn handle_message(
         &self,
         context: &Context,
-        message: &Message,
+        message_content: &str,
         guild_id: GuildId,
-        member: &PartialMember,
+        channel_id: ChannelId,
+        message_id: MessageId,
+        author: &User,
         permissions: Permissions,
         setting: &Setting,
-        config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<bool>;
 }

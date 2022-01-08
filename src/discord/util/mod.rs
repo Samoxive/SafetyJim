@@ -30,6 +30,7 @@ use crate::service::softban::SoftbanService;
 use crate::service::warn::WarnService;
 use crate::util::now;
 use async_recursion::async_recursion;
+use serenity::model::event::MessageUpdateEvent;
 use std::time::Duration;
 use tracing::{error, warn};
 use typemap_rev::TypeMap;
@@ -212,25 +213,28 @@ pub fn verify_guild_slash_command(
     })
 }
 
-pub struct GuildMessage<'a> {
+pub struct GuildMessageCreated<'a> {
     pub guild_id: GuildId,
     pub member: &'a PartialMember,
 }
 
-pub fn verify_guild_message(message: &Message) -> anyhow::Result<GuildMessage> {
-    let member = if let Some(member) = &message.member {
-        member
-    } else {
-        bail!("message has no member field");
-    };
+pub fn verify_guild_message_create(message: &Message) -> Option<GuildMessageCreated> {
+    Some(GuildMessageCreated {
+        guild_id: message.guild_id?,
+        member: message.member.as_ref()?,
+    })
+}
 
-    let guild_id = if let Some(guild_id) = message.guild_id {
-        guild_id
-    } else {
-        bail!("message has missing guild id");
-    };
+pub struct GuildMessageUpdated<'a> {
+    pub guild_id: GuildId,
+    pub content: &'a str,
+}
 
-    Ok(GuildMessage { guild_id, member })
+pub fn verify_guild_message_update(message: &MessageUpdateEvent) -> Option<GuildMessageUpdated> {
+    Some(GuildMessageUpdated {
+        guild_id: message.guild_id?,
+        content: message.content.as_ref()?,
+    })
 }
 
 pub async fn reply_with_str(

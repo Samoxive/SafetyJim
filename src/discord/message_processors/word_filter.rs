@@ -1,4 +1,3 @@
-use crate::config::Config;
 use crate::constants::{DEFAULT_BLOCKED_WORDS, JIM_ID, JIM_ID_AND_TAG};
 use crate::database::settings::{
     get_action_duration_for_auto_mod_action, Setting, WORD_FILTER_LEVEL_HIGH, WORD_FILTER_LEVEL_LOW,
@@ -9,13 +8,12 @@ use crate::service::guild::GuildService;
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::client::Context;
-use serenity::model::channel::Message;
-use serenity::model::guild::PartialMember;
-use serenity::model::id::GuildId;
+use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::model::Permissions;
 use smol_str::SmolStr;
 
 use anyhow::anyhow;
+use serenity::model::user::User;
 use tracing::{error, warn};
 use typemap_rev::TypeMap;
 
@@ -65,12 +63,13 @@ impl MessageProcessor for WordFilterProcessor {
     async fn handle_message(
         &self,
         context: &Context,
-        message: &Message,
+        message_content: &str,
         guild_id: GuildId,
-        _member: &PartialMember,
+        channel_id: ChannelId,
+        message_id: MessageId,
+        author: &User,
         permissions: Permissions,
         setting: &Setting,
-        _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<bool> {
         if !setting.word_filter {
@@ -87,12 +86,12 @@ impl MessageProcessor for WordFilterProcessor {
                 .map(SmolStr::new)
                 .collect::<Vec<SmolStr>>();
 
-            filter_message(setting, &message.content, &filter)
+            filter_message(setting, message_content, &filter)
         } else {
             let filter = DEFAULT_BLOCKED_WORDS
                 .get()
                 .ok_or_else(|| anyhow!("failed to get default blocked words!"))?;
-            filter_message(setting, &message.content, filter)
+            filter_message(setting, message_content, filter)
         };
 
         if !result {
@@ -117,7 +116,7 @@ impl MessageProcessor for WordFilterProcessor {
             setting.word_filter_action_duration,
         );
 
-        match message.delete(&context.http).await {
+        match channel_id.delete_message(&context.http, message_id).await {
             Ok(_) => {
                 execute_mod_action(
                     setting.word_filter_action,
@@ -126,10 +125,10 @@ impl MessageProcessor for WordFilterProcessor {
                     &guild.name,
                     setting,
                     services,
-                    Some(message.channel_id),
+                    Some(channel_id),
                     JIM_ID,
                     JIM_ID_AND_TAG,
-                    &message.author,
+                    author,
                     REASON.into(),
                     duration,
                     0,
