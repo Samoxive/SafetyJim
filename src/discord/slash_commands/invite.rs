@@ -6,9 +6,7 @@ use crate::config::Config;
 use crate::discord::slash_commands::SlashCommand;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
 use serenity::model::interactions::message_component::ButtonStyle;
-use serenity::model::interactions::{
-    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
-};
+use serenity::model::interactions::InteractionResponseType;
 use tracing::error;
 use typemap_rev::TypeMap;
 
