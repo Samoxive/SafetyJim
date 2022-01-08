@@ -1,1 +1,1 @@
-create index if not exists hardbans_hard_bantime_index on hardbans (hardban_time desc);
+create index if not exists hardbans_hardban_time_index on hardbans (hardban_time desc);
