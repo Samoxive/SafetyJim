@@ -147,7 +147,6 @@ impl SlashCommand for WeatherCommand {
         {
             Ok(response) => response,
             Err(err) => {
-                println!("{}", err);
                 invisible_failure_reply(&*context.http, interaction, "Failed to get address data!")
                     .await;
                 return Ok(());
