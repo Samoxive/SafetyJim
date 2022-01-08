@@ -63,7 +63,6 @@ impl SlashCommand for InviteCommand {
                                     })
                                 })
                             })
-                            .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
                     })
             })
             .await
