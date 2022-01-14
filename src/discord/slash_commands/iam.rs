@@ -97,6 +97,7 @@ impl SlashCommand for IAMCommand {
                 "Could not find a role with specified name!",
             )
             .await;
+            return Ok(());
         }
 
         if let Err(err) = context
