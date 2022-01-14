@@ -10,11 +10,9 @@ impl Shutdown {
     pub fn new() -> Self {
         let (sender, _) = broadcast::channel(1);
 
-        Self {
-            sender,
-        }
+        Self { sender }
     }
-    
+
     pub fn subscribe(&self) -> broadcast::Receiver<()> {
         self.sender.subscribe()
     }

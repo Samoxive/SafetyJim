@@ -250,7 +250,7 @@ pub async fn reply_with_str(
         })
         .await
         .map_err(|err| {
-            error!("failed to reply to interaction {}", err);
+            error!("failed to reply to interaction {:?} {}", interaction, err);
             err
         });
 }
@@ -272,7 +272,7 @@ async fn invisible_reply_with_str(
         })
         .await
         .map_err(|err| {
-            error!("failed to reply to interaction {}", err);
+            error!("failed to reply to interaction {:?} {}", interaction, err);
             err
         });
 }
@@ -286,7 +286,7 @@ pub async fn edit_interaction_response(
         .edit_original_interaction_response(http, |response| response.content(content))
         .await
         .map_err(|err| {
-            error!("failed to edit interaction reply {}", err);
+            error!("failed to edit interaction reply {:?} {}", interaction, err);
             err
         });
 }

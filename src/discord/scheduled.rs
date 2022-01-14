@@ -11,12 +11,12 @@ use serenity::builder::CreateEmbed;
 use serenity::http::Http;
 use serenity::model::id::{ChannelId, GuildId, UserId};
 use serenity::prelude::Mentionable;
-use tokio::time::interval;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::select;
+use tokio::time::interval;
 use tracing::error;
 use typemap_rev::TypeMap;
-use tokio::select;
 
 pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<TypeMap>, shutdown: Shutdown) {
     let http_1 = http.clone();

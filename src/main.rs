@@ -66,7 +66,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let pool = Arc::new(setup_database_pool(&config).await?);
     let services = Arc::new(create_services(config.clone(), pool.clone()).await?);
 
-    let mut bot = DiscordBot::new(config.clone(), flags, services.clone(), shutdown.clone()).await?;
+    let mut bot =
+        DiscordBot::new(config.clone(), flags, services.clone(), shutdown.clone()).await?;
     let shard_manager = bot.client.shard_manager.clone();
 
     let bot_future = spawn(async move { bot.connect().await });

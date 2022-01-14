@@ -47,7 +47,11 @@ pub struct DiscordBot {
     pub client: Client,
 }
 
-async fn feed_shard_statistics(shard_manager: Arc<Mutex<ShardManager>>, services: Arc<TypeMap>, shutdown: Shutdown) {
+async fn feed_shard_statistics(
+    shard_manager: Arc<Mutex<ShardManager>>,
+    services: Arc<TypeMap>,
+    shutdown: Shutdown,
+) {
     let mut receiver = shutdown.subscribe();
     let shard_statistic_service =
         if let Some(shard_statistic_service) = services.get::<ShardStatisticService>() {
@@ -110,7 +114,11 @@ impl DiscordBot {
             shutdown.clone(),
         ));
 
-        run_scheduled_tasks(client.cache_and_http.http.clone(), services.clone(), shutdown.clone());
+        run_scheduled_tasks(
+            client.cache_and_http.http.clone(),
+            services.clone(),
+            shutdown.clone(),
+        );
 
         Ok(DiscordBot { client })
     }
