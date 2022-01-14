@@ -5,51 +5,79 @@ use crate::service::join::JoinService;
 use crate::service::mute::MuteService;
 use crate::service::reminder::ReminderService;
 use crate::service::setting::SettingService;
+use crate::util::Shutdown;
 use chrono::{TimeZone, Utc};
 use serenity::builder::CreateEmbed;
 use serenity::http::Http;
 use serenity::model::id::{ChannelId, GuildId, UserId};
 use serenity::prelude::Mentionable;
+use tokio::time::interval;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::error;
 use typemap_rev::TypeMap;
+use tokio::select;
 
-pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<TypeMap>) {
+pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<TypeMap>, shutdown: Shutdown) {
     let http_1 = http.clone();
     let services_1 = services.clone();
+    let mut receiver_1 = shutdown.subscribe();
     let _ = tokio::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs(5));
+        let mut interval = interval(Duration::from_secs(5));
         loop {
-            interval.tick().await;
+            select! {
+                _ = interval.tick() => {}
+                _ = receiver_1.recv() => {
+                    return;
+                }
+            };
             allow_users(&*http_1, &*services_1).await;
         }
     });
 
     let http_2 = http.clone();
     let services_2 = services.clone();
+    let mut receiver_2 = shutdown.subscribe();
     let _ = tokio::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs(10));
+        let mut interval = interval(Duration::from_secs(10));
         loop {
-            interval.tick().await;
+            select! {
+                _ = interval.tick() => {}
+                _ = receiver_2.recv() => {
+                    return;
+                }
+            };
+
             unmute_users(&*http_2, &*services_2).await;
         }
     });
 
     let http_3 = http.clone();
     let services_3 = services.clone();
+    let mut receiver_3 = shutdown.subscribe();
     let _ = tokio::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs(30));
+        let mut interval = interval(Duration::from_secs(30));
         loop {
-            interval.tick().await;
+            select! {
+                _ = interval.tick() => {}
+                _ = receiver_3.recv() => {
+                    return;
+                }
+            };
             unban_users(&*http_3, &*services_3).await;
         }
     });
 
+    let mut receiver_4 = shutdown.subscribe();
     let _ = tokio::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs(5));
+        let mut interval = interval(Duration::from_secs(5));
         loop {
-            interval.tick().await;
+            select! {
+                _ = interval.tick() => {}
+                _ = receiver_4.recv() => {
+                    return;
+                }
+            };
             remind_reminders(&*http, &*services).await;
         }
     });

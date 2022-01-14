@@ -43,24 +43,22 @@ impl SlashCommand for InviteCommand {
                 response
                     .kind(InteractionResponseType::ChannelMessageWithSource)
                     .interaction_response_data(|message| {
-                        message
-                            .content("Links:")
-                            .components(|components| {
-                                components.create_action_row(|row| {
-                                    row.create_button(|button| {
-                                        button
-                                            .label("Invite Jim!")
-                                            .url(JIM_INVITE_LINK)
-                                            .style(ButtonStyle::Link)
-                                    })
-                                    .create_button(|button| {
-                                        button
-                                            .label("Join our support server!")
-                                            .url(SUPPORT_SERVER_INVITE_LINK)
-                                            .style(ButtonStyle::Link)
-                                    })
+                        message.content("Links:").components(|components| {
+                            components.create_action_row(|row| {
+                                row.create_button(|button| {
+                                    button
+                                        .label("Invite Jim!")
+                                        .url(JIM_INVITE_LINK)
+                                        .style(ButtonStyle::Link)
+                                })
+                                .create_button(|button| {
+                                    button
+                                        .label("Join our support server!")
+                                        .url(SUPPORT_SERVER_INVITE_LINK)
+                                        .style(ButtonStyle::Link)
                                 })
                             })
+                        })
                     })
             })
             .await

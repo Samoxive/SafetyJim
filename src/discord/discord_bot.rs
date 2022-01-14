@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::process::exit;
 use std::sync::Arc;
+use std::time::Duration;
 
 use serenity::async_trait;
 use serenity::client::bridge::gateway::ShardManager;
@@ -36,15 +37,18 @@ use crate::service::mute::MuteService;
 use crate::service::setting::SettingService;
 use crate::service::shard_statistic::ShardStatisticService;
 use crate::service::tag::TagService;
-use tokio::time::Duration;
+use crate::util::Shutdown;
+use tokio::select;
+use tokio::time::sleep;
 
 const SHARD_LATENCY_POLLING_INTERVAL: u64 = 60;
 
 pub struct DiscordBot {
-    client: Client,
+    pub client: Client,
 }
 
-async fn feed_shard_statistics(shard_manager: Arc<Mutex<ShardManager>>, services: Arc<TypeMap>) {
+async fn feed_shard_statistics(shard_manager: Arc<Mutex<ShardManager>>, services: Arc<TypeMap>, shutdown: Shutdown) {
+    let mut receiver = shutdown.subscribe();
     let shard_statistic_service =
         if let Some(shard_statistic_service) = services.get::<ShardStatisticService>() {
             shard_statistic_service
@@ -53,7 +57,13 @@ async fn feed_shard_statistics(shard_manager: Arc<Mutex<ShardManager>>, services
         };
 
     loop {
-        tokio::time::sleep(Duration::from_secs(SHARD_LATENCY_POLLING_INTERVAL)).await;
+        select! {
+            _ = sleep(Duration::from_secs(SHARD_LATENCY_POLLING_INTERVAL)) => {}
+            _ = receiver.recv() => {
+                return;
+            }
+        };
+
         shard_statistic_service
             .update_latencies(&*shard_manager.lock().await)
             .await;
@@ -65,6 +75,7 @@ impl DiscordBot {
         config: Arc<Config>,
         flags: Arc<Flags>,
         services: Arc<TypeMap>,
+        shutdown: Shutdown,
     ) -> Result<DiscordBot, Box<dyn Error>> {
         let slash_commands = discord::slash_commands::get_all_commands();
 
@@ -96,9 +107,10 @@ impl DiscordBot {
         tokio::spawn(feed_shard_statistics(
             client.shard_manager.clone(),
             services.clone(),
+            shutdown.clone(),
         ));
 
-        run_scheduled_tasks(client.cache_and_http.http.clone(), services.clone());
+        run_scheduled_tasks(client.cache_and_http.http.clone(), services.clone(), shutdown.clone());
 
         Ok(DiscordBot { client })
     }

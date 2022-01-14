@@ -6,6 +6,7 @@ use std::io;
 use std::sync::Arc;
 
 use tracing::Level;
+use util::Shutdown;
 
 use crate::config::{get_config, Config};
 use crate::flags::Flags;
@@ -59,12 +60,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     initialize_statics().await?;
     let config = Arc::new(get_config(&flags.config_path)?);
+
+    let shutdown = Shutdown::new();
+
     let pool = Arc::new(setup_database_pool(&config).await?);
     let services = Arc::new(create_services(config.clone(), pool.clone()).await?);
 
-    let mut bot = DiscordBot::new(config.clone(), flags, services.clone()).await?;
+    let mut bot = DiscordBot::new(config.clone(), flags, services.clone(), shutdown.clone()).await?;
+    let shard_manager = bot.client.shard_manager.clone();
 
     let bot_future = spawn(async move { bot.connect().await });
+
+    spawn(async move {
+        tokio::signal::ctrl_c().await.unwrap();
+
+        shutdown.shutdown();
+
+        shard_manager.lock().await.shutdown_all().await;
+    });
 
     run_server(config, services).await?;
 
