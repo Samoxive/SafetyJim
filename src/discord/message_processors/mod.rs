@@ -1,8 +1,10 @@
 mod invite_link;
+mod spam_filter;
 mod word_filter;
 
 use crate::database::settings::Setting;
 use crate::discord::message_processors::invite_link::InviteLinkProcessor;
+use crate::discord::message_processors::spam_filter::SpamFilterProcessor;
 use crate::discord::message_processors::word_filter::WordFilterProcessor;
 use async_trait::async_trait;
 use serenity::client::Context;
@@ -17,6 +19,7 @@ pub fn get_all_processors() -> MessageProcessors {
     MessageProcessors(vec![
         Box::new(InviteLinkProcessor),
         Box::new(WordFilterProcessor),
+        Box::new(SpamFilterProcessor::new()),
     ])
 }
 

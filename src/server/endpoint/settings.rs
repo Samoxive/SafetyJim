@@ -150,6 +150,7 @@ pub async fn get_setting(
         warn_action_duration: setting.warn_action_duration,
         warn_action_duration_type: setting.warn_action_duration_type,
         mods_can_edit_tags: setting.mods_can_edit_tags,
+        spam_filter: setting.spam_filter,
     })
 }
 
@@ -489,6 +490,7 @@ pub async fn update_setting(
                 warn_action_duration: new_setting.warn_action_duration,
                 warn_action_duration_type: new_setting.warn_action_duration_type,
                 mods_can_edit_tags: new_setting.mods_can_edit_tags,
+                spam_filter: new_setting.spam_filter,
             },
         )
         .await;

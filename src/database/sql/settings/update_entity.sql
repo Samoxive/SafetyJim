@@ -42,5 +42,6 @@ set mod_log                                  = $2,
     warn_action                              = $42,
     warn_action_duration                     = $43,
     warn_action_duration_type                = $44,
-    mods_can_edit_tags                       = $45
+    mods_can_edit_tags                       = $45,
+    spam_filter                              = $46
 where guild_id = $1;

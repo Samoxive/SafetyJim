@@ -44,5 +44,6 @@ create table if not exists settings
     warn_action                              integer not null,
     warn_action_duration                     integer not null,
     warn_action_duration_type                integer not null,
-    mods_can_edit_tags                       boolean not null
+    mods_can_edit_tags                       boolean not null,
+    spam_filter                              boolean not null
 );

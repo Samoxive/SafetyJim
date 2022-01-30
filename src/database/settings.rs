@@ -105,6 +105,7 @@ pub struct Setting {
     pub warn_action_duration: i32,
     pub warn_action_duration_type: i32,
     pub mods_can_edit_tags: bool,
+    pub spam_filter: bool,
 }
 
 impl Setting {
@@ -155,6 +156,7 @@ impl Setting {
             warn_action_duration: 0,
             warn_action_duration_type: DURATION_TYPE_MINUTES,
             mods_can_edit_tags: false,
+            spam_filter: false,
         }
     }
 }
@@ -226,6 +228,7 @@ impl SettingsRepository {
                 .bind(setting.warn_action_duration)
                 .bind(setting.warn_action_duration_type)
                 .bind(setting.mods_can_edit_tags)
+                .bind(setting.spam_filter)
                 .fetch_one(&*self.0)
                 .await?,
         )
@@ -278,6 +281,7 @@ impl SettingsRepository {
             .bind(setting.warn_action_duration)
             .bind(setting.warn_action_duration_type)
             .bind(setting.mods_can_edit_tags)
+            .bind(setting.spam_filter)
             .execute(&*self.0)
             .await?;
 

@@ -53,4 +53,5 @@ pub struct SettingModel {
     pub warn_action_duration: i32,
     pub warn_action_duration_type: i32,
     pub mods_can_edit_tags: bool,
+    pub spam_filter: bool,
 }
