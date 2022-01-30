@@ -1,8 +1,7 @@
-use crate::constants::DEPRECATION_NOTICE;
 use crate::discord::util::get_permissions;
 use moka::future::{Cache, CacheBuilder};
 use serenity::http::Http;
-use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId, UserId};
+use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
 use serenity::model::Permissions;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -46,7 +45,6 @@ pub struct GuildService {
     member_cache: Cache<(GuildId, UserId), Arc<CachedMember>>,
     user_cache: Cache<UserId, Arc<CachedUser>>,
     channel_cache: Cache<GuildId, Arc<HashMap<ChannelId, CachedChannel>>>,
-    deprecation_notice_cache: Cache<GuildId, ()>,
 }
 
 pub enum GetPermissionsFailure {
@@ -101,10 +99,6 @@ impl GuildService {
             channel_cache: CacheBuilder::new(100)
                 .time_to_idle(Duration::from_secs(30))
                 .time_to_live(Duration::from_secs(60))
-                .build(),
-            deprecation_notice_cache: CacheBuilder::new(500)
-                .time_to_idle(Duration::from_secs(10 * 60))
-                .time_to_live(Duration::from_secs(10 * 60))
                 .build(),
         }
     }
@@ -313,26 +307,5 @@ impl GuildService {
         };
 
         Ok(guild)
-    }
-
-    pub async fn notify_deprecation(
-        &self,
-        guild_id: GuildId,
-        channel_id: ChannelId,
-        message_id: MessageId,
-    ) {
-        if self.deprecation_notice_cache.get(&guild_id).is_some() {
-            return;
-        }
-
-        let _ = channel_id
-            .send_message(self.http().await, |message| {
-                message
-                    .reference_message((channel_id, message_id))
-                    .content(DEPRECATION_NOTICE)
-            })
-            .await;
-
-        self.deprecation_notice_cache.insert(guild_id, ()).await;
     }
 }

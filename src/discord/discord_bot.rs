@@ -9,7 +9,7 @@ use serenity::client::{Context, EventHandler};
 use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
 use serenity::model::event::{GuildMemberUpdateEvent, MessageUpdateEvent};
 use serenity::model::gateway::{Activity, GatewayIntents, Ready};
-use serenity::model::guild::{Guild, GuildUnavailable, Member, PartialGuild, Role};
+use serenity::model::guild::{Guild, Member, PartialGuild, Role, UnavailableGuild};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
 use serenity::model::interactions::application_command::ApplicationCommand;
 use serenity::model::interactions::Interaction;
@@ -168,7 +168,7 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_delete(&self, _ctx: Context, incomplete: GuildUnavailable) {
+    async fn guild_delete(&self, _ctx: Context, incomplete: UnavailableGuild) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
             statistic_service.remove_guild(&incomplete).await;
         }
@@ -470,18 +470,6 @@ impl EventHandler for DiscordEventHandler {
                 }
             }
         }
-
-        if setting.prefix.is_empty() {
-            return;
-        }
-
-        if message.content.starts_with(&setting.prefix) {
-            guild_service
-                .notify_deprecation(guild_id, message.channel_id, message.id)
-                .await;
-        }
-
-        return;
     }
 
     async fn message_update(&self, ctx: Context, message: MessageUpdateEvent) {

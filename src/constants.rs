@@ -19,12 +19,6 @@ pub const DEFAULT_WORD_FILTER_URL: &str =
 pub const DISCORD_API_BASE: &str = "https://discord.com";
 pub const DISCORD_CDN_BASE: &str = "https://cdn.discordapp.com";
 
-pub const DEPRECATION_NOTICE: &str = "Due to Discord's changes, the old way of implementing commands as text messages has been deprecated.
-Safety Jim migrated to slash commands on 8th of January after much work rewriting most of the project to adapt to changes.
-For this migration there is no action needed, however if you invited Jim after 24th of March, 2021 you need to kick him and invite back for slash commands to appear in your server.
-
-To report potential bugs and feedback, feel free to head to the support Discord server.";
-
 pub static START_EPOCH: OnceCell<u64> = OnceCell::new();
 pub static DEFAULT_BLOCKED_WORDS: OnceCell<Vec<SmolStr>> = OnceCell::new();
 
