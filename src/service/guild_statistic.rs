@@ -1,4 +1,4 @@
-use serenity::model::guild::{Guild, GuildUnavailable};
+use serenity::model::guild::{Guild, UnavailableGuild};
 use serenity::model::id::GuildId;
 use std::collections::HashMap;
 use tokio::sync::Mutex;
@@ -34,7 +34,7 @@ impl GuildStatisticService {
             .insert(guild_id, member_count);
     }
 
-    pub async fn remove_guild(&self, guild: &GuildUnavailable) {
+    pub async fn remove_guild(&self, guild: &UnavailableGuild) {
         let guild_id = guild.id;
         self.member_counts.lock().await.remove(&guild_id);
     }
