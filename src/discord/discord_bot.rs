@@ -16,6 +16,7 @@ use serenity::model::interactions::Interaction;
 use serenity::model::user::{CurrentUser, User};
 use serenity::prelude::Mentionable;
 use serenity::Client;
+use simsearch::{SearchOptions, SimSearch};
 use tokio::sync::Mutex;
 use tracing::{error, warn};
 use typemap_rev::TypeMap;
@@ -27,7 +28,7 @@ use crate::discord::scheduled::run_scheduled_tasks;
 use crate::discord::slash_commands::SlashCommands;
 use crate::discord::util::{
     invisible_success_reply, verify_guild_message_create, verify_guild_message_update,
-    GuildMessageCreated, GuildMessageUpdated,
+    ApplicationCommandInteractionDataExt, GuildMessageCreated, GuildMessageUpdated,
 };
 use crate::flags::Flags;
 use crate::service::guild::GuildService;
@@ -354,9 +355,30 @@ impl EventHandler for DiscordEventHandler {
                 };
 
                 let tags = tag_service.get_tag_names(guild_id).await;
+
+                let tag_option = if let Some(s) = autocomplete_interaction.data.string("name") {
+                    s
+                } else {
+                    return;
+                };
+
+                let tag_choices = if tag_option.is_empty() {
+                    tags
+                } else {
+                    let mut engine = SimSearch::new_with(SearchOptions::new().threshold(0.75));
+
+                    for (i, tag_name) in tags.iter().enumerate() {
+                        engine.insert(i, tag_name);
+                    }
+
+                    let results = engine.search(tag_option);
+
+                    results.into_iter().map(|i| tags[i].clone()).collect()
+                };
+
                 let _ = autocomplete_interaction
                     .create_autocomplete_response(&*ctx.http, |response| {
-                        for tag in tags {
+                        for tag in tag_choices {
                             response.add_string_choice(&tag, &tag);
                         }
 
