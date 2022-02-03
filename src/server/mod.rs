@@ -35,10 +35,7 @@ use typemap_rev::TypeMap;
 use uuid::Uuid;
 
 lazy_static! {
-    static ref VALIDATION: Validation = Validation {
-        algorithms: vec![Algorithm::HS512],
-        ..Validation::default()
-    };
+    static ref VALIDATION: Validation = Validation::new(Algorithm::HS512);
     static ref ENCODING_HEADER: Header = Header::new(Algorithm::HS512);
 }
 
