@@ -18,7 +18,7 @@ use tokio::sync::Mutex;
 use typemap_rev::TypeMap;
 
 const REASON: &str = "Spamming messages with same content";
-const REPETITION_THRESHOLD: u8 = 7; // lucky?
+const REPETITION_THRESHOLD: u8 = 4;
 
 #[derive(Clone)]
 pub struct MessageRepetitionRecord {
