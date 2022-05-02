@@ -53,8 +53,7 @@ async fn validate_captcha_response(secret: &str, response_id: &str) -> anyhow::R
             err
         })?
         .get("success")
-        .map(|success| success.as_bool())
-        .flatten()
+        .and_then(|success| success.as_bool())
         .unwrap_or(false))
 }
 

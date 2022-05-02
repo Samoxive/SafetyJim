@@ -43,7 +43,7 @@ impl JoinService {
                 err
             })
             .ok()
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_default()
     }
 
     pub async fn invalidate_join(&self, id: i32) {

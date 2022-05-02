@@ -52,7 +52,7 @@ impl IAMRoleService {
                 err
             })
             .ok()
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_default()
     }
 
     pub async fn insert_iam_role(

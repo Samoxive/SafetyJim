@@ -29,32 +29,26 @@ impl IAMRolesRepository {
         guild_id: i64,
         role_id: i64,
     ) -> Result<Option<IAMRole>, Error> {
-        Ok(
-            sqlx::query_as::<_, IAMRole>(include_str!("sql/iam_roles/select_guild_iam_role.sql"))
-                .bind(guild_id)
-                .bind(role_id)
-                .fetch_optional(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, IAMRole>(include_str!("sql/iam_roles/select_guild_iam_role.sql"))
+            .bind(guild_id)
+            .bind(role_id)
+            .fetch_optional(&*self.0)
+            .await
     }
 
     pub async fn _fetch_guild_iam_roles(&self, guild_id: i64) -> Result<Vec<IAMRole>, Error> {
-        Ok(
-            sqlx::query_as::<_, IAMRole>(include_str!("sql/iam_roles/select_guild_iam_roles.sql"))
-                .bind(guild_id)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, IAMRole>(include_str!("sql/iam_roles/select_guild_iam_roles.sql"))
+            .bind(guild_id)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn insert_iam_role(&self, iam_role: IAMRole) -> Result<IAMRole, Error> {
-        Ok(
-            sqlx::query_as::<_, IAMRole>(include_str!("sql/iam_roles/insert_entity.sql"))
-                .bind(iam_role.guild_id)
-                .bind(iam_role.role_id)
-                .fetch_one(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, IAMRole>(include_str!("sql/iam_roles/insert_entity.sql"))
+            .bind(iam_role.guild_id)
+            .bind(iam_role.role_id)
+            .fetch_one(&*self.0)
+            .await
     }
 
     pub async fn delete_iam_role(&self, iam_role_id: i32) -> Result<(), Error> {

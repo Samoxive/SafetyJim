@@ -27,22 +27,18 @@ impl WarnsRepository {
     }
 
     pub async fn fetch_warn(&self, id: i32) -> Result<Option<Warn>, Error> {
-        Ok(
-            sqlx::query_as::<_, Warn>(include_str!("sql/warns/select_warn_with_id.sql"))
-                .bind(id)
-                .fetch_optional(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Warn>(include_str!("sql/warns/select_warn_with_id.sql"))
+            .bind(id)
+            .fetch_optional(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_warns(&self, guild_id: i64, page: u32) -> Result<Vec<Warn>, Error> {
-        Ok(
-            sqlx::query_as::<_, Warn>(include_str!("sql/warns/select_guild_warns_paginated.sql"))
-                .bind(guild_id)
-                .bind((page - 1) * 10)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Warn>(include_str!("sql/warns/select_guild_warns_paginated.sql"))
+            .bind(guild_id)
+            .bind((page - 1) * 10)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_warn_count(&self, guild_id: i64) -> Result<i64, Error> {
@@ -69,17 +65,15 @@ impl WarnsRepository {
     }
 
     pub async fn insert_warn(&self, warn: Warn) -> Result<Warn, Error> {
-        Ok(
-            sqlx::query_as::<_, Warn>(include_str!("sql/warns/insert_entity.sql"))
-                .bind(warn.user_id)
-                .bind(warn.moderator_user_id)
-                .bind(warn.guild_id)
-                .bind(warn.warn_time)
-                .bind(warn.reason)
-                .bind(warn.pardoned)
-                .fetch_one(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Warn>(include_str!("sql/warns/insert_entity.sql"))
+            .bind(warn.user_id)
+            .bind(warn.moderator_user_id)
+            .bind(warn.guild_id)
+            .bind(warn.warn_time)
+            .bind(warn.reason)
+            .bind(warn.pardoned)
+            .fetch_one(&*self.0)
+            .await
     }
 
     pub async fn update_warn(&self, warn: Warn) -> Result<(), Error> {

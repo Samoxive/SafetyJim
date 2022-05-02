@@ -325,7 +325,7 @@ impl MuteService {
                 err
             })
             .ok()
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_default()
     }
 
     pub async fn fetch_guild_mute_count(&self, guild_id: GuildId) -> i64 {
@@ -349,7 +349,7 @@ impl MuteService {
                 err
             })
             .ok()
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_default()
     }
 
     pub async fn fetch_valid_mutes(&self, guild_id: GuildId, user_id: UserId) -> Vec<Mute> {
@@ -361,7 +361,7 @@ impl MuteService {
                 err
             })
             .ok()
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_default()
     }
 
     pub async fn fetch_actionable_mute_count(&self, guild_id: GuildId, user_id: UserId) -> i64 {

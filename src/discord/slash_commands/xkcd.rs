@@ -71,8 +71,7 @@ fn parse_ddg_response(response: &str) -> Option<String> {
 
             href_regex.is_match(href)
         })
-        .map(|element| element.value().attr("href").map(|href| href.to_string()))
-        .flatten()
+        .and_then(|element| element.value().attr("href").map(|href| href.to_string()))
 }
 
 #[async_trait]

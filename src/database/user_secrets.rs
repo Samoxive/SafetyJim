@@ -20,14 +20,10 @@ impl UserSecretsRepository {
     }
 
     pub async fn fetch_user_secret(&self, user_id: i64) -> Result<Option<UserSecret>, Error> {
-        Ok(
-            sqlx::query_as::<_, UserSecret>(include_str!(
-                "sql/user_secrets/select_user_secret.sql"
-            ))
+        sqlx::query_as::<_, UserSecret>(include_str!("sql/user_secrets/select_user_secret.sql"))
             .bind(user_id)
             .fetch_optional(&*self.0)
-            .await?,
-        )
+            .await
     }
 
     pub async fn upsert_user_secret(&self, user_secret: UserSecret) -> Result<(), Error> {

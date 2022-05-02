@@ -27,12 +27,10 @@ impl SoftbansRepository {
     }
 
     pub async fn fetch_softban(&self, id: i32) -> Result<Option<Softban>, Error> {
-        Ok(
-            sqlx::query_as::<_, Softban>(include_str!("sql/softbans/select_softban_with_id.sql"))
-                .bind(id)
-                .fetch_optional(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Softban>(include_str!("sql/softbans/select_softban_with_id.sql"))
+            .bind(id)
+            .fetch_optional(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_softbans(
@@ -40,13 +38,13 @@ impl SoftbansRepository {
         guild_id: i64,
         page: u32,
     ) -> Result<Vec<Softban>, Error> {
-        Ok(sqlx::query_as::<_, Softban>(include_str!(
+        sqlx::query_as::<_, Softban>(include_str!(
             "sql/softbans/select_guild_softbans_paginated.sql"
         ))
         .bind(guild_id)
         .bind((page - 1) * 10)
         .fetch_all(&*self.0)
-        .await?)
+        .await
     }
 
     pub async fn fetch_guild_softban_count(&self, guild_id: i64) -> Result<i64, Error> {
@@ -75,17 +73,15 @@ impl SoftbansRepository {
     }
 
     pub async fn insert_softban(&self, softban: Softban) -> Result<Softban, Error> {
-        Ok(
-            sqlx::query_as::<_, Softban>(include_str!("sql/softbans/insert_entity.sql"))
-                .bind(softban.user_id)
-                .bind(softban.moderator_user_id)
-                .bind(softban.guild_id)
-                .bind(softban.softban_time)
-                .bind(softban.reason)
-                .bind(softban.pardoned)
-                .fetch_one(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Softban>(include_str!("sql/softbans/insert_entity.sql"))
+            .bind(softban.user_id)
+            .bind(softban.moderator_user_id)
+            .bind(softban.guild_id)
+            .bind(softban.softban_time)
+            .bind(softban.reason)
+            .bind(softban.pardoned)
+            .fetch_one(&*self.0)
+            .await
     }
 
     pub async fn update_softban(&self, softban: Softban) -> Result<(), Error> {

@@ -34,22 +34,18 @@ impl TagsRepository {
         guild_id: i64,
         name: &str,
     ) -> Result<Option<Tag>, Error> {
-        Ok(
-            sqlx::query_as::<_, Tag>(include_str!("sql/tags/select_guild_tag_by_name.sql"))
-                .bind(guild_id)
-                .bind(name)
-                .fetch_optional(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Tag>(include_str!("sql/tags/select_guild_tag_by_name.sql"))
+            .bind(guild_id)
+            .bind(name)
+            .fetch_optional(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_tags(&self, guild_id: i64) -> Result<Vec<Tag>, Error> {
-        Ok(
-            sqlx::query_as::<_, Tag>(include_str!("sql/tags/select_guild_tags.sql"))
-                .bind(guild_id)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Tag>(include_str!("sql/tags/select_guild_tags.sql"))
+            .bind(guild_id)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn insert_tag(&self, tag: Tag) -> Result<(), Error> {

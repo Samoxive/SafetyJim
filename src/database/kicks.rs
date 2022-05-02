@@ -27,22 +27,18 @@ impl KicksRepository {
     }
 
     pub async fn fetch_kick(&self, id: i32) -> Result<Option<Kick>, Error> {
-        Ok(
-            sqlx::query_as::<_, Kick>(include_str!("sql/kicks/select_kick_with_id.sql"))
-                .bind(id)
-                .fetch_optional(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Kick>(include_str!("sql/kicks/select_kick_with_id.sql"))
+            .bind(id)
+            .fetch_optional(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_kicks(&self, guild_id: i64, page: u32) -> Result<Vec<Kick>, Error> {
-        Ok(
-            sqlx::query_as::<_, Kick>(include_str!("sql/kicks/select_guild_kicks_paginated.sql"))
-                .bind(guild_id)
-                .bind((page - 1) * 10)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Kick>(include_str!("sql/kicks/select_guild_kicks_paginated.sql"))
+            .bind(guild_id)
+            .bind((page - 1) * 10)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_kick_count(&self, guild_id: i64) -> Result<i64, Error> {
@@ -69,17 +65,15 @@ impl KicksRepository {
     }
 
     pub async fn insert_kick(&self, kick: Kick) -> Result<Kick, Error> {
-        Ok(
-            sqlx::query_as::<_, Kick>(include_str!("sql/kicks/insert_entity.sql"))
-                .bind(kick.user_id)
-                .bind(kick.moderator_user_id)
-                .bind(kick.guild_id)
-                .bind(kick.kick_time)
-                .bind(kick.reason)
-                .bind(kick.pardoned)
-                .fetch_one(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Kick>(include_str!("sql/kicks/insert_entity.sql"))
+            .bind(kick.user_id)
+            .bind(kick.moderator_user_id)
+            .bind(kick.guild_id)
+            .bind(kick.kick_time)
+            .bind(kick.reason)
+            .bind(kick.pardoned)
+            .fetch_one(&*self.0)
+            .await
     }
 
     pub async fn update_kick(&self, kick: Kick) -> Result<(), Error> {

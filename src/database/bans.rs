@@ -30,22 +30,18 @@ impl BansRepository {
     }
 
     pub async fn fetch_ban(&self, id: i32) -> Result<Option<Ban>, Error> {
-        Ok(
-            sqlx::query_as::<_, Ban>(include_str!("sql/bans/select_ban_with_id.sql"))
-                .bind(id)
-                .fetch_optional(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Ban>(include_str!("sql/bans/select_ban_with_id.sql"))
+            .bind(id)
+            .fetch_optional(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_bans(&self, guild_id: i64, page: u32) -> Result<Vec<Ban>, Error> {
-        Ok(
-            sqlx::query_as::<_, Ban>(include_str!("sql/bans/select_guild_bans_paginated.sql"))
-                .bind(guild_id)
-                .bind((page - 1) * 10)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Ban>(include_str!("sql/bans/select_guild_bans_paginated.sql"))
+            .bind(guild_id)
+            .bind((page - 1) * 10)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_ban_count(&self, guild_id: i64) -> Result<i64, Error> {
@@ -57,37 +53,31 @@ impl BansRepository {
     }
 
     pub async fn fetch_expired_bans(&self) -> Result<Vec<Ban>, Error> {
-        Ok(
-            sqlx::query_as::<_, Ban>(include_str!("sql/bans/select_expired_guild_bans.sql"))
-                .bind(now() as i64)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Ban>(include_str!("sql/bans/select_expired_guild_bans.sql"))
+            .bind(now() as i64)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn fetch_last_guild_ban(&self, guild_id: i64) -> Result<Option<Ban>, Error> {
-        Ok(
-            sqlx::query_as::<_, Ban>(include_str!("sql/bans/select_last_guild_ban.sql"))
-                .bind(guild_id)
-                .fetch_optional(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Ban>(include_str!("sql/bans/select_last_guild_ban.sql"))
+            .bind(guild_id)
+            .fetch_optional(&*self.0)
+            .await
     }
 
     pub async fn insert_ban(&self, ban: Ban) -> Result<Ban, Error> {
-        Ok(
-            sqlx::query_as::<_, Ban>(include_str!("sql/bans/insert_entity.sql"))
-                .bind(ban.user_id)
-                .bind(ban.moderator_user_id)
-                .bind(ban.guild_id)
-                .bind(ban.ban_time)
-                .bind(ban.expire_time)
-                .bind(ban.reason)
-                .bind(ban.expires)
-                .bind(ban.unbanned)
-                .fetch_one(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Ban>(include_str!("sql/bans/insert_entity.sql"))
+            .bind(ban.user_id)
+            .bind(ban.moderator_user_id)
+            .bind(ban.guild_id)
+            .bind(ban.ban_time)
+            .bind(ban.expire_time)
+            .bind(ban.reason)
+            .bind(ban.expires)
+            .bind(ban.unbanned)
+            .fetch_one(&*self.0)
+            .await
     }
 
     pub async fn update_ban(&self, ban: Ban) -> Result<(), Error> {

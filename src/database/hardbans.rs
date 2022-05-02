@@ -26,12 +26,10 @@ impl HardbansRepository {
     }
 
     pub async fn fetch_hardban(&self, id: i32) -> Result<Option<Hardban>, Error> {
-        Ok(
-            sqlx::query_as::<_, Hardban>(include_str!("sql/hardbans/select_hardban_with_id.sql"))
-                .bind(id)
-                .fetch_optional(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Hardban>(include_str!("sql/hardbans/select_hardban_with_id.sql"))
+            .bind(id)
+            .fetch_optional(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_hardbans(
@@ -39,13 +37,13 @@ impl HardbansRepository {
         guild_id: i64,
         page: u32,
     ) -> Result<Vec<Hardban>, Error> {
-        Ok(sqlx::query_as::<_, Hardban>(include_str!(
+        sqlx::query_as::<_, Hardban>(include_str!(
             "sql/hardbans/select_guild_hardbans_paginated.sql"
         ))
         .bind(guild_id)
         .bind((page - 1) * 10)
         .fetch_all(&*self.0)
-        .await?)
+        .await
     }
 
     pub async fn fetch_guild_hardban_count(&self, guild_id: i64) -> Result<i64, Error> {
@@ -59,16 +57,14 @@ impl HardbansRepository {
     }
 
     pub async fn insert_hardban(&self, hardban: Hardban) -> Result<Hardban, Error> {
-        Ok(
-            sqlx::query_as::<_, Hardban>(include_str!("sql/hardbans/insert_entity.sql"))
-                .bind(hardban.user_id)
-                .bind(hardban.moderator_user_id)
-                .bind(hardban.guild_id)
-                .bind(hardban.hardban_time)
-                .bind(hardban.reason)
-                .fetch_one(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Hardban>(include_str!("sql/hardbans/insert_entity.sql"))
+            .bind(hardban.user_id)
+            .bind(hardban.moderator_user_id)
+            .bind(hardban.guild_id)
+            .bind(hardban.hardban_time)
+            .bind(hardban.reason)
+            .fetch_one(&*self.0)
+            .await
     }
 
     pub async fn update_hardban(&self, hardban: Hardban) -> Result<(), Error> {

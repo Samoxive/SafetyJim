@@ -132,7 +132,7 @@ impl HardbanService {
                 err
             })
             .ok()
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_default()
     }
 
     pub async fn fetch_guild_hardban_count(&self, guild_id: GuildId) -> i64 {

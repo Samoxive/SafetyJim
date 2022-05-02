@@ -24,25 +24,21 @@ impl JoinsRepository {
     }
 
     pub async fn fetch_expired_joins(&self) -> Result<Vec<Join>, Error> {
-        Ok(
-            sqlx::query_as::<_, Join>(include_str!("sql/joins/select_expired_joins.sql"))
-                .bind(now() as i64)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Join>(include_str!("sql/joins/select_expired_joins.sql"))
+            .bind(now() as i64)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn insert_join(&self, join: Join) -> Result<Join, Error> {
-        Ok(
-            sqlx::query_as::<_, Join>(include_str!("sql/joins/insert_entity.sql"))
-                .bind(join.user_id)
-                .bind(join.guild_id)
-                .bind(join.join_time)
-                .bind(join.allow_time)
-                .bind(join.allowed)
-                .fetch_one(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Join>(include_str!("sql/joins/insert_entity.sql"))
+            .bind(join.user_id)
+            .bind(join.guild_id)
+            .bind(join.join_time)
+            .bind(join.allow_time)
+            .bind(join.allowed)
+            .fetch_one(&*self.0)
+            .await
     }
 
     pub async fn _update_join(&self, join: Join) -> Result<(), Error> {

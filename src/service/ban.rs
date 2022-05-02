@@ -200,7 +200,7 @@ impl BanService {
                 err
             })
             .ok()
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_default()
     }
 
     pub async fn fetch_last_guild_ban(&self, guild_id: GuildId) -> Option<Ban> {

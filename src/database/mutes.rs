@@ -31,22 +31,18 @@ impl MutesRepository {
     }
 
     pub async fn fetch_mute(&self, id: i32) -> Result<Option<Mute>, Error> {
-        Ok(
-            sqlx::query_as::<_, Mute>(include_str!("sql/mutes/select_mute_with_id.sql"))
-                .bind(id)
-                .fetch_optional(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Mute>(include_str!("sql/mutes/select_mute_with_id.sql"))
+            .bind(id)
+            .fetch_optional(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_mutes(&self, guild_id: i64, page: u32) -> Result<Vec<Mute>, Error> {
-        Ok(
-            sqlx::query_as::<_, Mute>(include_str!("sql/mutes/select_guild_mutes_paginated.sql"))
-                .bind(guild_id)
-                .bind((page - 1) * 10)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Mute>(include_str!("sql/mutes/select_guild_mutes_paginated.sql"))
+            .bind(guild_id)
+            .bind((page - 1) * 10)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn fetch_guild_mute_count(&self, guild_id: i64) -> Result<i64, Error> {
@@ -58,22 +54,18 @@ impl MutesRepository {
     }
 
     pub async fn fetch_expired_mutes(&self) -> Result<Vec<Mute>, Error> {
-        Ok(
-            sqlx::query_as::<_, Mute>(include_str!("sql/mutes/select_expired_guild_mutes.sql"))
-                .bind(now() as i64)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Mute>(include_str!("sql/mutes/select_expired_guild_mutes.sql"))
+            .bind(now() as i64)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn fetch_valid_mutes(&self, guild_id: i64, user_id: i64) -> Result<Vec<Mute>, Error> {
-        Ok(
-            sqlx::query_as::<_, Mute>(include_str!("sql/mutes/select_valid_guild_user_mutes.sql"))
-                .bind(guild_id)
-                .bind(user_id)
-                .fetch_all(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Mute>(include_str!("sql/mutes/select_valid_guild_user_mutes.sql"))
+            .bind(guild_id)
+            .bind(user_id)
+            .fetch_all(&*self.0)
+            .await
     }
 
     pub async fn fetch_actionable_mute_count(
@@ -92,20 +84,18 @@ impl MutesRepository {
     }
 
     pub async fn insert_mute(&self, mute: Mute) -> Result<Mute, Error> {
-        Ok(
-            sqlx::query_as::<_, Mute>(include_str!("sql/mutes/insert_entity.sql"))
-                .bind(mute.user_id)
-                .bind(mute.moderator_user_id)
-                .bind(mute.guild_id)
-                .bind(mute.mute_time)
-                .bind(mute.expire_time)
-                .bind(mute.reason)
-                .bind(mute.expires)
-                .bind(mute.unmuted)
-                .bind(mute.pardoned)
-                .fetch_one(&*self.0)
-                .await?,
-        )
+        sqlx::query_as::<_, Mute>(include_str!("sql/mutes/insert_entity.sql"))
+            .bind(mute.user_id)
+            .bind(mute.moderator_user_id)
+            .bind(mute.guild_id)
+            .bind(mute.mute_time)
+            .bind(mute.expire_time)
+            .bind(mute.reason)
+            .bind(mute.expires)
+            .bind(mute.unmuted)
+            .bind(mute.pardoned)
+            .fetch_one(&*self.0)
+            .await
     }
 
     pub async fn update_mute(&self, mute: Mute) -> Result<(), Error> {
