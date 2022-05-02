@@ -86,7 +86,7 @@ impl SlashCommand for InfoCommand {
                     .kind(InteractionResponseType::ChannelMessageWithSource)
                     .interaction_response_data(|message| {
                         message
-                            .create_embed(|embed| {
+                            .embed(|embed| {
                                 embed
                                     .author(|author| {
                                         author

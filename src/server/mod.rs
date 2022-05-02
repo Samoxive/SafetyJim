@@ -90,14 +90,13 @@ fn generate_token(secret: &str, user_id: UserId) -> Option<String> {
 async fn is_authenticated(
     config: &Config,
     services: &TypeMap,
-    req: &web::HttpRequest,
+    req: &actix_web::HttpRequest,
 ) -> Option<UserId> {
     let token = req
         .headers()
         .get(HeaderName::from_static("token")) // optimize into constant?
         .map(|value| value.to_str())
-        .map(|result| result.ok())
-        .flatten()?;
+        .and_then(|result| result.ok())?;
 
     let claims = verify_token(&config.server_secret, token)?;
 
@@ -120,7 +119,7 @@ async fn is_authenticated(
 pub async fn check_authentication(
     config: &Config,
     services: &TypeMap,
-    req: &web::HttpRequest,
+    req: &actix_web::HttpRequest,
 ) -> Result<UserId, HttpResponse> {
     is_authenticated(config, services, req)
         .await

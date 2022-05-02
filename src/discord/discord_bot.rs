@@ -93,15 +93,13 @@ impl DiscordBot {
         };
 
         let application_id: u64 = config.oauth_client_id.parse()?;
-        let client = Client::builder(&(config.discord_token))
-            .event_handler(handler)
-            .intents(
-                GatewayIntents::GUILDS
-                    | GatewayIntents::GUILD_MEMBERS
-                    | GatewayIntents::GUILD_MESSAGES,
-            )
-            .application_id(application_id)
-            .await?;
+        let client = Client::builder(
+            &config.discord_token,
+            GatewayIntents::GUILDS | GatewayIntents::GUILD_MEMBERS | GatewayIntents::GUILD_MESSAGES,
+        )
+        .event_handler(handler)
+        .application_id(application_id)
+        .await?;
 
         if let Some(guild_service) = services.get::<GuildService>() {
             guild_service
@@ -125,7 +123,7 @@ impl DiscordBot {
     }
 
     pub async fn connect(&mut self) -> Result<(), Arc<serenity::Error>> {
-        Ok(self.client.start_autosharded().await.map_err(Arc::new)?)
+        self.client.start_autosharded().await.map_err(Arc::new)
     }
 }
 

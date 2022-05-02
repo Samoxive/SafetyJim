@@ -51,8 +51,7 @@ impl ApplicationCommandInteractionDataExt for ApplicationCommandInteractionData 
         self.options
             .iter()
             .find(|option| option.name == option_name)
-            .map(|option| option.resolved.as_ref())
-            .flatten()
+            .and_then(|option| option.resolved.as_ref())
     }
 
     fn string(&self, option_name: &str) -> Option<&str> {
@@ -338,7 +337,7 @@ pub async fn clean_messages(
     let now = now();
 
     for message in messages.into_iter() {
-        let timestamp = message.created_at().timestamp() as u64;
+        let timestamp = message.created_at().unix_timestamp() as u64;
         if (now - timestamp) <= 60 * 60 * 24 * 12 {
             new_messages.push(message);
         } else {

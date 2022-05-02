@@ -10,7 +10,7 @@ use typemap_rev::TypeMap;
 pub async fn get_self(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
 ) -> impl Responder {
     let user_id = if let Some(id) = is_authenticated(&config, &services, &req).await {
         id

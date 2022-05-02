@@ -51,7 +51,7 @@ fn generate_member_embed<'a>(
     user: &User,
 ) -> &'a mut CreateEmbed {
     let boost_status = match member.premium_since {
-        Some(time) => format!("Since <t:{}>", time.timestamp()),
+        Some(time) => format!("Since <t:{}>", time.unix_timestamp()),
         None => "Not Boosting".into(),
     };
 
@@ -71,9 +71,9 @@ fn generate_member_embed<'a>(
         format!("Member of {}", guild.name)
     };
 
-    let created_at = format!("<t:{}>", user.created_at().timestamp());
+    let created_at = format!("<t:{}>", user.created_at().unix_timestamp());
     let joined_at = match &member.joined_at {
-        Some(time) => format!("<t:{}>", time.timestamp()),
+        Some(time) => format!("<t:{}>", time.unix_timestamp()),
         None => "<unknown>".into(),
     };
 
@@ -94,7 +94,7 @@ fn generate_user_embed<'a>(embed: &'a mut CreateEmbed, user: &User) -> &'a mut C
         None => "<none>".into(),
     };
 
-    let created_at = format!("<t:{}>", user.created_at().timestamp());
+    let created_at = format!("<t:{}>", user.created_at().unix_timestamp());
 
     embed
         .author(|author| author.name(user.tag()).icon_url(user.face()))
@@ -165,9 +165,7 @@ impl SlashCommand for WhoisCommand {
                         .kind(InteractionResponseType::ChannelMessageWithSource)
                         .interaction_response_data(|message| {
                             message
-                                .create_embed(|embed| {
-                                    generate_member_embed(embed, &guild, member, user)
-                                })
+                                .embed(|embed| generate_member_embed(embed, &guild, member, user))
                                 .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
                         })
                 })
@@ -183,7 +181,7 @@ impl SlashCommand for WhoisCommand {
                         .kind(InteractionResponseType::ChannelMessageWithSource)
                         .interaction_response_data(|message| {
                             message
-                                .create_embed(|embed| generate_user_embed(embed, user))
+                                .embed(|embed| generate_user_embed(embed, user))
                                 .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
                         })
                 })

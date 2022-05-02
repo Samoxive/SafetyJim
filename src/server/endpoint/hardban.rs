@@ -23,7 +23,7 @@ struct GetHardbansResponse {
 pub async fn get_hardbans(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     guild_id: web::Path<u64>,
     mod_log_params: web::Query<ModLogPaginationParams>,
 ) -> impl Responder {
@@ -68,7 +68,7 @@ pub async fn get_hardbans(
 pub async fn get_hardban(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     path: web::Path<(u64, i32)>,
 ) -> impl Responder {
     let (guild_id, hardban_id) = path.into_inner();
@@ -107,7 +107,7 @@ pub async fn get_hardban(
 pub async fn update_hardban(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     path: web::Path<(u64, i32)>,
     mut new_hardban: web::Json<HardbanModel>,
 ) -> impl Responder {

@@ -23,7 +23,7 @@ struct GetKicksResponse {
 pub async fn get_kicks(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     guild_id: web::Path<u64>,
     mod_log_params: web::Query<ModLogPaginationParams>,
 ) -> impl Responder {
@@ -68,7 +68,7 @@ pub async fn get_kicks(
 pub async fn get_kick(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     path: web::Path<(u64, i32)>,
 ) -> impl Responder {
     let (guild_id, kick_id) = path.into_inner();
@@ -107,7 +107,7 @@ pub async fn get_kick(
 pub async fn update_kick(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     path: web::Path<(u64, i32)>,
     mut new_kick: web::Json<KickModel>,
 ) -> impl Responder {

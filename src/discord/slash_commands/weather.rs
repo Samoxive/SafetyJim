@@ -229,7 +229,7 @@ impl SlashCommand for WeatherCommand {
                 response
                     .kind(InteractionResponseType::ChannelMessageWithSource)
                     .interaction_response_data(|message| {
-                        message.create_embed(|embed| {
+                        message.embed(|embed| {
                             embed
                                 .colour(EMBED_COLOR)
                                 .title(format!("Weather in {}", formatted_address))

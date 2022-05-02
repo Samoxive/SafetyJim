@@ -3,7 +3,7 @@ use chrono::{TimeZone, Utc};
 use serenity::builder::CreateEmbed;
 use serenity::http::Http;
 use serenity::model::id::ChannelId;
-use serenity::model::misc::Mentionable;
+use serenity::model::mention::Mentionable;
 use serenity::model::user::User;
 use serenity::utils::Color;
 use tracing::error;

@@ -74,7 +74,7 @@ impl SlashCommand for ServerCommand {
                     .kind(InteractionResponseType::ChannelMessageWithSource)
                     .interaction_response_data(|message| {
                         message
-                            .create_embed(|embed| {
+                            .embed(|embed| {
                                 embed
                                     .author(|author| {
                                         author
@@ -97,7 +97,7 @@ impl SlashCommand for ServerCommand {
                                     )
                                     .field(
                                         "Created On",
-                                        format!("<t:{}>", guild.id.created_at().timestamp()),
+                                        format!("<t:{}>", guild.id.created_at().unix_timestamp()),
                                         true,
                                     )
                                     .field(

@@ -23,7 +23,7 @@ struct GetWarnsResponse {
 pub async fn get_warns(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     guild_id: web::Path<u64>,
     mod_log_params: web::Query<ModLogPaginationParams>,
 ) -> impl Responder {
@@ -68,7 +68,7 @@ pub async fn get_warns(
 pub async fn get_warn(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     path: web::Path<(u64, i32)>,
 ) -> impl Responder {
     let (guild_id, warn_id) = path.into_inner();
@@ -107,7 +107,7 @@ pub async fn get_warn(
 pub async fn update_warn(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     path: web::Path<(u64, i32)>,
     mut new_warn: web::Json<WarnModel>,
 ) -> impl Responder {

@@ -23,7 +23,7 @@ struct GetSoftbansResponse {
 pub async fn get_softbans(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     guild_id: web::Path<u64>,
     mod_log_params: web::Query<ModLogPaginationParams>,
 ) -> impl Responder {
@@ -68,7 +68,7 @@ pub async fn get_softbans(
 pub async fn get_softban(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     path: web::Path<(u64, i32)>,
 ) -> impl Responder {
     let (guild_id, softban_id) = path.into_inner();
@@ -107,7 +107,7 @@ pub async fn get_softban(
 pub async fn update_softban(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     path: web::Path<(u64, i32)>,
     mut new_softban: web::Json<SoftbanModel>,
 ) -> impl Responder {

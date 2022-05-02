@@ -21,7 +21,7 @@ use typemap_rev::TypeMap;
 pub async fn get_setting(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     guild_id: web::Path<u64>,
 ) -> impl Responder {
     let guild_id = GuildId(guild_id.into_inner());
@@ -84,11 +84,10 @@ pub async fn get_setting(
 
     let holding_room_role = setting
         .holding_room_role_id
-        .map(|id| {
+        .and_then(|id| {
             let role_id = RoleId(id as u64);
             roles.get(&role_id).map(|role| (role_id, role))
         })
-        .flatten()
         .map(|(role_id, role)| RoleModel::from_role(role_id, role));
 
     let welcome_channel_id = ChannelId(setting.welcome_message_channel_id as u64);
@@ -158,7 +157,7 @@ pub async fn get_setting(
 pub async fn update_setting(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     guild_id: web::Path<u64>,
     mut new_setting: web::Json<SettingModel>,
 ) -> impl Responder {
@@ -502,7 +501,7 @@ pub async fn update_setting(
 pub async fn reset_setting(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    req: web::HttpRequest,
+    req: actix_web::HttpRequest,
     guild_id: web::Path<u64>,
 ) -> impl Responder {
     let guild_id = GuildId(guild_id.into_inner());
