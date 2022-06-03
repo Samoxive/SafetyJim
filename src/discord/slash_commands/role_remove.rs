@@ -1,22 +1,23 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::id::RoleId;
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::role_remove::RoleRemoveCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
+    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction,
 };
 use crate::service::iam_role::{IAMRoleService, RemoveIAMRoleFailure};
-use anyhow::bail;
-use serenity::model::id::RoleId;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 pub struct RoleRemoveCommand;
 
@@ -29,12 +30,12 @@ enum RoleRemoveCommandOptionFailure {
 }
 
 fn generate_options(
-    data: &ApplicationCommandInteractionData,
+    data: &CommandData,
 ) -> Result<RoleRemoveCommandOptions, RoleRemoveCommandOptionFailure> {
     let role = if let Some(role) = data.role("role") {
         role
     } else {
-        return Err(RoleRemoveCommandOptionFailure::MissingOption);
+        return Err(MissingOption);
     };
 
     Ok(RoleRemoveCommandOptions { role_id: role.id })
@@ -57,12 +58,13 @@ impl SlashCommand for RoleRemoveCommand {
         command
             .name("role-remove")
             .description("unregisters a self assignable role")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::ADMINISTRATOR)
             .create_option(|option| {
                 option
                     .name("role")
                     .description("self assignable role to unregister")
-                    .kind(ApplicationCommandOptionType::Role)
+                    .kind(CommandOptionType::Role)
                     .required(true)
             })
     }

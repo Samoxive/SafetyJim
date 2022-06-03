@@ -1,6 +1,14 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
+use serenity::client::bridge::gateway::ShardId;
 use serenity::client::Context;
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
+use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
+use serenity::model::Permissions;
+use serenity::utils::Colour;
+use tracing::error;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::{
@@ -11,15 +19,6 @@ use crate::service::ban::BanService;
 use crate::service::guild_statistic::GuildStatisticService;
 use crate::service::shard_statistic::ShardStatisticService;
 use crate::util::now;
-use anyhow::bail;
-use serenity::client::bridge::gateway::ShardId;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::model::interactions::{
-    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
-};
-use serenity::utils::Colour;
-use tracing::error;
-use typemap_rev::TypeMap;
 
 pub struct InfoCommand;
 
@@ -36,7 +35,8 @@ impl SlashCommand for InfoCommand {
         command
             .name("info")
             .description("displays information about Jim")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(
@@ -97,12 +97,20 @@ impl SlashCommand for InfoCommand {
                                         "Lifting the :hammer: since {}",
                                         START_EPOCH.get().expect("")
                                     ))
-                                    .field("Server Count", guild_statistics.guild_count, true)
-                                    .field("User Count", guild_statistics.member_count, true)
+                                    .field(
+                                        "Server Count",
+                                        &guild_statistics.guild_count.to_string(),
+                                        true,
+                                    )
+                                    .field(
+                                        "User Count",
+                                        &guild_statistics.member_count.to_string(),
+                                        true,
+                                    )
                                     .field("\u{200E}", "\u{200E}", true)
                                     .field(
                                         "Websocket Ping",
-                                        format!(
+                                        &format!(
                                             "Shard {}: {}ms\nAverage: {}ms",
                                             shard_string,
                                             shard_info.current_shard_latency,
@@ -114,7 +122,7 @@ impl SlashCommand for InfoCommand {
                                     .field("\u{200E}", "\u{200E}", true)
                                     .field(
                                         "Links",
-                                        format!(
+                                        &format!(
                                             "[Support]({}) | [Github]({}) | [Invite]({})",
                                             SUPPORT_SERVER_INVITE_LINK, GITHUB_LINK, INVITE_LINK
                                         ),
@@ -128,7 +136,7 @@ impl SlashCommand for InfoCommand {
                                     })
                                     .color(Colour::new(0x4286F4))
                             })
-                            .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
+                            .flags(MessageFlags::EPHEMERAL)
                     })
             })
             .await

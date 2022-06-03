@@ -1,11 +1,3 @@
-use crate::constants::EMBED_COLOR;
-use crate::discord::slash_commands::weather::WeatherCommandOptionFailure::MissingOption;
-use crate::discord::slash_commands::SlashCommand;
-use crate::discord::util::{
-    invisible_failure_reply, verify_guild_slash_command, ApplicationCommandInteractionDataExt,
-};
-use crate::util::now;
-use crate::Config;
 use anyhow::bail;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
@@ -13,11 +5,20 @@ use reqwest::{Client, ClientBuilder};
 use serde::Deserialize;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
-use serenity::model::interactions::InteractionResponseType;
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::Permissions;
 use typemap_rev::TypeMap;
+
+use crate::constants::EMBED_COLOR;
+use crate::discord::slash_commands::weather::WeatherCommandOptionFailure::MissingOption;
+use crate::discord::slash_commands::SlashCommand;
+use crate::discord::util::{invisible_failure_reply, verify_guild_slash_command, CommandDataExt};
+use crate::util::now;
+use crate::Config;
 
 const GEOCODE_URL: &str = "https://maps.googleapis.com/maps/api/geocode/json";
 const DARKSKY_URL: &str = "https://api.darksky.net/forecast";
@@ -83,7 +84,7 @@ enum WeatherCommandOptionFailure {
 }
 
 fn generate_options(
-    data: &ApplicationCommandInteractionData,
+    data: &CommandData,
 ) -> Result<WeatherCommandOptions, WeatherCommandOptionFailure> {
     let address = if let Some(s) = data.string("address") {
         s
@@ -107,12 +108,13 @@ impl SlashCommand for WeatherCommand {
         command
             .name("weather")
             .description("gives current weather information for given address")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("address")
                     .description("address for weather location")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(true)
             })
     }
@@ -236,13 +238,13 @@ impl SlashCommand for WeatherCommand {
                                 .footer(|footer| {
                                     footer.text(format!("Local Time: {}", local_date_str))
                                 })
-                                .field("Summary", summary, false)
+                                .field("Summary", &summary, false)
                                 .field(
                                     "Temperature",
-                                    format!("{} °C / {} °F", temp_c as i32, temp_f as i32),
+                                    &format!("{} °C / {} °F", temp_c as i32, temp_f as i32),
                                     true,
                                 )
-                                .field("Humidity", format!("{}%", humidity), true)
+                                .field("Humidity", &format!("{}%", humidity), true)
                                 .description(description)
                         })
                     })

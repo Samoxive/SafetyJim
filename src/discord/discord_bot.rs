@@ -6,18 +6,20 @@ use std::time::Duration;
 use serenity::async_trait;
 use serenity::client::bridge::gateway::ShardManager;
 use serenity::client::{Context, EventHandler};
+use serenity::model::application::command::Command;
+use serenity::model::application::interaction::Interaction;
 use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
 use serenity::model::event::{GuildMemberUpdateEvent, MessageUpdateEvent};
 use serenity::model::gateway::{Activity, GatewayIntents, Ready};
 use serenity::model::guild::{Guild, Member, PartialGuild, Role, UnavailableGuild};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
-use serenity::model::interactions::application_command::ApplicationCommand;
-use serenity::model::interactions::Interaction;
 use serenity::model::user::{CurrentUser, User};
 use serenity::prelude::Mentionable;
 use serenity::Client;
 use simsearch::{SearchOptions, SimSearch};
+use tokio::select;
 use tokio::sync::Mutex;
+use tokio::time::sleep;
 use tracing::{error, warn};
 use typemap_rev::TypeMap;
 
@@ -28,7 +30,7 @@ use crate::discord::scheduled::run_scheduled_tasks;
 use crate::discord::slash_commands::SlashCommands;
 use crate::discord::util::{
     invisible_success_reply, verify_guild_message_create, verify_guild_message_update,
-    ApplicationCommandInteractionDataExt, GuildMessageCreated, GuildMessageUpdated,
+    CommandDataExt, GuildMessageCreated, GuildMessageUpdated,
 };
 use crate::flags::Flags;
 use crate::service::guild::GuildService;
@@ -39,8 +41,6 @@ use crate::service::setting::SettingService;
 use crate::service::shard_statistic::ShardStatisticService;
 use crate::service::tag::TagService;
 use crate::util::Shutdown;
-use tokio::select;
-use tokio::time::sleep;
 
 const SHARD_LATENCY_POLLING_INTERVAL: u64 = 60;
 
@@ -140,7 +140,7 @@ async fn initialize_slash_commands(
     slash_commands: &SlashCommands,
 ) -> Result<(), serenity::Error> {
     warn!("initializing slash commands");
-    let _ = ApplicationCommand::set_global_application_commands(&ctx.http, |commands| {
+    let _ = Command::set_global_application_commands(&ctx.http, |commands| {
         for (&_name, slash_command) in &slash_commands.0 {
             commands
                 .create_application_command(move |command| slash_command.create_command(command));
@@ -155,15 +155,35 @@ async fn initialize_slash_commands(
 
 #[async_trait]
 impl EventHandler for DiscordEventHandler {
-    async fn guild_create(&self, _ctx: Context, guild: Guild) {
-        if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
-            statistic_service.add_guild(&guild).await;
+    async fn channel_create(&self, _ctx: Context, new: &GuildChannel) {
+        if let Some(guild_service) = self.services.get::<GuildService>() {
+            guild_service
+                .invalidate_cached_guild_channels(new.guild_id)
+                .await;
         }
     }
 
-    async fn guild_update(&self, _ctx: Context, new: PartialGuild) {
+    async fn channel_delete(&self, _ctx: Context, new: &GuildChannel) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
-            guild_service.invalidate_cached_guild(new.id).await;
+            guild_service
+                .invalidate_cached_guild_channels(new.guild_id)
+                .await;
+        }
+    }
+
+    async fn channel_update(&self, _ctx: Context, new: Channel) {
+        if let Some(guild_channel) = new.guild() {
+            if let Some(guild_service) = self.services.get::<GuildService>() {
+                guild_service
+                    .invalidate_cached_guild_channels(guild_channel.guild_id)
+                    .await;
+            }
+        }
+    }
+
+    async fn guild_create(&self, _ctx: Context, guild: Guild) {
+        if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
+            statistic_service.add_guild(&guild).await;
         }
     }
 
@@ -301,14 +321,6 @@ impl EventHandler for DiscordEventHandler {
             });
     }
 
-    async fn guild_member_update(&self, _ctx: Context, new: GuildMemberUpdateEvent) {
-        if let Some(guild_service) = self.services.get::<GuildService>() {
-            guild_service
-                .invalidate_cached_guild_member(new.guild_id, new.user.id)
-                .await;
-        }
-    }
-
     async fn guild_member_removal(&self, _ctx: Context, guild_id: GuildId, kicked: User) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
             statistic_service
@@ -327,95 +339,39 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn ready(&self, ctx: Context, data_about_bot: Ready) {
-        let shard = data_about_bot.shard.unwrap_or([0, 1]);
-        // Watching over users. [0 / 1]
-        let shard_status = format!("over users. [{} / {}]", shard[0], shard[1]);
-        let activity = Activity::watching(shard_status);
-        ctx.set_activity(activity).await;
-
-        if self.create_slash_commands {
-            if let Err(err) = initialize_slash_commands(&ctx, &self.slash_commands).await {
-                error!("failed to create slash commands {}", err);
-                exit(-1);
-            }
+    async fn guild_member_update(&self, _ctx: Context, new: GuildMemberUpdateEvent) {
+        if let Some(guild_service) = self.services.get::<GuildService>() {
+            guild_service
+                .invalidate_cached_guild_member(new.guild_id, new.user.id)
+                .await;
         }
     }
 
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Autocomplete(autocomplete_interaction) = interaction {
-            // only tag command has autocomplete so no need to filter based on command name
-            if let Some(tag_service) = self.services.get::<TagService>() {
-                let guild_id = if let Some(id) = autocomplete_interaction.guild_id {
-                    id
-                } else {
-                    return;
-                };
-
-                let tags = tag_service.get_tag_names(guild_id).await;
-
-                let tag_option = if let Some(s) = autocomplete_interaction.data.string("name") {
-                    s
-                } else {
-                    return;
-                };
-
-                let tag_choices = if tag_option.is_empty() {
-                    tags
-                } else {
-                    let mut engine = SimSearch::new_with(SearchOptions::new().threshold(0.75));
-
-                    for (i, tag_name) in tags.iter().enumerate() {
-                        engine.insert(i, tag_name);
-                    }
-
-                    let results = engine.search(tag_option);
-
-                    results.into_iter().map(|i| tags[i].clone()).collect()
-                };
-
-                let _ = autocomplete_interaction
-                    .create_autocomplete_response(&*ctx.http, |response| {
-                        for tag in tag_choices {
-                            response.add_string_choice(&tag, &tag);
-                        }
-
-                        response
-                    })
-                    .await
-                    .map_err(|err| {
-                        error!("failed to create autocomplete response {}", err);
-                        err
-                    });
-            }
-
-            return;
-        }
-
-        if let Interaction::ApplicationCommand(command) = interaction {
-            if command.guild_id.is_none() || command.member.is_none() {
-                invisible_success_reply(
-                    &*ctx.http,
-                    &command,
-                    "Jim's commands can only be used in servers.",
-                )
+    async fn guild_role_create(&self, _ctx: Context, new: Role) {
+        if let Some(guild_service) = self.services.get::<GuildService>() {
+            guild_service
+                .invalidate_cached_guild_roles(new.guild_id)
                 .await;
-                return;
-            }
+        }
+    }
 
-            let name = &command.data.name;
-            let slash_command_handler = self.slash_commands.0.get(name.as_str());
-            if let Some(slash_command_handler) = slash_command_handler {
-                if let Err(err) = slash_command_handler
-                    .handle_command(&ctx, &command, &self.config, self.services.as_ref())
-                    .await
-                {
-                    error!(
-                        name = name.as_str(),
-                        "failed to handle slash command {}", err
-                    );
-                }
-            }
+    async fn guild_role_delete(&self, _ctx: Context, guild_id: GuildId, _removed_role_id: RoleId) {
+        if let Some(guild_service) = self.services.get::<GuildService>() {
+            guild_service.invalidate_cached_guild_roles(guild_id).await;
+        }
+    }
+
+    async fn guild_role_update(&self, _ctx: Context, new: Role) {
+        if let Some(guild_service) = self.services.get::<GuildService>() {
+            guild_service
+                .invalidate_cached_guild_roles(new.guild_id)
+                .await;
+        }
+    }
+
+    async fn guild_update(&self, _ctx: Context, new: PartialGuild) {
+        if let Some(guild_service) = self.services.get::<GuildService>() {
+            guild_service.invalidate_cached_guild(new.id).await;
         }
     }
 
@@ -571,25 +527,18 @@ impl EventHandler for DiscordEventHandler {
         return;
     }
 
-    async fn guild_role_create(&self, _ctx: Context, new: Role) {
-        if let Some(guild_service) = self.services.get::<GuildService>() {
-            guild_service
-                .invalidate_cached_guild_roles(new.guild_id)
-                .await;
-        }
-    }
+    async fn ready(&self, ctx: Context, data_about_bot: Ready) {
+        let shard = data_about_bot.shard.unwrap_or([0, 1]);
+        // Watching over users. [0 / 1]
+        let shard_status = format!("over users. [{} / {}]", shard[0], shard[1]);
+        let activity = Activity::watching(shard_status);
+        ctx.set_activity(activity).await;
 
-    async fn guild_role_update(&self, _ctx: Context, new: Role) {
-        if let Some(guild_service) = self.services.get::<GuildService>() {
-            guild_service
-                .invalidate_cached_guild_roles(new.guild_id)
-                .await;
-        }
-    }
-
-    async fn guild_role_delete(&self, _ctx: Context, guild_id: GuildId, _removed_role_id: RoleId) {
-        if let Some(guild_service) = self.services.get::<GuildService>() {
-            guild_service.invalidate_cached_guild_roles(guild_id).await;
+        if self.create_slash_commands {
+            if let Err(err) = initialize_slash_commands(&ctx, &self.slash_commands).await {
+                error!("failed to create slash commands {}", err);
+                exit(-1);
+            }
         }
     }
 
@@ -599,29 +548,80 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn channel_create(&self, _ctx: Context, new: &GuildChannel) {
-        if let Some(guild_service) = self.services.get::<GuildService>() {
-            guild_service
-                .invalidate_cached_guild_channels(new.guild_id)
-                .await;
-        }
-    }
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::Autocomplete(autocomplete_interaction) = interaction {
+            // only tag command has autocomplete so no need to filter based on command name
+            if let Some(tag_service) = self.services.get::<TagService>() {
+                let guild_id = if let Some(id) = autocomplete_interaction.guild_id {
+                    id
+                } else {
+                    return;
+                };
 
-    async fn channel_update(&self, _ctx: Context, new: Channel) {
-        if let Some(guild_channel) = new.guild() {
-            if let Some(guild_service) = self.services.get::<GuildService>() {
-                guild_service
-                    .invalidate_cached_guild_channels(guild_channel.guild_id)
-                    .await;
+                let tags = tag_service.get_tag_names(guild_id).await;
+
+                let tag_option = if let Some(s) = autocomplete_interaction.data.string("name") {
+                    s
+                } else {
+                    return;
+                };
+
+                let tag_choices = if tag_option.is_empty() {
+                    tags
+                } else {
+                    let mut engine = SimSearch::new_with(SearchOptions::new().threshold(0.75));
+
+                    for (i, tag_name) in tags.iter().enumerate() {
+                        engine.insert(i, tag_name);
+                    }
+
+                    let results = engine.search(tag_option);
+
+                    results.into_iter().map(|i| tags[i].clone()).collect()
+                };
+
+                let _ = autocomplete_interaction
+                    .create_autocomplete_response(&*ctx.http, |response| {
+                        for tag in tag_choices {
+                            response.add_string_choice(&tag, &tag);
+                        }
+
+                        response
+                    })
+                    .await
+                    .map_err(|err| {
+                        error!("failed to create autocomplete response {}", err);
+                        err
+                    });
             }
-        }
-    }
 
-    async fn channel_delete(&self, _ctx: Context, new: &GuildChannel) {
-        if let Some(guild_service) = self.services.get::<GuildService>() {
-            guild_service
-                .invalidate_cached_guild_channels(new.guild_id)
+            return;
+        }
+
+        if let Interaction::ApplicationCommand(command) = interaction {
+            if command.guild_id.is_none() || command.member.is_none() {
+                invisible_success_reply(
+                    &*ctx.http,
+                    &command,
+                    "Jim's commands can only be used in servers.",
+                )
                 .await;
+                return;
+            }
+
+            let name = &command.data.name;
+            let slash_command_handler = self.slash_commands.0.get(name.as_str());
+            if let Some(slash_command_handler) = slash_command_handler {
+                if let Err(err) = slash_command_handler
+                    .handle_command(&ctx, &command, &self.config, self.services.as_ref())
+                    .await
+                {
+                    error!(
+                        name = name.as_str(),
+                        "failed to handle slash command {}", err
+                    );
+                }
+            }
         }
     }
 }

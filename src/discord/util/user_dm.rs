@@ -1,9 +1,10 @@
-use crate::constants::EMBED_COLOR;
 use chrono::{TimeZone, Utc};
 use serenity::builder::CreateEmbed;
 use serenity::http::Http;
 use serenity::model::id::UserId;
 use tracing::error;
+
+use crate::constants::EMBED_COLOR;
 
 pub enum ModActionKind {
     Ban { expiration_time: Option<u64> },
@@ -43,13 +44,13 @@ impl ModActionKind {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Banned until", value, false);
+                embed.field("Banned until", &value, false);
             }
             ModActionKind::Mute { expiration_time } => {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Muted until", value, false);
+                embed.field("Muted until", &value, false);
             }
             _ => {}
         }

@@ -1,22 +1,23 @@
-pub mod mod_log;
-pub mod user_dm;
+use std::collections::HashMap;
+use std::time::Duration;
 
 use anyhow::bail;
+use async_recursion::async_recursion;
 use serenity::http::{Http, HttpError};
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData, CommandDataOptionValue,
+};
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::application::interaction::MessageFlags;
 use serenity::model::channel::{Message, PartialChannel};
+use serenity::model::event::MessageUpdateEvent;
 use serenity::model::guild::{Member, PartialMember, Role};
 use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId, UserId};
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData,
-    ApplicationCommandInteractionDataOptionValue,
-};
-use serenity::model::interactions::{
-    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
-};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use serenity::Error;
-use std::collections::HashMap;
+use tracing::{error, warn};
+use typemap_rev::TypeMap;
 
 use crate::database::settings::{
     Setting, ACTION_BAN, ACTION_HARDBAN, ACTION_KICK, ACTION_MUTE, ACTION_SOFTBAN, ACTION_WARN,
@@ -29,14 +30,12 @@ use crate::service::mute::MuteService;
 use crate::service::softban::SoftbanService;
 use crate::service::warn::WarnService;
 use crate::util::now;
-use async_recursion::async_recursion;
-use serenity::model::event::MessageUpdateEvent;
-use std::time::Duration;
-use tracing::{error, warn};
-use typemap_rev::TypeMap;
 
-pub trait ApplicationCommandInteractionDataExt {
-    fn option(&self, option_name: &str) -> Option<&ApplicationCommandInteractionDataOptionValue>;
+pub mod mod_log;
+pub mod user_dm;
+
+pub trait CommandDataExt {
+    fn option(&self, option_name: &str) -> Option<&CommandDataOptionValue>;
     fn string(&self, option_name: &str) -> Option<&str>;
     fn integer(&self, option_name: &str) -> Option<i64>;
     fn boolean(&self, option_name: &str) -> Option<bool>;
@@ -46,8 +45,8 @@ pub trait ApplicationCommandInteractionDataExt {
     fn number(&self, option_name: &str) -> Option<f64>;
 }
 
-impl ApplicationCommandInteractionDataExt for ApplicationCommandInteractionData {
-    fn option(&self, option_name: &str) -> Option<&ApplicationCommandInteractionDataOptionValue> {
+impl CommandDataExt for CommandData {
+    fn option(&self, option_name: &str) -> Option<&CommandDataOptionValue> {
         self.options
             .iter()
             .find(|option| option.name == option_name)
@@ -55,9 +54,7 @@ impl ApplicationCommandInteractionDataExt for ApplicationCommandInteractionData 
     }
 
     fn string(&self, option_name: &str) -> Option<&str> {
-        if let Some(ApplicationCommandInteractionDataOptionValue::String(str)) =
-            self.option(option_name)
-        {
+        if let Some(CommandDataOptionValue::String(str)) = self.option(option_name) {
             Some(str.as_str())
         } else {
             None
@@ -65,9 +62,7 @@ impl ApplicationCommandInteractionDataExt for ApplicationCommandInteractionData 
     }
 
     fn integer(&self, option_name: &str) -> Option<i64> {
-        if let Some(ApplicationCommandInteractionDataOptionValue::Integer(i)) =
-            self.option(option_name)
-        {
+        if let Some(CommandDataOptionValue::Integer(i)) = self.option(option_name) {
             Some(*i)
         } else {
             None
@@ -75,9 +70,7 @@ impl ApplicationCommandInteractionDataExt for ApplicationCommandInteractionData 
     }
 
     fn boolean(&self, option_name: &str) -> Option<bool> {
-        if let Some(ApplicationCommandInteractionDataOptionValue::Boolean(b)) =
-            self.option(option_name)
-        {
+        if let Some(CommandDataOptionValue::Boolean(b)) = self.option(option_name) {
             Some(*b)
         } else {
             None
@@ -85,9 +78,7 @@ impl ApplicationCommandInteractionDataExt for ApplicationCommandInteractionData 
     }
 
     fn user(&self, option_name: &str) -> Option<(&User, Option<&PartialMember>)> {
-        if let Some(ApplicationCommandInteractionDataOptionValue::User(user, member)) =
-            self.option(option_name)
-        {
+        if let Some(CommandDataOptionValue::User(user, member)) = self.option(option_name) {
             Some((user, member.as_ref()))
         } else {
             None
@@ -95,9 +86,7 @@ impl ApplicationCommandInteractionDataExt for ApplicationCommandInteractionData 
     }
 
     fn channel(&self, option_name: &str) -> Option<&PartialChannel> {
-        if let Some(ApplicationCommandInteractionDataOptionValue::Channel(channel)) =
-            self.option(option_name)
-        {
+        if let Some(CommandDataOptionValue::Channel(channel)) = self.option(option_name) {
             Some(channel)
         } else {
             None
@@ -105,9 +94,7 @@ impl ApplicationCommandInteractionDataExt for ApplicationCommandInteractionData 
     }
 
     fn role(&self, option_name: &str) -> Option<&Role> {
-        if let Some(ApplicationCommandInteractionDataOptionValue::Role(role)) =
-            self.option(option_name)
-        {
+        if let Some(CommandDataOptionValue::Role(role)) = self.option(option_name) {
             Some(role)
         } else {
             None
@@ -115,9 +102,7 @@ impl ApplicationCommandInteractionDataExt for ApplicationCommandInteractionData 
     }
 
     fn number(&self, option_name: &str) -> Option<f64> {
-        if let Some(ApplicationCommandInteractionDataOptionValue::Number(n)) =
-            self.option(option_name)
-        {
+        if let Some(CommandDataOptionValue::Number(n)) = self.option(option_name) {
             Some(*n)
         } else {
             None
@@ -264,9 +249,7 @@ async fn invisible_reply_with_str(
             response
                 .kind(InteractionResponseType::ChannelMessageWithSource)
                 .interaction_response_data(|message| {
-                    message
-                        .content(content)
-                        .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
+                    message.content(content).flags(MessageFlags::EPHEMERAL)
                 })
         })
         .await
@@ -388,10 +371,10 @@ pub trait SerenityErrorExt {
     fn discord_error_code(&self) -> Option<isize>;
 }
 
-impl SerenityErrorExt for serenity::Error {
+impl SerenityErrorExt for Error {
     fn discord_error_code(&self) -> Option<isize> {
         match self {
-            Error::Http(http_err) => match &**http_err {
+            Error::Http(http_err) => match &*http_err {
                 HttpError::UnsuccessfulRequest(response) => Some(response.error.code),
                 _ => None,
             },

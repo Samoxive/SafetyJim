@@ -1,7 +1,12 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
+use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
+use serenity::model::Permissions;
+use tracing::error;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
@@ -10,12 +15,6 @@ use crate::discord::util::{
     invisible_failure_reply, verify_guild_slash_command, GuildSlashCommandInteraction,
 };
 use crate::service::tag::TagService;
-use anyhow::bail;
-use serenity::model::interactions::{
-    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
-};
-use tracing::error;
-use typemap_rev::TypeMap;
 
 pub struct TagListCommand;
 
@@ -32,7 +31,8 @@ impl SlashCommand for TagListCommand {
         command
             .name("tag-list")
             .description("lists previously registered tags")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(
@@ -80,7 +80,7 @@ impl SlashCommand for TagListCommand {
                                         .description(tags_str)
                                         .colour(EMBED_COLOR)
                                 })
-                                .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
+                                .flags(MessageFlags::EPHEMERAL)
                         })
                 })
                 .await

@@ -1,20 +1,19 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
+use serenity::client::bridge::gateway::ShardId;
 use serenity::client::Context;
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
+use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
+use serenity::model::Permissions;
+use serenity::utils::Colour;
+use tracing::error;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::AVATAR_URL;
 use crate::discord::slash_commands::SlashCommand;
 use crate::service::shard_statistic::ShardStatisticService;
-use anyhow::bail;
-use serenity::client::bridge::gateway::ShardId;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::model::interactions::{
-    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
-};
-use serenity::utils::Colour;
-use tracing::error;
-use typemap_rev::TypeMap;
 
 pub struct PingCommand;
 
@@ -31,7 +30,8 @@ impl SlashCommand for PingCommand {
         command
             .name("ping")
             .description("🏓")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(
@@ -70,7 +70,7 @@ impl SlashCommand for PingCommand {
                                     ))
                                     .color(Colour::new(0x4286F4))
                             })
-                            .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
+                            .flags(MessageFlags::EPHEMERAL)
                     })
             })
             .await

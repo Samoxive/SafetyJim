@@ -1,9 +1,14 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::user::User;
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::JIM_ID;
@@ -13,16 +18,11 @@ use crate::discord::slash_commands::softban::SoftbanCommandOptionFailure::{
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
-    UserExt,
+    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction, UserExt,
 };
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
 use crate::service::softban::{SoftbanFailure, SoftbanService};
-use anyhow::bail;
-use serenity::model::user::User;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 pub struct SoftbanCommand;
 
@@ -38,7 +38,7 @@ enum SoftbanCommandOptionFailure {
 }
 
 fn generate_options(
-    data: &ApplicationCommandInteractionData,
+    data: &CommandData,
 ) -> Result<SoftbanCommandOptions, SoftbanCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
@@ -80,26 +80,27 @@ impl SlashCommand for SoftbanCommand {
         command
             .name("softban")
             .description("kicks given user, deleting their last messages, defaults to a day")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::BAN_MEMBERS)
             .create_option(|option| {
                 option
                     .name("user")
                     .description("target user to softban")
-                    .kind(ApplicationCommandOptionType::User)
+                    .kind(CommandOptionType::User)
                     .required(true)
             })
             .create_option(|option| {
                 option
                     .name("reason")
                     .description("reason for the softban")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(false)
             })
             .create_option(|option| {
                 option
                     .name("days")
                     .description("number of days to delete last messages")
-                    .kind(ApplicationCommandOptionType::Integer)
+                    .kind(CommandOptionType::Integer)
                     .required(false)
                     .min_int_value(1)
                     .max_int_value(7)

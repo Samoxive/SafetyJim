@@ -1,26 +1,26 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::{CreateApplicationCommand, CreateEmbed};
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
+use serenity::model::guild::PartialMember;
+use serenity::model::user::User;
+use serenity::model::Permissions;
+use tracing::error;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::EMBED_COLOR;
 use crate::discord::slash_commands::whois::WhoisCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
+    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction,
 };
 use crate::service::guild::{CachedGuild, GuildService};
-use anyhow::bail;
-use serenity::model::guild::PartialMember;
-use serenity::model::interactions::{
-    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
-};
-use serenity::model::user::User;
-use tracing::error;
-use typemap_rev::TypeMap;
 
 pub struct WhoisCommand;
 
@@ -32,9 +32,7 @@ enum WhoisCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(
-    data: &ApplicationCommandInteractionData,
-) -> Result<WhoisCommandOptions, WhoisCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<WhoisCommandOptions, WhoisCommandOptionFailure> {
     let target = if let Some(target) = data.user("user") {
         target
     } else {
@@ -80,11 +78,11 @@ fn generate_member_embed<'a>(
     embed
         .author(|author| author.name(known_as).icon_url(user.face()))
         .title(title)
-        .field("ID", user.id.to_string(), false)
-        .field("User Flags", flags, false)
-        .field("Registered On", created_at, true)
-        .field("Joined On", joined_at, true)
-        .field("Boost Status", boost_status, true)
+        .field("ID", &user.id.to_string(), false)
+        .field("User Flags", &flags, false)
+        .field("Registered On", &created_at, true)
+        .field("Joined On", &joined_at, true)
+        .field("Boost Status", &boost_status, true)
         .colour(EMBED_COLOR)
 }
 
@@ -99,9 +97,9 @@ fn generate_user_embed<'a>(embed: &'a mut CreateEmbed, user: &User) -> &'a mut C
     embed
         .author(|author| author.name(user.tag()).icon_url(user.face()))
         .title("Discord User")
-        .field("ID", user.id.to_string(), false)
-        .field("User Flags", flags, false)
-        .field("Registered On", created_at, false)
+        .field("ID", &user.id.to_string(), false)
+        .field("User Flags", &flags, false)
+        .field("Registered On", &created_at, false)
         .colour(EMBED_COLOR)
 }
 
@@ -118,12 +116,13 @@ impl SlashCommand for WhoisCommand {
         command
             .name("whois")
             .description("displays information about given user or server member")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("user")
                     .description("target user to query")
-                    .kind(ApplicationCommandOptionType::User)
+                    .kind(CommandOptionType::User)
                     .required(true)
             })
     }
@@ -166,7 +165,7 @@ impl SlashCommand for WhoisCommand {
                         .interaction_response_data(|message| {
                             message
                                 .embed(|embed| generate_member_embed(embed, &guild, member, user))
-                                .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
+                                .flags(MessageFlags::EPHEMERAL)
                         })
                 })
                 .await
@@ -182,7 +181,7 @@ impl SlashCommand for WhoisCommand {
                         .interaction_response_data(|message| {
                             message
                                 .embed(|embed| generate_user_embed(embed, user))
-                                .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
+                                .flags(MessageFlags::EPHEMERAL)
                         })
                 })
                 .await

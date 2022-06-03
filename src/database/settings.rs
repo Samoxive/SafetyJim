@@ -1,8 +1,8 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use serenity::model::id::GuildId;
 use sqlx::{Error, PgPool};
-use std::time::Duration;
 use tracing::warn;
 
 const DEFAULT_WELCOME_MESSAGE: &str = "Welcome to $guild $user!";
@@ -115,7 +115,7 @@ impl Setting {
             mod_log: false,
             mod_log_channel_id: 0,
             holding_room: false,
-            holding_room_role_id: Option::None,
+            holding_room_role_id: None,
             holding_room_minutes: 3,
             invite_link_remover: false,
             welcome_message: false,
@@ -129,7 +129,7 @@ impl Setting {
             silent_commands_level: SILENT_COMMANDS_MOD_ONLY,
             mod_action_confirmation_message: true,
             word_filter: false,
-            word_filter_blocklist: Option::None,
+            word_filter_blocklist: None,
             word_filter_level: WORD_FILTER_LEVEL_LOW,
             word_filter_action: ACTION_WARN,
             word_filter_action_duration: 0,

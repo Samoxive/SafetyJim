@@ -2,18 +2,17 @@ use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
+use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
+use serenity::model::Permissions;
+use tracing::error;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{verify_guild_slash_command, GuildSlashCommandInteraction};
 use crate::service::guild::GuildService;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::model::interactions::{
-    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType,
-};
-use tracing::error;
-use typemap_rev::TypeMap;
 
 pub struct ServerCommand;
 
@@ -30,7 +29,8 @@ impl SlashCommand for ServerCommand {
         command
             .name("server")
             .description("displays information about the server")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(
@@ -87,29 +87,29 @@ impl SlashCommand for ServerCommand {
                                     .colour(EMBED_COLOR)
                                     .field(
                                         "Server Owner",
-                                        format!("{} ({})", owner.tag, guild.owner_id),
+                                        &format!("{} ({})", owner.tag, guild.owner_id),
                                         true,
                                     )
                                     .field(
                                         "Member Count",
-                                        format!("{}", guild.approximate_member_count.unwrap_or(0)),
+                                        &format!("{}", guild.approximate_member_count.unwrap_or(0)),
                                         true,
                                     )
                                     .field(
                                         "Created On",
-                                        format!("<t:{}>", guild.id.created_at().unix_timestamp()),
+                                        &format!("<t:{}>", guild.id.created_at().unix_timestamp()),
                                         true,
                                     )
                                     .field(
                                         "Boost Count",
-                                        guild.premium_subscription_count.to_string(),
+                                        &guild.premium_subscription_count.to_string(),
                                         true,
                                     )
-                                    .field("Boost Tier", format!("{:?}", guild.premium_tier), true)
-                                    .field("NSFW Tier", format!("{:?}", guild.nsfw_level), true)
-                                    .field("Server Features", guild.features.join(" | "), false)
+                                    .field("Boost Tier", &format!("{:?}", guild.premium_tier), true)
+                                    .field("NSFW Tier", &format!("{:?}", guild.nsfw_level), true)
+                                    .field("Server Features", &guild.features.join(" | "), false)
                             })
-                            .flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL)
+                            .flags(MessageFlags::EPHEMERAL)
                     })
             })
             .await

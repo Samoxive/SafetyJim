@@ -1,20 +1,22 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::tag::TagCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, reply_with_str, verify_guild_slash_command,
-    ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
+    invisible_failure_reply, reply_with_str, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction,
 };
 use crate::service::tag::TagService;
-use anyhow::bail;
-use typemap_rev::TypeMap;
 
 pub struct TagCommand;
 
@@ -26,9 +28,7 @@ enum TagCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(
-    data: &ApplicationCommandInteractionData,
-) -> Result<TagCommandOptions, TagCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<TagCommandOptions, TagCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
     } else {
@@ -51,12 +51,13 @@ impl SlashCommand for TagCommand {
         command
             .name("tag")
             .description("repeats previously registered message via tag name")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("name")
                     .description("tag name for message")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(true)
                     .set_autocomplete(true)
             })

@@ -1,7 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 use crate::server::model::channel::ChannelModel;
 use crate::server::model::guild::GuildModel;
 use crate::server::model::role::RoleModel;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

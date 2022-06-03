@@ -1,22 +1,23 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::id::RoleId;
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::role_create::RoleCreateCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
+    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction,
 };
 use crate::service::iam_role::{IAMRoleService, InsertIAMRoleFailure};
-use anyhow::bail;
-use serenity::model::id::RoleId;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 pub struct RoleCreateCommand;
 
@@ -29,12 +30,12 @@ enum RoleCreateCommandOptionFailure {
 }
 
 fn generate_options(
-    data: &ApplicationCommandInteractionData,
+    data: &CommandData,
 ) -> Result<RoleCreateCommandOptions, RoleCreateCommandOptionFailure> {
     let role = if let Some(role) = data.role("role") {
         role
     } else {
-        return Err(RoleCreateCommandOptionFailure::MissingOption);
+        return Err(MissingOption);
     };
 
     Ok(RoleCreateCommandOptions { role_id: role.id })
@@ -57,12 +58,13 @@ impl SlashCommand for RoleCreateCommand {
         command
             .name("role-create")
             .description("registers a role that can be self assigned via iam command")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::ADMINISTRATOR)
             .create_option(|option| {
                 option
                     .name("role")
                     .description("self assignable role to register")
-                    .kind(ApplicationCommandOptionType::Role)
+                    .kind(CommandOptionType::Role)
                     .required(true)
             })
     }

@@ -1,4 +1,3 @@
-use crate::discord::util::{SerenityErrorExt, UserExt};
 use chrono::{TimeZone, Utc};
 use serenity::builder::CreateEmbed;
 use serenity::http::Http;
@@ -7,6 +6,8 @@ use serenity::model::mention::Mentionable;
 use serenity::model::user::User;
 use serenity::utils::Color;
 use tracing::error;
+
+use crate::discord::util::{SerenityErrorExt, UserExt};
 
 pub enum ModLogAction {
     Ban { expiration_time: Option<u64> },
@@ -46,13 +47,13 @@ impl ModLogAction {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Banned until", value, false);
+                embed.field("Banned until", &value, false);
             }
             ModLogAction::Mute { expiration_time } => {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Muted until", value, false);
+                embed.field("Muted until", &value, false);
             }
             _ => {}
         }
@@ -94,15 +95,15 @@ pub async fn create_mod_log_entry(
                     .timestamp(Utc.timestamp(action_time as i64, 0).to_rfc3339())
                     .field(
                         "Action",
-                        format!("{} - #{}", action.name(), entity_id),
+                        &format!("{} - #{}", action.name(), entity_id),
                         false,
                     )
-                    .field("User:", target_user.tag_and_id(), false)
+                    .field("User:", &target_user.tag_and_id(), false)
                     .field("Reason:", reason, false)
                     .field("Responsible Moderator:", mod_user_tag_and_id, false);
 
                 if let Some(action_channel_id) = action_channel_id {
-                    embed.field("Channel", action_channel_id.mention(), false);
+                    embed.field("Channel", &action_channel_id.mention().to_string(), false);
                 }
 
                 action.create_expiration_date_field(embed);

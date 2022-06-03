@@ -1,23 +1,23 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::user::User;
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::unmute::UnmuteCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
-    UserExt,
+    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction, UserExt,
 };
 use crate::service::mute::{MuteService, UnmuteFailure};
-use anyhow::bail;
-use serenity::model::user::User;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 pub struct UnmuteCommand;
 
@@ -30,7 +30,7 @@ enum UnmuteCommandOptionFailure {
 }
 
 fn generate_options(
-    data: &ApplicationCommandInteractionData,
+    data: &CommandData,
 ) -> Result<UnmuteCommandOptions, UnmuteCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
@@ -58,12 +58,13 @@ impl SlashCommand for UnmuteCommand {
         command
             .name("unmute")
             .description("unmutes given user")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::MANAGE_ROLES)
             .create_option(|option| {
                 option
                     .name("user")
                     .description("target user to unmute")
-                    .kind(ApplicationCommandOptionType::User)
+                    .kind(CommandOptionType::User)
                     .required(true)
             })
     }
@@ -131,7 +132,7 @@ impl SlashCommand for UnmuteCommand {
                     interaction,
                     "Could not unmute specified user for unknown reasons, this incident has been logged.",
                 )
-                .await;
+                    .await;
             }
         }
 

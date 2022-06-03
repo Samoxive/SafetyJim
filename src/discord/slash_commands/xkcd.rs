@@ -1,10 +1,3 @@
-use crate::discord::slash_commands::xkcd::XkcdCommandOptionFailure::MissingOption;
-use crate::discord::slash_commands::SlashCommand;
-use crate::discord::util::{
-    invisible_failure_reply, reply_with_str, verify_guild_slash_command,
-    ApplicationCommandInteractionDataExt,
-};
-use crate::Config;
 use anyhow::bail;
 use async_trait::async_trait;
 use regex::Regex;
@@ -12,10 +5,19 @@ use reqwest::{Client, ClientBuilder};
 use scraper::{Html, Selector};
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::Permissions;
 use typemap_rev::TypeMap;
+
+use crate::discord::slash_commands::xkcd::XkcdCommandOptionFailure::MissingOption;
+use crate::discord::slash_commands::SlashCommand;
+use crate::discord::util::{
+    invisible_failure_reply, reply_with_str, verify_guild_slash_command, CommandDataExt,
+};
+use crate::Config;
 
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36";
 const DDG_URL: &str = "https://duckduckgo.com/html/";
@@ -44,9 +46,7 @@ enum XkcdCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(
-    data: &ApplicationCommandInteractionData,
-) -> Result<XkcdCommandOptions, XkcdCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<XkcdCommandOptions, XkcdCommandOptionFailure> {
     let description = if let Some(s) = data.string("description") {
         s
     } else {
@@ -87,12 +87,13 @@ impl SlashCommand for XkcdCommand {
         command
             .name("xkcd")
             .description("searches xkcd comics with given description or partial title")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("description")
                     .description("description or partial title of the comic")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(true)
             })
     }

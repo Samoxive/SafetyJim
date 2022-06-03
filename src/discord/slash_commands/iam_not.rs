@@ -1,20 +1,22 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::id::RoleId;
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, verify_guild_slash_command,
-    ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction, SerenityErrorExt,
+    invisible_failure_reply, invisible_success_reply, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction, SerenityErrorExt,
 };
 use crate::service::iam_role::IAMRoleService;
-use anyhow::bail;
-use serenity::model::id::RoleId;
-use typemap_rev::TypeMap;
 
 pub struct IAMNotCommand;
 
@@ -27,7 +29,7 @@ enum IAMNotCommandOptionFailure {
 }
 
 fn generate_options(
-    data: &ApplicationCommandInteractionData,
+    data: &CommandData,
 ) -> Result<IAMNotCommandOptions, IAMNotCommandOptionFailure> {
     let role = if let Some(role) = data.role("role") {
         role
@@ -51,12 +53,13 @@ impl SlashCommand for IAMNotCommand {
         command
             .name("iam-not")
             .description("removes specified self assigned role")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("role")
                     .description("role to remove")
-                    .kind(ApplicationCommandOptionType::Role)
+                    .kind(CommandOptionType::Role)
                     .required(true)
             })
     }

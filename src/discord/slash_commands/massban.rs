@@ -1,27 +1,29 @@
+use std::num::ParseIntError;
+
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
-use std::num::ParseIntError;
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::id::UserId;
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::JIM_ID;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     edit_interaction_response, invisible_failure_reply, unauthorized_reply,
-    verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
-    SerenityErrorExt, UserExt,
+    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction, SerenityErrorExt,
+    UserExt,
 };
 use crate::service::guild::GuildService;
 use crate::service::hardban::{HardbanFailure, HardbanService};
 use crate::service::setting::SettingService;
-use anyhow::bail;
-use serenity::model::id::UserId;
-use serenity::model::interactions::InteractionResponseType;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 pub struct MassbanCommand;
 
@@ -35,7 +37,7 @@ enum MassbanCommandOptionFailure {
 }
 
 fn generate_options(
-    data: &ApplicationCommandInteractionData,
+    data: &CommandData,
 ) -> Result<MassbanCommandOptions, MassbanCommandOptionFailure> {
     let users_str = if let Some(s) = data.string("users") {
         s
@@ -77,12 +79,13 @@ impl SlashCommand for MassbanCommand {
         command
             .name("massban")
             .description("hardbans given users in mass")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::BAN_MEMBERS)
             .create_option(|option| {
                 option
                     .name("users")
                     .description("comma separated ids of users to hardban")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(true)
             })
     }

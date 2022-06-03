@@ -1,9 +1,13 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::database::settings::Setting;
@@ -11,13 +15,10 @@ use crate::discord::slash_commands::tag_edit::TagEditCommandOptionFailure::Missi
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     invisible_failure_reply, invisible_success_reply, is_staff, verify_guild_slash_command,
-    ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
+    CommandDataExt, GuildSlashCommandInteraction,
 };
 use crate::service::setting::SettingService;
 use crate::service::tag::{TagService, UpdateTagFailure};
-use anyhow::bail;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 pub struct TagEditCommand;
 
@@ -31,7 +32,7 @@ enum TagEditCommandOptionFailure {
 }
 
 fn generate_options(
-    data: &ApplicationCommandInteractionData,
+    data: &CommandData,
 ) -> Result<TagEditCommandOptions, TagEditCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
@@ -69,12 +70,19 @@ impl SlashCommand for TagEditCommand {
         command
             .name("tag-edit")
             .description("edits previously registered tag content")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(
+                Permissions::ADMINISTRATOR
+                    | Permissions::BAN_MEMBERS
+                    | Permissions::KICK_MEMBERS
+                    | Permissions::MANAGE_ROLES
+                    | Permissions::MANAGE_MESSAGES,
+            )
             .create_option(|option| {
                 option
                     .name("name")
                     .description("tag name to edit")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(true)
                     .set_autocomplete(true)
             })
@@ -82,7 +90,7 @@ impl SlashCommand for TagEditCommand {
                 option
                     .name("content")
                     .description("content to replace tag with")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(true)
             })
     }

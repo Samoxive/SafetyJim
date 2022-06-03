@@ -1,9 +1,18 @@
+use std::future::ready;
+
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::futures::StreamExt;
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::id::MessageId;
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::clean_bot::CleanBotCommandOptionFailure::{
@@ -12,16 +21,8 @@ use crate::discord::slash_commands::clean_bot::CleanBotCommandOptionFailure::{
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     clean_messages, edit_interaction_response, invisible_failure_reply, unauthorized_reply,
-    verify_guild_slash_command, ApplicationCommandInteractionDataExt, CleanMessagesFailure,
-    GuildSlashCommandInteraction,
+    verify_guild_slash_command, CleanMessagesFailure, CommandDataExt, GuildSlashCommandInteraction,
 };
-use anyhow::bail;
-use serenity::futures::StreamExt;
-use serenity::model::id::MessageId;
-use serenity::model::interactions::InteractionResponseType;
-use serenity::model::Permissions;
-use std::future::ready;
-use typemap_rev::TypeMap;
 
 pub struct CleanBotCommand;
 
@@ -35,7 +36,7 @@ enum CleanBotCommandOptionFailure {
 }
 
 fn generate_options(
-    data: &ApplicationCommandInteractionData,
+    data: &CommandData,
 ) -> Result<CleanBotCommandOptions, CleanBotCommandOptionFailure> {
     let number = if let Some(number) = data.integer("number") {
         if number > 0 && number <= 100 {
@@ -67,12 +68,13 @@ impl SlashCommand for CleanBotCommand {
         command
             .name("clean-bot")
             .description("deletes specified number of bot messages")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::MANAGE_MESSAGES)
             .create_option(|option| {
                 option
                     .name("number")
                     .description("number of messages to delete")
-                    .kind(ApplicationCommandOptionType::Integer)
+                    .kind(CommandOptionType::Integer)
                     .required(true)
                     .min_int_value(1)
                     .max_int_value(100)

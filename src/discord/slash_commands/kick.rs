@@ -1,9 +1,14 @@
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::user::User;
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::JIM_ID;
@@ -11,16 +16,11 @@ use crate::discord::slash_commands::kick::KickCommandOptionFailure::MissingOptio
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
     invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
-    UserExt,
+    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction, UserExt,
 };
 use crate::service::guild::GuildService;
 use crate::service::kick::{KickFailure, KickService};
 use crate::service::setting::SettingService;
-use anyhow::bail;
-use serenity::model::user::User;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 pub struct KickCommand;
 
@@ -33,9 +33,7 @@ enum KickCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(
-    data: &ApplicationCommandInteractionData,
-) -> Result<KickCommandOptions, KickCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<KickCommandOptions, KickCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -67,19 +65,20 @@ impl SlashCommand for KickCommand {
         command
             .name("kick")
             .description("kicks given user")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::KICK_MEMBERS)
             .create_option(|option| {
                 option
                     .name("user")
                     .description("target user to kick")
-                    .kind(ApplicationCommandOptionType::User)
+                    .kind(CommandOptionType::User)
                     .required(true)
             })
             .create_option(|option| {
                 option
                     .name("reason")
                     .description("reason for the kick")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(false)
             })
     }

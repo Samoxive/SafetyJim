@@ -1,9 +1,15 @@
+use std::time::Duration;
+
+use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{
-    ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType,
+use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::interaction::application_command::{
+    ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::remind::RemindCommandFailure::{
@@ -11,13 +17,10 @@ use crate::discord::slash_commands::remind::RemindCommandFailure::{
 };
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, verify_guild_slash_command,
-    ApplicationCommandInteractionDataExt, GuildSlashCommandInteraction,
+    invisible_failure_reply, invisible_success_reply, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction,
 };
 use crate::service::reminder::ReminderService;
-use anyhow::bail;
-use std::time::Duration;
-use typemap_rev::TypeMap;
 
 pub struct RemindCommand;
 
@@ -31,9 +34,7 @@ enum RemindCommandFailure<'a> {
     DurationParseError(&'a str),
 }
 
-fn generate_options(
-    data: &ApplicationCommandInteractionData,
-) -> Result<RemindCommandOptions, RemindCommandFailure> {
+fn generate_options(data: &CommandData) -> Result<RemindCommandOptions, RemindCommandFailure> {
     let message = if let Some(message) = data.string("message").map(String::from) {
         message
     } else {
@@ -66,19 +67,20 @@ impl SlashCommand for RemindCommand {
         command
             .name("remind")
             .description("sets a reminder for a future date, duration defaults to a day")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("message")
                     .description("message to be reminded of")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(true)
             })
             .create_option(|option| {
                 option
                     .name("duration")
                     .description("duration after which notification is sent")
-                    .kind(ApplicationCommandOptionType::String)
+                    .kind(CommandOptionType::String)
                     .required(false)
             })
     }

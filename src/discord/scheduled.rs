@@ -1,3 +1,16 @@
+use std::sync::Arc;
+use std::time::Duration;
+
+use chrono::{TimeZone, Utc};
+use serenity::builder::CreateEmbed;
+use serenity::http::Http;
+use serenity::model::id::{ChannelId, GuildId, UserId};
+use serenity::prelude::Mentionable;
+use tokio::select;
+use tokio::time::interval;
+use tracing::error;
+use typemap_rev::TypeMap;
+
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
 use crate::service::ban::BanService;
 use crate::service::guild::GuildService;
@@ -6,17 +19,6 @@ use crate::service::mute::MuteService;
 use crate::service::reminder::ReminderService;
 use crate::service::setting::SettingService;
 use crate::util::Shutdown;
-use chrono::{TimeZone, Utc};
-use serenity::builder::CreateEmbed;
-use serenity::http::Http;
-use serenity::model::id::{ChannelId, GuildId, UserId};
-use serenity::prelude::Mentionable;
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::select;
-use tokio::time::interval;
-use tracing::error;
-use typemap_rev::TypeMap;
 
 pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<TypeMap>, shutdown: Shutdown) {
     let http_1 = http.clone();
@@ -227,7 +229,9 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
             // user is in the guild, send reminder to guild channel
             let channel_message_result = channel_id
                 .send_message(http, |message| {
-                    message.content(user_id.mention()).set_embed(embed.clone())
+                    message
+                        .content(user_id.mention().to_string())
+                        .set_embed(embed.clone())
                 })
                 .await
                 .map_err(|err| {
@@ -249,7 +253,9 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
             if let Ok(dm_channel) = dm_channel_result {
                 let _ = dm_channel
                     .send_message(http, |message| {
-                        message.content(user_id.mention()).set_embed(embed)
+                        message
+                            .content(user_id.mention().to_string())
+                            .set_embed(embed)
                     })
                     .await
                     .map_err(|err| {

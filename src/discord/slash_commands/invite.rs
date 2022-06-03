@@ -1,14 +1,15 @@
 use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
+use serenity::model::application::component::ButtonStyle;
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::Permissions;
+use tracing::error;
+use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::SlashCommand;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::model::interactions::message_component::ButtonStyle;
-use serenity::model::interactions::InteractionResponseType;
-use tracing::error;
-use typemap_rev::TypeMap;
 
 const SUPPORT_SERVER_INVITE_LINK: &str = "https://discord.io/safetyjim";
 const JIM_INVITE_LINK: &str = "https://discord.com/api/oauth2/authorize?client_id=881152939530534913&permissions=0&scope=bot%20applications.commands";
@@ -28,7 +29,8 @@ impl SlashCommand for InviteCommand {
         command
             .name("invite")
             .description("displays links to invite Jim and get support")
-            .default_permission(true)
+            .dm_permission(false)
+            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(
