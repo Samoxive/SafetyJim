@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
-use crate::util::now;
 use sqlx::{Error, PgPool, Row};
+
+use crate::util::now;
 
 #[derive(sqlx::FromRow)]
 pub struct Ban {
@@ -10,7 +11,7 @@ pub struct Ban {
     pub moderator_user_id: i64,
     pub guild_id: i64,
     pub ban_time: i64,
-    pub expire_time: i64, // expiretime
+    pub expire_time: i64,
     pub reason: String,
     pub expires: bool,
     pub unbanned: bool,

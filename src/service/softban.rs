@@ -1,5 +1,9 @@
-use serenity::model::id::{ChannelId, GuildId, UserId};
 use std::num::NonZeroU32;
+
+use serenity::http::Http;
+use serenity::model::id::{ChannelId, GuildId, UserId};
+use serenity::model::user::User;
+use tracing::error;
 use typemap_rev::{TypeMap, TypeMapKey};
 
 use crate::database::settings::{get_action_duration_for_auto_mod_action, Setting};
@@ -8,9 +12,6 @@ use crate::discord::util::mod_log::{create_mod_log_entry, CreateModLogEntryError
 use crate::discord::util::user_dm::{notify_user_for_mod_action, ModActionKind};
 use crate::discord::util::{execute_mod_action, SerenityErrorExt};
 use crate::util::now;
-use serenity::http::Http;
-use serenity::model::user::User;
-use tracing::error;
 
 impl TypeMapKey for SoftbanService {
     type Value = SoftbanService;
@@ -73,7 +74,7 @@ impl SoftbanService {
                         error!("failed to issue discord softban {}", err);
                         Err(SoftbanFailure::Unknown)
                     }
-                }
+                };
             }
         }
 
@@ -86,7 +87,7 @@ impl SoftbanService {
                         error!("failed to issue discord unban {}", err);
                         Err(SoftbanFailure::Unknown)
                     }
-                }
+                };
             }
         }
 

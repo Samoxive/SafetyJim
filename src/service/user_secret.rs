@@ -1,18 +1,19 @@
-use crate::constants::{DISCORD_API_BASE, DISCORD_CDN_BASE};
-use crate::Config;
+use std::num::ParseIntError;
+use std::sync::Arc;
+use std::time::Duration;
+
 use anyhow::bail;
 use moka::future::{Cache, CacheBuilder};
 use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use serenity::model::id::{GuildId, UserId};
-use std::num::ParseIntError;
-use std::sync::Arc;
-use std::time::Duration;
 use tracing::error;
 use typemap_rev::{TypeMap, TypeMapKey};
 
+use crate::constants::{DISCORD_API_BASE, DISCORD_CDN_BASE};
 use crate::database::user_secrets::{UserSecret, UserSecretsRepository};
 use crate::service::guild_statistic::GuildStatisticService;
+use crate::Config;
 
 impl TypeMapKey for UserSecretService {
     type Value = UserSecretService;

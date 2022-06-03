@@ -1,5 +1,6 @@
-use crate::server::model::guild::GuildModel;
 use serde::{Deserialize, Serialize};
+
+use crate::server::model::guild::GuildModel;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

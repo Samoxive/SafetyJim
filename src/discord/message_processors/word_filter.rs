@@ -1,3 +1,14 @@
+use anyhow::anyhow;
+use anyhow::bail;
+use async_trait::async_trait;
+use serenity::client::Context;
+use serenity::model::id::{ChannelId, GuildId, MessageId};
+use serenity::model::user::User;
+use serenity::model::Permissions;
+use smol_str::SmolStr;
+use tracing::{error, warn};
+use typemap_rev::TypeMap;
+
 use crate::constants::{DEFAULT_BLOCKED_WORDS, JIM_ID, JIM_ID_AND_TAG};
 use crate::database::settings::{
     get_action_duration_for_auto_mod_action, Setting, WORD_FILTER_LEVEL_HIGH, WORD_FILTER_LEVEL_LOW,
@@ -5,17 +16,6 @@ use crate::database::settings::{
 use crate::discord::message_processors::MessageProcessor;
 use crate::discord::util::{execute_mod_action, is_staff, SerenityErrorExt};
 use crate::service::guild::GuildService;
-use anyhow::bail;
-use async_trait::async_trait;
-use serenity::client::Context;
-use serenity::model::id::{ChannelId, GuildId, MessageId};
-use serenity::model::Permissions;
-use smol_str::SmolStr;
-
-use anyhow::anyhow;
-use serenity::model::user::User;
-use tracing::{error, warn};
-use typemap_rev::TypeMap;
 
 const REASON: &str = "Using blocklisted word(s).";
 

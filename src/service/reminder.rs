@@ -1,11 +1,12 @@
+use std::time::Duration;
+
+use serenity::model::id::{ChannelId, GuildId};
+use serenity::model::user::User;
+use tracing::error;
 use typemap_rev::TypeMapKey;
 
 use crate::database::reminders::{Reminder, RemindersRepository};
 use crate::util::now;
-use serenity::model::id::{ChannelId, GuildId};
-use serenity::model::user::User;
-use std::time::Duration;
-use tracing::error;
 
 impl TypeMapKey for ReminderService {
     type Value = ReminderService;

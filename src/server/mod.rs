@@ -1,5 +1,19 @@
-mod endpoint;
-mod model;
+use std::error::Error;
+use std::net::Ipv4Addr;
+use std::sync::Arc;
+
+use actix_cors::Cors;
+use actix_web::http::header::{HeaderName, CONTENT_TYPE};
+use actix_web::{get, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use jsonwebtoken::errors::ErrorKind;
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
+use serenity::model::id::{GuildId, UserId};
+use serenity::model::Permissions;
+use tracing::error;
+use typemap_rev::TypeMap;
+use uuid::Uuid;
 
 use crate::database::settings::{PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, PRIVACY_STAFF_ONLY};
 use crate::discord::util::is_staff;
@@ -18,21 +32,9 @@ use crate::service::invalid_uuid::InvalidUUIDService;
 use crate::service::setting::SettingService;
 use crate::util::now;
 use crate::Config;
-use actix_cors::Cors;
-use actix_web::http::header::{HeaderName, CONTENT_TYPE};
-use actix_web::{get, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
-use jsonwebtoken::errors::ErrorKind;
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use lazy_static::lazy_static;
-use serde::{Deserialize, Serialize};
-use serenity::model::id::{GuildId, UserId};
-use serenity::model::Permissions;
-use std::error::Error;
-use std::net::Ipv4Addr;
-use std::sync::Arc;
-use tracing::error;
-use typemap_rev::TypeMap;
-use uuid::Uuid;
+
+mod endpoint;
+mod model;
 
 lazy_static! {
     static ref VALIDATION: Validation = Validation::new(Algorithm::HS512);
@@ -90,7 +92,7 @@ fn generate_token(secret: &str, user_id: UserId) -> Option<String> {
 async fn is_authenticated(
     config: &Config,
     services: &TypeMap,
-    req: &actix_web::HttpRequest,
+    req: &HttpRequest,
 ) -> Option<UserId> {
     let token = req
         .headers()
@@ -119,7 +121,7 @@ async fn is_authenticated(
 pub async fn check_authentication(
     config: &Config,
     services: &TypeMap,
-    req: &actix_web::HttpRequest,
+    req: &HttpRequest,
 ) -> Result<UserId, HttpResponse> {
     is_authenticated(config, services, req)
         .await

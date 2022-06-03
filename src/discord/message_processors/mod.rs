@@ -1,17 +1,18 @@
-mod invite_link;
-mod spam_filter;
-mod word_filter;
-
-use crate::database::settings::Setting;
-use crate::discord::message_processors::invite_link::InviteLinkProcessor;
-use crate::discord::message_processors::spam_filter::SpamFilterProcessor;
-use crate::discord::message_processors::word_filter::WordFilterProcessor;
 use async_trait::async_trait;
 use serenity::client::Context;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use typemap_rev::TypeMap;
+
+use crate::database::settings::Setting;
+use crate::discord::message_processors::invite_link::InviteLinkProcessor;
+use crate::discord::message_processors::spam_filter::SpamFilterProcessor;
+use crate::discord::message_processors::word_filter::WordFilterProcessor;
+
+mod invite_link;
+mod spam_filter;
+mod word_filter;
 
 pub struct MessageProcessors(pub Vec<Box<dyn MessageProcessor + Send + Sync>>);
 

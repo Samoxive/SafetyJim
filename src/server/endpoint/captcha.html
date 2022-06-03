@@ -1,21 +1,22 @@
-<html>
+<html lang="en">
 
 <head>
-    <link rel="shortcut icon" href="https://safetyjim.xyz/favicon.ico">
+    <link href="https://safetyjim.xyz/favicon.ico" rel="shortcut icon">
     <title>Safety Jim</title>
-    <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+    <script async defer src='https://www.google.com/recaptcha/api.js'></script>
 </head>
 
 <body style="background-color:#222">
 <div style="display:flex;justify-content:center;align-items:center;height:100%">
     <div>
-        <form action="" method="POST" id="captcha-form">
-            <div class="g-recaptcha" data-sitekey="6LdH5IsUAAAAAPt5tQVPWUFKPGynkFh2lq5jNVun" data-callback="onSuccess" data-theme="dark"></div>
+        <form action="" id="captcha-form" method="POST">
+            <div class="g-recaptcha" data-callback="onSuccess" data-sitekey="6LdH5IsUAAAAAPt5tQVPWUFKPGynkFh2lq5jNVun"
+                 data-theme="dark"></div>
         </form>
     </div>
 </div>
 <script>
-    function onSuccess(res) {
+    function onSuccess() {
         document.getElementById("captcha-form").submit();
     }
 </script>

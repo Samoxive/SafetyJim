@@ -1,4 +1,9 @@
 use std::num::NonZeroU32;
+
+use serenity::http::Http;
+use serenity::model::id::{ChannelId, GuildId, UserId};
+use serenity::model::user::User;
+use tracing::error;
 use typemap_rev::TypeMapKey;
 
 use crate::database::hardbans::{Hardban, HardbansRepository};
@@ -7,10 +12,6 @@ use crate::discord::util::mod_log::{create_mod_log_entry, CreateModLogEntryError
 use crate::discord::util::user_dm::{notify_user_for_mod_action, ModActionKind};
 use crate::discord::util::SerenityErrorExt;
 use crate::util::now;
-use serenity::http::Http;
-use serenity::model::id::{ChannelId, GuildId, UserId};
-use serenity::model::user::User;
-use tracing::error;
 
 impl TypeMapKey for HardbanService {
     type Value = HardbanService;
@@ -70,7 +71,7 @@ impl HardbanService {
                         error!("failed to issue discord hardban {}", err);
                         Err(HardbanFailure::Unknown)
                     }
-                }
+                };
             }
         }
 

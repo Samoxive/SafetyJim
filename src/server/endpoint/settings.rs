@@ -1,3 +1,7 @@
+use actix_web::{delete, get, post, web, HttpResponse, Responder};
+use serenity::model::id::{ChannelId, GuildId, RoleId};
+use typemap_rev::TypeMap;
+
 use crate::database::settings::{
     Setting, ACTION_HARDBAN, ACTION_NOTHING, DURATION_TYPE_DAYS, DURATION_TYPE_SECONDS,
     PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, SILENT_COMMANDS_ALL, SILENT_COMMANDS_MOD_ONLY,
@@ -13,9 +17,6 @@ use crate::server::{
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
 use crate::Config;
-use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use serenity::model::id::{ChannelId, GuildId, RoleId};
-use typemap_rev::TypeMap;
 
 #[get("/guilds/{guild_id}/settings")]
 pub async fn get_setting(
@@ -49,7 +50,7 @@ pub async fn get_setting(
         Ok(guild) => guild,
         Err(_) => {
             return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?")
+                .json("Failed to fetch guild data, is Jim in this server?");
         }
     };
 
@@ -57,7 +58,7 @@ pub async fn get_setting(
         Ok(channels) => channels,
         Err(_) => {
             return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?")
+                .json("Failed to fetch guild data, is Jim in this server?");
         }
     };
 
@@ -65,7 +66,7 @@ pub async fn get_setting(
         Ok(roles) => roles,
         Err(_) => {
             return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?")
+                .json("Failed to fetch guild data, is Jim in this server?");
         }
     };
 
@@ -177,7 +178,7 @@ pub async fn update_setting(
         Ok(channels) => channels,
         Err(_) => {
             return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?")
+                .json("Failed to fetch guild data, is Jim in this server?");
         }
     };
 
@@ -185,7 +186,7 @@ pub async fn update_setting(
         Ok(roles) => roles,
         Err(_) => {
             return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?")
+                .json("Failed to fetch guild data, is Jim in this server?");
         }
     };
 
@@ -207,7 +208,7 @@ pub async fn update_setting(
             Ok(id) => ChannelId(id),
             Err(_) => {
                 return HttpResponse::BadRequest()
-                    .json("Selected moderator log channel id is invalid!")
+                    .json("Selected moderator log channel id is invalid!");
             }
         };
 
@@ -227,7 +228,7 @@ pub async fn update_setting(
                 Ok(id) => ChannelId(id),
                 Err(_) => {
                     return HttpResponse::BadRequest()
-                        .json("Selected welcome message channel id is invalid!")
+                        .json("Selected welcome message channel id is invalid!");
                 }
             };
 
@@ -245,7 +246,8 @@ pub async fn update_setting(
         let role_id = match role.id.parse::<u64>() {
             Ok(id) => RoleId(id),
             Err(_) => {
-                return HttpResponse::BadRequest().json("Selected holding room role id is invalid!")
+                return HttpResponse::BadRequest()
+                    .json("Selected holding room role id is invalid!");
             }
         };
 

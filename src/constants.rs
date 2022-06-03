@@ -1,10 +1,12 @@
-use crate::util::now;
+use std::error::Error;
+
 use anyhow::anyhow;
 use once_cell::sync::OnceCell;
 use serenity::model::id::UserId;
 use serenity::utils::Colour;
 use smol_str::SmolStr;
-use std::error::Error;
+
+use crate::util::now;
 
 pub const AVATAR_URL: &str =
     "https://cdn.discordapp.com/avatars/313749262687141888/07fd66b4a2aae9c33e719ad6780ad6b0.png";

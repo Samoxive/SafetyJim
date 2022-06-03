@@ -1,10 +1,11 @@
-use crate::server::generate_token;
-use crate::service::user_secret::UserSecretService;
-use crate::Config;
 use actix_web::{post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use tracing::error;
 use typemap_rev::TypeMap;
+
+use crate::server::generate_token;
+use crate::service::user_secret::UserSecretService;
+use crate::Config;
 
 #[derive(Serialize, Deserialize)]
 pub struct LoginParams {

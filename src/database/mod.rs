@@ -1,6 +1,7 @@
-use crate::Config;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions, PgSslMode};
 use sqlx::{Pool, Postgres};
+
+use crate::Config;
 
 pub mod bans;
 pub mod hardbans;

@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use serenity::model::guild::{Guild, UnavailableGuild};
 use serenity::model::id::GuildId;
-use std::collections::HashMap;
 use tokio::sync::Mutex;
 use typemap_rev::TypeMapKey;
 

@@ -1,10 +1,11 @@
+use actix_web::{get, web, HttpResponse, Responder};
+use typemap_rev::TypeMap;
+
 use crate::server::is_authenticated;
 use crate::server::model::guild::GuildModel;
 use crate::server::model::self_user::SelfUserModel;
 use crate::service::user_secret::UserSecretService;
 use crate::Config;
-use actix_web::{get, web, HttpResponse, Responder};
-use typemap_rev::TypeMap;
 
 #[get("/@me")]
 pub async fn get_self(

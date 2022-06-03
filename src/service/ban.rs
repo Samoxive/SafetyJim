@@ -1,4 +1,10 @@
 use std::num::NonZeroU32;
+use std::time::Duration;
+
+use serenity::http::Http;
+use serenity::model::id::{ChannelId, GuildId, UserId};
+use serenity::model::user::User;
+use tracing::error;
 use typemap_rev::TypeMapKey;
 
 use crate::database::bans::{Ban, BansRepository};
@@ -7,11 +13,6 @@ use crate::discord::util::mod_log::{create_mod_log_entry, CreateModLogEntryError
 use crate::discord::util::user_dm::{notify_user_for_mod_action, ModActionKind};
 use crate::discord::util::SerenityErrorExt;
 use crate::util::now;
-use serenity::http::Http;
-use serenity::model::id::{ChannelId, GuildId, UserId};
-use serenity::model::user::User;
-use std::time::Duration;
-use tracing::error;
 
 impl TypeMapKey for BanService {
     type Value = BanService;
@@ -80,7 +81,7 @@ impl BanService {
                         error!("failed to issue discord ban {}", err);
                         Err(BanFailure::Unknown)
                     }
-                }
+                };
             }
         }
 
@@ -146,7 +147,7 @@ impl BanService {
                         error!("failed issue discord unban {}", err);
                         Err(UnbanFailure::Unknown)
                     }
-                }
+                };
             }
         }
 

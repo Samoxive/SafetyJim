@@ -1,9 +1,7 @@
-use crate::constants::{JIM_ID, JIM_ID_AND_TAG};
-use crate::database::settings::Setting;
-use crate::discord::message_processors::MessageProcessor;
-use crate::discord::util::is_staff;
-use crate::service::guild::GuildService;
-use crate::service::hardban::HardbanService;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+use std::time::Duration;
+
 use anyhow::bail;
 use async_trait::async_trait;
 use moka::future::{Cache, CacheBuilder};
@@ -11,11 +9,15 @@ use serenity::client::Context;
 use serenity::model::id::{ChannelId, GuildId, MessageId, UserId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-use std::time::Duration;
 use tokio::sync::Mutex;
 use typemap_rev::TypeMap;
+
+use crate::constants::{JIM_ID, JIM_ID_AND_TAG};
+use crate::database::settings::Setting;
+use crate::discord::message_processors::MessageProcessor;
+use crate::discord::util::is_staff;
+use crate::service::guild::GuildService;
+use crate::service::hardban::HardbanService;
 
 const REASON: &str = "Spamming messages with same content";
 const REPETITION_THRESHOLD: u8 = 4;

@@ -1,11 +1,12 @@
+use std::sync::Arc;
+use std::time::Duration;
+
+use moka::future::{Cache, CacheBuilder};
+use serenity::model::id::GuildId;
+use tracing::error;
 use typemap_rev::TypeMapKey;
 
 use crate::database::settings::{Setting, SettingsRepository};
-use moka::future::{Cache, CacheBuilder};
-use serenity::model::id::GuildId;
-use std::sync::Arc;
-use std::time::Duration;
-use tracing::error;
 
 impl TypeMapKey for SettingService {
     type Value = SettingService;

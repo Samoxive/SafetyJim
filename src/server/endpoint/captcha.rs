@@ -1,11 +1,12 @@
-use crate::service::guild::GuildService;
-use crate::service::setting::SettingService;
-use crate::Config;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serenity::model::id::{GuildId, RoleId, UserId};
 use tracing::error;
 use typemap_rev::TypeMap;
+
+use crate::service::guild::GuildService;
+use crate::service::setting::SettingService;
+use crate::Config;
 
 const CAPTCHA_TEMPLATE: &str = include_str!("captcha.html");
 const CAPTCHA_VERIFICATION_URL: &str = "https://google.com/recaptcha/api/siteverify";

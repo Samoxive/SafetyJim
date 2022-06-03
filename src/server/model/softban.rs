@@ -1,8 +1,9 @@
-use crate::database::softbans::Softban;
-use crate::server::model::user::UserModel;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 use typemap_rev::TypeMap;
+
+use crate::database::softbans::Softban;
+use crate::server::model::user::UserModel;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

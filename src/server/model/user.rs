@@ -1,7 +1,8 @@
-use crate::service::guild::GuildService;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 use typemap_rev::TypeMap;
+
+use crate::service::guild::GuildService;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

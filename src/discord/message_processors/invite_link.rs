@@ -1,8 +1,3 @@
-use crate::constants::{JIM_ID, JIM_ID_AND_TAG};
-use crate::database::settings::{get_action_duration_for_auto_mod_action, Setting};
-use crate::discord::message_processors::MessageProcessor;
-use crate::discord::util::{execute_mod_action, is_staff, SerenityErrorExt};
-use crate::service::guild::GuildService;
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::client::Context;
@@ -11,6 +6,12 @@ use serenity::model::user::User;
 use serenity::model::Permissions;
 use tracing::error;
 use typemap_rev::TypeMap;
+
+use crate::constants::{JIM_ID, JIM_ID_AND_TAG};
+use crate::database::settings::{get_action_duration_for_auto_mod_action, Setting};
+use crate::discord::message_processors::MessageProcessor;
+use crate::discord::util::{execute_mod_action, is_staff, SerenityErrorExt};
+use crate::service::guild::GuildService;
 
 const REASON: &str = "Sending invite links";
 

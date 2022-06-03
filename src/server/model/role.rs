@@ -1,6 +1,7 @@
-use crate::service::guild::CachedRole;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::RoleId;
+
+use crate::service::guild::CachedRole;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

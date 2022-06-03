@@ -1,14 +1,16 @@
-use crate::discord::util::get_permissions;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::Duration;
+
 use moka::future::{Cache, CacheBuilder};
 use serenity::http::Http;
 use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
 use serenity::model::Permissions;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::Duration;
 use thiserror::Error;
 use tokio::sync::RwLock;
 use typemap_rev::TypeMapKey;
+
+use crate::discord::util::get_permissions;
 
 impl TypeMapKey for GuildService {
     type Value = GuildService;

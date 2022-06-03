@@ -1,3 +1,9 @@
+use actix_web::{get, post, web, HttpResponse, Responder};
+use serde::{Deserialize, Serialize};
+use serenity::model::id::GuildId;
+use serenity::model::Permissions;
+use typemap_rev::TypeMap;
+
 use crate::server::endpoint::ModLogPaginationParams;
 use crate::server::model::kick::KickModel;
 use crate::server::{
@@ -5,11 +11,6 @@ use crate::server::{
 };
 use crate::service::kick::KickService;
 use crate::Config;
-use actix_web::{get, post, web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
-use serenity::model::id::GuildId;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

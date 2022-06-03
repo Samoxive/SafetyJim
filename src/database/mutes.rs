@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
-use crate::util::now;
 use sqlx::{Error, PgPool, Row};
+
+use crate::util::now;
 
 #[derive(sqlx::FromRow)]
 pub struct Mute {

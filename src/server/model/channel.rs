@@ -1,6 +1,7 @@
-use crate::service::guild::CachedChannel;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::ChannelId;
+
+use crate::service::guild::CachedChannel;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

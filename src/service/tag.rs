@@ -1,8 +1,8 @@
+use serenity::model::id::GuildId;
+use tracing::error;
 use typemap_rev::TypeMapKey;
 
 use crate::database::tags::{Tag, TagsRepository};
-use serenity::model::id::GuildId;
-use tracing::error;
 
 const TAG_CONTENT_SIZE_LIMIT: usize = 2000;
 

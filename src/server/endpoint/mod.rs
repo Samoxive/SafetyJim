@@ -1,5 +1,6 @@
-use serde::Deserialize;
 use std::num::NonZeroU32;
+
+use serde::Deserialize;
 
 pub mod ban;
 pub mod captcha;

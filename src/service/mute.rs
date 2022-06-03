@@ -1,5 +1,12 @@
-use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
 use std::num::NonZeroU32;
+use std::time::Duration;
+
+use serenity::http::Http;
+use serenity::model::channel::{PermissionOverwrite, PermissionOverwriteType};
+use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
+use serenity::model::user::User;
+use serenity::model::Permissions;
+use tracing::error;
 use typemap_rev::{TypeMap, TypeMapKey};
 
 use crate::database::mutes::{Mute, MutesRepository};
@@ -9,12 +16,6 @@ use crate::discord::util::user_dm::{notify_user_for_mod_action, ModActionKind};
 use crate::discord::util::{execute_mod_action, SerenityErrorExt};
 use crate::service::guild::{GetRolesFailure, GuildService};
 use crate::util::now;
-use serenity::http::Http;
-use serenity::model::channel::{PermissionOverwrite, PermissionOverwriteType};
-use serenity::model::user::User;
-use serenity::model::Permissions;
-use std::time::Duration;
-use tracing::error;
 
 impl TypeMapKey for MuteService {
     type Value = MuteService;
@@ -174,7 +175,7 @@ impl MuteService {
                         error!("failed to issue discord member role add {}", err);
                         Err(MuteFailure::Unknown)
                     }
-                }
+                };
             }
         }
 
@@ -291,7 +292,7 @@ impl MuteService {
                             error!("failed to issue discord member role remove {}", err);
                             Err(UnmuteFailure::Unknown)
                         }
-                    }
+                    };
                 }
             }
 

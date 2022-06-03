@@ -3,7 +3,6 @@ use std::sync::Arc;
 use sqlx::PgPool;
 use typemap_rev::TypeMap;
 
-use crate::Config;
 use ban::BanService;
 use hardban::HardbanService;
 use iam_role::IAMRoleService;
@@ -34,6 +33,7 @@ use crate::database::warns::WarnsRepository;
 use crate::service::guild::GuildService;
 use crate::service::guild_statistic::GuildStatisticService;
 use crate::service::shard_statistic::ShardStatisticService;
+use crate::Config;
 
 pub mod ban;
 pub mod guild;
