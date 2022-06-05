@@ -9,7 +9,6 @@ use serenity::model::application::interaction::application_command::{
 use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
 use serenity::model::guild::PartialMember;
 use serenity::model::user::User;
-use serenity::model::Permissions;
 use tracing::error;
 use typemap_rev::TypeMap;
 

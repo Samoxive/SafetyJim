@@ -4,7 +4,6 @@ use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
-use serenity::model::Permissions;
 use tracing::error;
 use typemap_rev::TypeMap;
 

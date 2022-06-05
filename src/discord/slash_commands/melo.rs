@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::client::Context;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::model::Permissions;
 use typemap_rev::TypeMap;
 
 use crate::config::Config;

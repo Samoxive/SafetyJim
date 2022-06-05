@@ -4,7 +4,6 @@ use serenity::client::Context;
 use serenity::model::application::component::ButtonStyle;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use serenity::model::application::interaction::InteractionResponseType;
-use serenity::model::Permissions;
 use tracing::error;
 use typemap_rev::TypeMap;
 

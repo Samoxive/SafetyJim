@@ -6,7 +6,6 @@ use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
     ApplicationCommandInteraction, CommandData,
 };
-use serenity::model::Permissions;
 use typemap_rev::TypeMap;
 
 use crate::config::Config;

@@ -10,7 +10,6 @@ use serenity::model::application::interaction::application_command::{
     ApplicationCommandInteraction, CommandData,
 };
 use serenity::model::application::interaction::InteractionResponseType;
-use serenity::model::Permissions;
 use typemap_rev::TypeMap;
 
 use crate::constants::EMBED_COLOR;

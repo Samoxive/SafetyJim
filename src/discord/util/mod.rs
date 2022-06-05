@@ -374,10 +374,7 @@ pub trait SerenityErrorExt {
 impl SerenityErrorExt for Error {
     fn discord_error_code(&self) -> Option<isize> {
         match self {
-            Error::Http(http_err) => match &*http_err {
-                HttpError::UnsuccessfulRequest(response) => Some(response.error.code),
-                _ => None,
-            },
+            Error::Http(HttpError::UnsuccessfulRequest(response)) => Some(response.error.code),
             _ => None,
         }
     }
