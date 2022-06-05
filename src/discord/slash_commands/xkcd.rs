@@ -88,7 +88,6 @@ impl SlashCommand for XkcdCommand {
             .name("xkcd")
             .description("searches xkcd comics with given description or partial title")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("description")

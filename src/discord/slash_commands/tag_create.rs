@@ -71,13 +71,6 @@ impl SlashCommand for TagCreateCommand {
             .name("tag-create")
             .description("registers a message that can be repeated later")
             .dm_permission(false)
-            .default_member_permissions(
-                Permissions::ADMINISTRATOR
-                    | Permissions::BAN_MEMBERS
-                    | Permissions::KICK_MEMBERS
-                    | Permissions::MANAGE_ROLES
-                    | Permissions::MANAGE_MESSAGES,
-            )
             .create_option(|option| {
                 option
                     .name("name")
@@ -122,6 +115,7 @@ impl SlashCommand for TagCreateCommand {
 
         let setting = setting_service.get_setting(guild_id).await;
 
+        // refer to tag-remove command permission check
         if !is_authorized(&setting, permissions) {
             // TODO(sam): use unauthorized reply function
             invisible_failure_reply(

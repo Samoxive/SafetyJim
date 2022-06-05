@@ -54,7 +54,6 @@ impl SlashCommand for IAMNotCommand {
             .name("iam-not")
             .description("removes specified self assigned role")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("role")

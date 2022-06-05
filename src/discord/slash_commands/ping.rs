@@ -31,7 +31,6 @@ impl SlashCommand for PingCommand {
             .name("ping")
             .description("🏓")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(

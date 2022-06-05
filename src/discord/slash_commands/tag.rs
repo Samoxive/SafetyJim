@@ -52,7 +52,6 @@ impl SlashCommand for TagCommand {
             .name("tag")
             .description("repeats previously registered message via tag name")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("name")

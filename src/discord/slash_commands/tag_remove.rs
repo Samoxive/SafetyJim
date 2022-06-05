@@ -64,13 +64,6 @@ impl SlashCommand for TagRemoveCommand {
             .name("tag-remove")
             .description("remove previously registered tag")
             .dm_permission(false)
-            .default_member_permissions(
-                Permissions::ADMINISTRATOR
-                    | Permissions::BAN_MEMBERS
-                    | Permissions::KICK_MEMBERS
-                    | Permissions::MANAGE_ROLES
-                    | Permissions::MANAGE_MESSAGES,
-            )
             .create_option(|option| {
                 option
                     .name("name")
@@ -109,6 +102,8 @@ impl SlashCommand for TagRemoveCommand {
 
         let setting = setting_service.get_setting(guild_id).await;
 
+        // tag-remove command doesn't have default_member_permissions because we can't have
+        // Discord check for *any* permissions instead of *all*, don't remove this check.
         if !is_authorized(&setting, permissions) {
             // TODO(sam): use unauthorized reply function
             invisible_failure_reply(

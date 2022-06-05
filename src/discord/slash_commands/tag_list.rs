@@ -32,7 +32,6 @@ impl SlashCommand for TagListCommand {
             .name("tag-list")
             .description("lists previously registered tags")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(

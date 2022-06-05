@@ -30,7 +30,6 @@ impl SlashCommand for ServerCommand {
             .name("server")
             .description("displays information about the server")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(

@@ -599,6 +599,7 @@ impl EventHandler for DiscordEventHandler {
         }
 
         if let Interaction::ApplicationCommand(command) = interaction {
+            // TODO(sam): maybe remove this check later and rely on dm_permission field of command
             if command.guild_id.is_none() || command.member.is_none() {
                 invisible_success_reply(
                     &*ctx.http,

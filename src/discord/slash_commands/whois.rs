@@ -117,7 +117,6 @@ impl SlashCommand for WhoisCommand {
             .name("whois")
             .description("displays information about given user or server member")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("user")

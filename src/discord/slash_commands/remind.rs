@@ -68,7 +68,6 @@ impl SlashCommand for RemindCommand {
             .name("remind")
             .description("sets a reminder for a future date, duration defaults to a day")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("message")

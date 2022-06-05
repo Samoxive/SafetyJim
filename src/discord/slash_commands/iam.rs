@@ -52,7 +52,6 @@ impl SlashCommand for IAMCommand {
             .name("iam")
             .description("self assigns specified role")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("role")

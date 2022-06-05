@@ -36,7 +36,6 @@ impl SlashCommand for InfoCommand {
             .name("info")
             .description("displays information about Jim")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(

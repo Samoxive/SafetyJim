@@ -24,8 +24,7 @@ impl SlashCommand for MeloCommand {
         command
             .name("melo")
             .description("melo.")
-            .dm_permission(true)
-            .default_member_permissions(Permissions::all())
+            .dm_permission(false)
     }
 
     async fn handle_command(

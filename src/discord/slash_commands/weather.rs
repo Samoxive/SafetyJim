@@ -109,7 +109,6 @@ impl SlashCommand for WeatherCommand {
             .name("weather")
             .description("gives current weather information for given address")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
             .create_option(|option| {
                 option
                     .name("address")

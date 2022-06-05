@@ -30,7 +30,6 @@ impl SlashCommand for InviteCommand {
             .name("invite")
             .description("displays links to invite Jim and get support")
             .dm_permission(false)
-            .default_member_permissions(Permissions::all())
     }
 
     async fn handle_command(
