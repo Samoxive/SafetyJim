@@ -18,9 +18,11 @@ pub struct MessageProcessors(pub Vec<Box<dyn MessageProcessor + Send + Sync>>);
 
 pub fn get_all_processors() -> MessageProcessors {
     MessageProcessors(vec![
+        // needs to be run first to detect spam even if it contains blocklisted words
+        // or a Discord server invite link
+        Box::new(SpamFilterProcessor::new()),
         Box::new(InviteLinkProcessor),
         Box::new(WordFilterProcessor),
-        Box::new(SpamFilterProcessor::new()),
     ])
 }
 
