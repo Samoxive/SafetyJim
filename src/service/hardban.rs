@@ -1,9 +1,9 @@
-use std::num::NonZeroU32;
+use std::num::{NonZeroU32, NonZeroU64};
 
 use serenity::http::Http;
 use serenity::model::id::{ChannelId, GuildId, UserId};
 use serenity::model::user::User;
-use tracing::error;
+use tracing::{error, warn};
 use typemap_rev::TypeMapKey;
 
 use crate::database::hardbans::{Hardban, HardbansRepository};
@@ -42,7 +42,12 @@ impl HardbanService {
     ) -> Result<(), HardbanFailure> {
         let now = now();
         let mod_log_channel_id = if setting.mod_log {
-            Some(ChannelId(setting.mod_log_channel_id as u64))
+            if let Some(id) = NonZeroU64::new(setting.mod_log_channel_id as u64) {
+                Some(ChannelId(id))
+            } else {
+                warn!("found setting with invalid mod log channel id! {:?}", setting);
+                None
+            }
         } else {
             None
         };
@@ -77,9 +82,9 @@ impl HardbanService {
 
         let hardban_entry = Hardban {
             id: 0,
-            user_id: target_user.id.0 as i64,
-            moderator_user_id: mod_user_id.0 as i64,
-            guild_id: guild_id.0 as i64,
+            user_id: target_user.id.0.get() as i64,
+            moderator_user_id: mod_user_id.0.get() as i64,
+            guild_id: guild_id.0.get() as i64,
             hardban_time: now as i64,
             reason: reason.clone(),
         };
@@ -126,7 +131,7 @@ impl HardbanService {
 
     pub async fn fetch_guild_hardbans(&self, guild_id: GuildId, page: NonZeroU32) -> Vec<Hardban> {
         self.repository
-            .fetch_guild_hardbans(guild_id.0 as i64, page.get())
+            .fetch_guild_hardbans(guild_id.0.get() as i64, page.get())
             .await
             .map_err(|err| {
                 error!("failed to fetch guild guild hardbans {:?}", err);
@@ -138,7 +143,7 @@ impl HardbanService {
 
     pub async fn fetch_guild_hardban_count(&self, guild_id: GuildId) -> i64 {
         self.repository
-            .fetch_guild_hardban_count(guild_id.0 as i64)
+            .fetch_guild_hardban_count(guild_id.0.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch guild hardban count {:?}", err);

@@ -1,3 +1,4 @@
+use std::num::NonZeroU64;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 use typemap_rev::TypeMap;
@@ -18,11 +19,24 @@ pub struct WarnModel {
 
 impl WarnModel {
     pub async fn from_warn(services: &TypeMap, warn: &Warn) -> WarnModel {
+        let user = if let Some(id) = NonZeroU64::new(warn.user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            Default::default()
+        };
+
+        let moderator_user = if let Some(id) = NonZeroU64::new(warn.moderator_user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            Default::default()
+        };
+
         WarnModel {
             id: warn.id,
-            user: UserModel::from_id(services, UserId(warn.user_id as u64)).await,
-            moderator_user: UserModel::from_id(services, UserId(warn.moderator_user_id as u64))
-                .await,
+            user,
+            moderator_user,
             action_time: warn.warn_time,
             reason: warn.reason.clone(),
             pardoned: warn.pardoned,

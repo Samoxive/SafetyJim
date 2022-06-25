@@ -42,7 +42,7 @@ impl SoftbansRepository {
             "sql/softbans/select_guild_softbans_paginated.sql"
         ))
         .bind(guild_id)
-        .bind((page - 1) * 10)
+        .bind(((page - 1) * 10) as i32)
         .fetch_all(&*self.0)
         .await
     }

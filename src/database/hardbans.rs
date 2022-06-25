@@ -41,7 +41,7 @@ impl HardbansRepository {
             "sql/hardbans/select_guild_hardbans_paginated.sql"
         ))
         .bind(guild_id)
-        .bind((page - 1) * 10)
+        .bind(((page - 1) * 10) as i32)
         .fetch_all(&*self.0)
         .await
     }

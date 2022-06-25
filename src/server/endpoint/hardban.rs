@@ -1,3 +1,4 @@
+use std::num::NonZeroU64;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serenity::model::id::GuildId;
@@ -25,7 +26,7 @@ pub async fn get_hardbans(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
     req: actix_web::HttpRequest,
-    guild_id: web::Path<u64>,
+    guild_id: web::Path<NonZeroU64>,
     mod_log_params: web::Query<ModLogPaginationParams>,
 ) -> impl Responder {
     let guild_id = GuildId(guild_id.into_inner());
@@ -70,7 +71,7 @@ pub async fn get_hardban(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
     req: actix_web::HttpRequest,
-    path: web::Path<(u64, i32)>,
+    path: web::Path<(NonZeroU64, i32)>,
 ) -> impl Responder {
     let (guild_id, hardban_id) = path.into_inner();
     let guild_id = GuildId(guild_id);
@@ -109,7 +110,7 @@ pub async fn update_hardban(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
     req: actix_web::HttpRequest,
-    path: web::Path<(u64, i32)>,
+    path: web::Path<(NonZeroU64, i32)>,
     mut new_hardban: web::Json<HardbanModel>,
 ) -> impl Responder {
     let (guild_id, hardban_id) = path.into_inner();
@@ -136,7 +137,7 @@ pub async fn update_hardban(
         return HttpResponse::NotFound().json("Hardban with given id doesn't exist!");
     };
 
-    if hardban.guild_id != guild_id.0 as i64 {
+    if hardban.guild_id != guild_id.0.get() as i64 {
         return HttpResponse::Forbidden().json("Given hardban id doesn't belong to your guild!");
     }
 

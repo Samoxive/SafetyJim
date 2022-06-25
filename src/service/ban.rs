@@ -1,10 +1,10 @@
-use std::num::NonZeroU32;
+use std::num::{NonZeroU32, NonZeroU64};
 use std::time::Duration;
 
 use serenity::http::Http;
 use serenity::model::id::{ChannelId, GuildId, UserId};
 use serenity::model::user::User;
-use tracing::error;
+use tracing::{error, warn};
 use typemap_rev::TypeMapKey;
 
 use crate::database::bans::{Ban, BansRepository};
@@ -52,7 +52,12 @@ impl BanService {
         let expiration_time = duration.map(|duration| now + duration.as_secs());
 
         let mod_log_channel_id = if setting.mod_log {
-            Some(ChannelId(setting.mod_log_channel_id as u64))
+            if let Some(id) = NonZeroU64::new(setting.mod_log_channel_id as u64) {
+                Some(ChannelId(id))
+            } else {
+                warn!("found setting with invalid mod log channel id! {:?}", setting);
+                None
+            }
         } else {
             None
         };
@@ -87,9 +92,9 @@ impl BanService {
 
         let ban_entry = Ban {
             id: 0,
-            user_id: target_user.id.0 as i64,
-            moderator_user_id: mod_user_id.0 as i64,
-            guild_id: guild_id.0 as i64,
+            user_id: target_user.id.0.get() as i64,
+            moderator_user_id: mod_user_id.0.get() as i64,
+            guild_id: guild_id.0.get() as i64,
             ban_time: now as i64,
             expire_time: expiration_time.unwrap_or(0) as i64,
             reason: reason.clone(),
@@ -135,7 +140,7 @@ impl BanService {
     ) -> Result<(), UnbanFailure> {
         let audit_log_reason = format!("Unbanned by {}", mod_user_tag_and_id);
         match http
-            .remove_ban(guild_id.0, target_user_id.0, Some(&audit_log_reason))
+            .remove_ban(guild_id.0.get(), target_user_id.0.get(), Some(&audit_log_reason))
             .await
         {
             Ok(_) => (),
@@ -170,7 +175,7 @@ impl BanService {
 
     pub async fn fetch_guild_bans(&self, guild_id: GuildId, page: NonZeroU32) -> Vec<Ban> {
         self.repository
-            .fetch_guild_bans(guild_id.0 as i64, page.get())
+            .fetch_guild_bans(guild_id.0.get() as i64, page.get())
             .await
             .map_err(|err| {
                 error!("failed to fetch guild bans {:?}", err);
@@ -182,7 +187,7 @@ impl BanService {
 
     pub async fn fetch_guild_ban_count(&self, guild_id: GuildId) -> i64 {
         self.repository
-            .fetch_guild_ban_count(guild_id.0 as i64)
+            .fetch_guild_ban_count(guild_id.0.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch guild ban count {:?}", err);
@@ -206,7 +211,7 @@ impl BanService {
 
     pub async fn fetch_last_guild_ban(&self, guild_id: GuildId) -> Option<Ban> {
         self.repository
-            .fetch_last_guild_ban(guild_id.0 as i64)
+            .fetch_last_guild_ban(guild_id.0.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch last guild ban {:?}", err);
@@ -241,7 +246,7 @@ impl BanService {
     pub async fn invalidate_previous_user_bans(&self, guild_id: GuildId, user_id: UserId) {
         let _ = self
             .repository
-            .invalidate_previous_user_bans(guild_id.0 as i64, user_id.0 as i64)
+            .invalidate_previous_user_bans(guild_id.0.get() as i64, user_id.0.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to invalidate user bans {:?}", err);

@@ -22,8 +22,8 @@ impl JoinService {
             .repository
             .insert_join(Join {
                 id: 0,
-                user_id: user_id.0 as i64,
-                guild_id: guild_id.0 as i64,
+                user_id: user_id.0.get() as i64,
+                guild_id: guild_id.0.get() as i64,
                 join_time: now as i64,
                 allow_time: allow_time as i64,
                 allowed: false,
@@ -56,7 +56,7 @@ impl JoinService {
     pub async fn delete_user_joins(&self, guild_id: GuildId, user_id: UserId) {
         let _ = self
             .repository
-            .delete_guild_user_joins(guild_id.0 as i64, user_id.0 as i64)
+            .delete_guild_user_joins(guild_id.0.get() as i64, user_id.0.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to delete user joins {:?}", err);

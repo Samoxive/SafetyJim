@@ -1,3 +1,4 @@
+use std::num::NonZeroU64;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 use typemap_rev::TypeMap;
@@ -19,11 +20,25 @@ pub struct BanModel {
 
 impl BanModel {
     pub async fn from_ban(services: &TypeMap, ban: &Ban) -> BanModel {
+        let user = if let Some(id) = NonZeroU64::new(ban.user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            // should never happen since user ids come from Discord
+            Default::default()
+        };
+
+        let moderator_user = if let Some(id) = NonZeroU64::new(ban.moderator_user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            Default::default()
+        };
+
         BanModel {
             id: ban.id,
-            user: UserModel::from_id(services, UserId(ban.user_id as u64)).await,
-            moderator_user: UserModel::from_id(services, UserId(ban.moderator_user_id as u64))
-                .await,
+            user,
+            moderator_user,
             action_time: ban.ban_time,
             expiration_time: ban.expire_time,
             unbanned: ban.unbanned,

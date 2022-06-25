@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::net::Ipv4Addr;
+use std::num::NonZeroU64;
 use std::sync::Arc;
 
 use actix_cors::Cors;
@@ -107,7 +108,7 @@ async fn is_authenticated(
     if invalid_uuid_service.is_uuid_invalid(claims.uuid).await {
         None
     } else {
-        match claims.user_id.parse::<u64>() {
+        match claims.user_id.parse::<NonZeroU64>() {
             Ok(id) => Some(UserId(id)),
             Err(_) => {
                 // secret leaked or we have a problem with token generation

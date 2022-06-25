@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::num::NonZeroU64;
 use std::process::exit;
 use std::sync::Arc;
 use std::time::Duration;
@@ -10,12 +11,13 @@ use serenity::model::application::command::Command;
 use serenity::model::application::interaction::Interaction;
 use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
 use serenity::model::event::{GuildMemberUpdateEvent, MessageUpdateEvent};
-use serenity::model::gateway::{Activity, GatewayIntents, Ready};
+use serenity::model::gateway::{GatewayIntents, Ready};
 use serenity::model::guild::{Guild, Member, PartialGuild, Role, UnavailableGuild};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
 use serenity::model::user::{CurrentUser, User};
 use serenity::prelude::Mentionable;
 use serenity::Client;
+use serenity::gateway::ActivityData;
 use simsearch::{SearchOptions, SimSearch};
 use tokio::select;
 use tokio::sync::Mutex;
@@ -28,10 +30,7 @@ use crate::discord;
 use crate::discord::message_processors::{get_all_processors, MessageProcessors};
 use crate::discord::scheduled::run_scheduled_tasks;
 use crate::discord::slash_commands::SlashCommands;
-use crate::discord::util::{
-    invisible_success_reply, verify_guild_message_create, verify_guild_message_update,
-    CommandDataExt, GuildMessageCreated, GuildMessageUpdated,
-};
+use crate::discord::util::{invisible_success_reply, verify_guild_message_create, verify_guild_message_update, GuildMessageCreated, GuildMessageUpdated, AutocompleteDataExt};
 use crate::flags::Flags;
 use crate::service::guild::GuildService;
 use crate::service::guild_statistic::GuildStatisticService;
@@ -250,14 +249,17 @@ impl EventHandler for DiscordEventHandler {
                 content
             };
 
-            let channel_id = ChannelId(setting.welcome_message_channel_id as u64);
-            let _ = channel_id
-                .send_message(&*ctx.http, |message| message.content(content))
-                .await
-                .map_err(|err| {
-                    error!("failed to send welcome message {}", err);
-                    err
-                });
+            if let Some(id) = NonZeroU64::new(setting.welcome_message_channel_id as u64) {
+                let channel_id = ChannelId(id);
+
+                let _ = channel_id
+                    .send_message(&*ctx.http, |message| message.content(content))
+                    .await
+                    .map_err(|err| {
+                        error!("failed to send welcome message {}", err);
+                        err
+                    });
+            }
         }
 
         if setting.holding_room {
@@ -309,9 +311,9 @@ impl EventHandler for DiscordEventHandler {
         let _ = ctx
             .http
             .add_member_role(
-                guild_id.0,
-                new_member.user.id.0,
-                role.0,
+                guild_id.0.get(),
+                new_member.user.id.0.get(),
+                role.0.get(),
                 Some("Preventing mute evasion"),
             )
             .await
@@ -528,11 +530,13 @@ impl EventHandler for DiscordEventHandler {
     }
 
     async fn ready(&self, ctx: Context, data_about_bot: Ready) {
-        let shard = data_about_bot.shard.unwrap_or([0, 1]);
+        let shard = data_about_bot.shard
+            .map(|info| (info.id, info.total))
+            .unwrap_or((0, 1));
         // Watching over users. [0 / 1]
-        let shard_status = format!("over users. [{} / {}]", shard[0], shard[1]);
-        let activity = Activity::watching(shard_status);
-        ctx.set_activity(activity).await;
+        let shard_status = format!("over users. [{} / {}]", shard.0, shard.1);
+        let activity = ActivityData::watching(shard_status);
+        ctx.set_activity(Some(activity)).await;
 
         if self.create_slash_commands {
             if let Err(err) = initialize_slash_commands(&ctx, &self.slash_commands).await {

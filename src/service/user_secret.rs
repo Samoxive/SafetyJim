@@ -1,4 +1,4 @@
-use std::num::ParseIntError;
+use std::num::{NonZeroU64, ParseIntError};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -125,7 +125,7 @@ async fn fetch_self_user(client: &Client, access_token: &str) -> anyhow::Result<
             err
         })?;
 
-    let user_id = match response.id.parse::<u64>() {
+    let user_id = match response.id.parse::<NonZeroU64>() {
         Ok(id) => UserId(id),
         Err(err) => {
             error!("failed to parse self user id from discord {}", err);
@@ -166,7 +166,7 @@ pub async fn fetch_self_user_guilds(
     match response
         .into_iter()
         .map(|guild| {
-            let guild_id = match guild.id.parse::<u64>() {
+            let guild_id = match guild.id.parse::<NonZeroU64>() {
                 Ok(id) => GuildId(id),
                 Err(err) => {
                     error!("failed to parse self user guild id from discord {}", err);
@@ -243,7 +243,7 @@ impl UserSecretService {
 
         self.repository
             .upsert_user_secret(UserSecret {
-                user_id: self_user.id.0 as i64,
+                user_id: self_user.id.0.get() as i64,
                 access_token: response.access_token,
             })
             .await
@@ -283,7 +283,7 @@ impl UserSecretService {
     }
 
     pub async fn fetch_self_user(&self, user_id: UserId) -> anyhow::Result<SelfUser> {
-        let access_token = match self.repository.fetch_user_secret(user_id.0 as i64).await {
+        let access_token = match self.repository.fetch_user_secret(user_id.0.get() as i64).await {
             Ok(Some(secret)) => secret.access_token,
             Ok(None) => {
                 error!("user's secrets don't exist yet their token does!");
@@ -333,7 +333,7 @@ impl UserSecretService {
         services: &TypeMap,
         user_id: UserId,
     ) -> anyhow::Result<Vec<SelfGuild>> {
-        let access_token = match self.repository.fetch_user_secret(user_id.0 as i64).await {
+        let access_token = match self.repository.fetch_user_secret(user_id.0.get() as i64).await {
             Ok(Some(secret)) => secret.access_token,
             Ok(None) => {
                 error!("user's secrets don't exist yet their token does!");

@@ -36,7 +36,7 @@ impl KicksRepository {
     pub async fn fetch_guild_kicks(&self, guild_id: i64, page: u32) -> Result<Vec<Kick>, Error> {
         sqlx::query_as::<_, Kick>(include_str!("sql/kicks/select_guild_kicks_paginated.sql"))
             .bind(guild_id)
-            .bind((page - 1) * 10)
+            .bind(((page - 1) * 10) as i32)
             .fetch_all(&*self.0)
             .await
     }

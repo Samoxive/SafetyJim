@@ -36,7 +36,7 @@ impl WarnsRepository {
     pub async fn fetch_guild_warns(&self, guild_id: i64, page: u32) -> Result<Vec<Warn>, Error> {
         sqlx::query_as::<_, Warn>(include_str!("sql/warns/select_guild_warns_paginated.sql"))
             .bind(guild_id)
-            .bind((page - 1) * 10)
+            .bind(((page - 1) * 10) as i32)
             .fetch_all(&*self.0)
             .await
     }

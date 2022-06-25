@@ -1,3 +1,4 @@
+use std::num::NonZeroU64;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 use typemap_rev::TypeMap;
@@ -17,11 +18,24 @@ pub struct HardbanModel {
 
 impl HardbanModel {
     pub async fn from_hardban(services: &TypeMap, hardban: &Hardban) -> HardbanModel {
+        let user = if let Some(id) = NonZeroU64::new(hardban.user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            Default::default()
+        };
+
+        let moderator_user = if let Some(id) = NonZeroU64::new(hardban.moderator_user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            Default::default()
+        };
+
         HardbanModel {
             id: hardban.id,
-            user: UserModel::from_id(services, UserId(hardban.user_id as u64)).await,
-            moderator_user: UserModel::from_id(services, UserId(hardban.moderator_user_id as u64))
-                .await,
+            user,
+            moderator_user,
             action_time: hardban.hardban_time,
             reason: hardban.reason.clone(),
         }

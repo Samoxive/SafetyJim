@@ -1,7 +1,8 @@
+use std::num::NonZeroU64;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serenity::model::id::{GuildId, RoleId, UserId};
-use tracing::error;
+use tracing::{error, warn};
 use typemap_rev::TypeMap;
 
 use crate::service::guild::GuildService;
@@ -62,7 +63,7 @@ async fn validate_captcha_response(secret: &str, response_id: &str) -> anyhow::R
 pub async fn submit_captcha(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
-    path: web::Path<(u64, u64)>,
+    path: web::Path<(NonZeroU64, NonZeroU64)>,
     body: web::Form<CaptchaModel>,
 ) -> impl Responder {
     let (guild_id, user_id) = path.into_inner();
@@ -101,7 +102,15 @@ pub async fn submit_captcha(
     }
 
     let role_id = if let Some(id) = setting.holding_room_role_id {
-        RoleId(id as u64)
+        match NonZeroU64::new(id as u64) {
+            Some(id) => {
+                RoleId(id)
+            },
+            _ => {
+                warn!("found setting with invalid holding room id! {:?}", setting);
+                return HttpResponse::BadRequest().json("Holding room role is invalid!")
+            }
+        }
     } else {
         return HttpResponse::BadRequest().json("Holding room role isn't set up!");
     };
@@ -110,9 +119,9 @@ pub async fn submit_captcha(
         .http()
         .await
         .add_member_role(
-            guild_id.0,
-            user_id.0,
-            role_id.0,
+            guild_id.0.get(),
+            user_id.0.get(),
+            role_id.0.get(),
             Some("Taking member out of holding room because of completed captcha challenge"),
         )
         .await;

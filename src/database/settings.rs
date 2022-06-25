@@ -58,7 +58,7 @@ pub fn get_action_duration_for_auto_mod_action(
     }
 }
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct Setting {
     pub guild_id: i64,
     pub mod_log: bool,
@@ -111,7 +111,7 @@ pub struct Setting {
 impl Setting {
     pub fn default(guild_id: GuildId) -> Self {
         Setting {
-            guild_id: guild_id.0 as i64,
+            guild_id: guild_id.0.get() as i64,
             mod_log: false,
             mod_log_channel_id: 0,
             holding_room: false,

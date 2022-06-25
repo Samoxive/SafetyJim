@@ -1,3 +1,4 @@
+use std::num::NonZeroU64;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 use typemap_rev::TypeMap;
@@ -18,11 +19,24 @@ pub struct KickModel {
 
 impl KickModel {
     pub async fn from_kick(services: &TypeMap, kick: &Kick) -> KickModel {
+        let user = if let Some(id) = NonZeroU64::new(kick.user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            Default::default()
+        };
+
+        let moderator_user = if let Some(id) = NonZeroU64::new(kick.moderator_user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            Default::default()
+        };
+
         KickModel {
             id: kick.id,
-            user: UserModel::from_id(services, UserId(kick.user_id as u64)).await,
-            moderator_user: UserModel::from_id(services, UserId(kick.moderator_user_id as u64))
-                .await,
+            user,
+            moderator_user,
             action_time: kick.kick_time,
             reason: kick.reason.clone(),
             pardoned: kick.pardoned,

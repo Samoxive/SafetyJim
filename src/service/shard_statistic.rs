@@ -9,7 +9,7 @@ impl TypeMapKey for ShardStatisticService {
 }
 
 pub struct ShardStatisticService {
-    shard_latencies: Mutex<HashMap<u64, u64>>,
+    shard_latencies: Mutex<HashMap<u32, u64>>,
 }
 
 pub struct ShardLatencyInfo {

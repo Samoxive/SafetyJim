@@ -1,3 +1,4 @@
+use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -8,7 +9,7 @@ use serenity::model::id::{ChannelId, GuildId, UserId};
 use serenity::prelude::Mentionable;
 use tokio::select;
 use tokio::time::interval;
-use tracing::error;
+use tracing::{error, warn};
 use typemap_rev::TypeMap;
 
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
@@ -100,9 +101,18 @@ pub async fn allow_users(http: &Http, services: &TypeMap) {
 
     let expired_joins = join_service.get_expired_joins().await;
     for expired_join in expired_joins {
+        let guild_id = if let Some(id) = NonZeroU64::new(expired_join.guild_id as u64) {
+            GuildId(id)
+        } else {
+            warn!("found expired join with invalid guild id! {:?}", expired_join);
+            join_service.invalidate_join(expired_join.id).await;
+            continue;
+        };
+
         let setting = setting_service
-            .get_setting(GuildId(expired_join.guild_id as u64))
+            .get_setting(guild_id)
             .await;
+
         if setting.holding_room {
             if let Some(holding_room_role_id) = setting.holding_room_role_id {
                 let _ = http
@@ -139,8 +149,16 @@ pub async fn unmute_users(http: &Http, services: &TypeMap) {
 
     let expired_mutes = mute_service.fetch_expired_mutes().await;
     for expired_mute in expired_mutes {
+        let guild_id = if let Some(id) = NonZeroU64::new(expired_mute.guild_id as u64) {
+            GuildId(id)
+        } else {
+            warn!("found expired mute with invalid guild id! {:?}", expired_mute);
+            mute_service.invalidate_mute(expired_mute.id).await;
+            continue;
+        };
+
         if let Some(muted_role_id) = guild_service
-            .get_roles(GuildId(expired_mute.guild_id as u64))
+            .get_roles(guild_id)
             .await
             .map(|roles| {
                 roles
@@ -155,7 +173,7 @@ pub async fn unmute_users(http: &Http, services: &TypeMap) {
                 .remove_member_role(
                     expired_mute.guild_id as u64,
                     expired_mute.user_id as u64,
-                    muted_role_id.0,
+                    muted_role_id.0.get(),
                     Some("Unmuting member because duration expired"),
                 )
                 .await
@@ -211,7 +229,7 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
     for expired_reminder in expired_reminders {
         let mut embed = CreateEmbed::default();
         embed.title(format!("Reminder - #{}", expired_reminder.id));
-        embed.description(expired_reminder.message);
+        embed.description(&expired_reminder.message);
         embed.author(|author| author.name("Safety Jim").icon_url(AVATAR_URL));
         embed.footer(|footer| footer.text("Reminder set on"));
         embed.timestamp(
@@ -220,9 +238,35 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
         );
         embed.colour(EMBED_COLOR);
 
-        let guild_id = GuildId(expired_reminder.guild_id as u64);
-        let channel_id = ChannelId(expired_reminder.channel_id as u64);
-        let user_id = UserId(expired_reminder.user_id as u64);
+        let guild_id = if let Some(id) = NonZeroU64::new(expired_reminder.guild_id as u64) {
+            GuildId(id)
+        } else {
+            warn!("found expired reminder with invalid guild id! {:?}", expired_reminder);
+            reminder_service
+                .invalidate_reminder(expired_reminder.id)
+                .await;
+            continue;
+        };
+
+        let channel_id = if let Some(id) = NonZeroU64::new(expired_reminder.channel_id as u64) {
+            ChannelId(id)
+        } else {
+            warn!("found expired reminder with invalid channel id! {:?}", expired_reminder);
+            reminder_service
+                .invalidate_reminder(expired_reminder.id)
+                .await;
+            continue;
+        };
+
+        let user_id = if let Some(id) = NonZeroU64::new(expired_reminder.user_id as u64) {
+            UserId(id)
+        } else {
+            warn!("found expired reminder with invalid user id! {:?}", expired_reminder);
+            reminder_service
+                .invalidate_reminder(expired_reminder.id)
+                .await;
+            continue;
+        };
 
         let mut is_dm_required = false;
         if guild_service.get_member(guild_id, user_id).await.is_ok() {

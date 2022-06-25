@@ -7,7 +7,7 @@ use serenity::http::{Http, HttpError};
 use serenity::model::application::interaction::application_command::{
     ApplicationCommandInteraction, CommandData, CommandDataOptionValue,
 };
-use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::application::interaction::{autocomplete, InteractionResponseType};
 use serenity::model::application::interaction::MessageFlags;
 use serenity::model::channel::{Message, PartialChannel};
 use serenity::model::event::MessageUpdateEvent;
@@ -16,6 +16,7 @@ use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId, UserId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use serenity::Error;
+use serenity::model::prelude::interaction::autocomplete::AutocompleteData;
 use tracing::{error, warn};
 use typemap_rev::TypeMap;
 
@@ -33,6 +34,28 @@ use crate::util::now;
 
 pub mod mod_log;
 pub mod user_dm;
+
+pub trait AutocompleteDataExt {
+    fn option(&self, option_name: &str) -> Option<&autocomplete::CommandDataOptionValue>;
+    fn string(&self, option_name: &str) -> Option<&str>;
+}
+
+impl AutocompleteDataExt for AutocompleteData {
+    fn option(&self, option_name: &str) -> Option<&autocomplete::CommandDataOptionValue> {
+        self.options
+            .iter()
+            .find(|option| option.name == option_name)
+            .map(|option| &option.value)
+    }
+
+    fn string(&self, option_name: &str) -> Option<&str> {
+        if let Some(autocomplete::CommandDataOptionValue::String(str)) = self.option(option_name) {
+            Some(str.as_str())
+        } else {
+            None
+        }
+    }
+}
 
 pub trait CommandDataExt {
     fn option(&self, option_name: &str) -> Option<&CommandDataOptionValue>;

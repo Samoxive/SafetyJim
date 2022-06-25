@@ -1,3 +1,4 @@
+use std::num::NonZeroU64;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
 use typemap_rev::TypeMap;
@@ -23,7 +24,7 @@ pub async fn get_setting(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
     req: actix_web::HttpRequest,
-    guild_id: web::Path<u64>,
+    guild_id: web::Path<NonZeroU64>,
 ) -> impl Responder {
     let guild_id = GuildId(guild_id.into_inner());
 
@@ -78,23 +79,21 @@ pub async fn get_setting(
 
     let setting = setting_service.get_setting(guild_id).await;
 
-    let mod_log_channel_id = ChannelId(setting.mod_log_channel_id as u64);
-    let mod_log_channel = channels
-        .get(&mod_log_channel_id)
-        .map(|channel| ChannelModel::from_guild_channel(mod_log_channel_id, channel));
+    let mod_log_channel = NonZeroU64::new(setting.mod_log_channel_id as u64)
+        .map(ChannelId)
+        .and_then(|channel_id| channels.get(&channel_id).map(|channel| (channel_id, channel)))
+        .map(|(id, channel)| ChannelModel::from_guild_channel(id, channel));
 
-    let holding_room_role = setting
-        .holding_room_role_id
-        .and_then(|id| {
-            let role_id = RoleId(id as u64);
-            roles.get(&role_id).map(|role| (role_id, role))
-        })
+    let holding_room_role = setting.holding_room_role_id
+        .and_then(|id| NonZeroU64::new(id as u64))
+        .map(RoleId)
+        .and_then(|role_id| roles.get(&role_id).map(|role| (role_id, role)))
         .map(|(role_id, role)| RoleModel::from_role(role_id, role));
 
-    let welcome_channel_id = ChannelId(setting.welcome_message_channel_id as u64);
-    let welcome_channel = channels
-        .get(&welcome_channel_id)
-        .map(|channel| ChannelModel::from_guild_channel(welcome_channel_id, channel));
+    let welcome_channel = NonZeroU64::new(setting.welcome_message_channel_id as u64)
+        .map(ChannelId)
+        .and_then(|channel_id| channels.get(&channel_id).map(|channel| (channel_id, channel)))
+        .map(|(id, channel)| ChannelModel::from_guild_channel(id, channel));
 
     HttpResponse::Ok().json(SettingModel {
         guild: GuildModel::from_cached_guild(guild_id, &*guild),
@@ -159,7 +158,7 @@ pub async fn update_setting(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
     req: actix_web::HttpRequest,
-    guild_id: web::Path<u64>,
+    guild_id: web::Path<NonZeroU64>,
     mut new_setting: web::Json<SettingModel>,
 ) -> impl Responder {
     let guild_id = GuildId(guild_id.into_inner());
@@ -204,7 +203,7 @@ pub async fn update_setting(
     }
 
     let mod_log_channel_id = if let Some(channel) = new_setting.mod_log_channel.as_ref() {
-        let channel_id = match channel.id.parse::<u64>() {
+        let channel_id = match channel.id.parse::<NonZeroU64>() {
             Ok(id) => ChannelId(id),
             Err(_) => {
                 return HttpResponse::BadRequest()
@@ -217,14 +216,14 @@ pub async fn update_setting(
                 .json("Selected moderator log channel doesn't exist!");
         }
 
-        channel_id
+        channel_id.get() as i64
     } else {
-        ChannelId(0)
+        0
     };
 
     let welcome_message_channel_id =
         if let Some(channel) = new_setting.welcome_message_channel.as_ref() {
-            let channel_id = match channel.id.parse::<u64>() {
+            let channel_id = match channel.id.parse::<NonZeroU64>() {
                 Ok(id) => ChannelId(id),
                 Err(_) => {
                     return HttpResponse::BadRequest()
@@ -237,13 +236,13 @@ pub async fn update_setting(
                     .json("Selected welcome message channel doesn't exist!");
             }
 
-            channel_id
+            channel_id.get() as i64
         } else {
-            ChannelId(0)
+            0
         };
 
     let holding_room_role_id = if let Some(role) = new_setting.holding_room_role.as_ref() {
-        let role_id = match role.id.parse::<u64>() {
+        let role_id = match role.id.parse::<NonZeroU64>() {
             Ok(id) => RoleId(id),
             Err(_) => {
                 return HttpResponse::BadRequest()
@@ -255,7 +254,7 @@ pub async fn update_setting(
             return HttpResponse::BadRequest().json("Selected holding room role doesn't exist!");
         }
 
-        Some(role_id)
+        Some(role_id.get() as i64)
     } else {
         if new_setting.join_captcha || new_setting.holding_room {
             return HttpResponse::BadRequest().json("You can't enable join captcha or holding room without setting a holding room role!");
@@ -444,16 +443,16 @@ pub async fn update_setting(
         .update_setting(
             guild_id,
             Setting {
-                guild_id: guild_id.0 as i64,
+                guild_id: guild_id.0.get() as i64,
                 mod_log: new_setting.mod_log,
-                mod_log_channel_id: mod_log_channel_id.0 as i64,
+                mod_log_channel_id,
                 holding_room: new_setting.holding_room,
-                holding_room_role_id: holding_room_role_id.map(|id| id.0 as i64),
+                holding_room_role_id,
                 holding_room_minutes: new_setting.holding_room_minutes,
                 invite_link_remover: new_setting.invite_link_remover,
                 welcome_message: new_setting.welcome_message,
                 message: new_setting.message.clone(),
-                welcome_message_channel_id: welcome_message_channel_id.0 as i64,
+                welcome_message_channel_id,
                 prefix: new_setting.prefix.clone(),
                 silent_commands: new_setting.silent_commands,
                 no_space_prefix: new_setting.no_space_prefix,
@@ -504,7 +503,7 @@ pub async fn reset_setting(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
     req: actix_web::HttpRequest,
-    guild_id: web::Path<u64>,
+    guild_id: web::Path<NonZeroU64>,
 ) -> impl Responder {
     let guild_id = GuildId(guild_id.into_inner());
 

@@ -4,7 +4,7 @@ use sqlx::{Error, PgPool, Row};
 
 use crate::util::now;
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct Mute {
     pub id: i32,
     pub user_id: i64,
@@ -41,7 +41,7 @@ impl MutesRepository {
     pub async fn fetch_guild_mutes(&self, guild_id: i64, page: u32) -> Result<Vec<Mute>, Error> {
         sqlx::query_as::<_, Mute>(include_str!("sql/mutes/select_guild_mutes_paginated.sql"))
             .bind(guild_id)
-            .bind((page - 1) * 10)
+            .bind(((page - 1) * 10) as i32)
             .fetch_all(&*self.0)
             .await
     }

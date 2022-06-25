@@ -1,4 +1,4 @@
-use std::num::ParseIntError;
+use std::num::{NonZeroU64, ParseIntError};
 
 use anyhow::bail;
 use async_trait::async_trait;
@@ -48,8 +48,8 @@ fn generate_options(
     let user_ids = match users_str
         .split(',')
         .map(|element| element.trim())
-        .map(|element| element.parse::<u64>())
-        .collect::<Result<Vec<u64>, ParseIntError>>()
+        .map(|element| element.parse::<NonZeroU64>())
+        .collect::<Result<Vec<NonZeroU64>, ParseIntError>>()
     {
         Ok(ids) => ids,
         Err(_) => return Err(MassbanCommandOptionFailure::UserIdParsingFailed),
@@ -198,7 +198,7 @@ impl SlashCommand for MassbanCommand {
             // massban is used for cases like raids, so getting the users from cache would unnecessarily
             // inflate the cache that is mostly used for the front end, plus we are likely to send all
             // these requests because they aren't likely to be in the cache in the first place
-            let target_user = match context.http.get_user(target_user_id.0).await {
+            let target_user = match context.http.get_user(target_user_id.0.get()).await {
                 Ok(user) => user,
                 Err(err) => match err.discord_error_code() {
                     Some(10013) => {

@@ -102,9 +102,9 @@ impl SlashCommand for IAMCommand {
         if let Err(err) = context
             .http
             .add_member_role(
-                guild_id.0,
-                member.user.id.0,
-                options.role_id.0,
+                guild_id.0.get(),
+                member.user.id.0.get(),
+                options.role_id.0.get(),
                 Some("Member self-assigned the role"),
             )
             .await

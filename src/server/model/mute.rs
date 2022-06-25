@@ -1,3 +1,4 @@
+use std::num::NonZeroU64;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 use typemap_rev::TypeMap;
@@ -20,11 +21,24 @@ pub struct MuteModel {
 
 impl MuteModel {
     pub async fn from_mute(services: &TypeMap, mute: &Mute) -> MuteModel {
+        let user = if let Some(id) = NonZeroU64::new(mute.user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            Default::default()
+        };
+
+        let moderator_user = if let Some(id) = NonZeroU64::new(mute.moderator_user_id as u64) {
+            let user_id = UserId(id);
+            UserModel::from_id(services, user_id).await
+        } else {
+            Default::default()
+        };
+
         MuteModel {
             id: mute.id,
-            user: UserModel::from_id(services, UserId(mute.user_id as u64)).await,
-            moderator_user: UserModel::from_id(services, UserId(mute.moderator_user_id as u64))
-                .await,
+            user,
+            moderator_user,
             action_time: mute.mute_time,
             expiration_time: mute.expire_time,
             unmuted: mute.unmuted,

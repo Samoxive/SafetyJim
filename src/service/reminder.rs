@@ -48,9 +48,9 @@ impl ReminderService {
 
         let reminder = Reminder {
             id: 0,
-            user_id: user.id.0 as i64,
-            channel_id: channel_id.0 as i64,
-            guild_id: guild_id.0 as i64,
+            user_id: user.id.0.get() as i64,
+            channel_id: channel_id.0.get() as i64,
+            guild_id: guild_id.0.get() as i64,
             create_time: now as i64,
             remind_time: remind_time as i64,
             reminded: false,

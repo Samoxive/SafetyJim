@@ -45,7 +45,7 @@ impl SettingService {
             Ok(setting) => setting,
             Err(err) => {
                 error!("failed to insert guild setting {:?}", err);
-                match self.repository.fetch_setting(guild_id.0 as i64).await {
+                match self.repository.fetch_setting(guild_id.0.get() as i64).await {
                     Ok(Some(setting)) => setting,
                     Ok(None) => Setting::default(guild_id),
                     Err(err) => {
@@ -65,7 +65,7 @@ impl SettingService {
 
     pub async fn fetch_setting(&self, guild_id: GuildId) -> Option<Arc<Setting>> {
         self.repository
-            .fetch_setting(guild_id.0 as i64)
+            .fetch_setting(guild_id.0.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch setting {:?}", err);
@@ -92,7 +92,7 @@ impl SettingService {
     pub async fn reset_setting(&self, guild_id: GuildId) {
         let _ = self
             .repository
-            .delete_setting(guild_id.0 as i64)
+            .delete_setting(guild_id.0.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to delete setting {:?}", err);

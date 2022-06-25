@@ -40,7 +40,7 @@ impl BansRepository {
     pub async fn fetch_guild_bans(&self, guild_id: i64, page: u32) -> Result<Vec<Ban>, Error> {
         sqlx::query_as::<_, Ban>(include_str!("sql/bans/select_guild_bans_paginated.sql"))
             .bind(guild_id)
-            .bind((page - 1) * 10)
+            .bind(((page - 1) * 10) as i32)
             .fetch_all(&*self.0)
             .await
     }

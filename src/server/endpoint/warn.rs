@@ -1,3 +1,4 @@
+use std::num::NonZeroU64;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serenity::model::id::GuildId;
@@ -25,7 +26,7 @@ pub async fn get_warns(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
     req: actix_web::HttpRequest,
-    guild_id: web::Path<u64>,
+    guild_id: web::Path<NonZeroU64>,
     mod_log_params: web::Query<ModLogPaginationParams>,
 ) -> impl Responder {
     let guild_id = GuildId(guild_id.into_inner());
@@ -70,7 +71,7 @@ pub async fn get_warn(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
     req: actix_web::HttpRequest,
-    path: web::Path<(u64, i32)>,
+    path: web::Path<(NonZeroU64, i32)>,
 ) -> impl Responder {
     let (guild_id, warn_id) = path.into_inner();
     let guild_id = GuildId(guild_id);
@@ -109,7 +110,7 @@ pub async fn update_warn(
     config: web::Data<Config>,
     services: web::Data<TypeMap>,
     req: actix_web::HttpRequest,
-    path: web::Path<(u64, i32)>,
+    path: web::Path<(NonZeroU64, i32)>,
     mut new_warn: web::Json<WarnModel>,
 ) -> impl Responder {
     let (guild_id, warn_id) = path.into_inner();
@@ -141,7 +142,7 @@ pub async fn update_warn(
         return HttpResponse::NotFound().json("Warn with given id doesn't exist!");
     };
 
-    if warn.guild_id != guild_id.0 as i64 {
+    if warn.guild_id != guild_id.0.get() as i64 {
         return HttpResponse::Forbidden().json("Given warn id doesn't belong to your guild!");
     }
 

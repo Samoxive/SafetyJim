@@ -34,7 +34,7 @@ pub struct TagService {
 impl TagService {
     pub async fn get_tag_content(&self, guild_id: GuildId, name: &str) -> Option<String> {
         self.repository
-            .fetch_guild_tag_by_name(guild_id.0 as i64, name)
+            .fetch_guild_tag_by_name(guild_id.0.get() as i64, name)
             .await
             .map_err(|err| {
                 error!("failed to fetch guild tag by name {:?}", err);
@@ -57,7 +57,7 @@ impl TagService {
 
         let new_tag = Tag {
             id: 0,
-            guild_id: guild_id.0 as i64,
+            guild_id: guild_id.0.get() as i64,
             name: name.into(),
             response: content.into(),
         };
@@ -85,7 +85,7 @@ impl TagService {
 
         let mut tag = match self
             .repository
-            .fetch_guild_tag_by_name(guild_id.0 as i64, name)
+            .fetch_guild_tag_by_name(guild_id.0.get() as i64, name)
             .await
         {
             Ok(Some(tag)) => tag,
@@ -111,7 +111,7 @@ impl TagService {
     pub async fn remove_tag(&self, guild_id: GuildId, name: &str) -> Result<(), RemoveTagFailure> {
         let tag = match self
             .repository
-            .fetch_guild_tag_by_name(guild_id.0 as i64, name)
+            .fetch_guild_tag_by_name(guild_id.0.get() as i64, name)
             .await
         {
             Ok(Some(tag)) => tag,
@@ -132,7 +132,7 @@ impl TagService {
     }
 
     pub async fn get_tag_names(&self, guild_id: GuildId) -> Vec<String> {
-        match self.repository.fetch_guild_tags(guild_id.0 as i64).await {
+        match self.repository.fetch_guild_tags(guild_id.0.get() as i64).await {
             Ok(tags) => tags.into_iter().map(|tag| tag.name).collect(),
             Err(err) => {
                 error!("failed to fetch guild tags {:?}", err);
