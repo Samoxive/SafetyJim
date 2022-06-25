@@ -94,7 +94,7 @@ impl DiscordBot {
         let application_id: u64 = config.oauth_client_id.parse()?;
         let client = Client::builder(
             &config.discord_token,
-            GatewayIntents::GUILDS | GatewayIntents::GUILD_MEMBERS | GatewayIntents::GUILD_MESSAGES,
+            GatewayIntents::GUILDS | GatewayIntents::GUILD_MEMBERS | GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT,
         )
         .event_handler(handler)
         .application_id(application_id)
