@@ -33,8 +33,3 @@ tracing-futures = "0.2.5"
 tracing-subscriber = { version = "0.3.11", features = ["json", "registry", "env-filter"] }
 typemap_rev = "0.1.5"
 uuid = { version = "1.1.2", features = ["serde", "v4"] }
-
-[profile.release]
-debug = 0
-lto = "fat"
-panic = "abort"
