@@ -5,7 +5,7 @@ use typemap_rev::TypeMap;
 
 use crate::database::settings::{
     Setting, ACTION_HARDBAN, ACTION_NOTHING, DURATION_TYPE_DAYS, DURATION_TYPE_SECONDS,
-    PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, SILENT_COMMANDS_ALL, SILENT_COMMANDS_MOD_ONLY,
+    PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE,
     WORD_FILTER_LEVEL_HIGH, WORD_FILTER_LEVEL_LOW,
 };
 use crate::server::model::channel::ChannelModel;
@@ -114,13 +114,7 @@ pub async fn get_setting(
         welcome_message: setting.welcome_message,
         message: setting.message.clone(),
         welcome_message_channel: welcome_channel,
-        prefix: setting.prefix.clone(),
-        silent_commands: setting.silent_commands,
-        no_space_prefix: setting.no_space_prefix,
-        statistics: setting.statistics,
         join_captcha: setting.join_captcha,
-        silent_commands_level: setting.silent_commands_level,
-        mod_action_confirmation_message: setting.mod_action_confirmation_message,
         word_filter: setting.word_filter,
         word_filter_blocklist: setting.word_filter_blocklist.clone(),
         word_filter_level: setting.word_filter_level,
@@ -190,7 +184,6 @@ pub async fn update_setting(
     };
 
     new_setting.message = new_setting.message.trim().to_string();
-    new_setting.prefix = new_setting.prefix.trim().to_string();
     new_setting.word_filter_blocklist = new_setting
         .word_filter_blocklist
         .as_ref()
@@ -272,30 +265,12 @@ pub async fn update_setting(
         return HttpResponse::BadRequest().json("Holding room minutes cannot be negative!");
     }
 
-    if new_setting.message.is_empty() || new_setting.prefix.is_empty() {
-        return HttpResponse::BadRequest().json("Welcome message or prefix cannot be empty!");
+    if new_setting.message.is_empty() {
+        return HttpResponse::BadRequest().json("Welcome message cannot be empty!");
     } else {
-        if new_setting.prefix.split_ascii_whitespace().count() != 1 {
-            return HttpResponse::BadRequest().json("Prefix cannot be multiple words!");
-        }
-
-        if new_setting.prefix.len() >= 1000 {
-            return HttpResponse::BadRequest().json("Prefix cannot be too long!");
-        }
-
         if new_setting.message.len() >= 1750 {
             return HttpResponse::BadRequest().json("Welcome message cannot be too long!");
         }
-    }
-
-    if new_setting.statistics {
-        return HttpResponse::BadRequest().json("Statistics option isn't open to public yet!");
-    }
-
-    if new_setting.silent_commands_level != SILENT_COMMANDS_MOD_ONLY
-        && new_setting.silent_commands_level != SILENT_COMMANDS_ALL
-    {
-        return HttpResponse::BadRequest().json("Invalid value for silent commands level!");
     }
 
     if let Some(blocklist) = new_setting.word_filter_blocklist.as_ref() {
@@ -453,13 +428,7 @@ pub async fn update_setting(
                 welcome_message: new_setting.welcome_message,
                 message: new_setting.message.clone(),
                 welcome_message_channel_id,
-                prefix: new_setting.prefix.clone(),
-                silent_commands: new_setting.silent_commands,
-                no_space_prefix: new_setting.no_space_prefix,
-                statistics: new_setting.statistics,
                 join_captcha: new_setting.join_captcha,
-                silent_commands_level: new_setting.silent_commands_level,
-                mod_action_confirmation_message: new_setting.mod_action_confirmation_message,
                 word_filter: new_setting.word_filter,
                 word_filter_blocklist: new_setting.word_filter_blocklist.clone(),
                 word_filter_level: new_setting.word_filter_level,

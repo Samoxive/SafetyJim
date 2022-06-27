@@ -6,10 +6,7 @@ use sqlx::{Error, PgPool};
 use tracing::warn;
 
 const DEFAULT_WELCOME_MESSAGE: &str = "Welcome to $guild $user!";
-const DEFAULT_PREFIX: &str = "-mod";
 
-pub const SILENT_COMMANDS_MOD_ONLY: i32 = 0;
-pub const SILENT_COMMANDS_ALL: i32 = 1;
 pub const WORD_FILTER_LEVEL_LOW: i32 = 0;
 pub const WORD_FILTER_LEVEL_HIGH: i32 = 1;
 pub const ACTION_NOTHING: i32 = 0;
@@ -70,13 +67,7 @@ pub struct Setting {
     pub welcome_message: bool,
     pub message: String,
     pub welcome_message_channel_id: i64,
-    pub prefix: String,        // deprecated
-    pub silent_commands: bool, // deprecated
-    pub no_space_prefix: bool, // deprecated
-    pub statistics: bool,      // deprecated
     pub join_captcha: bool,
-    pub silent_commands_level: i32,            // deprecated
-    pub mod_action_confirmation_message: bool, // deprecated
     pub word_filter: bool,
     pub word_filter_blocklist: Option<String>,
     pub word_filter_level: i32,
@@ -121,13 +112,7 @@ impl Setting {
             welcome_message: false,
             message: DEFAULT_WELCOME_MESSAGE.into(),
             welcome_message_channel_id: 0,
-            prefix: DEFAULT_PREFIX.into(),
-            silent_commands: false,
-            no_space_prefix: false,
-            statistics: false,
             join_captcha: false,
-            silent_commands_level: SILENT_COMMANDS_MOD_ONLY,
-            mod_action_confirmation_message: true,
             word_filter: false,
             word_filter_blocklist: None,
             word_filter_level: WORD_FILTER_LEVEL_LOW,
@@ -190,13 +175,7 @@ impl SettingsRepository {
             .bind(setting.welcome_message)
             .bind(setting.message)
             .bind(setting.welcome_message_channel_id)
-            .bind(setting.prefix)
-            .bind(setting.silent_commands)
-            .bind(setting.no_space_prefix)
-            .bind(setting.statistics)
             .bind(setting.join_captcha)
-            .bind(setting.silent_commands_level)
-            .bind(setting.mod_action_confirmation_message)
             .bind(setting.word_filter)
             .bind(setting.word_filter_blocklist)
             .bind(setting.word_filter_level)
@@ -242,13 +221,7 @@ impl SettingsRepository {
             .bind(setting.welcome_message)
             .bind(setting.message)
             .bind(setting.welcome_message_channel_id)
-            .bind(setting.prefix)
-            .bind(setting.silent_commands)
-            .bind(setting.no_space_prefix)
-            .bind(setting.statistics)
             .bind(setting.join_captcha)
-            .bind(setting.silent_commands_level)
-            .bind(setting.mod_action_confirmation_message)
             .bind(setting.word_filter)
             .bind(setting.word_filter_blocklist)
             .bind(setting.word_filter_level)

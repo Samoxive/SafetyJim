@@ -19,13 +19,7 @@ pub struct SettingModel {
     pub welcome_message: bool,
     pub message: String,
     pub welcome_message_channel: Option<ChannelModel>,
-    pub prefix: String,        // deprecated
-    pub silent_commands: bool, // deprecated
-    pub no_space_prefix: bool, // deprecated
-    pub statistics: bool,      // deprecated
     pub join_captcha: bool,
-    pub silent_commands_level: i32,            // deprecated
-    pub mod_action_confirmation_message: bool, // deprecated
     pub word_filter: bool,
     pub word_filter_blocklist: Option<String>,
     pub word_filter_level: i32,

@@ -8,13 +8,7 @@ insert into settings (guild_id,
                       welcome_message,
                       message,
                       welcome_message_channel_id,
-                      prefix,
-                      silent_commands,
-                      no_space_prefix,
-                      "statistics",
                       join_captcha,
-                      silent_commands_level,
-                      mod_action_confirmation_message,
                       word_filter,
                       word_filter_blocklist,
                       word_filter_level,
@@ -45,5 +39,5 @@ insert into settings (guild_id,
                       mods_can_edit_tags,
                       spam_filter)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
-        $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46)
+        $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40)
 returning *;
