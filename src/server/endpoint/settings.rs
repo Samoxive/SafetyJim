@@ -267,10 +267,8 @@ pub async fn update_setting(
 
     if new_setting.message.is_empty() {
         return HttpResponse::BadRequest().json("Welcome message cannot be empty!");
-    } else {
-        if new_setting.message.len() >= 1750 {
-            return HttpResponse::BadRequest().json("Welcome message cannot be too long!");
-        }
+    } else if new_setting.message.len() >= 1750 {
+        return HttpResponse::BadRequest().json("Welcome message cannot be too long!");
     }
 
     if let Some(blocklist) = new_setting.word_filter_blocklist.as_ref() {
