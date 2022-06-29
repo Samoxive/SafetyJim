@@ -49,8 +49,8 @@ impl AutocompleteDataExt for AutocompleteData {
     }
 
     fn string(&self, option_name: &str) -> Option<&str> {
-        if let Some(autocomplete::CommandDataOptionValue::String(str)) = self.option(option_name) {
-            Some(str.as_str())
+        if let Some(autocomplete::CommandDataOptionValue::Autocomplete {value, kind: _}) = self.option(option_name) {
+            Some(value.as_str())
         } else {
             None
         }
