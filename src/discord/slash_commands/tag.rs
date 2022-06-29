@@ -6,6 +6,8 @@ use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
     ApplicationCommandInteraction, CommandData,
 };
+use serenity::model::id::UserId;
+use serenity::prelude::Mentionable;
 use typemap_rev::TypeMap;
 
 use crate::config::Config;
@@ -21,6 +23,7 @@ pub struct TagCommand;
 
 struct TagCommandOptions<'a> {
     name: &'a str,
+    mention_user: Option<UserId>
 }
 
 enum TagCommandOptionFailure {
@@ -34,7 +37,9 @@ fn generate_options(data: &CommandData) -> Result<TagCommandOptions, TagCommandO
         return Err(MissingOption);
     };
 
-    Ok(TagCommandOptions { name })
+    let mention_user = data.user("mention").map(|(user, _)| user.id);
+
+    Ok(TagCommandOptions { name, mention_user })
 }
 
 #[async_trait]
@@ -58,6 +63,13 @@ impl SlashCommand for TagCommand {
                     .kind(CommandOptionType::String)
                     .required(true)
                     .set_autocomplete(true)
+            })
+            .create_option(|option| {
+                option
+                    .name("mention")
+                    .description("user to be mentioned alongside tag content")
+                    .kind(CommandOptionType::User)
+                    .required(false)
             })
     }
 
@@ -87,7 +99,7 @@ impl SlashCommand for TagCommand {
             bail!("couldn't get tag service!");
         };
 
-        let content =
+        let mut content =
             if let Some(content) = tag_service.get_tag_content(guild_id, options.name).await {
                 content
             } else {
@@ -99,6 +111,11 @@ impl SlashCommand for TagCommand {
                 .await;
                 return Ok(());
             };
+
+        if let Some(mention_user) = options.mention_user {
+            content.push('\n');
+            content.push_str(&mention_user.mention().to_string())
+        }
 
         reply_with_str(&context.http, interaction, &content).await;
         Ok(())
