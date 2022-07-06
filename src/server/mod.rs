@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::net::Ipv4Addr;
+use std::net::Ipv6Addr;
 use std::num::NonZeroU64;
 use std::sync::Arc;
 
@@ -336,7 +336,7 @@ pub async fn run_server(config: Arc<Config>, services: Arc<TypeMap>) -> Result<(
                     .max_age(None),
             )
     })
-    .bind((Ipv4Addr::LOCALHOST, port))?
+    .bind((Ipv6Addr::UNSPECIFIED, port))?
     .run()
     .await?;
 
