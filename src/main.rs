@@ -7,7 +7,6 @@ use std::sync::Arc;
 
 use tokio::spawn;
 use tracing::Level;
-use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter, Layer};
 
@@ -30,36 +29,25 @@ mod server;
 mod service;
 mod util;
 
-fn setup_logging(flags: &Flags) -> WorkerGuard {
-    let file_appender = tracing_appender::rolling::daily(&flags.logs_path, "jim.log");
-    let (non_blocking_log, guard) = tracing_appender::non_blocking(file_appender);
-
+fn setup_logging() {
     let subscriber = tracing_subscriber::registry()
-        .with(EnvFilter::from_default_env().add_directive(Level::TRACE.into()))
-        .with(
-            fmt::Layer::new()
-                .json()
-                .with_writer(non_blocking_log)
-                .with_filter(LevelFilter::INFO),
-        )
+        .with(EnvFilter::from_default_env().add_directive(Level::DEBUG.into()))
         .with(
             fmt::Layer::new()
                 .with_writer(io::stdout)
-                .with_filter(LevelFilter::WARN),
+                .with_filter(LevelFilter::TRACE),
         );
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-
-    guard
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let flags = Arc::new(argh::from_env::<Flags>());
-    let _guard = setup_logging(&flags);
+    let _guard = setup_logging();
 
     initialize_statics().await?;
-    let config = Arc::new(get_config(&flags.config_path)?);
+    let config = Arc::new(get_config()?);
 
     let shutdown = Shutdown::new();
 
