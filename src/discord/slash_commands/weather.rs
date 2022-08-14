@@ -3,7 +3,10 @@ use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use reqwest::{Client, ClientBuilder};
 use serde::Deserialize;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{
+    CreateApplicationCommand, CreateApplicationCommandOption, CreateEmbed, CreateEmbedFooter,
+    CreateInteractionResponse, CreateInteractionResponseData,
+};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -100,21 +103,18 @@ impl SlashCommand for WeatherCommand {
         "weather"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("weather")
             .description("gives current weather information for given address")
             .dm_permission(false)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("address")
                     .description("address for weather location")
                     .kind(CommandOptionType::String)
-                    .required(true)
-            })
+                    .required(true),
+            )
     }
 
     async fn handle_command(
@@ -224,29 +224,27 @@ impl SlashCommand for WeatherCommand {
             _ => "<unknown>",
         };
 
+        let embed = CreateEmbed::default()
+            .colour(EMBED_COLOR)
+            .title(format!("Weather in {}", formatted_address))
+            .footer(CreateEmbedFooter::default().text(format!("Local Time: {}", local_date_str)))
+            .field("Summary", &summary, false)
+            .field(
+                "Temperature",
+                &format!("{} °C / {} °F", temp_c as i32, temp_f as i32),
+                true,
+            )
+            .field("Humidity", &format!("{}%", humidity), true)
+            .description(description);
+
+        let data = CreateInteractionResponseData::default().add_embed(embed);
+
+        let response = CreateInteractionResponse::default()
+            .kind(InteractionResponseType::ChannelMessageWithSource)
+            .interaction_response_data(data);
+
         let _ = interaction
-            .create_interaction_response(&*context.http, |response| {
-                response
-                    .kind(InteractionResponseType::ChannelMessageWithSource)
-                    .interaction_response_data(|message| {
-                        message.embed(|embed| {
-                            embed
-                                .colour(EMBED_COLOR)
-                                .title(format!("Weather in {}", formatted_address))
-                                .footer(|footer| {
-                                    footer.text(format!("Local Time: {}", local_date_str))
-                                })
-                                .field("Summary", &summary, false)
-                                .field(
-                                    "Temperature",
-                                    &format!("{} °C / {} °F", temp_c as i32, temp_f as i32),
-                                    true,
-                                )
-                                .field("Humidity", &format!("{}%", humidity), true)
-                                .description(description)
-                        })
-                    })
-            })
+            .create_interaction_response(&*context.http, response)
             .await;
 
         Ok(())

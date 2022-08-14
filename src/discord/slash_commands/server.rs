@@ -1,9 +1,13 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{
+    CreateApplicationCommand, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
+    CreateInteractionResponseData,
+};
 use serenity::client::Context;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::channel::MessageFlags;
 use tracing::error;
 use typemap_rev::TypeMap;
 
@@ -21,11 +25,8 @@ impl SlashCommand for ServerCommand {
         "server"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("server")
             .description("displays information about the server")
             .dm_permission(false)
@@ -66,50 +67,48 @@ impl SlashCommand for ServerCommand {
             .as_ref()
             .map(|code| format!("https://discord.gg/{}", code));
 
+        let embed = CreateEmbed::default()
+            .author(
+                CreateEmbedAuthor::default()
+                    .name(format!("{} ({})", guild.name, guild.id))
+                    .url(vanity_url.unwrap_or_else(|| "".into()))
+                    .icon_url(guild.icon_url().as_deref().unwrap_or(AVATAR_URL)),
+            )
+            .colour(EMBED_COLOR)
+            .field(
+                "Server Owner",
+                &format!("{} ({})", owner.tag, guild.owner_id),
+                true,
+            )
+            .field(
+                "Member Count",
+                &format!("{}", guild.approximate_member_count.unwrap_or(0)),
+                true,
+            )
+            .field(
+                "Created On",
+                &format!("<t:{}>", guild.id.created_at().unix_timestamp()),
+                true,
+            )
+            .field(
+                "Boost Count",
+                &guild.premium_subscription_count.to_string(),
+                true,
+            )
+            .field("Boost Tier", &format!("{:?}", guild.premium_tier), true)
+            .field("NSFW Tier", &format!("{:?}", guild.nsfw_level), true)
+            .field("Server Features", &guild.features.join(" | "), false);
+
+        let data = CreateInteractionResponseData::default()
+            .flags(MessageFlags::EPHEMERAL)
+            .add_embed(embed);
+
+        let response = CreateInteractionResponse::default()
+            .kind(InteractionResponseType::ChannelMessageWithSource)
+            .interaction_response_data(data);
+
         interaction
-            .create_interaction_response(&context.http, |response| {
-                response
-                    .kind(InteractionResponseType::ChannelMessageWithSource)
-                    .interaction_response_data(|message| {
-                        message
-                            .embed(|embed| {
-                                embed
-                                    .author(|author| {
-                                        author
-                                            .name(format!("{} ({})", guild.name, guild.id))
-                                            .url(vanity_url.unwrap_or_else(|| "".into()))
-                                            .icon_url(
-                                                guild.icon_url().as_deref().unwrap_or(AVATAR_URL),
-                                            )
-                                    })
-                                    .colour(EMBED_COLOR)
-                                    .field(
-                                        "Server Owner",
-                                        &format!("{} ({})", owner.tag, guild.owner_id),
-                                        true,
-                                    )
-                                    .field(
-                                        "Member Count",
-                                        &format!("{}", guild.approximate_member_count.unwrap_or(0)),
-                                        true,
-                                    )
-                                    .field(
-                                        "Created On",
-                                        &format!("<t:{}>", guild.id.created_at().unix_timestamp()),
-                                        true,
-                                    )
-                                    .field(
-                                        "Boost Count",
-                                        &guild.premium_subscription_count.to_string(),
-                                        true,
-                                    )
-                                    .field("Boost Tier", &format!("{:?}", guild.premium_tier), true)
-                                    .field("NSFW Tier", &format!("{:?}", guild.nsfw_level), true)
-                                    .field("Server Features", &guild.features.join(" | "), false)
-                            })
-                            .flags(MessageFlags::EPHEMERAL)
-                    })
-            })
+            .create_interaction_response(&context.http, response)
             .await
             .map_err(|err| {
                 error!("failed to reply to interaction {}", err);

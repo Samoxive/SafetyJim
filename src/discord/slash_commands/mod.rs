@@ -42,10 +42,7 @@ mod xkcd;
 #[async_trait]
 pub trait SlashCommand {
     fn command_name(&self) -> &'static str;
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand;
+    fn create_command(&self) -> CreateApplicationCommand;
     async fn handle_command(
         &self,
         context: &Context,

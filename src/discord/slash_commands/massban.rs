@@ -2,7 +2,9 @@ use std::num::{NonZeroU64, ParseIntError};
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{
+    CreateApplicationCommand, CreateApplicationCommandOption, CreateInteractionResponse,
+};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -72,22 +74,19 @@ impl SlashCommand for MassbanCommand {
         "massban"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("massban")
             .description("hardbans given users in mass")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("users")
                     .description("comma separated ids of users to hardban")
                     .kind(CommandOptionType::String)
-                    .required(true)
-            })
+                    .required(true),
+            )
     }
 
     async fn handle_command(
@@ -185,10 +184,11 @@ impl SlashCommand for MassbanCommand {
             bail!("couldn't get setting service!");
         };
 
+        let response = CreateInteractionResponse::default()
+            .kind(InteractionResponseType::DeferredChannelMessageWithSource);
+
         interaction
-            .create_interaction_response(&context.http, |response| {
-                response.kind(InteractionResponseType::DeferredChannelMessageWithSource)
-            })
+            .create_interaction_response(&context.http, response)
             .await?;
 
         let setting = setting_service.get_setting(guild_id).await;

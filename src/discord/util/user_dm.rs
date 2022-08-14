@@ -1,8 +1,8 @@
-use chrono::{TimeZone, Utc};
-use serenity::builder::CreateEmbed;
+use serenity::builder::{CreateEmbed, CreateEmbedFooter, CreateMessage};
 use serenity::http::Http;
 use serenity::model::id::UserId;
-use tracing::error;
+use serenity::model::Timestamp;
+use tracing::{error, warn};
 
 use crate::constants::EMBED_COLOR;
 
@@ -38,21 +38,21 @@ impl ModActionKind {
         }
     }
 
-    fn create_expiration_date_field(&self, embed: &mut CreateEmbed) {
+    fn create_expiration_date_field(&self, embed: CreateEmbed) -> CreateEmbed {
         match self {
             ModActionKind::Ban { expiration_time } => {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Banned until", &value, false);
+                embed.field("Banned until", &value, false)
             }
             ModActionKind::Mute { expiration_time } => {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Muted until", &value, false);
+                embed.field("Muted until", &value, false)
             }
-            _ => {}
+            _ => embed,
         }
     }
 }
@@ -72,24 +72,31 @@ pub async fn notify_user_for_mod_action(
     });
 
     if let Ok(channel) = dm_channel_result {
-        let _ = channel
-            .send_message(http, |message| {
-                message.embed(|embed| {
-                    embed
-                        .title(kind.title(guild_name))
-                        .colour(EMBED_COLOR)
-                        .footer(|footer| footer.text(kind.by_moderator(mod_user_tag_and_id)))
-                        .timestamp(Utc.timestamp(action_time as i64, 0).to_rfc3339())
-                        .field("Reason", reason, false);
+        let timestamp = match Timestamp::from_unix_timestamp(action_time as i64) {
+            Ok(t) => t,
+            Err(_) => {
+                warn!(
+                    "attempted to notify user for mod action with invalid timestamp! {}",
+                    action_time
+                );
+                return;
+            }
+        };
 
-                    kind.create_expiration_date_field(embed);
-                    embed
-                })
-            })
-            .await
-            .map_err(|err| {
-                error!("failed to create DM {}", err);
-                err
-            });
+        let mut embed = CreateEmbed::default()
+            .title(kind.title(guild_name))
+            .colour(EMBED_COLOR)
+            .footer(CreateEmbedFooter::default().text(kind.by_moderator(mod_user_tag_and_id)))
+            .timestamp(timestamp)
+            .field("Reason", reason, false);
+
+        embed = kind.create_expiration_date_field(embed);
+
+        let message = CreateMessage::default().add_embed(embed);
+
+        let _ = channel.send_message(http, message).await.map_err(|err| {
+            error!("failed to create DM {}", err);
+            err
+        });
     }
 }

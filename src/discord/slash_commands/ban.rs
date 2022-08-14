@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -75,36 +75,33 @@ impl SlashCommand for BanCommand {
         "ban"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("ban")
             .description("bans given user, time can be given for a temporary ban")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("user")
                     .description("target user to ban")
                     .kind(CommandOptionType::User)
-                    .required(true)
-            })
-            .create_option(|option| {
-                option
+                    .required(true),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("reason")
                     .description("reason for the ban")
                     .kind(CommandOptionType::String)
-                    .required(false)
-            })
-            .create_option(|option| {
-                option
+                    .required(false),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("duration")
                     .description("duration for the ban")
                     .kind(CommandOptionType::String)
-                    .required(false)
-            })
+                    .required(false),
+            )
     }
 
     async fn handle_command(

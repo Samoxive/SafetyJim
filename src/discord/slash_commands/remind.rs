@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -59,28 +59,25 @@ impl SlashCommand for RemindCommand {
         "remind"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("remind")
             .description("sets a reminder for a future date, duration defaults to a day")
             .dm_permission(false)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("message")
                     .description("message to be reminded of")
                     .kind(CommandOptionType::String)
-                    .required(true)
-            })
-            .create_option(|option| {
-                option
+                    .required(true),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("duration")
                     .description("duration after which notification is sent")
                     .kind(CommandOptionType::String)
-                    .required(false)
-            })
+                    .required(false),
+            )
     }
 
     async fn handle_command(

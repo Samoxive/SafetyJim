@@ -1,6 +1,6 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -73,38 +73,35 @@ impl SlashCommand for SoftbanCommand {
         "softban"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("softban")
             .description("kicks given user, deleting their last messages, defaults to a day")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("user")
                     .description("target user to softban")
                     .kind(CommandOptionType::User)
-                    .required(true)
-            })
-            .create_option(|option| {
-                option
+                    .required(true),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("reason")
                     .description("reason for the softban")
                     .kind(CommandOptionType::String)
-                    .required(false)
-            })
-            .create_option(|option| {
-                option
+                    .required(false),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("days")
                     .description("number of days to delete last messages")
                     .kind(CommandOptionType::Integer)
                     .required(false)
                     .min_int_value(1)
-                    .max_int_value(7)
-            })
+                    .max_int_value(7),
+            )
     }
 
     async fn handle_command(

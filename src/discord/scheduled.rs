@@ -2,10 +2,10 @@ use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::time::Duration;
 
-use chrono::{TimeZone, Utc};
-use serenity::builder::CreateEmbed;
+use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::http::Http;
 use serenity::model::id::{ChannelId, GuildId, UserId};
+use serenity::model::Timestamp;
 use serenity::prelude::Mentionable;
 use tokio::select;
 use tokio::time::interval;
@@ -104,14 +104,15 @@ pub async fn allow_users(http: &Http, services: &TypeMap) {
         let guild_id = if let Some(id) = NonZeroU64::new(expired_join.guild_id as u64) {
             GuildId(id)
         } else {
-            warn!("found expired join with invalid guild id! {:?}", expired_join);
+            warn!(
+                "found expired join with invalid guild id! {:?}",
+                expired_join
+            );
             join_service.invalidate_join(expired_join.id).await;
             continue;
         };
 
-        let setting = setting_service
-            .get_setting(guild_id)
-            .await;
+        let setting = setting_service.get_setting(guild_id).await;
 
         if setting.holding_room {
             if let Some(holding_room_role_id) = setting.holding_room_role_id {
@@ -152,7 +153,10 @@ pub async fn unmute_users(http: &Http, services: &TypeMap) {
         let guild_id = if let Some(id) = NonZeroU64::new(expired_mute.guild_id as u64) {
             GuildId(id)
         } else {
-            warn!("found expired mute with invalid guild id! {:?}", expired_mute);
+            warn!(
+                "found expired mute with invalid guild id! {:?}",
+                expired_mute
+            );
             mute_service.invalidate_mute(expired_mute.id).await;
             continue;
         };
@@ -227,21 +231,38 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
 
     let expired_reminders = reminder_service.fetch_expired_reminders().await;
     for expired_reminder in expired_reminders {
-        let mut embed = CreateEmbed::default();
-        embed.title(format!("Reminder - #{}", expired_reminder.id));
-        embed.description(&expired_reminder.message);
-        embed.author(|author| author.name("Safety Jim").icon_url(AVATAR_URL));
-        embed.footer(|footer| footer.text("Reminder set on"));
-        embed.timestamp(
-            Utc.timestamp(expired_reminder.create_time as i64, 0)
-                .to_rfc3339(),
-        );
-        embed.colour(EMBED_COLOR);
+        let timestamp = match Timestamp::from_unix_timestamp(expired_reminder.create_time as i64) {
+            Ok(t) => t,
+            Err(_) => {
+                warn!(
+                    "found expired reminder with invalid expiration time! {:?}",
+                    expired_reminder
+                );
+                reminder_service
+                    .invalidate_reminder(expired_reminder.id)
+                    .await;
+                continue;
+            }
+        };
+        let embed = CreateEmbed::default()
+            .title(format!("Reminder - #{}", expired_reminder.id))
+            .description(&expired_reminder.message)
+            .author(
+                CreateEmbedAuthor::default()
+                    .name("Safety Jim")
+                    .icon_url(AVATAR_URL),
+            )
+            .footer(CreateEmbedFooter::default().text("Reminder set on"))
+            .timestamp(timestamp)
+            .colour(EMBED_COLOR);
 
         let guild_id = if let Some(id) = NonZeroU64::new(expired_reminder.guild_id as u64) {
             GuildId(id)
         } else {
-            warn!("found expired reminder with invalid guild id! {:?}", expired_reminder);
+            warn!(
+                "found expired reminder with invalid guild id! {:?}",
+                expired_reminder
+            );
             reminder_service
                 .invalidate_reminder(expired_reminder.id)
                 .await;
@@ -251,7 +272,10 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
         let channel_id = if let Some(id) = NonZeroU64::new(expired_reminder.channel_id as u64) {
             ChannelId(id)
         } else {
-            warn!("found expired reminder with invalid channel id! {:?}", expired_reminder);
+            warn!(
+                "found expired reminder with invalid channel id! {:?}",
+                expired_reminder
+            );
             reminder_service
                 .invalidate_reminder(expired_reminder.id)
                 .await;
@@ -261,7 +285,10 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
         let user_id = if let Some(id) = NonZeroU64::new(expired_reminder.user_id as u64) {
             UserId(id)
         } else {
-            warn!("found expired reminder with invalid user id! {:?}", expired_reminder);
+            warn!(
+                "found expired reminder with invalid user id! {:?}",
+                expired_reminder
+            );
             reminder_service
                 .invalidate_reminder(expired_reminder.id)
                 .await;
@@ -271,14 +298,12 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
         let mut is_dm_required = false;
         if guild_service.get_member(guild_id, user_id).await.is_ok() {
             // user is in the guild, send reminder to guild channel
-            let channel_message_result = channel_id
-                .send_message(http, |message| {
-                    message
-                        .content(user_id.mention().to_string())
-                        .set_embed(embed.clone())
-                })
-                .await
-                .map_err(|err| {
+            let message = CreateMessage::default()
+                .content(user_id.mention().to_string())
+                .add_embed(embed.clone());
+
+            let channel_message_result =
+                channel_id.send_message(http, message).await.map_err(|err| {
                     error!("failed to send channel message {}", err);
                     err
                 });
@@ -295,17 +320,14 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
                 err
             });
             if let Ok(dm_channel) = dm_channel_result {
-                let _ = dm_channel
-                    .send_message(http, |message| {
-                        message
-                            .content(user_id.mention().to_string())
-                            .set_embed(embed)
-                    })
-                    .await
-                    .map_err(|err| {
-                        error!("failed to send DM {}", err);
-                        err
-                    });
+                let message = CreateMessage::default()
+                    .content(user_id.mention().to_string())
+                    .add_embed(embed);
+
+                let _ = dm_channel.send_message(http, message).await.map_err(|err| {
+                    error!("failed to send DM {}", err);
+                    err
+                });
             }
         }
 

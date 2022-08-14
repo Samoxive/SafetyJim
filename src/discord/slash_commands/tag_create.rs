@@ -1,6 +1,6 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -63,28 +63,25 @@ impl SlashCommand for TagCreateCommand {
         "tag-create"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("tag-create")
             .description("registers a message that can be repeated later")
             .dm_permission(false)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("name")
                     .description("tag name to create")
                     .kind(CommandOptionType::String)
-                    .required(true)
-            })
-            .create_option(|option| {
-                option
+                    .required(true),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("content")
                     .description("tag content")
                     .kind(CommandOptionType::String)
-                    .required(true)
-            })
+                    .required(true),
+            )
     }
 
     async fn handle_command(

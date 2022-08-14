@@ -1,6 +1,6 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -51,22 +51,19 @@ impl SlashCommand for RoleCreateCommand {
         "role-create"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("role-create")
             .description("registers a role that can be self assigned via iam command")
             .dm_permission(false)
             .default_member_permissions(Permissions::ADMINISTRATOR)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("role")
                     .description("self assignable role to register")
                     .kind(CommandOptionType::Role)
-                    .required(true)
-            })
+                    .required(true),
+            )
     }
 
     async fn handle_command(

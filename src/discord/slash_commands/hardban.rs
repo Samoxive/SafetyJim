@@ -1,6 +1,6 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -60,29 +60,26 @@ impl SlashCommand for HardbanCommand {
         "hardban"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("hardban")
             .description("hardbans given user, deleting all messages in last 7 days")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("user")
                     .description("target user to hardban")
                     .kind(CommandOptionType::User)
-                    .required(true)
-            })
-            .create_option(|option| {
-                option
+                    .required(true),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("reason")
                     .description("reason for the hardban")
                     .kind(CommandOptionType::String)
-                    .required(false)
-            })
+                    .required(false),
+            )
     }
 
     async fn handle_command(

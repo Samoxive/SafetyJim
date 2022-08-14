@@ -5,8 +5,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use serenity::async_trait;
+use serenity::builder::{AutocompleteChoice, CreateAutocompleteResponse, CreateMessage};
 use serenity::client::bridge::gateway::ShardManager;
 use serenity::client::{Context, EventHandler};
+use serenity::gateway::ActivityData;
+use serenity::json::Value;
 use serenity::model::application::command::Command;
 use serenity::model::application::interaction::Interaction;
 use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
@@ -17,7 +20,6 @@ use serenity::model::id::{ChannelId, GuildId, RoleId};
 use serenity::model::user::{CurrentUser, User};
 use serenity::prelude::Mentionable;
 use serenity::Client;
-use serenity::gateway::ActivityData;
 use simsearch::{SearchOptions, SimSearch};
 use tokio::select;
 use tokio::sync::Mutex;
@@ -30,7 +32,10 @@ use crate::discord;
 use crate::discord::message_processors::{get_all_processors, MessageProcessors};
 use crate::discord::scheduled::run_scheduled_tasks;
 use crate::discord::slash_commands::SlashCommands;
-use crate::discord::util::{invisible_success_reply, verify_guild_message_create, verify_guild_message_update, GuildMessageCreated, GuildMessageUpdated, AutocompleteDataExt};
+use crate::discord::util::{
+    invisible_success_reply, verify_guild_message_create, verify_guild_message_update,
+    CommandDataExt, GuildMessageCreated, GuildMessageUpdated,
+};
 use crate::flags::Flags;
 use crate::service::guild::GuildService;
 use crate::service::guild_statistic::GuildStatisticService;
@@ -89,12 +94,16 @@ impl DiscordBot {
             services: services.clone(),
             slash_commands,
             message_processors: get_all_processors(),
+            created_slash_commands: Mutex::new(false),
         };
 
         let application_id: u64 = config.oauth_client_id.parse()?;
         let client = Client::builder(
             &config.discord_token,
-            GatewayIntents::GUILDS | GatewayIntents::GUILD_MEMBERS | GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT,
+            GatewayIntents::GUILDS
+                | GatewayIntents::GUILD_MEMBERS
+                | GatewayIntents::GUILD_MESSAGES
+                | GatewayIntents::MESSAGE_CONTENT,
         )
         .event_handler(handler)
         .application_id(application_id)
@@ -132,6 +141,7 @@ struct DiscordEventHandler {
     slash_commands: SlashCommands,
     message_processors: MessageProcessors,
     services: Arc<TypeMap>,
+    created_slash_commands: Mutex<bool>,
 }
 
 async fn initialize_slash_commands(
@@ -139,13 +149,14 @@ async fn initialize_slash_commands(
     slash_commands: &SlashCommands,
 ) -> Result<(), serenity::Error> {
     warn!("initializing slash commands");
-    let _ = Command::set_global_application_commands(&ctx.http, |commands| {
-        for (&_name, slash_command) in &slash_commands.0 {
-            commands
-                .create_application_command(move |command| slash_command.create_command(command));
-        }
-        commands
-    })
+    let _ = Command::set_global_application_commands(
+        &ctx.http,
+        slash_commands
+            .0
+            .iter()
+            .map(|(_, slash_command)| slash_command.create_command())
+            .collect(),
+    )
     .await?;
     warn!("initialized slash commands!");
 
@@ -251,9 +262,10 @@ impl EventHandler for DiscordEventHandler {
 
             if let Some(id) = NonZeroU64::new(setting.welcome_message_channel_id as u64) {
                 let channel_id = ChannelId(id);
+                let message = CreateMessage::default().content(content);
 
                 let _ = channel_id
-                    .send_message(&*ctx.http, |message| message.content(content))
+                    .send_message(&*ctx.http, message)
                     .await
                     .map_err(|err| {
                         error!("failed to send welcome message {}", err);
@@ -272,10 +284,14 @@ impl EventHandler for DiscordEventHandler {
 
         if setting.join_captcha {
             if let Ok(dm_channel) = new_member.user.id.create_dm_channel(&ctx.http).await {
+                let content = format!(
+                    "Welcome to {}! To enter you must complete this captcha.\n{}/captcha/{}/{}",
+                    &guild.name, self.config.self_url, guild_id.0, new_member.user.id.0
+                );
+                let message = CreateMessage::default().content(content);
+
                 let _ = dm_channel
-                    .send_message(&ctx.http, |message| {
-                        message.content(format!("Welcome to {}! To enter you must complete this captcha.\n{}/captcha/{}/{}", &guild.name, self.config.self_url, guild_id.0, new_member.user.id.0))
-                    })
+                    .send_message(&ctx.http, message)
                     .await
                     .map_err(|err| {
                         error!("failed to send captcha challenge DM {}", err);
@@ -530,7 +546,8 @@ impl EventHandler for DiscordEventHandler {
     }
 
     async fn ready(&self, ctx: Context, data_about_bot: Ready) {
-        let shard = data_about_bot.shard
+        let shard = data_about_bot
+            .shard
             .map(|info| (info.id, info.total))
             .unwrap_or((0, 1));
         // Watching over users. [0 / 1]
@@ -539,9 +556,16 @@ impl EventHandler for DiscordEventHandler {
         ctx.set_activity(Some(activity)).await;
 
         if self.create_slash_commands {
-            if let Err(err) = initialize_slash_commands(&ctx, &self.slash_commands).await {
-                error!("failed to create slash commands {}", err);
-                exit(-1);
+            let mut created_guard = self.created_slash_commands.lock().await;
+            let created = *created_guard;
+
+            if !created {
+                if let Err(err) = initialize_slash_commands(&ctx, &self.slash_commands).await {
+                    error!("failed to create slash commands {}", err);
+                    exit(-1);
+                }
+
+                *created_guard = true;
             }
         }
     }
@@ -564,11 +588,12 @@ impl EventHandler for DiscordEventHandler {
 
                 let tags = tag_service.get_tag_names(guild_id).await;
 
-                let tag_option = if let Some(s) = autocomplete_interaction.data.string("name") {
-                    s
-                } else {
-                    return;
-                };
+                let tag_option =
+                    if let Some(s) = autocomplete_interaction.data.string_autocomplete("name") {
+                        s
+                    } else {
+                        return;
+                    };
 
                 let tag_choices = if tag_option.is_empty() {
                     tags
@@ -584,14 +609,20 @@ impl EventHandler for DiscordEventHandler {
                     results.into_iter().map(|i| tags[i].clone()).collect()
                 };
 
-                let _ = autocomplete_interaction
-                    .create_autocomplete_response(&*ctx.http, |response| {
-                        for tag in tag_choices {
-                            response.add_string_choice(&tag, &tag);
-                        }
+                let response = CreateAutocompleteResponse::default().set_choices(
+                    tag_choices
+                        .iter()
+                        .map(|tag| {
+                            let mut choice = AutocompleteChoice::default();
+                            choice.name = tag.clone();
+                            choice.value = Value::String(tag.clone());
+                            choice
+                        })
+                        .collect(),
+                );
 
-                        response
-                    })
+                let _ = autocomplete_interaction
+                    .create_autocomplete_response(&*ctx.http, response)
                     .await
                     .map_err(|err| {
                         error!("failed to create autocomplete response {}", err);

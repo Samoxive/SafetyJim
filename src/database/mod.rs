@@ -20,8 +20,6 @@ pub mod warns;
 pub async fn setup_database_pool(config: &Config) -> Result<Pool<Postgres>, sqlx::Error> {
     PgPoolOptions::new()
         .max_connections(5)
-        .connect(
-            &config.database_url
-        )
+        .connect(&config.database_url)
         .await
 }

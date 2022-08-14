@@ -1,6 +1,6 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -63,29 +63,26 @@ impl SlashCommand for TagEditCommand {
         "tag-edit"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("tag-edit")
             .description("edits previously registered tag content")
             .dm_permission(false)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("name")
                     .description("tag name to edit")
                     .kind(CommandOptionType::String)
                     .required(true)
-                    .set_autocomplete(true)
-            })
-            .create_option(|option| {
-                option
+                    .set_autocomplete(true),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("content")
                     .description("content to replace tag with")
                     .kind(CommandOptionType::String)
-                    .required(true)
-            })
+                    .required(true),
+            )
     }
 
     async fn handle_command(

@@ -44,7 +44,7 @@ fn setup_logging() {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let flags = Arc::new(argh::from_env::<Flags>());
-    let _guard = setup_logging();
+    setup_logging();
 
     initialize_statics().await?;
     let config = Arc::new(get_config()?);

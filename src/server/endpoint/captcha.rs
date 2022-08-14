@@ -1,4 +1,5 @@
 use std::num::NonZeroU64;
+
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serenity::model::id::{GuildId, RoleId, UserId};
@@ -103,12 +104,10 @@ pub async fn submit_captcha(
 
     let role_id = if let Some(id) = setting.holding_room_role_id {
         match NonZeroU64::new(id as u64) {
-            Some(id) => {
-                RoleId(id)
-            },
+            Some(id) => RoleId(id),
             _ => {
                 warn!("found setting with invalid holding room id! {:?}", setting);
-                return HttpResponse::BadRequest().json("Holding room role is invalid!")
+                return HttpResponse::BadRequest().json("Holding room role is invalid!");
             }
         }
     } else {

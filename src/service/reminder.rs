@@ -57,13 +57,13 @@ impl ReminderService {
             message,
         };
 
-        return match self.repository.insert_reminder(reminder).await {
+        match self.repository.insert_reminder(reminder).await {
             Ok(_) => Ok(()),
             Err(err) => {
                 error!("failed to insert reminder {:?}", err);
                 Err(CreateReminderFailure::Unknown)
             }
-        };
+        }
     }
 
     pub async fn invalidate_reminder(&self, id: i32) {

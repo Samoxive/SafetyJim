@@ -1,6 +1,6 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -51,22 +51,19 @@ impl SlashCommand for UnmuteCommand {
         "unmute"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("unmute")
             .description("unmutes given user")
             .dm_permission(false)
             .default_member_permissions(Permissions::MANAGE_ROLES)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("user")
                     .description("target user to unmute")
                     .kind(CommandOptionType::User)
-                    .required(true)
-            })
+                    .required(true),
+            )
     }
 
     async fn handle_command(

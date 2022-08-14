@@ -1,6 +1,6 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -23,7 +23,7 @@ pub struct TagCommand;
 
 struct TagCommandOptions<'a> {
     name: &'a str,
-    mention_user: Option<UserId>
+    mention_user: Option<UserId>,
 }
 
 enum TagCommandOptionFailure {
@@ -48,29 +48,26 @@ impl SlashCommand for TagCommand {
         "tag"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("tag")
             .description("repeats previously registered message via tag name")
             .dm_permission(false)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("name")
                     .description("tag name for message")
                     .kind(CommandOptionType::String)
                     .required(true)
-                    .set_autocomplete(true)
-            })
-            .create_option(|option| {
-                option
+                    .set_autocomplete(true),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("mention")
                     .description("user to be mentioned alongside tag content")
                     .kind(CommandOptionType::User)
-                    .required(false)
-            })
+                    .required(false),
+            )
     }
 
     async fn handle_command(

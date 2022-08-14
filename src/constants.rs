@@ -3,8 +3,8 @@ use std::num::NonZeroU64;
 
 use anyhow::anyhow;
 use once_cell::sync::OnceCell;
+use serenity::model::colour::Colour;
 use serenity::model::id::UserId;
-use serenity::utils::Colour;
 use smol_str::SmolStr;
 
 use crate::util::now;

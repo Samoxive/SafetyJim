@@ -1,12 +1,12 @@
 use std::num::NonZeroU64;
+
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use serenity::model::id::{ChannelId, GuildId, RoleId};
 use typemap_rev::TypeMap;
 
 use crate::database::settings::{
     Setting, ACTION_HARDBAN, ACTION_NOTHING, DURATION_TYPE_DAYS, DURATION_TYPE_SECONDS,
-    PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE,
-    WORD_FILTER_LEVEL_HIGH, WORD_FILTER_LEVEL_LOW,
+    PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, WORD_FILTER_LEVEL_HIGH, WORD_FILTER_LEVEL_LOW,
 };
 use crate::server::model::channel::ChannelModel;
 use crate::server::model::guild::GuildModel;
@@ -81,10 +81,15 @@ pub async fn get_setting(
 
     let mod_log_channel = NonZeroU64::new(setting.mod_log_channel_id as u64)
         .map(ChannelId)
-        .and_then(|channel_id| channels.get(&channel_id).map(|channel| (channel_id, channel)))
+        .and_then(|channel_id| {
+            channels
+                .get(&channel_id)
+                .map(|channel| (channel_id, channel))
+        })
         .map(|(id, channel)| ChannelModel::from_guild_channel(id, channel));
 
-    let holding_room_role = setting.holding_room_role_id
+    let holding_room_role = setting
+        .holding_room_role_id
         .and_then(|id| NonZeroU64::new(id as u64))
         .map(RoleId)
         .and_then(|role_id| roles.get(&role_id).map(|role| (role_id, role)))
@@ -92,7 +97,11 @@ pub async fn get_setting(
 
     let welcome_channel = NonZeroU64::new(setting.welcome_message_channel_id as u64)
         .map(ChannelId)
-        .and_then(|channel_id| channels.get(&channel_id).map(|channel| (channel_id, channel)))
+        .and_then(|channel_id| {
+            channels
+                .get(&channel_id)
+                .map(|channel| (channel_id, channel))
+        })
         .map(|(id, channel)| ChannelModel::from_guild_channel(id, channel));
 
     HttpResponse::Ok().json(SettingModel {

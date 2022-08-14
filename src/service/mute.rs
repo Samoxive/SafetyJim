@@ -1,6 +1,7 @@
 use std::num::{NonZeroU32, NonZeroU64};
 use std::time::Duration;
 
+use serenity::builder::EditRole;
 use serenity::http::Http;
 use serenity::model::channel::{PermissionOverwrite, PermissionOverwriteType};
 use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
@@ -65,7 +66,8 @@ impl MuteService {
             }
         }
 
-        let role = match guild_id.create_role(http, |role| role.name("Muted")).await {
+        let create_role_req = EditRole::default().name("Muted");
+        let role = match guild_id.create_role(http, create_role_req).await {
             Ok(role) => role,
             Err(err) => {
                 return match err.discord_error_code() {
@@ -137,7 +139,10 @@ impl MuteService {
             if let Some(id) = NonZeroU64::new(setting.mod_log_channel_id as u64) {
                 Some(ChannelId(id))
             } else {
-                warn!("found setting with invalid mod log channel id! {:?}", setting);
+                warn!(
+                    "found setting with invalid mod log channel id! {:?}",
+                    setting
+                );
                 None
             }
         } else {

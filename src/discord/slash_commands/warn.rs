@@ -1,6 +1,6 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -58,29 +58,26 @@ impl SlashCommand for WarnCommand {
         "warn"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("warn")
             .description("warns given user")
             .dm_permission(false)
             .default_member_permissions(Permissions::KICK_MEMBERS)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("user")
                     .description("target user to warn")
                     .kind(CommandOptionType::User)
-                    .required(true)
-            })
-            .create_option(|option| {
-                option
+                    .required(true),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("reason")
                     .description("reason for the warning")
                     .kind(CommandOptionType::String)
-                    .required(false)
-            })
+                    .required(false),
+            )
     }
 
     async fn handle_command(

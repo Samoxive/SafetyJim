@@ -1,5 +1,8 @@
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{
+    CreateActionRow, CreateApplicationCommand, CreateButton, CreateComponents,
+    CreateInteractionResponse, CreateInteractionResponseData,
+};
 use serenity::client::Context;
 use serenity::model::application::component::ButtonStyle;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
@@ -21,11 +24,8 @@ impl SlashCommand for InviteCommand {
         "invite"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("invite")
             .description("displays links to invite Jim and get support")
             .dm_permission(false)
@@ -38,29 +38,32 @@ impl SlashCommand for InviteCommand {
         _config: &Config,
         _services: &TypeMap,
     ) -> anyhow::Result<()> {
+        let components = CreateComponents::default().add_action_row(
+            CreateActionRow::default()
+                .add_button(
+                    CreateButton::default()
+                        .label("Invite Jim!")
+                        .url(JIM_INVITE_LINK)
+                        .style(ButtonStyle::Link),
+                )
+                .add_button(
+                    CreateButton::default()
+                        .label("Join our support server!")
+                        .url(SUPPORT_SERVER_INVITE_LINK)
+                        .style(ButtonStyle::Link),
+                ),
+        );
+
+        let data = CreateInteractionResponseData::default()
+            .content("Links:")
+            .components(components);
+
+        let response = CreateInteractionResponse::default()
+            .kind(InteractionResponseType::ChannelMessageWithSource)
+            .interaction_response_data(data);
+
         interaction
-            .create_interaction_response(&context.http, |response| {
-                response
-                    .kind(InteractionResponseType::ChannelMessageWithSource)
-                    .interaction_response_data(|message| {
-                        message.content("Links:").components(|components| {
-                            components.create_action_row(|row| {
-                                row.create_button(|button| {
-                                    button
-                                        .label("Invite Jim!")
-                                        .url(JIM_INVITE_LINK)
-                                        .style(ButtonStyle::Link)
-                                })
-                                .create_button(|button| {
-                                    button
-                                        .label("Join our support server!")
-                                        .url(SUPPORT_SERVER_INVITE_LINK)
-                                        .style(ButtonStyle::Link)
-                                })
-                            })
-                        })
-                    })
-            })
+            .create_interaction_response(&context.http, response)
             .await
             .map_err(|err| {
                 error!("failed to reply to interaction {}", err);

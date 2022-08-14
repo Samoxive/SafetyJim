@@ -2,7 +2,9 @@ use std::future::ready;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{
+    CreateApplicationCommand, CreateApplicationCommandOption, CreateInteractionResponse,
+};
 use serenity::client::Context;
 use serenity::futures::StreamExt;
 use serenity::model::application::command::CommandOptionType;
@@ -71,31 +73,28 @@ impl SlashCommand for CleanUserCommand {
         "clean-user"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("clean-user")
             .description("deletes specified number of bot messages")
             .dm_permission(false)
             .default_member_permissions(Permissions::MANAGE_MESSAGES)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("number")
                     .description("number of messages to delete")
                     .kind(CommandOptionType::Integer)
                     .required(true)
                     .min_int_value(1)
-                    .max_int_value(100)
-            })
-            .create_option(|option| {
-                option
+                    .max_int_value(100),
+            )
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("user")
                     .description("target user to clean messages from")
                     .kind(CommandOptionType::User)
-                    .required(true)
-            })
+                    .required(true),
+            )
     }
 
     async fn handle_command(
@@ -134,10 +133,11 @@ impl SlashCommand for CleanUserCommand {
             }
         };
 
+        let response = CreateInteractionResponse::default()
+            .kind(InteractionResponseType::DeferredChannelMessageWithSource);
+
         interaction
-            .create_interaction_response(&context.http, |response| {
-                response.kind(InteractionResponseType::DeferredChannelMessageWithSource)
-            })
+            .create_interaction_response(&context.http, response)
             .await?;
 
         let message_ids_results: Vec<Result<MessageId, serenity::Error>> = channel_id

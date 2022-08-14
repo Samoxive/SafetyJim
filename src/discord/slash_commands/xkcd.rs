@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use regex::Regex;
 use reqwest::{Client, ClientBuilder};
 use scraper::{Html, Selector};
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -79,21 +79,18 @@ impl SlashCommand for XkcdCommand {
         "xkcd"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("xkcd")
             .description("searches xkcd comics with given description or partial title")
             .dm_permission(false)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("description")
                     .description("description or partial title of the comic")
                     .kind(CommandOptionType::String)
-                    .required(true)
-            })
+                    .required(true),
+            )
     }
 
     async fn handle_command(

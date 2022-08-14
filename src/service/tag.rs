@@ -132,7 +132,11 @@ impl TagService {
     }
 
     pub async fn get_tag_names(&self, guild_id: GuildId) -> Vec<String> {
-        match self.repository.fetch_guild_tags(guild_id.0.get() as i64).await {
+        match self
+            .repository
+            .fetch_guild_tags(guild_id.0.get() as i64)
+            .await
+        {
             Ok(tags) => tags.into_iter().map(|tag| tag.name).collect(),
             Err(err) => {
                 error!("failed to fetch guild tags {:?}", err);

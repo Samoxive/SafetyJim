@@ -1,6 +1,6 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
@@ -56,22 +56,19 @@ impl SlashCommand for TagRemoveCommand {
         "tag-remove"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("tag-remove")
             .description("remove previously registered tag")
             .dm_permission(false)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("name")
                     .description("tag name to remove")
                     .kind(CommandOptionType::String)
                     .required(true)
-                    .set_autocomplete(true)
-            })
+                    .set_autocomplete(true),
+            )
     }
 
     async fn handle_command(

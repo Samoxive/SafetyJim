@@ -1,17 +1,20 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{
+    CreateApplicationCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
+    CreateInteractionResponse, CreateInteractionResponseData,
+};
 use serenity::client::bridge::gateway::ShardId;
 use serenity::client::Context;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
-use serenity::utils::Colour;
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::channel::MessageFlags;
 use tracing::error;
 use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::{
-    AVATAR_URL, GITHUB_LINK, INVITE_LINK, START_EPOCH, SUPPORT_SERVER_INVITE_LINK,
+    AVATAR_URL, EMBED_COLOR, GITHUB_LINK, INVITE_LINK, START_EPOCH, SUPPORT_SERVER_INVITE_LINK,
 };
 use crate::discord::slash_commands::SlashCommand;
 use crate::service::ban::BanService;
@@ -27,11 +30,8 @@ impl SlashCommand for InfoCommand {
         "info"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("info")
             .description("displays information about Jim")
             .dm_permission(false)
@@ -78,65 +78,63 @@ impl SlashCommand for InfoCommand {
 
         let shard_string = format!("[{} / {}]", shard_id, shard_info.total_shard_count);
 
+        let embed = CreateEmbed::default()
+            .author(
+                CreateEmbedAuthor::default()
+                    .name(format!("Safety Jim - {}", shard_string))
+                    .icon_url(AVATAR_URL),
+            )
+            .description(format!(
+                "Lifting the :hammer: since {}",
+                START_EPOCH.get().expect("")
+            ))
+            .field(
+                "Server Count",
+                &guild_statistics.guild_count.to_string(),
+                true,
+            )
+            .field(
+                "User Count",
+                &guild_statistics.member_count.to_string(),
+                true,
+            )
+            .field("\u{200E}", "\u{200E}", true)
+            .field(
+                "Websocket Ping",
+                &format!(
+                    "Shard {}: {}ms\nAverage: {}ms",
+                    shard_string,
+                    shard_info.current_shard_latency,
+                    shard_info.average_shard_latency
+                ),
+                true,
+            )
+            .field("\u{200E}", "\u{200E}", true)
+            .field("\u{200E}", "\u{200E}", true)
+            .field(
+                "Links",
+                &format!(
+                    "[Support]({}) | [Github]({}) | [Invite]({})",
+                    SUPPORT_SERVER_INVITE_LINK, GITHUB_LINK, INVITE_LINK
+                ),
+                true,
+            )
+            .footer(CreateEmbedFooter::default().text(format!(
+                "Made by Samoxive#8634 | Days since last incident: {}",
+                days_since_last_ban
+            )))
+            .color(EMBED_COLOR);
+
+        let response = CreateInteractionResponse::default()
+            .kind(InteractionResponseType::ChannelMessageWithSource)
+            .interaction_response_data(
+                CreateInteractionResponseData::default()
+                    .flags(MessageFlags::EPHEMERAL)
+                    .add_embed(embed),
+            );
+
         interaction
-            .create_interaction_response(&context.http, |response| {
-                response
-                    .kind(InteractionResponseType::ChannelMessageWithSource)
-                    .interaction_response_data(|message| {
-                        message
-                            .embed(|embed| {
-                                embed
-                                    .author(|author| {
-                                        author
-                                            .name(format!("Safety Jim - {}", shard_string))
-                                            .icon_url(AVATAR_URL)
-                                    })
-                                    .description(format!(
-                                        "Lifting the :hammer: since {}",
-                                        START_EPOCH.get().expect("")
-                                    ))
-                                    .field(
-                                        "Server Count",
-                                        &guild_statistics.guild_count.to_string(),
-                                        true,
-                                    )
-                                    .field(
-                                        "User Count",
-                                        &guild_statistics.member_count.to_string(),
-                                        true,
-                                    )
-                                    .field("\u{200E}", "\u{200E}", true)
-                                    .field(
-                                        "Websocket Ping",
-                                        &format!(
-                                            "Shard {}: {}ms\nAverage: {}ms",
-                                            shard_string,
-                                            shard_info.current_shard_latency,
-                                            shard_info.average_shard_latency
-                                        ),
-                                        true,
-                                    )
-                                    .field("\u{200E}", "\u{200E}", true)
-                                    .field("\u{200E}", "\u{200E}", true)
-                                    .field(
-                                        "Links",
-                                        &format!(
-                                            "[Support]({}) | [Github]({}) | [Invite]({})",
-                                            SUPPORT_SERVER_INVITE_LINK, GITHUB_LINK, INVITE_LINK
-                                        ),
-                                        true,
-                                    )
-                                    .footer(|footer| {
-                                        footer.text(format!(
-                                            "Made by Samoxive#8634 | Days since last incident: {}",
-                                            days_since_last_ban
-                                        ))
-                                    })
-                                    .color(Colour::new(0x4286F4))
-                            })
-                            .flags(MessageFlags::EPHEMERAL)
-                    })
-            })
+            .create_interaction_response(&context.http, response)
             .await
             .map_err(|err| {
                 error!("failed to reply to interaction {}", err);

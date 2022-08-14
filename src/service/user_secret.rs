@@ -283,7 +283,11 @@ impl UserSecretService {
     }
 
     pub async fn fetch_self_user(&self, user_id: UserId) -> anyhow::Result<SelfUser> {
-        let access_token = match self.repository.fetch_user_secret(user_id.0.get() as i64).await {
+        let access_token = match self
+            .repository
+            .fetch_user_secret(user_id.0.get() as i64)
+            .await
+        {
             Ok(Some(secret)) => secret.access_token,
             Ok(None) => {
                 error!("user's secrets don't exist yet their token does!");
@@ -333,7 +337,11 @@ impl UserSecretService {
         services: &TypeMap,
         user_id: UserId,
     ) -> anyhow::Result<Vec<SelfGuild>> {
-        let access_token = match self.repository.fetch_user_secret(user_id.0.get() as i64).await {
+        let access_token = match self
+            .repository
+            .fetch_user_secret(user_id.0.get() as i64)
+            .await
+        {
             Ok(Some(secret)) => secret.access_token,
             Ok(None) => {
                 error!("user's secrets don't exist yet their token does!");

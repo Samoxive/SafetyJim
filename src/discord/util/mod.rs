@@ -3,20 +3,21 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_recursion::async_recursion;
+use serenity::builder::{
+    CreateInteractionResponse, CreateInteractionResponseData, EditInteractionResponse,
+};
 use serenity::http::{Http, HttpError};
 use serenity::model::application::interaction::application_command::{
     ApplicationCommandInteraction, CommandData, CommandDataOptionValue,
 };
-use serenity::model::application::interaction::{autocomplete, InteractionResponseType};
-use serenity::model::application::interaction::MessageFlags;
-use serenity::model::channel::{Message, PartialChannel};
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::channel::{Message, MessageFlags, PartialChannel};
 use serenity::model::event::MessageUpdateEvent;
 use serenity::model::guild::{Member, PartialMember, Role};
 use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId, UserId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use serenity::Error;
-use serenity::model::prelude::interaction::autocomplete::AutocompleteData;
 use tracing::{error, warn};
 use typemap_rev::TypeMap;
 
@@ -35,28 +36,6 @@ use crate::util::now;
 pub mod mod_log;
 pub mod user_dm;
 
-pub trait AutocompleteDataExt {
-    fn option(&self, option_name: &str) -> Option<&autocomplete::CommandDataOptionValue>;
-    fn string(&self, option_name: &str) -> Option<&str>;
-}
-
-impl AutocompleteDataExt for AutocompleteData {
-    fn option(&self, option_name: &str) -> Option<&autocomplete::CommandDataOptionValue> {
-        self.options
-            .iter()
-            .find(|option| option.name == option_name)
-            .map(|option| &option.value)
-    }
-
-    fn string(&self, option_name: &str) -> Option<&str> {
-        if let Some(autocomplete::CommandDataOptionValue::Autocomplete {value, kind: _}) = self.option(option_name) {
-            Some(value.as_str())
-        } else {
-            None
-        }
-    }
-}
-
 pub trait CommandDataExt {
     fn option(&self, option_name: &str) -> Option<&CommandDataOptionValue>;
     fn string(&self, option_name: &str) -> Option<&str>;
@@ -66,6 +45,7 @@ pub trait CommandDataExt {
     fn channel(&self, option_name: &str) -> Option<&PartialChannel>;
     fn role(&self, option_name: &str) -> Option<&Role>;
     fn number(&self, option_name: &str) -> Option<f64>;
+    fn string_autocomplete(&self, option_name: &str) -> Option<&str>;
 }
 
 impl CommandDataExt for CommandData {
@@ -73,7 +53,7 @@ impl CommandDataExt for CommandData {
         self.options
             .iter()
             .find(|option| option.name == option_name)
-            .and_then(|option| option.resolved.as_ref())
+            .map(|option| &option.value)
     }
 
     fn string(&self, option_name: &str) -> Option<&str> {
@@ -101,15 +81,20 @@ impl CommandDataExt for CommandData {
     }
 
     fn user(&self, option_name: &str) -> Option<(&User, Option<&PartialMember>)> {
-        if let Some(CommandDataOptionValue::User(user, member)) = self.option(option_name) {
-            Some((user, member.as_ref()))
+        if let Some(CommandDataOptionValue::User(user_id)) = self.option(option_name) {
+            let user = self.resolved.users.get(user_id)?;
+            let member = self.resolved.members.get(user_id);
+
+            Some((user, member))
         } else {
             None
         }
     }
 
     fn channel(&self, option_name: &str) -> Option<&PartialChannel> {
-        if let Some(CommandDataOptionValue::Channel(channel)) = self.option(option_name) {
+        if let Some(CommandDataOptionValue::Channel(channel_id)) = self.option(option_name) {
+            let channel = self.resolved.channels.get(channel_id)?;
+
             Some(channel)
         } else {
             None
@@ -117,7 +102,9 @@ impl CommandDataExt for CommandData {
     }
 
     fn role(&self, option_name: &str) -> Option<&Role> {
-        if let Some(CommandDataOptionValue::Role(role)) = self.option(option_name) {
+        if let Some(CommandDataOptionValue::Role(role_id)) = self.option(option_name) {
+            let role = self.resolved.roles.get(role_id)?;
+
             Some(role)
         } else {
             None
@@ -130,6 +117,16 @@ impl CommandDataExt for CommandData {
         } else {
             None
         }
+    }
+
+    fn string_autocomplete(&self, option_name: &str) -> Option<&str> {
+        if let Some(autocomplete_option) = self.autocomplete() {
+            if autocomplete_option.name == option_name {
+                return Some(autocomplete_option.value);
+            }
+        }
+
+        None
     }
 }
 
@@ -244,17 +241,22 @@ pub fn verify_guild_message_update(message: &MessageUpdateEvent) -> Option<Guild
     })
 }
 
+pub fn create_str_reply_data(content: &str) -> CreateInteractionResponseData {
+    CreateInteractionResponseData::default().content(content)
+}
+
 pub async fn reply_with_str(
     http: &Http,
     interaction: &ApplicationCommandInteraction,
     content: &str,
 ) {
+    let data = create_str_reply_data(content);
+    let builder = CreateInteractionResponse::default()
+        .kind(InteractionResponseType::ChannelMessageWithSource)
+        .interaction_response_data(data);
+
     let _ = interaction
-        .create_interaction_response(http, |response| {
-            response
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|message| message.content(content))
-        })
+        .create_interaction_response(http, builder)
         .await
         .map_err(|err| {
             error!("failed to reply to interaction {:?} {}", interaction, err);
@@ -267,14 +269,13 @@ async fn invisible_reply_with_str(
     interaction: &ApplicationCommandInteraction,
     content: &str,
 ) {
+    let data = create_str_reply_data(content).flags(MessageFlags::EPHEMERAL);
+    let builder = CreateInteractionResponse::default()
+        .kind(InteractionResponseType::ChannelMessageWithSource)
+        .interaction_response_data(data);
+
     let _ = interaction
-        .create_interaction_response(http, |response| {
-            response
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|message| {
-                    message.content(content).flags(MessageFlags::EPHEMERAL)
-                })
-        })
+        .create_interaction_response(http, builder)
         .await
         .map_err(|err| {
             error!("failed to reply to interaction {:?} {}", interaction, err);
@@ -287,8 +288,10 @@ pub async fn edit_interaction_response(
     interaction: &ApplicationCommandInteraction,
     content: &str,
 ) {
+    let builder = EditInteractionResponse::default().content(content);
+
     let _ = interaction
-        .edit_original_interaction_response(http, |response| response.content(content))
+        .edit_original_interaction_response(http, builder)
         .await
         .map_err(|err| {
             error!("failed to edit interaction reply {:?} {}", interaction, err);

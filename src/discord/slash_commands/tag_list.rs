@@ -1,9 +1,13 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::{
+    CreateApplicationCommand, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
+    CreateInteractionResponseData,
+};
 use serenity::client::Context;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::channel::MessageFlags;
 use tracing::error;
 use typemap_rev::TypeMap;
 
@@ -23,11 +27,8 @@ impl SlashCommand for TagListCommand {
         "tag-list"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("tag-list")
             .description("lists previously registered tags")
             .dm_permission(false)
@@ -64,23 +65,25 @@ impl SlashCommand for TagListCommand {
                 .collect::<Vec<String>>()
                 .join("\n");
 
+            let embed = CreateEmbed::default()
+                .author(
+                    CreateEmbedAuthor::default()
+                        .name("List of tags")
+                        .icon_url(AVATAR_URL),
+                )
+                .description(tags_str)
+                .colour(EMBED_COLOR);
+
+            let data = CreateInteractionResponseData::default()
+                .flags(MessageFlags::EPHEMERAL)
+                .add_embed(embed);
+
+            let response = CreateInteractionResponse::default()
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(data);
+
             interaction
-                .create_interaction_response(&context.http, |response| {
-                    response
-                        .kind(InteractionResponseType::ChannelMessageWithSource)
-                        .interaction_response_data(|message| {
-                            message
-                                .embed(|embed| {
-                                    embed
-                                        .author(|author| {
-                                            author.name("List of tags").icon_url(AVATAR_URL)
-                                        })
-                                        .description(tags_str)
-                                        .colour(EMBED_COLOR)
-                                })
-                                .flags(MessageFlags::EPHEMERAL)
-                        })
-                })
+                .create_interaction_response(&context.http, response)
                 .await
                 .map_err(|err| {
                     error!("failed to reply to interaction {}", err);

@@ -45,7 +45,10 @@ impl HardbanService {
             if let Some(id) = NonZeroU64::new(setting.mod_log_channel_id as u64) {
                 Some(ChannelId(id))
             } else {
-                warn!("found setting with invalid mod log channel id! {:?}", setting);
+                warn!(
+                    "found setting with invalid mod log channel id! {:?}",
+                    setting
+                );
                 None
             }
         } else {

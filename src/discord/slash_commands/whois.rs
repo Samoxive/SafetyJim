@@ -1,12 +1,16 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateEmbed};
+use serenity::builder::{
+    CreateApplicationCommand, CreateApplicationCommandOption, CreateEmbed, CreateEmbedAuthor,
+    CreateInteractionResponse, CreateInteractionResponseData,
+};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
     ApplicationCommandInteraction, CommandData,
 };
-use serenity::model::application::interaction::{InteractionResponseType, MessageFlags};
+use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::channel::MessageFlags;
 use serenity::model::guild::PartialMember;
 use serenity::model::user::User;
 use tracing::error;
@@ -41,12 +45,7 @@ fn generate_options(data: &CommandData) -> Result<WhoisCommandOptions, WhoisComm
     Ok(WhoisCommandOptions { target })
 }
 
-fn generate_member_embed<'a>(
-    embed: &'a mut CreateEmbed,
-    guild: &CachedGuild,
-    member: &PartialMember,
-    user: &User,
-) -> &'a mut CreateEmbed {
+fn generate_member_embed(guild: &CachedGuild, member: &PartialMember, user: &User) -> CreateEmbed {
     let boost_status = match member.premium_since {
         Some(time) => format!("Since <t:{}>", time.unix_timestamp()),
         None => "Not Boosting".into(),
@@ -74,8 +73,12 @@ fn generate_member_embed<'a>(
         None => "<unknown>".into(),
     };
 
-    embed
-        .author(|author| author.name(known_as).icon_url(user.face()))
+    CreateEmbed::default()
+        .author(
+            CreateEmbedAuthor::default()
+                .name(known_as)
+                .icon_url(user.face()),
+        )
         .title(title)
         .field("ID", &user.id.to_string(), false)
         .field("User Flags", &flags, false)
@@ -85,7 +88,7 @@ fn generate_member_embed<'a>(
         .colour(EMBED_COLOR)
 }
 
-fn generate_user_embed<'a>(embed: &'a mut CreateEmbed, user: &User) -> &'a mut CreateEmbed {
+fn generate_user_embed(user: &User) -> CreateEmbed {
     let flags = match user.public_flags {
         Some(flags) => format!("{:?}", flags),
         None => "<none>".into(),
@@ -93,8 +96,12 @@ fn generate_user_embed<'a>(embed: &'a mut CreateEmbed, user: &User) -> &'a mut C
 
     let created_at = format!("<t:{}>", user.created_at().unix_timestamp());
 
-    embed
-        .author(|author| author.name(user.tag()).icon_url(user.face()))
+    CreateEmbed::default()
+        .author(
+            CreateEmbedAuthor::default()
+                .name(user.tag())
+                .icon_url(user.face()),
+        )
         .title("Discord User")
         .field("ID", &user.id.to_string(), false)
         .field("User Flags", &flags, false)
@@ -108,21 +115,18 @@ impl SlashCommand for WhoisCommand {
         "whois"
     }
 
-    fn create_command<'a>(
-        &self,
-        command: &'a mut CreateApplicationCommand,
-    ) -> &'a mut CreateApplicationCommand {
-        command
+    fn create_command(&self) -> CreateApplicationCommand {
+        CreateApplicationCommand::default()
             .name("whois")
             .description("displays information about given user or server member")
             .dm_permission(false)
-            .create_option(|option| {
-                option
+            .add_option(
+                CreateApplicationCommandOption::default()
                     .name("user")
                     .description("target user to query")
                     .kind(CommandOptionType::User)
-                    .required(true)
-            })
+                    .required(true),
+            )
     }
 
     async fn handle_command(
@@ -156,32 +160,36 @@ impl SlashCommand for WhoisCommand {
 
             let guild = guild_service.get_guild(guild_id).await?;
 
+            let embed = generate_member_embed(&guild, member, user);
+
+            let data = CreateInteractionResponseData::default()
+                .flags(MessageFlags::EPHEMERAL)
+                .add_embed(embed);
+
+            let response = CreateInteractionResponse::default()
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(data);
+
             interaction
-                .create_interaction_response(&context.http, |response| {
-                    response
-                        .kind(InteractionResponseType::ChannelMessageWithSource)
-                        .interaction_response_data(|message| {
-                            message
-                                .embed(|embed| generate_member_embed(embed, &guild, member, user))
-                                .flags(MessageFlags::EPHEMERAL)
-                        })
-                })
+                .create_interaction_response(&context.http, response)
                 .await
                 .map_err(|err| {
                     error!("failed to reply to interaction {}", err);
                     err
                 })?;
         } else {
+            let embed = generate_user_embed(user);
+
+            let data = CreateInteractionResponseData::default()
+                .flags(MessageFlags::EPHEMERAL)
+                .add_embed(embed);
+
+            let response = CreateInteractionResponse::default()
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(data);
+
             interaction
-                .create_interaction_response(&context.http, |response| {
-                    response
-                        .kind(InteractionResponseType::ChannelMessageWithSource)
-                        .interaction_response_data(|message| {
-                            message
-                                .embed(|embed| generate_user_embed(embed, user))
-                                .flags(MessageFlags::EPHEMERAL)
-                        })
-                })
+                .create_interaction_response(&context.http, response)
                 .await
                 .map_err(|err| {
                     error!("failed to reply to interaction {}", err);

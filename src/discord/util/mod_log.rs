@@ -1,11 +1,10 @@
-use chrono::{TimeZone, Utc};
-use serenity::builder::CreateEmbed;
+use serenity::builder::{CreateEmbed, CreateMessage};
 use serenity::http::Http;
 use serenity::model::id::ChannelId;
 use serenity::model::mention::Mentionable;
 use serenity::model::user::User;
-use serenity::utils::Color;
-use tracing::error;
+use serenity::model::{Color, Timestamp};
+use tracing::{error, warn};
 
 use crate::discord::util::{SerenityErrorExt, UserExt};
 
@@ -41,21 +40,21 @@ impl ModLogAction {
         }
     }
 
-    fn create_expiration_date_field(&self, embed: &mut CreateEmbed) {
+    fn create_expiration_date_field(&self, embed: CreateEmbed) -> CreateEmbed {
         match self {
             ModLogAction::Ban { expiration_time } => {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Banned until", &value, false);
+                embed.field("Banned until", &value, false)
             }
             ModLogAction::Mute { expiration_time } => {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Muted until", &value, false);
+                embed.field("Muted until", &value, false)
             }
-            _ => {}
+            _ => embed,
         }
     }
 }
@@ -87,29 +86,39 @@ pub async fn create_mod_log_entry(
     entity_id: i32,
     action_time: u64,
 ) -> Result<(), CreateModLogEntryError> {
+    let timestamp = match Timestamp::from_unix_timestamp(action_time as i64) {
+        Ok(t) => t,
+        Err(_) => {
+            warn!(
+                "attempted to create mod log entry with invalid timestamp! {}",
+                action_time
+            );
+            return Err(CreateModLogEntryError::Unknown);
+        }
+    };
+
+    let mut embed = CreateEmbed::default()
+        .color(action.color())
+        .timestamp(timestamp)
+        .field(
+            "Action",
+            &format!("{} - #{}", action.name(), entity_id),
+            false,
+        )
+        .field("User:", &target_user.tag_and_id(), false)
+        .field("Reason:", reason, false)
+        .field("Responsible Moderator:", mod_user_tag_and_id, false);
+
+    if let Some(action_channel_id) = action_channel_id {
+        embed = embed.field("Channel", &action_channel_id.mention().to_string(), false);
+    }
+
+    embed = action.create_expiration_date_field(embed);
+
+    let message = CreateMessage::default().add_embed(embed);
+
     mod_log_channel_id
-        .send_message(http, |message| {
-            message.embed(|embed| {
-                let embed = embed
-                    .color(action.color())
-                    .timestamp(Utc.timestamp(action_time as i64, 0).to_rfc3339())
-                    .field(
-                        "Action",
-                        &format!("{} - #{}", action.name(), entity_id),
-                        false,
-                    )
-                    .field("User:", &target_user.tag_and_id(), false)
-                    .field("Reason:", reason, false)
-                    .field("Responsible Moderator:", mod_user_tag_and_id, false);
-
-                if let Some(action_channel_id) = action_channel_id {
-                    embed.field("Channel", &action_channel_id.mention().to_string(), false);
-                }
-
-                action.create_expiration_date_field(embed);
-                embed
-            })
-        })
+        .send_message(http, message)
         .await
         .map(|_| ())
         .map_err(|err| match err.discord_error_code() {

@@ -55,7 +55,10 @@ impl BanService {
             if let Some(id) = NonZeroU64::new(setting.mod_log_channel_id as u64) {
                 Some(ChannelId(id))
             } else {
-                warn!("found setting with invalid mod log channel id! {:?}", setting);
+                warn!(
+                    "found setting with invalid mod log channel id! {:?}",
+                    setting
+                );
                 None
             }
         } else {
@@ -140,7 +143,11 @@ impl BanService {
     ) -> Result<(), UnbanFailure> {
         let audit_log_reason = format!("Unbanned by {}", mod_user_tag_and_id);
         match http
-            .remove_ban(guild_id.0.get(), target_user_id.0.get(), Some(&audit_log_reason))
+            .remove_ban(
+                guild_id.0.get(),
+                target_user_id.0.get(),
+                Some(&audit_log_reason),
+            )
             .await
         {
             Ok(_) => (),
