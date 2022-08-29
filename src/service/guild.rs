@@ -82,25 +82,25 @@ impl GuildService {
     pub fn new() -> GuildService {
         GuildService {
             http: Arc::new(RwLock::new(None)),
-            guild_cache: CacheBuilder::new(100)
-                .time_to_idle(Duration::from_secs(30))
+            guild_cache: CacheBuilder::new(1024)
+                .time_to_idle(Duration::from_secs(2 * 60))
                 .time_to_live(Duration::from_secs(5 * 60))
                 .build(),
-            role_cache: CacheBuilder::new(100)
-                .time_to_idle(Duration::from_secs(30))
+            role_cache: CacheBuilder::new(1024)
+                .time_to_idle(Duration::from_secs(2 * 60))
                 .time_to_live(Duration::from_secs(5 * 60))
                 .build(),
-            member_cache: CacheBuilder::new(500)
-                .time_to_idle(Duration::from_secs(30))
+            member_cache: CacheBuilder::new(2048)
+                .time_to_idle(Duration::from_secs(2 * 60))
                 .time_to_live(Duration::from_secs(5 * 60))
                 .build(),
-            user_cache: CacheBuilder::new(500)
-                .time_to_idle(Duration::from_secs(30))
+            user_cache: CacheBuilder::new(2048)
+                .time_to_idle(Duration::from_secs(2 * 60))
                 .time_to_live(Duration::from_secs(5 * 60))
                 .build(),
-            channel_cache: CacheBuilder::new(100)
-                .time_to_idle(Duration::from_secs(30))
-                .time_to_live(Duration::from_secs(60))
+            channel_cache: CacheBuilder::new(1024)
+                .time_to_idle(Duration::from_secs(2 * 60))
+                .time_to_live(Duration::from_secs(5 * 60))
                 .build(),
         }
     }
