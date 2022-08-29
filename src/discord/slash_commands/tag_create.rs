@@ -64,23 +64,24 @@ impl SlashCommand for TagCreateCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("tag-create")
+        CreateApplicationCommand::new("tag-create")
             .description("registers a message that can be repeated later")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("name")
-                    .description("tag name to create")
-                    .kind(CommandOptionType::String)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "name",
+                    "tag name to create",
+                )
+                .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("content")
-                    .description("tag content")
-                    .kind(CommandOptionType::String)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "content",
+                    "tag content",
+                )
+                .required(true),
             )
     }
 

@@ -50,17 +50,17 @@ impl SlashCommand for UnbanCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("unban")
+        CreateApplicationCommand::new("unban")
             .description("unbans given user")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("user")
-                    .description("target user to unban")
-                    .kind(CommandOptionType::User)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::User,
+                    "user",
+                    "target user to unban",
+                )
+                .required(true),
             )
     }
 

@@ -26,8 +26,7 @@ impl SlashCommand for ServerCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("server")
+        CreateApplicationCommand::new("server")
             .description("displays information about the server")
             .dm_permission(false)
     }
@@ -69,8 +68,7 @@ impl SlashCommand for ServerCommand {
 
         let embed = CreateEmbed::default()
             .author(
-                CreateEmbedAuthor::default()
-                    .name(format!("{} ({})", guild.name, guild.id))
+                CreateEmbedAuthor::new(format!("{} ({})", guild.name, guild.id))
                     .url(vanity_url.unwrap_or_else(|| "".into()))
                     .icon_url(guild.icon_url().as_deref().unwrap_or(AVATAR_URL)),
             )

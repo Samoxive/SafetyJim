@@ -247,12 +247,8 @@ pub async fn remind_reminders(http: &Http, services: &TypeMap) {
         let embed = CreateEmbed::default()
             .title(format!("Reminder - #{}", expired_reminder.id))
             .description(&expired_reminder.message)
-            .author(
-                CreateEmbedAuthor::default()
-                    .name("Safety Jim")
-                    .icon_url(AVATAR_URL),
-            )
-            .footer(CreateEmbedFooter::default().text("Reminder set on"))
+            .author(CreateEmbedAuthor::new("Safety Jim").icon_url(AVATAR_URL))
+            .footer(CreateEmbedFooter::new("Reminder set on"))
             .timestamp(timestamp)
             .colour(EMBED_COLOR);
 

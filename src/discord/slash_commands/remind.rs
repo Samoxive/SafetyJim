@@ -60,23 +60,24 @@ impl SlashCommand for RemindCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("remind")
+        CreateApplicationCommand::new("remind")
             .description("sets a reminder for a future date, duration defaults to a day")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("message")
-                    .description("message to be reminded of")
-                    .kind(CommandOptionType::String)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "message",
+                    "message to be reminded of",
+                )
+                .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("duration")
-                    .description("duration after which notification is sent")
-                    .kind(CommandOptionType::String)
-                    .required(false),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "duration",
+                    "duration after which notification is sent",
+                )
+                .required(false),
             )
     }
 

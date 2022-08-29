@@ -25,8 +25,7 @@ impl SlashCommand for InviteCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("invite")
+        CreateApplicationCommand::new("invite")
             .description("displays links to invite Jim and get support")
             .dm_permission(false)
     }

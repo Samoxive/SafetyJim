@@ -76,31 +76,33 @@ impl SlashCommand for BanCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("ban")
+        CreateApplicationCommand::new("ban")
             .description("bans given user, time can be given for a temporary ban")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("user")
-                    .description("target user to ban")
-                    .kind(CommandOptionType::User)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::User,
+                    "user",
+                    "target user to ban",
+                )
+                .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("reason")
-                    .description("reason for the ban")
-                    .kind(CommandOptionType::String)
-                    .required(false),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "reason",
+                    "reason for the ban",
+                )
+                .required(false),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("duration")
-                    .description("duration for the ban")
-                    .kind(CommandOptionType::String)
-                    .required(false),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "duration",
+                    "duration for the ban",
+                )
+                .required(false),
             )
     }
 

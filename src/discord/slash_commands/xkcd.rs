@@ -80,16 +80,16 @@ impl SlashCommand for XkcdCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("xkcd")
+        CreateApplicationCommand::new("xkcd")
             .description("searches xkcd comics with given description or partial title")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("description")
-                    .description("description or partial title of the comic")
-                    .kind(CommandOptionType::String)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "description",
+                    "description or partial title of the comic",
+                )
+                .required(true),
             )
     }
 

@@ -52,17 +52,17 @@ impl SlashCommand for UnmuteCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("unmute")
+        CreateApplicationCommand::new("unmute")
             .description("unmutes given user")
             .dm_permission(false)
             .default_member_permissions(Permissions::MANAGE_ROLES)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("user")
-                    .description("target user to unmute")
-                    .kind(CommandOptionType::User)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::User,
+                    "user",
+                    "target user to unmute",
+                )
+                .required(true),
             )
     }
 

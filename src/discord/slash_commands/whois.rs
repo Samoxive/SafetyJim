@@ -74,11 +74,7 @@ fn generate_member_embed(guild: &CachedGuild, member: &PartialMember, user: &Use
     };
 
     CreateEmbed::default()
-        .author(
-            CreateEmbedAuthor::default()
-                .name(known_as)
-                .icon_url(user.face()),
-        )
+        .author(CreateEmbedAuthor::new(known_as).icon_url(user.face()))
         .title(title)
         .field("ID", &user.id.to_string(), false)
         .field("User Flags", &flags, false)
@@ -97,11 +93,7 @@ fn generate_user_embed(user: &User) -> CreateEmbed {
     let created_at = format!("<t:{}>", user.created_at().unix_timestamp());
 
     CreateEmbed::default()
-        .author(
-            CreateEmbedAuthor::default()
-                .name(user.tag())
-                .icon_url(user.face()),
-        )
+        .author(CreateEmbedAuthor::new(user.tag()).icon_url(user.face()))
         .title("Discord User")
         .field("ID", &user.id.to_string(), false)
         .field("User Flags", &flags, false)
@@ -116,16 +108,16 @@ impl SlashCommand for WhoisCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("whois")
+        CreateApplicationCommand::new("whois")
             .description("displays information about given user or server member")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("user")
-                    .description("target user to query")
-                    .kind(CommandOptionType::User)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::User,
+                    "user",
+                    "target user to query",
+                )
+                .required(true),
             )
     }
 

@@ -52,17 +52,17 @@ impl SlashCommand for RoleCreateCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("role-create")
+        CreateApplicationCommand::new("role-create")
             .description("registers a role that can be self assigned via iam command")
             .dm_permission(false)
             .default_member_permissions(Permissions::ADMINISTRATOR)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("role")
-                    .description("self assignable role to register")
-                    .kind(CommandOptionType::Role)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::Role,
+                    "role",
+                    "self assignable role to register",
+                )
+                .required(true),
             )
     }
 

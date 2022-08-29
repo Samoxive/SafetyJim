@@ -46,16 +46,16 @@ impl SlashCommand for IAMNotCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("iam-not")
+        CreateApplicationCommand::new("iam-not")
             .description("removes specified self assigned role")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("role")
-                    .description("role to remove")
-                    .kind(CommandOptionType::Role)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::Role,
+                    "role",
+                    "role to remove",
+                )
+                .required(true),
             )
     }
 

@@ -57,17 +57,17 @@ impl SlashCommand for TagRemoveCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("tag-remove")
+        CreateApplicationCommand::new("tag-remove")
             .description("remove previously registered tag")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("name")
-                    .description("tag name to remove")
-                    .kind(CommandOptionType::String)
-                    .required(true)
-                    .set_autocomplete(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "name",
+                    "tag name to remove",
+                )
+                .required(true)
+                .set_autocomplete(true),
             )
     }
 

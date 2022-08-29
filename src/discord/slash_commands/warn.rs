@@ -59,24 +59,25 @@ impl SlashCommand for WarnCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("warn")
+        CreateApplicationCommand::new("warn")
             .description("warns given user")
             .dm_permission(false)
             .default_member_permissions(Permissions::KICK_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("user")
-                    .description("target user to warn")
-                    .kind(CommandOptionType::User)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::User,
+                    "user",
+                    "target user to warn",
+                )
+                .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("reason")
-                    .description("reason for the warning")
-                    .kind(CommandOptionType::String)
-                    .required(false),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "reason",
+                    "reason for the warning",
+                )
+                .required(false),
             )
     }
 

@@ -31,8 +31,7 @@ impl SlashCommand for InfoCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("info")
+        CreateApplicationCommand::new("info")
             .description("displays information about Jim")
             .dm_permission(false)
     }
@@ -80,8 +79,7 @@ impl SlashCommand for InfoCommand {
 
         let embed = CreateEmbed::default()
             .author(
-                CreateEmbedAuthor::default()
-                    .name(format!("Safety Jim - {}", shard_string))
+                CreateEmbedAuthor::new(format!("Safety Jim - {}", shard_string))
                     .icon_url(AVATAR_URL),
             )
             .description(format!(
@@ -119,7 +117,7 @@ impl SlashCommand for InfoCommand {
                 ),
                 true,
             )
-            .footer(CreateEmbedFooter::default().text(format!(
+            .footer(CreateEmbedFooter::new(format!(
                 "Made by Samoxive#8634 | Days since last incident: {}",
                 days_since_last_ban
             )))

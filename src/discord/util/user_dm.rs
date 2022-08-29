@@ -86,7 +86,9 @@ pub async fn notify_user_for_mod_action(
         let mut embed = CreateEmbed::default()
             .title(kind.title(guild_name))
             .colour(EMBED_COLOR)
-            .footer(CreateEmbedFooter::default().text(kind.by_moderator(mod_user_tag_and_id)))
+            .footer(CreateEmbedFooter::new(
+                kind.by_moderator(mod_user_tag_and_id),
+            ))
             .timestamp(timestamp)
             .field("Reason", reason, false);
 

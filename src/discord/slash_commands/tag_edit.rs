@@ -64,24 +64,25 @@ impl SlashCommand for TagEditCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("tag-edit")
+        CreateApplicationCommand::new("tag-edit")
             .description("edits previously registered tag content")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("name")
-                    .description("tag name to edit")
-                    .kind(CommandOptionType::String)
-                    .required(true)
-                    .set_autocomplete(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "name",
+                    "tag name to edit",
+                )
+                .required(true)
+                .set_autocomplete(true),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("content")
-                    .description("content to replace tag with")
-                    .kind(CommandOptionType::String)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "content",
+                    "content to replace tag with",
+                )
+                .required(true),
             )
     }
 

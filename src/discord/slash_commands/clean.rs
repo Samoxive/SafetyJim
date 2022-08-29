@@ -60,19 +60,19 @@ impl SlashCommand for CleanCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("clean")
+        CreateApplicationCommand::new("clean")
             .description("deletes specified number of messages")
             .dm_permission(false)
             .default_member_permissions(Permissions::MANAGE_MESSAGES)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("number")
-                    .description("number of messages to delete")
-                    .kind(CommandOptionType::Integer)
-                    .required(true)
-                    .min_int_value(1)
-                    .max_int_value(100),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::Integer,
+                    "number",
+                    "number of messages to delete",
+                )
+                .required(true)
+                .min_int_value(1)
+                .max_int_value(100),
             )
     }
 

@@ -104,16 +104,16 @@ impl SlashCommand for WeatherCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("weather")
+        CreateApplicationCommand::new("weather")
             .description("gives current weather information for given address")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("address")
-                    .description("address for weather location")
-                    .kind(CommandOptionType::String)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "address",
+                    "address for weather location",
+                )
+                .required(true),
             )
     }
 
@@ -227,7 +227,10 @@ impl SlashCommand for WeatherCommand {
         let embed = CreateEmbed::default()
             .colour(EMBED_COLOR)
             .title(format!("Weather in {}", formatted_address))
-            .footer(CreateEmbedFooter::default().text(format!("Local Time: {}", local_date_str)))
+            .footer(CreateEmbedFooter::new(format!(
+                "Local Time: {}",
+                local_date_str
+            )))
             .field("Summary", &summary, false)
             .field(
                 "Temperature",

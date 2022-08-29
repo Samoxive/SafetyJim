@@ -17,8 +17,7 @@ impl SlashCommand for MeloCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("melo")
+        CreateApplicationCommand::new("melo")
             .description("melo.")
             .dm_permission(false)
     }

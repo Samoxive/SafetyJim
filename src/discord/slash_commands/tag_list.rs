@@ -28,8 +28,7 @@ impl SlashCommand for TagListCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("tag-list")
+        CreateApplicationCommand::new("tag-list")
             .description("lists previously registered tags")
             .dm_permission(false)
     }
@@ -66,11 +65,7 @@ impl SlashCommand for TagListCommand {
                 .join("\n");
 
             let embed = CreateEmbed::default()
-                .author(
-                    CreateEmbedAuthor::default()
-                        .name("List of tags")
-                        .icon_url(AVATAR_URL),
-                )
+                .author(CreateEmbedAuthor::new("List of tags").icon_url(AVATAR_URL))
                 .description(tags_str)
                 .colour(EMBED_COLOR);
 

@@ -44,16 +44,16 @@ impl SlashCommand for IAMCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("iam")
+        CreateApplicationCommand::new("iam")
             .description("self assigns specified role")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("role")
-                    .description("role to assign")
-                    .kind(CommandOptionType::Role)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::Role,
+                    "role",
+                    "role to assign",
+                )
+                .required(true),
             )
     }
 

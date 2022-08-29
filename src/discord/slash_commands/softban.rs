@@ -74,33 +74,35 @@ impl SlashCommand for SoftbanCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("softban")
+        CreateApplicationCommand::new("softban")
             .description("kicks given user, deleting their last messages, defaults to a day")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("user")
-                    .description("target user to softban")
-                    .kind(CommandOptionType::User)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::User,
+                    "user",
+                    "target user to softban",
+                )
+                .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("reason")
-                    .description("reason for the softban")
-                    .kind(CommandOptionType::String)
-                    .required(false),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "reason",
+                    "reason for the softban",
+                )
+                .required(false),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("days")
-                    .description("number of days to delete last messages")
-                    .kind(CommandOptionType::Integer)
-                    .required(false)
-                    .min_int_value(1)
-                    .max_int_value(7),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::Integer,
+                    "days",
+                    "number of days to delete last messages",
+                )
+                .required(false)
+                .min_int_value(1)
+                .max_int_value(7),
             )
     }
 

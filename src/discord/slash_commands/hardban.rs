@@ -61,24 +61,25 @@ impl SlashCommand for HardbanCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("hardban")
+        CreateApplicationCommand::new("hardban")
             .description("hardbans given user, deleting all messages in last 7 days")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("user")
-                    .description("target user to hardban")
-                    .kind(CommandOptionType::User)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::User,
+                    "user",
+                    "target user to hardban",
+                )
+                .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("reason")
-                    .description("reason for the hardban")
-                    .kind(CommandOptionType::String)
-                    .required(false),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "reason",
+                    "reason for the hardban",
+                )
+                .required(false),
             )
     }
 

@@ -553,7 +553,7 @@ impl EventHandler for DiscordEventHandler {
         // Watching over users. [0 / 1]
         let shard_status = format!("over users. [{} / {}]", shard.0, shard.1);
         let activity = ActivityData::watching(shard_status);
-        ctx.set_activity(Some(activity)).await;
+        ctx.set_activity(Some(activity));
 
         if self.create_slash_commands {
             let mut created_guard = self.created_slash_commands.lock().await;
@@ -612,11 +612,9 @@ impl EventHandler for DiscordEventHandler {
                 let response = CreateAutocompleteResponse::default().set_choices(
                     tag_choices
                         .iter()
-                        .map(|tag| {
-                            let mut choice = AutocompleteChoice::default();
-                            choice.name = tag.clone();
-                            choice.value = Value::String(tag.clone());
-                            choice
+                        .map(|tag| AutocompleteChoice {
+                            name: tag.clone(),
+                            value: Value::String(tag.clone()),
                         })
                         .collect(),
                 );

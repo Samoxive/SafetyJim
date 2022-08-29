@@ -75,17 +75,17 @@ impl SlashCommand for MassbanCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("massban")
+        CreateApplicationCommand::new("massban")
             .description("hardbans given users in mass")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("users")
-                    .description("comma separated ids of users to hardban")
-                    .kind(CommandOptionType::String)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "users",
+                    "comma separated ids of users to hardban",
+                )
+                .required(true),
             )
     }
 

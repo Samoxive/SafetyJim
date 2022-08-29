@@ -52,17 +52,17 @@ impl SlashCommand for RoleRemoveCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("role-remove")
+        CreateApplicationCommand::new("role-remove")
             .description("unregisters a self assignable role")
             .dm_permission(false)
             .default_member_permissions(Permissions::ADMINISTRATOR)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("role")
-                    .description("self assignable role to unregister")
-                    .kind(CommandOptionType::Role)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::Role,
+                    "role",
+                    "self assignable role to unregister",
+                )
+                .required(true),
             )
     }
 

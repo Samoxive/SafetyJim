@@ -26,8 +26,7 @@ impl SlashCommand for PingCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("ping")
+        CreateApplicationCommand::new("ping")
             .description("🏓")
             .dm_permission(false)
     }
@@ -48,12 +47,11 @@ impl SlashCommand for PingCommand {
 
         let embed = CreateEmbed::default()
             .author(
-                CreateEmbedAuthor::default()
-                    .name(format!(
-                        "Safety Jim [{} / {}]",
-                        shard_id, shard_info.total_shard_count
-                    ))
-                    .icon_url(AVATAR_URL),
+                CreateEmbedAuthor::new(format!(
+                    "Safety Jim [{} / {}]",
+                    shard_id, shard_info.total_shard_count
+                ))
+                .icon_url(AVATAR_URL),
             )
             .description(format!(
                 ":ping_pong: Ping: {}ms",

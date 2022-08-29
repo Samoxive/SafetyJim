@@ -76,31 +76,33 @@ impl SlashCommand for MuteCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("mute")
+        CreateApplicationCommand::new("mute")
             .description("mutes given user, time can be given for a temporary mute")
             .dm_permission(false)
             .default_member_permissions(Permissions::MANAGE_ROLES)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("user")
-                    .description("target user to mute")
-                    .kind(CommandOptionType::User)
-                    .required(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::User,
+                    "user",
+                    "target user to mute",
+                )
+                .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("reason")
-                    .description("reason for the mute")
-                    .kind(CommandOptionType::String)
-                    .required(false),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "reason",
+                    "reason for the mute",
+                )
+                .required(false),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("duration")
-                    .description("duration for the mute")
-                    .kind(CommandOptionType::String)
-                    .required(false),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "duration",
+                    "duration for the mute",
+                )
+                .required(false),
             )
     }
 

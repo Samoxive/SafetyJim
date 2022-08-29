@@ -49,24 +49,25 @@ impl SlashCommand for TagCommand {
     }
 
     fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::default()
-            .name("tag")
+        CreateApplicationCommand::new("tag")
             .description("repeats previously registered message via tag name")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("name")
-                    .description("tag name for message")
-                    .kind(CommandOptionType::String)
-                    .required(true)
-                    .set_autocomplete(true),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::String,
+                    "name",
+                    "tag name for message",
+                )
+                .required(true)
+                .set_autocomplete(true),
             )
             .add_option(
-                CreateApplicationCommandOption::default()
-                    .name("mention")
-                    .description("user to be mentioned alongside tag content")
-                    .kind(CommandOptionType::User)
-                    .required(false),
+                CreateApplicationCommandOption::new(
+                    CommandOptionType::User,
+                    "mention",
+                    "user to be mentioned alongside tag content",
+                )
+                .required(false),
             )
     }
 
