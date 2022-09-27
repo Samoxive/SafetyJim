@@ -7,18 +7,22 @@ use std::sync::Arc;
 
 use tokio::spawn;
 use tracing::Level;
+use tracing_subscriber::{EnvFilter, filter::LevelFilter, fmt, Layer};
 use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter, Layer};
 
+use mimalloc::MiMalloc;
 use util::Shutdown;
 
-use crate::config::{get_config, Config};
+use crate::config::{Config, get_config};
 use crate::constants::initialize_statics;
 use crate::database::setup_database_pool;
 use crate::discord::discord_bot::DiscordBot;
 use crate::flags::Flags;
 use crate::server::run_server;
 use crate::service::create_services;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 mod config;
 mod constants;
