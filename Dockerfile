@@ -1,4 +1,4 @@
-FROM rust:1.61.0-slim-bullseye AS builder
+FROM rust:1.62.0-slim-bullseye AS builder
 
 WORKDIR /app
 COPY . .
@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/app/target \
 	 	cargo build --release; \
 		objcopy --compress-debug-sections target/release/safetyjim ./safetyjim
 
-FROM debian:11.3-slim
+FROM debian:11.5-slim
 
 RUN rm -rf /var/lib/{apt,dpkg,cache,log}/;
 

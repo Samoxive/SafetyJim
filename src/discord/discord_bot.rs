@@ -181,7 +181,7 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn channel_update(&self, _ctx: Context, new: Channel) {
+    async fn channel_update(&self, _ctx: Context, _old: Option<Channel>, new: Channel) {
         if let Some(guild_channel) = new.guild() {
             if let Some(guild_service) = self.services.get::<GuildService>() {
                 guild_service
@@ -191,13 +191,13 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_create(&self, _ctx: Context, guild: Guild) {
+    async fn guild_create(&self, _ctx: Context, guild: Guild, _is_new: Option<bool>) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
             statistic_service.add_guild(&guild).await;
         }
     }
 
-    async fn guild_delete(&self, _ctx: Context, incomplete: UnavailableGuild) {
+    async fn guild_delete(&self, _ctx: Context, incomplete: UnavailableGuild, _full: Option<Guild>) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
             statistic_service.remove_guild(&incomplete).await;
         }
@@ -339,7 +339,7 @@ impl EventHandler for DiscordEventHandler {
             });
     }
 
-    async fn guild_member_removal(&self, _ctx: Context, guild_id: GuildId, kicked: User) {
+    async fn guild_member_removal(&self, _ctx: Context, guild_id: GuildId, kicked: User, _member: Option<Member>) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
             statistic_service
                 .decrement_guild_member_count(guild_id)
@@ -357,7 +357,8 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_member_update(&self, _ctx: Context, new: GuildMemberUpdateEvent) {
+    // serenity merged no-cache and cached methods so ignore underscore prefixed parameters, they only exist for cache users.
+    async fn guild_member_update(&self, _ctx: Context, _old: Option<Member>, _new: Option<Member>, new: GuildMemberUpdateEvent) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
                 .invalidate_cached_guild_member(new.guild_id, new.user.id)
@@ -373,13 +374,13 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_role_delete(&self, _ctx: Context, guild_id: GuildId, _removed_role_id: RoleId) {
+    async fn guild_role_delete(&self, _ctx: Context, guild_id: GuildId, _removed_role_id: RoleId, _role: Option<Role>) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service.invalidate_cached_guild_roles(guild_id).await;
         }
     }
 
-    async fn guild_role_update(&self, _ctx: Context, new: Role) {
+    async fn guild_role_update(&self, _ctx: Context, _old: Option<Role>, new: Role) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
                 .invalidate_cached_guild_roles(new.guild_id)
@@ -387,7 +388,7 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_update(&self, _ctx: Context, new: PartialGuild) {
+    async fn guild_update(&self, _ctx: Context, _old: Option<Guild>, new: PartialGuild) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service.invalidate_cached_guild(new.id).await;
         }
@@ -466,7 +467,7 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn message_update(&self, ctx: Context, message: MessageUpdateEvent) {
+    async fn message_update(&self, ctx: Context, _old: Option<Message>, _new: Option<Message>, message: MessageUpdateEvent) {
         let author = if let Some(author) = &message.author {
             author
         } else {
@@ -570,7 +571,7 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn user_update(&self, _ctx: Context, new: CurrentUser) {
+    async fn user_update(&self, _ctx: Context, _old: Option<CurrentUser>, new: CurrentUser) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service.invalidate_cached_user(new.id).await;
         }

@@ -4,7 +4,6 @@ use serenity::builder::{
     CreateInteractionResponse, CreateInteractionResponseData,
 };
 use serenity::client::Context;
-use serenity::model::application::component::ButtonStyle;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use serenity::model::application::interaction::InteractionResponseType;
 use tracing::error;
@@ -40,16 +39,12 @@ impl SlashCommand for InviteCommand {
         let components = CreateComponents::default().add_action_row(
             CreateActionRow::default()
                 .add_button(
-                    CreateButton::default()
-                        .label("Invite Jim!")
-                        .url(JIM_INVITE_LINK)
-                        .style(ButtonStyle::Link),
+                    CreateButton::new_link(JIM_INVITE_LINK)
+                        .label("Invite Jim!"),
                 )
                 .add_button(
-                    CreateButton::default()
-                        .label("Join our support server!")
-                        .url(SUPPORT_SERVER_INVITE_LINK)
-                        .style(ButtonStyle::Link),
+                    CreateButton::new_link(SUPPORT_SERVER_INVITE_LINK)
+                        .label("Join our support server!"),
                 ),
         );
 
