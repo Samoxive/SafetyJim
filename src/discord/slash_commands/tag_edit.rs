@@ -1,10 +1,10 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use serenity::model::Permissions;
 use typemap_rev::TypeMap;
@@ -63,21 +63,18 @@ impl SlashCommand for TagEditCommand {
         "tag-edit"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("tag-edit")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("tag-edit")
+            .kind(CommandType::ChatInput)
             .description("edits previously registered tag content")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::String,
-                    "name",
-                    "tag name to edit",
-                )
-                .required(true)
-                .set_autocomplete(true),
+                CreateCommandOption::new(CommandOptionType::String, "name", "tag name to edit")
+                    .required(true)
+                    .set_autocomplete(true),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "content",
                     "content to replace tag with",
@@ -89,7 +86,7 @@ impl SlashCommand for TagEditCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

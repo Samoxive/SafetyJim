@@ -2,11 +2,11 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use typemap_rev::TypeMap;
 
@@ -59,12 +59,13 @@ impl SlashCommand for RemindCommand {
         "remind"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("remind")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("remind")
+            .kind(CommandType::ChatInput)
             .description("sets a reminder for a future date, duration defaults to a day")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "message",
                     "message to be reminded of",
@@ -72,7 +73,7 @@ impl SlashCommand for RemindCommand {
                 .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "duration",
                     "duration after which notification is sent",
@@ -84,7 +85,7 @@ impl SlashCommand for RemindCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

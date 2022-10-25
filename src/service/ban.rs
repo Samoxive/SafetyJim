@@ -143,11 +143,7 @@ impl BanService {
     ) -> Result<(), UnbanFailure> {
         let audit_log_reason = format!("Unbanned by {}", mod_user_tag_and_id);
         match http
-            .remove_ban(
-                guild_id.0.get(),
-                target_user_id.0.get(),
-                Some(&audit_log_reason),
-            )
+            .remove_ban(guild_id, target_user_id, Some(&audit_log_reason))
             .await
         {
             Ok(_) => (),

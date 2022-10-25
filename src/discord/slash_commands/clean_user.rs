@@ -3,15 +3,14 @@ use std::future::ready;
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::{
-    CreateApplicationCommand, CreateApplicationCommandOption, CreateInteractionResponse,
+    CreateCommand, CreateCommandOption, CreateInteractionResponse, CreateInteractionResponseMessage,
 };
 use serenity::client::Context;
 use serenity::futures::StreamExt;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
-use serenity::model::application::interaction::InteractionResponseType;
 use serenity::model::id::{MessageId, UserId};
 use serenity::model::Permissions;
 use typemap_rev::TypeMap;
@@ -73,13 +72,14 @@ impl SlashCommand for CleanUserCommand {
         "clean-user"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("clean-user")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("clean-user")
+            .kind(CommandType::ChatInput)
             .description("deletes specified number of bot messages")
             .dm_permission(false)
             .default_member_permissions(Permissions::MANAGE_MESSAGES)
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::Integer,
                     "number",
                     "number of messages to delete",
@@ -89,7 +89,7 @@ impl SlashCommand for CleanUserCommand {
                 .max_int_value(100),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::User,
                     "user",
                     "target user to clean messages from",
@@ -101,7 +101,7 @@ impl SlashCommand for CleanUserCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         _services: &TypeMap,
     ) -> anyhow::Result<()> {
@@ -134,8 +134,8 @@ impl SlashCommand for CleanUserCommand {
             }
         };
 
-        let response = CreateInteractionResponse::default()
-            .kind(InteractionResponseType::DeferredChannelMessageWithSource);
+        let response =
+            CreateInteractionResponse::Defer(CreateInteractionResponseMessage::default());
 
         interaction
             .create_interaction_response(&context.http, response)

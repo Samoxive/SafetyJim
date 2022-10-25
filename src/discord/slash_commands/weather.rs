@@ -4,15 +4,14 @@ use chrono::NaiveDateTime;
 use reqwest::{Client, ClientBuilder};
 use serde::Deserialize;
 use serenity::builder::{
-    CreateApplicationCommand, CreateApplicationCommandOption, CreateEmbed, CreateEmbedFooter,
-    CreateInteractionResponse, CreateInteractionResponseData,
+    CreateCommand, CreateCommandOption, CreateEmbed, CreateEmbedFooter, CreateInteractionResponse,
+    CreateInteractionResponseMessage,
 };
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
-use serenity::model::application::interaction::InteractionResponseType;
 use typemap_rev::TypeMap;
 
 use crate::constants::EMBED_COLOR;
@@ -103,12 +102,13 @@ impl SlashCommand for WeatherCommand {
         "weather"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("weather")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("weather")
+            .kind(CommandType::ChatInput)
             .description("gives current weather information for given address")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "address",
                     "address for weather location",
@@ -120,7 +120,7 @@ impl SlashCommand for WeatherCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         config: &Config,
         _services: &TypeMap,
     ) -> anyhow::Result<()> {
@@ -240,11 +240,9 @@ impl SlashCommand for WeatherCommand {
             .field("Humidity", &format!("{}%", humidity), true)
             .description(description);
 
-        let data = CreateInteractionResponseData::default().add_embed(embed);
+        let data = CreateInteractionResponseMessage::new().add_embed(embed);
 
-        let response = CreateInteractionResponse::default()
-            .kind(InteractionResponseType::ChannelMessageWithSource)
-            .interaction_response_data(data);
+        let response = CreateInteractionResponse::Message(data);
 
         let _ = interaction
             .create_interaction_response(&*context.http, response)

@@ -1,10 +1,10 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use serenity::model::id::UserId;
 use serenity::prelude::Mentionable;
@@ -48,21 +48,18 @@ impl SlashCommand for TagCommand {
         "tag"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("tag")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("tag")
+            .kind(CommandType::ChatInput)
             .description("repeats previously registered message via tag name")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::String,
-                    "name",
-                    "tag name for message",
-                )
-                .required(true)
-                .set_autocomplete(true),
+                CreateCommandOption::new(CommandOptionType::String, "name", "tag name for message")
+                    .required(true)
+                    .set_autocomplete(true),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::User,
                     "mention",
                     "user to be mentioned alongside tag content",
@@ -74,7 +71,7 @@ impl SlashCommand for TagCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

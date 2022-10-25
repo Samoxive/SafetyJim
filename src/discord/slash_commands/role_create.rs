@@ -1,10 +1,10 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use serenity::model::id::RoleId;
 use serenity::model::Permissions;
@@ -51,13 +51,14 @@ impl SlashCommand for RoleCreateCommand {
         "role-create"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("role-create")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("role-create")
+            .kind(CommandType::ChatInput)
             .description("registers a role that can be self assigned via iam command")
             .dm_permission(false)
             .default_member_permissions(Permissions::ADMINISTRATOR)
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::Role,
                     "role",
                     "self assignable role to register",
@@ -69,7 +70,7 @@ impl SlashCommand for RoleCreateCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

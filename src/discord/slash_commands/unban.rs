@@ -1,10 +1,10 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use serenity::model::user::User;
 use serenity::model::Permissions;
@@ -49,25 +49,22 @@ impl SlashCommand for UnbanCommand {
         "unban"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("unban")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("unban")
+            .kind(CommandType::ChatInput)
             .description("unbans given user")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::User,
-                    "user",
-                    "target user to unban",
-                )
-                .required(true),
+                CreateCommandOption::new(CommandOptionType::User, "user", "target user to unban")
+                    .required(true),
             )
     }
 
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

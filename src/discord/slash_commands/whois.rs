@@ -1,15 +1,14 @@
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::{
-    CreateApplicationCommand, CreateApplicationCommandOption, CreateEmbed, CreateEmbedAuthor,
-    CreateInteractionResponse, CreateInteractionResponseData,
+    CreateCommand, CreateCommandOption, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
+    CreateInteractionResponseMessage,
 };
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
-use serenity::model::application::interaction::InteractionResponseType;
 use serenity::model::channel::MessageFlags;
 use serenity::model::guild::PartialMember;
 use serenity::model::user::User;
@@ -107,24 +106,21 @@ impl SlashCommand for WhoisCommand {
         "whois"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("whois")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("whois")
+            .kind(CommandType::ChatInput)
             .description("displays information about given user or server member")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::User,
-                    "user",
-                    "target user to query",
-                )
-                .required(true),
+                CreateCommandOption::new(CommandOptionType::User, "user", "target user to query")
+                    .required(true),
             )
     }
 
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {
@@ -154,13 +150,11 @@ impl SlashCommand for WhoisCommand {
 
             let embed = generate_member_embed(&guild, member, user);
 
-            let data = CreateInteractionResponseData::default()
+            let data = CreateInteractionResponseMessage::new()
                 .flags(MessageFlags::EPHEMERAL)
                 .add_embed(embed);
 
-            let response = CreateInteractionResponse::default()
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(data);
+            let response = CreateInteractionResponse::Message(data);
 
             interaction
                 .create_interaction_response(&context.http, response)
@@ -172,13 +166,11 @@ impl SlashCommand for WhoisCommand {
         } else {
             let embed = generate_user_embed(user);
 
-            let data = CreateInteractionResponseData::default()
+            let data = CreateInteractionResponseMessage::new()
                 .flags(MessageFlags::EPHEMERAL)
                 .add_embed(embed);
 
-            let response = CreateInteractionResponse::default()
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(data);
+            let response = CreateInteractionResponse::Message(data);
 
             interaction
                 .create_interaction_response(&context.http, response)

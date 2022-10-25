@@ -1,13 +1,13 @@
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::{
-    CreateApplicationCommand, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
-    CreateInteractionResponseData,
+    CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
+    CreateInteractionResponseMessage,
 };
 use serenity::client::bridge::gateway::ShardId;
 use serenity::client::Context;
-use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::application::command::CommandType;
+use serenity::model::application::interaction::application_command::CommandInteraction;
 use serenity::model::channel::MessageFlags;
 use tracing::error;
 use typemap_rev::TypeMap;
@@ -25,8 +25,9 @@ impl SlashCommand for PingCommand {
         "ping"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("ping")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("ping")
+            .kind(CommandType::ChatInput)
             .description("🏓")
             .dm_permission(false)
     }
@@ -34,7 +35,7 @@ impl SlashCommand for PingCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {
@@ -59,13 +60,11 @@ impl SlashCommand for PingCommand {
             ))
             .color(EMBED_COLOR);
 
-        let data = CreateInteractionResponseData::default()
+        let response_message = CreateInteractionResponseMessage::new()
             .flags(MessageFlags::EPHEMERAL)
             .add_embed(embed);
 
-        let response = CreateInteractionResponse::default()
-            .kind(InteractionResponseType::ChannelMessageWithSource)
-            .interaction_response_data(data);
+        let response = CreateInteractionResponse::Message(response_message);
 
         interaction
             .create_interaction_response(&context.http, response)

@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use serenity::builder::CreateApplicationCommand;
+use serenity::builder::CreateCommand;
 use serenity::client::Context;
-use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
+use serenity::model::application::interaction::application_command::CommandInteraction;
 use typemap_rev::TypeMap;
 
 use crate::config::Config;
@@ -42,11 +42,11 @@ mod xkcd;
 #[async_trait]
 pub trait SlashCommand {
     fn command_name(&self) -> &'static str;
-    fn create_command(&self) -> CreateApplicationCommand;
+    fn create_command(&self) -> CreateCommand;
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()>;

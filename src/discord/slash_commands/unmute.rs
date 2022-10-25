@@ -1,10 +1,10 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use serenity::model::user::User;
 use serenity::model::Permissions;
@@ -51,25 +51,22 @@ impl SlashCommand for UnmuteCommand {
         "unmute"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("unmute")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("unmute")
+            .kind(CommandType::ChatInput)
             .description("unmutes given user")
             .dm_permission(false)
             .default_member_permissions(Permissions::MANAGE_ROLES)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::User,
-                    "user",
-                    "target user to unmute",
-                )
-                .required(true),
+                CreateCommandOption::new(CommandOptionType::User, "user", "target user to unmute")
+                    .required(true),
             )
     }
 
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

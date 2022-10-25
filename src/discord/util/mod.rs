@@ -4,13 +4,12 @@ use std::time::Duration;
 use anyhow::bail;
 use async_recursion::async_recursion;
 use serenity::builder::{
-    CreateInteractionResponse, CreateInteractionResponseData, EditInteractionResponse,
+    CreateInteractionResponse, CreateInteractionResponseMessage, EditInteractionResponse,
 };
 use serenity::http::{Http, HttpError};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData, CommandDataOptionValue,
+    CommandData, CommandDataOptionValue, CommandInteraction,
 };
-use serenity::model::application::interaction::InteractionResponseType;
 use serenity::model::channel::{Message, MessageFlags, PartialChannel};
 use serenity::model::event::MessageUpdateEvent;
 use serenity::model::guild::{Member, PartialMember, Role};
@@ -190,7 +189,7 @@ pub struct GuildSlashCommandInteraction<'a> {
 }
 
 pub fn verify_guild_slash_command(
-    interaction: &ApplicationCommandInteraction,
+    interaction: &CommandInteraction,
 ) -> anyhow::Result<GuildSlashCommandInteraction<'_>> {
     let member = if let Some(member) = &interaction.member {
         member
@@ -241,19 +240,13 @@ pub fn verify_guild_message_update(message: &MessageUpdateEvent) -> Option<Guild
     })
 }
 
-pub fn create_str_reply_data(content: &str) -> CreateInteractionResponseData {
-    CreateInteractionResponseData::default().content(content)
+pub fn create_str_reply_data(content: &str) -> CreateInteractionResponseMessage {
+    CreateInteractionResponseMessage::new().content(content)
 }
 
-pub async fn reply_with_str(
-    http: &Http,
-    interaction: &ApplicationCommandInteraction,
-    content: &str,
-) {
+pub async fn reply_with_str(http: &Http, interaction: &CommandInteraction, content: &str) {
     let data = create_str_reply_data(content);
-    let builder = CreateInteractionResponse::default()
-        .kind(InteractionResponseType::ChannelMessageWithSource)
-        .interaction_response_data(data);
+    let builder = CreateInteractionResponse::Message(data);
 
     let _ = interaction
         .create_interaction_response(http, builder)
@@ -264,15 +257,9 @@ pub async fn reply_with_str(
         });
 }
 
-async fn invisible_reply_with_str(
-    http: &Http,
-    interaction: &ApplicationCommandInteraction,
-    content: &str,
-) {
+async fn invisible_reply_with_str(http: &Http, interaction: &CommandInteraction, content: &str) {
     let data = create_str_reply_data(content).flags(MessageFlags::EPHEMERAL);
-    let builder = CreateInteractionResponse::default()
-        .kind(InteractionResponseType::ChannelMessageWithSource)
-        .interaction_response_data(data);
+    let builder = CreateInteractionResponse::Message(data);
 
     let _ = interaction
         .create_interaction_response(http, builder)
@@ -285,7 +272,7 @@ async fn invisible_reply_with_str(
 
 pub async fn edit_interaction_response(
     http: &Http,
-    interaction: &ApplicationCommandInteraction,
+    interaction: &CommandInteraction,
     content: &str,
 ) {
     let builder = EditInteractionResponse::default().content(content);
@@ -301,7 +288,7 @@ pub async fn edit_interaction_response(
 
 pub async fn unauthorized_reply(
     http: &Http,
-    interaction: &ApplicationCommandInteraction,
+    interaction: &CommandInteraction,
     required_permission: Permissions,
 ) {
     invisible_failure_reply(
@@ -317,7 +304,7 @@ pub async fn unauthorized_reply(
 
 pub async fn invisible_success_reply(
     http: &Http,
-    interaction: &ApplicationCommandInteraction,
+    interaction: &CommandInteraction,
     failure_message: &str,
 ) {
     invisible_reply_with_str(http, interaction, failure_message).await;
@@ -325,7 +312,7 @@ pub async fn invisible_success_reply(
 
 pub async fn invisible_failure_reply(
     http: &Http,
-    interaction: &ApplicationCommandInteraction,
+    interaction: &CommandInteraction,
     failure_message: &str,
 ) {
     invisible_reply_with_str(http, interaction, failure_message).await;

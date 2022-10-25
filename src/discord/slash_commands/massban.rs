@@ -3,14 +3,13 @@ use std::num::{NonZeroU64, ParseIntError};
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::{
-    CreateApplicationCommand, CreateApplicationCommandOption, CreateInteractionResponse,
+    CreateCommand, CreateCommandOption, CreateInteractionResponse, CreateInteractionResponseMessage,
 };
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
-use serenity::model::application::interaction::InteractionResponseType;
 use serenity::model::id::UserId;
 use serenity::model::Permissions;
 use typemap_rev::TypeMap;
@@ -74,13 +73,14 @@ impl SlashCommand for MassbanCommand {
         "massban"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("massban")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("massban")
+            .kind(CommandType::ChatInput)
             .description("hardbans given users in mass")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "users",
                     "comma separated ids of users to hardban",
@@ -92,7 +92,7 @@ impl SlashCommand for MassbanCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {
@@ -184,8 +184,8 @@ impl SlashCommand for MassbanCommand {
             bail!("couldn't get setting service!");
         };
 
-        let response = CreateInteractionResponse::default()
-            .kind(InteractionResponseType::DeferredChannelMessageWithSource);
+        let response =
+            CreateInteractionResponse::Defer(CreateInteractionResponseMessage::default());
 
         interaction
             .create_interaction_response(&context.http, response)
@@ -198,7 +198,7 @@ impl SlashCommand for MassbanCommand {
             // massban is used for cases like raids, so getting the users from cache would unnecessarily
             // inflate the cache that is mostly used for the front end, plus we are likely to send all
             // these requests because they aren't likely to be in the cache in the first place
-            let target_user = match context.http.get_user(target_user_id.0.get()).await {
+            let target_user = match context.http.get_user(target_user_id).await {
                 Ok(user) => user,
                 Err(err) => match err.discord_error_code() {
                     Some(10013) => {

@@ -1,10 +1,10 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use serenity::model::user::User;
 use serenity::model::Permissions;
@@ -58,21 +58,18 @@ impl SlashCommand for KickCommand {
         "kick"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("kick")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("kick")
+            .kind(CommandType::ChatInput)
             .description("kicks given user")
             .dm_permission(false)
             .default_member_permissions(Permissions::KICK_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::User,
-                    "user",
-                    "target user to kick",
-                )
-                .required(true),
+                CreateCommandOption::new(CommandOptionType::User, "user", "target user to kick")
+                    .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "reason",
                     "reason for the kick",
@@ -84,7 +81,7 @@ impl SlashCommand for KickCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

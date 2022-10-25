@@ -3,11 +3,11 @@ use async_trait::async_trait;
 use regex::Regex;
 use reqwest::{Client, ClientBuilder};
 use scraper::{Html, Selector};
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use typemap_rev::TypeMap;
 
@@ -79,12 +79,13 @@ impl SlashCommand for XkcdCommand {
         "xkcd"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("xkcd")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("xkcd")
+            .kind(CommandType::ChatInput)
             .description("searches xkcd comics with given description or partial title")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "description",
                     "description or partial title of the comic",
@@ -96,7 +97,7 @@ impl SlashCommand for XkcdCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         _services: &TypeMap,
     ) -> anyhow::Result<()> {

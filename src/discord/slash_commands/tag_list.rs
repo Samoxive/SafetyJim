@@ -1,12 +1,12 @@
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::{
-    CreateApplicationCommand, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
-    CreateInteractionResponseData,
+    CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
+    CreateInteractionResponseMessage,
 };
 use serenity::client::Context;
-use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::application::command::CommandType;
+use serenity::model::application::interaction::application_command::CommandInteraction;
 use serenity::model::channel::MessageFlags;
 use tracing::error;
 use typemap_rev::TypeMap;
@@ -27,8 +27,9 @@ impl SlashCommand for TagListCommand {
         "tag-list"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("tag-list")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("tag-list")
+            .kind(CommandType::ChatInput)
             .description("lists previously registered tags")
             .dm_permission(false)
     }
@@ -36,7 +37,7 @@ impl SlashCommand for TagListCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {
@@ -69,13 +70,11 @@ impl SlashCommand for TagListCommand {
                 .description(tags_str)
                 .colour(EMBED_COLOR);
 
-            let data = CreateInteractionResponseData::default()
+            let data = CreateInteractionResponseMessage::new()
                 .flags(MessageFlags::EPHEMERAL)
                 .add_embed(embed);
 
-            let response = CreateInteractionResponse::default()
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(data);
+            let response = CreateInteractionResponse::Message(data);
 
             interaction
                 .create_interaction_response(&context.http, response)

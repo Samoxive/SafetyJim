@@ -4,7 +4,7 @@ use sqlx::{Error, PgPool, Row};
 
 use crate::util::now;
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct Ban {
     pub id: i32,
     pub user_id: i64,

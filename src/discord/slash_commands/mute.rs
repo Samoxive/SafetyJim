@@ -2,11 +2,11 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use serenity::model::user::User;
 use serenity::model::Permissions;
@@ -75,21 +75,18 @@ impl SlashCommand for MuteCommand {
         "mute"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("mute")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("mute")
+            .kind(CommandType::ChatInput)
             .description("mutes given user, time can be given for a temporary mute")
             .dm_permission(false)
             .default_member_permissions(Permissions::MANAGE_ROLES)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::User,
-                    "user",
-                    "target user to mute",
-                )
-                .required(true),
+                CreateCommandOption::new(CommandOptionType::User, "user", "target user to mute")
+                    .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "reason",
                     "reason for the mute",
@@ -97,7 +94,7 @@ impl SlashCommand for MuteCommand {
                 .required(false),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "duration",
                     "duration for the mute",
@@ -109,7 +106,7 @@ impl SlashCommand for MuteCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

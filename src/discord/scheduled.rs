@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::http::Http;
-use serenity::model::id::{ChannelId, GuildId, UserId};
+use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
 use serenity::model::Timestamp;
 use serenity::prelude::Mentionable;
 use tokio::select;
@@ -116,11 +116,34 @@ pub async fn allow_users(http: &Http, services: &TypeMap) {
 
         if setting.holding_room {
             if let Some(holding_room_role_id) = setting.holding_room_role_id {
+                // these aren't likely to be zero but we need sanity checks to avoid panic
+                let user_id = if let Some(id) = NonZeroU64::new(expired_join.user_id as u64) {
+                    UserId(id)
+                } else {
+                    warn!(
+                        "found expired join with invalid user id! {:?}",
+                        expired_join
+                    );
+                    join_service.invalidate_join(expired_join.id).await;
+                    continue;
+                };
+
+                let role_id = if let Some(id) = NonZeroU64::new(holding_room_role_id as u64) {
+                    RoleId(id)
+                } else {
+                    warn!(
+                        "found expired join in guild with invalid role id! {:?}",
+                        expired_join
+                    );
+                    join_service.invalidate_join(expired_join.id).await;
+                    continue;
+                };
+
                 let _ = http
                     .add_member_role(
-                        expired_join.guild_id as u64,
-                        expired_join.user_id as u64,
-                        holding_room_role_id as u64,
+                        guild_id,
+                        user_id,
+                        role_id,
                         Some("Taking member out of holding room because duration expired"),
                     )
                     .await
@@ -173,11 +196,23 @@ pub async fn unmute_users(http: &Http, services: &TypeMap) {
             .ok()
             .flatten()
         {
+            // these aren't likely to be zero but we need sanity checks to avoid panic
+            let user_id = if let Some(id) = NonZeroU64::new(expired_mute.user_id as u64) {
+                UserId(id)
+            } else {
+                warn!(
+                    "found expired mute with invalid user id! {:?}",
+                    expired_mute
+                );
+                mute_service.invalidate_mute(expired_mute.id).await;
+                continue;
+            };
+
             let _ = http
                 .remove_member_role(
-                    expired_mute.guild_id as u64,
-                    expired_mute.user_id as u64,
-                    muted_role_id.0.get(),
+                    guild_id,
+                    user_id,
+                    muted_role_id,
                     Some("Unmuting member because duration expired"),
                 )
                 .await
@@ -200,10 +235,27 @@ pub async fn unban_users(http: &Http, services: &TypeMap) {
 
     let expired_bans = ban_service.fetch_expired_bans().await;
     for expired_ban in expired_bans {
+        // these aren't likely to be zero but we need sanity checks to avoid panic
+        let guild_id = if let Some(id) = NonZeroU64::new(expired_ban.guild_id as u64) {
+            GuildId(id)
+        } else {
+            warn!("found expired ban with invalid guild id! {:?}", expired_ban);
+            ban_service.invalidate_ban(expired_ban.id).await;
+            continue;
+        };
+
+        let user_id = if let Some(id) = NonZeroU64::new(expired_ban.user_id as u64) {
+            UserId(id)
+        } else {
+            warn!("found expired ban with invalid user id! {:?}", expired_ban);
+            ban_service.invalidate_ban(expired_ban.id).await;
+            continue;
+        };
+
         let _ = http
             .remove_ban(
-                expired_ban.guild_id as u64,
-                expired_ban.user_id as u64,
+                guild_id,
+                user_id,
                 Some("Unbanning member because duration expired"),
             )
             .await

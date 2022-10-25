@@ -2,12 +2,13 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
 use serenity::model::application::command::CommandOptionType;
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
+use serenity::model::prelude::command::CommandType;
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use typemap_rev::TypeMap;
@@ -75,29 +76,22 @@ impl SlashCommand for BanCommand {
         "ban"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("ban")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("ban")
+            .kind(CommandType::ChatInput)
             .description("bans given user, time can be given for a temporary ban")
             .dm_permission(false)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::User,
-                    "user",
-                    "target user to ban",
-                )
-                .required(true),
+                CreateCommandOption::new(CommandOptionType::User, "user", "target user to ban")
+                    .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::String,
-                    "reason",
-                    "reason for the ban",
-                )
-                .required(false),
+                CreateCommandOption::new(CommandOptionType::String, "reason", "reason for the ban")
+                    .required(false),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
+                CreateCommandOption::new(
                     CommandOptionType::String,
                     "duration",
                     "duration for the ban",
@@ -109,7 +103,7 @@ impl SlashCommand for BanCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

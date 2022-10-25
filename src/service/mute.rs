@@ -42,7 +42,7 @@ pub enum UnmuteFailure {
 }
 
 impl MuteService {
-    pub async fn fetch_muted_role(
+    pub async fn fetch_muted_role_id(
         &self,
         http: &Http,
         services: &TypeMap,
@@ -160,7 +160,7 @@ impl MuteService {
         )
         .await;
 
-        let role = match self.fetch_muted_role(http, services, guild_id).await {
+        let role_id = match self.fetch_muted_role_id(http, services, guild_id).await {
             Ok(role) => role,
             Err(err) => {
                 return Err(err);
@@ -169,12 +169,7 @@ impl MuteService {
 
         let audit_log_reason = format!("Muted by {} - {}", mod_user_tag_and_id, reason);
         match http
-            .add_member_role(
-                guild_id.0.get(),
-                target_user.id.0.get(),
-                role.0.get(),
-                Some(&audit_log_reason),
-            )
+            .add_member_role(guild_id, target_user.id, role_id, Some(&audit_log_reason))
             .await
         {
             Ok(_) => (),
@@ -286,12 +281,7 @@ impl MuteService {
 
         if let Some((role_id, _)) = muted_role {
             match http
-                .remove_member_role(
-                    guild_id.0.get(),
-                    target_user_id.0.get(),
-                    role_id.0.get(),
-                    Some(&audit_log_reason),
-                )
+                .remove_member_role(guild_id, target_user_id, *role_id, Some(&audit_log_reason))
                 .await
             {
                 Ok(_) => (),

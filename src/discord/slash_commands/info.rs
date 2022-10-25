@@ -1,13 +1,13 @@
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::{
-    CreateApplicationCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
-    CreateInteractionResponse, CreateInteractionResponseData,
+    CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateInteractionResponse,
+    CreateInteractionResponseMessage,
 };
 use serenity::client::bridge::gateway::ShardId;
 use serenity::client::Context;
-use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::application::command::CommandType;
+use serenity::model::application::interaction::application_command::CommandInteraction;
 use serenity::model::channel::MessageFlags;
 use tracing::error;
 use typemap_rev::TypeMap;
@@ -30,8 +30,9 @@ impl SlashCommand for InfoCommand {
         "info"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("info")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("info")
+            .kind(CommandType::ChatInput)
             .description("displays information about Jim")
             .dm_permission(false)
     }
@@ -39,7 +40,7 @@ impl SlashCommand for InfoCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {
@@ -123,13 +124,11 @@ impl SlashCommand for InfoCommand {
             )))
             .color(EMBED_COLOR);
 
-        let response = CreateInteractionResponse::default()
-            .kind(InteractionResponseType::ChannelMessageWithSource)
-            .interaction_response_data(
-                CreateInteractionResponseData::default()
-                    .flags(MessageFlags::EPHEMERAL)
-                    .add_embed(embed),
-            );
+        let response_message = CreateInteractionResponseMessage::new()
+            .flags(MessageFlags::EPHEMERAL)
+            .add_embed(embed);
+
+        let response = CreateInteractionResponse::Message(response_message);
 
         interaction
             .create_interaction_response(&context.http, response)

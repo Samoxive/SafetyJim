@@ -118,9 +118,9 @@ pub async fn submit_captcha(
         .http()
         .await
         .add_member_role(
-            guild_id.0.get(),
-            user_id.0.get(),
-            role_id.0.get(),
+            guild_id,
+            user_id,
+            role_id,
             Some("Taking member out of holding room because of completed captcha challenge"),
         )
         .await;

@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use serenity::builder::{
-    CreateActionRow, CreateApplicationCommand, CreateButton, CreateComponents,
-    CreateInteractionResponse, CreateInteractionResponseData,
+    CreateActionRow, CreateButton, CreateCommand, CreateInteractionResponse,
+    CreateInteractionResponseMessage,
 };
 use serenity::client::Context;
-use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::application::command::CommandType;
+use serenity::model::application::interaction::application_command::CommandInteraction;
 use tracing::error;
 use typemap_rev::TypeMap;
 
@@ -23,8 +23,9 @@ impl SlashCommand for InviteCommand {
         "invite"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("invite")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("invite")
+            .kind(CommandType::ChatInput)
             .description("displays links to invite Jim and get support")
             .dm_permission(false)
     }
@@ -32,29 +33,20 @@ impl SlashCommand for InviteCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         _services: &TypeMap,
     ) -> anyhow::Result<()> {
-        let components = CreateComponents::default().add_action_row(
-            CreateActionRow::default()
-                .add_button(
-                    CreateButton::new_link(JIM_INVITE_LINK)
-                        .label("Invite Jim!"),
-                )
-                .add_button(
-                    CreateButton::new_link(SUPPORT_SERVER_INVITE_LINK)
-                        .label("Join our support server!"),
-                ),
-        );
+        let components = vec![CreateActionRow::Buttons(vec![
+            CreateButton::new_link("Invite Jim!", JIM_INVITE_LINK),
+            CreateButton::new_link("Join our support server!", SUPPORT_SERVER_INVITE_LINK),
+        ])];
 
-        let data = CreateInteractionResponseData::default()
+        let data = CreateInteractionResponseMessage::new()
             .content("Links:")
             .components(components);
 
-        let response = CreateInteractionResponse::default()
-            .kind(InteractionResponseType::ChannelMessageWithSource)
-            .interaction_response_data(data);
+        let response = CreateInteractionResponse::Message(data);
 
         interaction
             .create_interaction_response(&context.http, response)

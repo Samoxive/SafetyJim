@@ -1,10 +1,10 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use serenity::model::Permissions;
 use typemap_rev::TypeMap;
@@ -63,32 +63,25 @@ impl SlashCommand for TagCreateCommand {
         "tag-create"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("tag-create")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("tag-create")
+            .kind(CommandType::ChatInput)
             .description("registers a message that can be repeated later")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::String,
-                    "name",
-                    "tag name to create",
-                )
-                .required(true),
+                CreateCommandOption::new(CommandOptionType::String, "name", "tag name to create")
+                    .required(true),
             )
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::String,
-                    "content",
-                    "tag content",
-                )
-                .required(true),
+                CreateCommandOption::new(CommandOptionType::String, "content", "tag content")
+                    .required(true),
             )
     }
 
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {

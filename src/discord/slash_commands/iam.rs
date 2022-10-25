@@ -1,10 +1,10 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{CreateApplicationCommand, CreateApplicationCommandOption};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::CommandOptionType;
+use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
-    ApplicationCommandInteraction, CommandData,
+    CommandData, CommandInteraction,
 };
 use serenity::model::id::RoleId;
 use typemap_rev::TypeMap;
@@ -43,24 +43,21 @@ impl SlashCommand for IAMCommand {
         "iam"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("iam")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("iam")
+            .kind(CommandType::ChatInput)
             .description("self assigns specified role")
             .dm_permission(false)
             .add_option(
-                CreateApplicationCommandOption::new(
-                    CommandOptionType::Role,
-                    "role",
-                    "role to assign",
-                )
-                .required(true),
+                CreateCommandOption::new(CommandOptionType::Role, "role", "role to assign")
+                    .required(true),
             )
     }
 
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {
@@ -99,9 +96,9 @@ impl SlashCommand for IAMCommand {
         if let Err(err) = context
             .http
             .add_member_role(
-                guild_id.0.get(),
-                member.user.id.0.get(),
-                options.role_id.0.get(),
+                guild_id,
+                member.user.id,
+                options.role_id,
                 Some("Member self-assigned the role"),
             )
             .await

@@ -16,7 +16,7 @@ use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
 use serenity::model::event::{GuildMemberUpdateEvent, MessageUpdateEvent};
 use serenity::model::gateway::{GatewayIntents, Ready};
 use serenity::model::guild::{Guild, Member, PartialGuild, Role, UnavailableGuild};
-use serenity::model::id::{ChannelId, GuildId, RoleId};
+use serenity::model::id::{ApplicationId, ChannelId, GuildId, RoleId};
 use serenity::model::user::{CurrentUser, User};
 use serenity::prelude::Mentionable;
 use serenity::Client;
@@ -97,7 +97,7 @@ impl DiscordBot {
             created_slash_commands: Mutex::new(false),
         };
 
-        let application_id: u64 = config.oauth_client_id.parse()?;
+        let application_id = ApplicationId::new(config.oauth_client_id.parse()?);
         let client = Client::builder(
             &config.discord_token,
             GatewayIntents::GUILDS
@@ -165,7 +165,7 @@ async fn initialize_slash_commands(
 
 #[async_trait]
 impl EventHandler for DiscordEventHandler {
-    async fn channel_create(&self, _ctx: Context, new: &GuildChannel) {
+    async fn channel_create(&self, _ctx: Context, new: GuildChannel) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
                 .invalidate_cached_guild_channels(new.guild_id)
@@ -173,7 +173,12 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn channel_delete(&self, _ctx: Context, new: &GuildChannel) {
+    async fn channel_delete(
+        &self,
+        _ctx: Context,
+        new: GuildChannel,
+        _messages: Option<Vec<Message>>,
+    ) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
                 .invalidate_cached_guild_channels(new.guild_id)
@@ -197,7 +202,12 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_delete(&self, _ctx: Context, incomplete: UnavailableGuild, _full: Option<Guild>) {
+    async fn guild_delete(
+        &self,
+        _ctx: Context,
+        incomplete: UnavailableGuild,
+        _full: Option<Guild>,
+    ) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
             statistic_service.remove_guild(&incomplete).await;
         }
@@ -314,8 +324,8 @@ impl EventHandler for DiscordEventHandler {
             return;
         }
 
-        let role = match mute_service
-            .fetch_muted_role(&ctx.http, &*self.services, guild_id)
+        let role_id = match mute_service
+            .fetch_muted_role_id(&ctx.http, &*self.services, guild_id)
             .await
         {
             Ok(role) => role,
@@ -327,9 +337,9 @@ impl EventHandler for DiscordEventHandler {
         let _ = ctx
             .http
             .add_member_role(
-                guild_id.0.get(),
-                new_member.user.id.0.get(),
-                role.0.get(),
+                guild_id,
+                new_member.user.id,
+                role_id,
                 Some("Preventing mute evasion"),
             )
             .await
@@ -339,7 +349,13 @@ impl EventHandler for DiscordEventHandler {
             });
     }
 
-    async fn guild_member_removal(&self, _ctx: Context, guild_id: GuildId, kicked: User, _member: Option<Member>) {
+    async fn guild_member_removal(
+        &self,
+        _ctx: Context,
+        guild_id: GuildId,
+        kicked: User,
+        _member: Option<Member>,
+    ) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
             statistic_service
                 .decrement_guild_member_count(guild_id)
@@ -358,7 +374,13 @@ impl EventHandler for DiscordEventHandler {
     }
 
     // serenity merged no-cache and cached methods so ignore underscore prefixed parameters, they only exist for cache users.
-    async fn guild_member_update(&self, _ctx: Context, _old: Option<Member>, _new: Option<Member>, new: GuildMemberUpdateEvent) {
+    async fn guild_member_update(
+        &self,
+        _ctx: Context,
+        _old: Option<Member>,
+        _new: Option<Member>,
+        new: GuildMemberUpdateEvent,
+    ) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
                 .invalidate_cached_guild_member(new.guild_id, new.user.id)
@@ -374,7 +396,13 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_role_delete(&self, _ctx: Context, guild_id: GuildId, _removed_role_id: RoleId, _role: Option<Role>) {
+    async fn guild_role_delete(
+        &self,
+        _ctx: Context,
+        guild_id: GuildId,
+        _removed_role_id: RoleId,
+        _role: Option<Role>,
+    ) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service.invalidate_cached_guild_roles(guild_id).await;
         }
@@ -467,7 +495,13 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn message_update(&self, ctx: Context, _old: Option<Message>, _new: Option<Message>, message: MessageUpdateEvent) {
+    async fn message_update(
+        &self,
+        ctx: Context,
+        _old: Option<Message>,
+        _new: Option<Message>,
+        message: MessageUpdateEvent,
+    ) {
         let author = if let Some(author) = &message.author {
             author
         } else {
@@ -632,7 +666,7 @@ impl EventHandler for DiscordEventHandler {
             return;
         }
 
-        if let Interaction::ApplicationCommand(command) = interaction {
+        if let Interaction::Command(command) = interaction {
             // TODO(sam): maybe remove this check later and rely on dm_permission field of command
             if command.guild_id.is_none() || command.member.is_none() {
                 invisible_success_reply(

@@ -1,12 +1,12 @@
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::builder::{
-    CreateApplicationCommand, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
-    CreateInteractionResponseData,
+    CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
+    CreateInteractionResponseMessage,
 };
 use serenity::client::Context;
-use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
-use serenity::model::application::interaction::InteractionResponseType;
+use serenity::model::application::command::CommandType;
+use serenity::model::application::interaction::application_command::CommandInteraction;
 use serenity::model::channel::MessageFlags;
 use tracing::error;
 use typemap_rev::TypeMap;
@@ -25,8 +25,9 @@ impl SlashCommand for ServerCommand {
         "server"
     }
 
-    fn create_command(&self) -> CreateApplicationCommand {
-        CreateApplicationCommand::new("server")
+    fn create_command(&self) -> CreateCommand {
+        CreateCommand::new("server")
+            .kind(CommandType::ChatInput)
             .description("displays information about the server")
             .dm_permission(false)
     }
@@ -34,7 +35,7 @@ impl SlashCommand for ServerCommand {
     async fn handle_command(
         &self,
         context: &Context,
-        interaction: &ApplicationCommandInteraction,
+        interaction: &CommandInteraction,
         _config: &Config,
         services: &TypeMap,
     ) -> anyhow::Result<()> {
@@ -97,13 +98,11 @@ impl SlashCommand for ServerCommand {
             .field("NSFW Tier", &format!("{:?}", guild.nsfw_level), true)
             .field("Server Features", &guild.features.join(" | "), false);
 
-        let data = CreateInteractionResponseData::default()
+        let response_message = CreateInteractionResponseMessage::new()
             .flags(MessageFlags::EPHEMERAL)
             .add_embed(embed);
 
-        let response = CreateInteractionResponse::default()
-            .kind(InteractionResponseType::ChannelMessageWithSource)
-            .interaction_response_data(data);
+        let response = CreateInteractionResponse::Message(response_message);
 
         interaction
             .create_interaction_response(&context.http, response)
