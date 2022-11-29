@@ -8,16 +8,16 @@ use serenity::model::application::interaction::application_command::{
 };
 use serenity::model::id::RoleId;
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::role_create::RoleCreateCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction,
+    reply_to_interaction_str, unauthorized_reply, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction,
 };
 use crate::service::iam_role::{IAMRoleService, InsertIAMRoleFailure};
+use crate::service::Services;
 
 pub struct RoleCreateCommand;
 
@@ -72,7 +72,7 @@ impl SlashCommand for RoleCreateCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -88,7 +88,7 @@ impl SlashCommand for RoleCreateCommand {
         };
 
         if !is_authorized(permissions) {
-            unauthorized_reply(&*context.http, interaction, Permissions::ADMINISTRATOR).await;
+            unauthorized_reply(&context.http, interaction, Permissions::ADMINISTRATOR).await;
             return Ok(());
         }
 
@@ -102,15 +102,17 @@ impl SlashCommand for RoleCreateCommand {
             .insert_iam_role(guild_id, options.role_id)
             .await
         {
-            Ok(_) => invisible_success_reply(&context.http, interaction, "Success.").await,
+            Ok(_) => reply_to_interaction_str(&context.http, interaction, "Success.", true).await,
             Err(InsertIAMRoleFailure::RoleExists) => {
-                invisible_failure_reply(&context.http, interaction, "Role already exists!").await
+                reply_to_interaction_str(&context.http, interaction, "Role already exists!", true)
+                    .await;
             }
             Err(InsertIAMRoleFailure::Unknown) => {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "Failed to create role, this incident was logged.",
+                    true,
                 )
                 .await
             }

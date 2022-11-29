@@ -8,11 +8,12 @@ use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use serenity::model::id::{GuildId, UserId};
 use tracing::error;
-use typemap_rev::{TypeMap, TypeMapKey};
+use typemap_rev::TypeMapKey;
 
 use crate::constants::{DISCORD_API_BASE, DISCORD_CDN_BASE};
 use crate::database::user_secrets::{UserSecret, UserSecretsRepository};
 use crate::service::guild_statistic::GuildStatisticService;
+use crate::service::Services;
 use crate::Config;
 
 impl TypeMapKey for UserSecretService {
@@ -312,7 +313,7 @@ impl UserSecretService {
 
     pub async fn get_self_user_guilds(
         &self,
-        services: &TypeMap,
+        services: &Services,
         user_id: UserId,
     ) -> anyhow::Result<Arc<Vec<SelfGuild>>> {
         let self_user_guilds =
@@ -334,7 +335,7 @@ impl UserSecretService {
 
     pub async fn fetch_self_user_guilds(
         &self,
-        services: &TypeMap,
+        services: &Services,
         user_id: UserId,
     ) -> anyhow::Result<Vec<SelfGuild>> {
         let access_token = match self

@@ -11,7 +11,6 @@ use serenity::model::application::interaction::application_command::{
 use serenity::model::prelude::command::CommandType;
 use serenity::model::user::User;
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::JIM_ID;
@@ -20,12 +19,13 @@ use crate::discord::slash_commands::ban::BanCommandOptionFailure::{
 };
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction, UserExt,
+    reply_to_interaction_str, unauthorized_reply, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction, UserExt,
 };
 use crate::service::ban::{BanFailure, BanService};
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
+use crate::service::Services;
 
 pub struct BanCommand;
 
@@ -105,7 +105,7 @@ impl SlashCommand for BanCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -117,17 +117,18 @@ impl SlashCommand for BanCommand {
         let mod_user = &interaction.user;
 
         if !is_authorized(permissions) {
-            unauthorized_reply(&*context.http, interaction, Permissions::BAN_MEMBERS).await;
+            unauthorized_reply(&context.http, interaction, Permissions::BAN_MEMBERS).await;
             return Ok(());
         }
 
         let options = match generate_options(&interaction.data) {
             Ok(options) => options,
             Err(DurationParseError(duration)) => {
-                invisible_failure_reply(
-                    &*context.http,
+                reply_to_interaction_str(
+                    &context.http,
                     interaction,
                     &format!("Failed to understand duration: {}", duration),
+                    true,
                 )
                 .await;
                 return Ok(());
@@ -138,10 +139,11 @@ impl SlashCommand for BanCommand {
         };
 
         if options.target_user.id == mod_user.id {
-            invisible_failure_reply(
-                &*context.http,
+            reply_to_interaction_str(
+                &context.http,
                 interaction,
                 "You can't ban yourself, dummy!",
+                true,
             )
             .await;
             return Ok(());
@@ -150,10 +152,11 @@ impl SlashCommand for BanCommand {
         if options.target_user.id == JIM_ID {
             // Sanity check: Jim cannot ban itself.
             // c.f. https://discord.com/channels/238666723824238602/238666723824238602/902275716299776090
-            invisible_failure_reply(
-                &*context.http,
+            reply_to_interaction_str(
+                &context.http,
                 interaction,
                 "I'm sorry, Dave. I'm afraid I can't do that.",
+                true,
             )
             .await;
             return Ok(());
@@ -168,10 +171,11 @@ impl SlashCommand for BanCommand {
         let guild = guild_service.get_guild(guild_id).await?;
 
         if options.target_user.id == guild.owner_id {
-            invisible_failure_reply(
-                &*context.http,
+            reply_to_interaction_str(
+                &context.http,
                 interaction,
                 "You can't ban owner of the server!",
+                true,
             )
             .await;
             return Ok(());
@@ -209,25 +213,33 @@ impl SlashCommand for BanCommand {
             .await
         {
             Ok(_) => {
-                invisible_success_reply(&context.http, interaction, "Success.").await;
+                let _ =
+                    reply_to_interaction_str(&context.http, interaction, "Success.", true).await;
             }
             Err(BanFailure::Unauthorized) => {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "I don't have enough permissions to do this action!",
+                    true,
                 )
                 .await;
             }
             Err(BanFailure::ModLogError(err)) => {
-                invisible_failure_reply(&context.http, interaction, err.to_interaction_response())
-                    .await;
+                reply_to_interaction_str(
+                    &context.http,
+                    interaction,
+                    err.to_interaction_response(),
+                    true,
+                )
+                .await;
             }
             Err(BanFailure::Unknown) => {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "Could not ban specified user for unknown reasons, this incident has been logged.",
+                    true,
                 )
                     .await;
             }

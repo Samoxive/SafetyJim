@@ -8,19 +8,19 @@ use serenity::model::application::interaction::application_command::{
 };
 use serenity::model::user::User;
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::JIM_ID;
 use crate::discord::slash_commands::warn::WarnCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction, UserExt,
+    reply_to_interaction_str, unauthorized_reply, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction, UserExt,
 };
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
 use crate::service::warn::{WarnFailure, WarnService};
+use crate::service::Services;
 
 pub struct WarnCommand;
 
@@ -83,7 +83,7 @@ impl SlashCommand for WarnCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -95,7 +95,7 @@ impl SlashCommand for WarnCommand {
         let mod_user = &interaction.user;
 
         if !is_authorized(permissions) {
-            unauthorized_reply(&*context.http, interaction, Permissions::KICK_MEMBERS).await;
+            unauthorized_reply(&context.http, interaction, Permissions::KICK_MEMBERS).await;
             return Ok(());
         }
 
@@ -107,20 +107,22 @@ impl SlashCommand for WarnCommand {
         };
 
         if options.target_user.id == mod_user.id {
-            invisible_failure_reply(
-                &*context.http,
+            reply_to_interaction_str(
+                &context.http,
                 interaction,
                 "You can't warn yourself, dummy!",
+                true,
             )
             .await;
             return Ok(());
         }
 
         if options.target_user.id == JIM_ID {
-            invisible_failure_reply(
-                &*context.http,
+            reply_to_interaction_str(
+                &context.http,
                 interaction,
                 "I'm sorry, Dave. I'm afraid I can't do that.",
+                true,
             )
             .await;
             return Ok(());
@@ -135,10 +137,11 @@ impl SlashCommand for WarnCommand {
         let guild = guild_service.get_guild(guild_id).await?;
 
         if options.target_user.id == guild.owner_id {
-            invisible_failure_reply(
-                &*context.http,
+            reply_to_interaction_str(
+                &context.http,
                 interaction,
                 "You can't warn owner of the server!",
+                true,
             )
             .await;
             return Ok(());
@@ -177,11 +180,16 @@ impl SlashCommand for WarnCommand {
             .await
         {
             Ok(_) => {
-                invisible_success_reply(&context.http, interaction, "Success.").await;
+                reply_to_interaction_str(&context.http, interaction, "Success.", true).await;
             }
             Err(WarnFailure::ModLogError(err)) => {
-                invisible_failure_reply(&context.http, interaction, err.to_interaction_response())
-                    .await;
+                reply_to_interaction_str(
+                    &context.http,
+                    interaction,
+                    err.to_interaction_response(),
+                    true,
+                )
+                .await;
             }
         }
 

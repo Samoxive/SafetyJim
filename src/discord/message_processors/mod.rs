@@ -3,12 +3,12 @@ use serenity::client::Context;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::database::settings::Setting;
 use crate::discord::message_processors::invite_link::InviteLinkProcessor;
 use crate::discord::message_processors::spam_filter::SpamFilterProcessor;
 use crate::discord::message_processors::word_filter::WordFilterProcessor;
+use crate::service::Services;
 
 mod invite_link;
 mod spam_filter;
@@ -38,6 +38,6 @@ pub trait MessageProcessor {
         author: &User,
         permissions: Permissions,
         setting: &Setting,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<bool>;
 }

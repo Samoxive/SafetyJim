@@ -8,7 +8,7 @@ use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use tracing::{error, warn};
-use typemap_rev::{TypeMap, TypeMapKey};
+use typemap_rev::TypeMapKey;
 
 use crate::database::mutes::{Mute, MutesRepository};
 use crate::database::settings::{get_action_duration_for_auto_mod_action, Setting};
@@ -16,6 +16,7 @@ use crate::discord::util::mod_log::{create_mod_log_entry, CreateModLogEntryError
 use crate::discord::util::user_dm::{notify_user_for_mod_action, ModActionKind};
 use crate::discord::util::{execute_mod_action, SerenityErrorExt};
 use crate::service::guild::{GetRolesFailure, GuildService};
+use crate::service::Services;
 use crate::util::now;
 
 impl TypeMapKey for MuteService {
@@ -45,7 +46,7 @@ impl MuteService {
     pub async fn fetch_muted_role_id(
         &self,
         http: &Http,
-        services: &TypeMap,
+        services: &Services,
         guild_id: GuildId,
     ) -> Result<RoleId, MuteFailure> {
         let guild_service = if let Some(service) = services.get::<GuildService>() {
@@ -124,7 +125,7 @@ impl MuteService {
         guild_id: GuildId,
         guild_name: &str,
         setting: &Setting,
-        services: &TypeMap,
+        services: &Services,
         channel_id: Option<ChannelId>,
         mod_user_id: UserId,
         mod_user_tag_and_id: &str,
@@ -257,7 +258,7 @@ impl MuteService {
     pub async fn unmute(
         &self,
         http: &Http,
-        services: &TypeMap,
+        services: &Services,
         guild_id: GuildId,
         target_user_id: UserId,
         mod_user_tag_and_id: &str,

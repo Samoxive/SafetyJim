@@ -4,7 +4,8 @@ use std::time::Duration;
 use anyhow::bail;
 use async_recursion::async_recursion;
 use serenity::builder::{
-    CreateInteractionResponse, CreateInteractionResponseMessage, EditInteractionResponse,
+    CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
+    EditInteractionResponse,
 };
 use serenity::http::{Http, HttpError};
 use serenity::model::application::interaction::application_command::{
@@ -18,7 +19,6 @@ use serenity::model::user::User;
 use serenity::model::Permissions;
 use serenity::Error;
 use tracing::{error, warn};
-use typemap_rev::TypeMap;
 
 use crate::database::settings::{
     Setting, ACTION_BAN, ACTION_HARDBAN, ACTION_KICK, ACTION_MUTE, ACTION_SOFTBAN, ACTION_WARN,
@@ -30,6 +30,7 @@ use crate::service::kick::KickService;
 use crate::service::mute::MuteService;
 use crate::service::softban::SoftbanService;
 use crate::service::warn::WarnService;
+use crate::service::Services;
 use crate::util::now;
 
 pub mod mod_log;
@@ -240,16 +241,26 @@ pub fn verify_guild_message_update(message: &MessageUpdateEvent) -> Option<Guild
     })
 }
 
-pub fn create_str_reply_data(content: &str) -> CreateInteractionResponseMessage {
-    CreateInteractionResponseMessage::new().content(content)
+fn create_interaction_response_message(is_ephemeral: bool) -> CreateInteractionResponseMessage {
+    if is_ephemeral {
+        CreateInteractionResponseMessage::new().flags(MessageFlags::EPHEMERAL)
+    } else {
+        CreateInteractionResponseMessage::new()
+    }
 }
 
-pub async fn reply_with_str(http: &Http, interaction: &CommandInteraction, content: &str) {
-    let data = create_str_reply_data(content);
-    let builder = CreateInteractionResponse::Message(data);
+// function doesn't return a Result because we never care if our reply succeeds, replies to interactions rarely fail
+// and when they do it's usually because we missed the 3 seconds reply window, in which case Jim is probably overloaded
+// and can't respond to interactions in time.
+async fn reply_to_interaction(
+    http: &Http,
+    interaction: &CommandInteraction,
+    response_data: CreateInteractionResponseMessage,
+) {
+    let interaction_response = CreateInteractionResponse::Message(response_data);
 
     let _ = interaction
-        .create_interaction_response(http, builder)
+        .create_response(http, interaction_response)
         .await
         .map_err(|err| {
             error!("failed to reply to interaction {:?} {}", interaction, err);
@@ -257,20 +268,40 @@ pub async fn reply_with_str(http: &Http, interaction: &CommandInteraction, conte
         });
 }
 
-async fn invisible_reply_with_str(http: &Http, interaction: &CommandInteraction, content: &str) {
-    let data = create_str_reply_data(content).flags(MessageFlags::EPHEMERAL);
-    let builder = CreateInteractionResponse::Message(data);
+pub async fn reply_to_interaction_str(
+    http: &Http,
+    interaction: &CommandInteraction,
+    content: &str,
+    is_ephemeral: bool,
+) {
+    let response_data = create_interaction_response_message(is_ephemeral).content(content);
 
-    let _ = interaction
-        .create_interaction_response(http, builder)
-        .await
-        .map_err(|err| {
-            error!("failed to reply to interaction {:?} {}", interaction, err);
-            err
-        });
+    reply_to_interaction(http, interaction, response_data).await;
 }
 
-pub async fn edit_interaction_response(
+pub async fn reply_to_interaction_embed(
+    http: &Http,
+    interaction: &CommandInteraction,
+    embed: CreateEmbed,
+    is_ephemeral: bool,
+) {
+    let response_data = create_interaction_response_message(is_ephemeral).add_embed(embed);
+
+    reply_to_interaction(http, interaction, response_data).await;
+}
+
+pub async fn defer_interaction(http: &Http, interaction: &CommandInteraction) -> Result<(), Error> {
+    let interaction_response =
+        CreateInteractionResponse::Defer(CreateInteractionResponseMessage::new());
+
+    interaction
+        .create_response(http, interaction_response)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn edit_deferred_interaction_response(
     http: &Http,
     interaction: &CommandInteraction,
     content: &str,
@@ -278,7 +309,7 @@ pub async fn edit_interaction_response(
     let builder = EditInteractionResponse::default().content(content);
 
     let _ = interaction
-        .edit_original_interaction_response(http, builder)
+        .edit_response(http, builder)
         .await
         .map_err(|err| {
             error!("failed to edit interaction reply {:?} {}", interaction, err);
@@ -291,31 +322,16 @@ pub async fn unauthorized_reply(
     interaction: &CommandInteraction,
     required_permission: Permissions,
 ) {
-    invisible_failure_reply(
+    reply_to_interaction_str(
         http,
         interaction,
         &format!(
             "You don't have enough permissions to execute this command! Required permission: {}",
             required_permission
         ),
+        true,
     )
     .await;
-}
-
-pub async fn invisible_success_reply(
-    http: &Http,
-    interaction: &CommandInteraction,
-    failure_message: &str,
-) {
-    invisible_reply_with_str(http, interaction, failure_message).await;
-}
-
-pub async fn invisible_failure_reply(
-    http: &Http,
-    interaction: &CommandInteraction,
-    failure_message: &str,
-) {
-    invisible_reply_with_str(http, interaction, failure_message).await;
 }
 
 pub enum CleanMessagesFailure {
@@ -400,7 +416,7 @@ pub async fn execute_mod_action(
     guild_id: GuildId,
     guild_name: &str,
     setting: &Setting,
-    services: &TypeMap,
+    services: &Services,
     channel_id: Option<ChannelId>,
     mod_user_id: UserId,
     mod_user_tag_and_id: &str,

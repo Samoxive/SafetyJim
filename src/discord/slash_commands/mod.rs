@@ -4,9 +4,9 @@ use async_trait::async_trait;
 use serenity::builder::CreateCommand;
 use serenity::client::Context;
 use serenity::model::application::interaction::application_command::CommandInteraction;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
+use crate::service::Services;
 
 mod ban;
 mod clean;
@@ -48,7 +48,7 @@ pub trait SlashCommand {
         context: &Context,
         interaction: &CommandInteraction,
         config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()>;
 }
 

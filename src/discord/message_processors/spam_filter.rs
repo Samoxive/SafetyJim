@@ -10,7 +10,6 @@ use serenity::model::id::{ChannelId, GuildId, MessageId, UserId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use tokio::sync::Mutex;
-use typemap_rev::TypeMap;
 
 use crate::constants::{JIM_ID, JIM_ID_AND_TAG};
 use crate::database::settings::Setting;
@@ -18,6 +17,7 @@ use crate::discord::message_processors::MessageProcessor;
 use crate::discord::util::is_staff;
 use crate::service::guild::GuildService;
 use crate::service::hardban::HardbanService;
+use crate::service::Services;
 
 const REASON: &str = "Spamming messages with same content";
 const REPETITION_THRESHOLD: u8 = 4;
@@ -60,7 +60,7 @@ impl MessageProcessor for SpamFilterProcessor {
         author: &User,
         permissions: Permissions,
         setting: &Setting,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<bool> {
         if !setting.spam_filter {
             return Ok(false);

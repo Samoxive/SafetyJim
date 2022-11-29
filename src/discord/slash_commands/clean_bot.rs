@@ -2,9 +2,7 @@ use std::future::ready;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{
-    CreateCommand, CreateCommandOption, CreateInteractionResponse, CreateInteractionResponseMessage,
-};
+use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
 use serenity::futures::StreamExt;
 use serenity::model::application::command::{CommandOptionType, CommandType};
@@ -13,7 +11,6 @@ use serenity::model::application::interaction::application_command::{
 };
 use serenity::model::id::MessageId;
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::clean_bot::CleanBotCommandOptionFailure::{
@@ -21,9 +18,11 @@ use crate::discord::slash_commands::clean_bot::CleanBotCommandOptionFailure::{
 };
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    clean_messages, edit_interaction_response, invisible_failure_reply, unauthorized_reply,
-    verify_guild_slash_command, CleanMessagesFailure, CommandDataExt, GuildSlashCommandInteraction,
+    clean_messages, defer_interaction, edit_deferred_interaction_response,
+    reply_to_interaction_str, unauthorized_reply, verify_guild_slash_command, CleanMessagesFailure,
+    CommandDataExt, GuildSlashCommandInteraction,
 };
+use crate::service::Services;
 
 pub struct CleanBotCommand;
 
@@ -85,7 +84,7 @@ impl SlashCommand for CleanBotCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        _services: &TypeMap,
+        _services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id: _,
@@ -96,17 +95,18 @@ impl SlashCommand for CleanBotCommand {
         let channel_id = interaction.channel_id;
 
         if !is_authorized(permissions) {
-            unauthorized_reply(&*context.http, interaction, Permissions::MANAGE_MESSAGES).await;
+            unauthorized_reply(&context.http, interaction, Permissions::MANAGE_MESSAGES).await;
             return Ok(());
         }
 
         let options = match generate_options(&interaction.data) {
             Ok(options) => options,
             Err(OutOfRangeError(number)) => {
-                invisible_failure_reply(
-                    &*context.http,
+                reply_to_interaction_str(
+                    &context.http,
                     interaction,
                     &format!("Number is out of range, must be between 1-100: {}", number),
+                    true,
                 )
                 .await;
                 return Ok(());
@@ -116,12 +116,7 @@ impl SlashCommand for CleanBotCommand {
             }
         };
 
-        let response =
-            CreateInteractionResponse::Defer(CreateInteractionResponseMessage::default());
-
-        interaction
-            .create_interaction_response(&context.http, response)
-            .await?;
+        defer_interaction(&context.http, interaction).await?;
 
         let message_ids_results: Vec<Result<MessageId, serenity::Error>> = channel_id
             .messages_iter(&context.http)
@@ -148,7 +143,7 @@ impl SlashCommand for CleanBotCommand {
         let message_ids: Vec<MessageId> = message_ids.into_iter().map(Result::unwrap).collect();
 
         if !errors.is_empty() {
-            edit_interaction_response(
+            edit_deferred_interaction_response(
                 &context.http,
                 interaction,
                 "Failed to select messages to clean, make sure I have required permissions.",
@@ -164,7 +159,7 @@ impl SlashCommand for CleanBotCommand {
             Err(CleanMessagesFailure::Unauthorized) => "I don't have enough permissions to do that! Required permission: Manage Messages, Read Message History".into(),
             Err(CleanMessagesFailure::Other) => "Failed to clean messages.".into()
         };
-        edit_interaction_response(&context.http, interaction, &content).await;
+        edit_deferred_interaction_response(&context.http, interaction, &content).await;
 
         Ok(())
     }

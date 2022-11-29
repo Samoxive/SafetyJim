@@ -4,13 +4,14 @@ use serenity::http::Http;
 use serenity::model::id::{ChannelId, GuildId, UserId};
 use serenity::model::user::User;
 use tracing::{error, warn};
-use typemap_rev::{TypeMap, TypeMapKey};
+use typemap_rev::TypeMapKey;
 
 use crate::database::kicks::{Kick, KicksRepository};
 use crate::database::settings::{get_action_duration_for_auto_mod_action, Setting};
 use crate::discord::util::mod_log::{create_mod_log_entry, CreateModLogEntryError, ModLogAction};
 use crate::discord::util::user_dm::{notify_user_for_mod_action, ModActionKind};
 use crate::discord::util::{execute_mod_action, SerenityErrorExt};
+use crate::service::Services;
 use crate::util::now;
 
 impl TypeMapKey for KickService {
@@ -34,7 +35,7 @@ impl KickService {
         guild_id: GuildId,
         guild_name: &str,
         setting: &Setting,
-        services: &TypeMap,
+        services: &Services,
         channel_id: Option<ChannelId>,
         mod_user_id: UserId,
         mod_user_tag_and_id: &str,

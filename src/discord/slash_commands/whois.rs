@@ -1,28 +1,24 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{
-    CreateCommand, CreateCommandOption, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
-    CreateInteractionResponseMessage,
-};
+use serenity::builder::{CreateCommand, CreateCommandOption, CreateEmbed, CreateEmbedAuthor};
 use serenity::client::Context;
 use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
     CommandData, CommandInteraction,
 };
-use serenity::model::channel::MessageFlags;
 use serenity::model::guild::PartialMember;
 use serenity::model::user::User;
-use tracing::error;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::EMBED_COLOR;
 use crate::discord::slash_commands::whois::WhoisCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction,
+    reply_to_interaction_embed, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction,
 };
 use crate::service::guild::{CachedGuild, GuildService};
+use crate::service::Services;
 
 pub struct WhoisCommand;
 
@@ -122,7 +118,7 @@ impl SlashCommand for WhoisCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -150,35 +146,11 @@ impl SlashCommand for WhoisCommand {
 
             let embed = generate_member_embed(&guild, member, user);
 
-            let data = CreateInteractionResponseMessage::new()
-                .flags(MessageFlags::EPHEMERAL)
-                .add_embed(embed);
-
-            let response = CreateInteractionResponse::Message(data);
-
-            interaction
-                .create_interaction_response(&context.http, response)
-                .await
-                .map_err(|err| {
-                    error!("failed to reply to interaction {}", err);
-                    err
-                })?;
+            reply_to_interaction_embed(&context.http, interaction, embed, true).await;
         } else {
             let embed = generate_user_embed(user);
 
-            let data = CreateInteractionResponseMessage::new()
-                .flags(MessageFlags::EPHEMERAL)
-                .add_embed(embed);
-
-            let response = CreateInteractionResponse::Message(data);
-
-            interaction
-                .create_interaction_response(&context.http, response)
-                .await
-                .map_err(|err| {
-                    error!("failed to reply to interaction {}", err);
-                    err
-                })?;
+            reply_to_interaction_embed(&context.http, interaction, embed, true).await;
         }
 
         Ok(())

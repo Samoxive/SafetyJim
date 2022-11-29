@@ -16,7 +16,7 @@ impl GuildModel {
         GuildModel {
             id: guild_id.to_string(),
             name: guild.name.clone(),
-            icon_url: guild.icon_url.clone().unwrap_or_else(|| "".to_string()),
+            icon_url: guild.icon_url.clone().unwrap_or_default(),
         }
     }
 }

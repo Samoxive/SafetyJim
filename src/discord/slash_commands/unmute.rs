@@ -8,16 +8,16 @@ use serenity::model::application::interaction::application_command::{
 };
 use serenity::model::user::User;
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::unmute::UnmuteCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction, UserExt,
+    reply_to_interaction_str, unauthorized_reply, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction, UserExt,
 };
 use crate::service::mute::{MuteService, UnmuteFailure};
+use crate::service::Services;
 
 pub struct UnmuteCommand;
 
@@ -68,7 +68,7 @@ impl SlashCommand for UnmuteCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -79,7 +79,7 @@ impl SlashCommand for UnmuteCommand {
         let mod_user = &interaction.user;
 
         if !is_authorized(permissions) {
-            unauthorized_reply(&*context.http, interaction, Permissions::MANAGE_ROLES).await;
+            unauthorized_reply(&context.http, interaction, Permissions::MANAGE_ROLES).await;
             return Ok(());
         }
 
@@ -107,24 +107,26 @@ impl SlashCommand for UnmuteCommand {
             .await
         {
             Ok(_) => {
-                invisible_success_reply(&context.http, interaction, "Success.").await;
+                reply_to_interaction_str(&context.http, interaction, "Success.", true).await;
             }
             Err(UnmuteFailure::RoleNotFound) => {
-                invisible_failure_reply(&context.http, interaction, "Could not find a role called Muted, please create one yourself or mute a user to set it up automatically.").await;
+                reply_to_interaction_str(&context.http, interaction, "Could not find a role called Muted, please create one yourself or mute a user to set it up automatically.", true).await;
             }
             Err(UnmuteFailure::Unauthorized) => {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "I don't have enough permissions to do this action!",
+                    true,
                 )
                 .await;
             }
             Err(UnmuteFailure::Unknown) => {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "Could not unmute specified user for unknown reasons, this incident has been logged.",
+                    true,
                 )
                     .await;
             }

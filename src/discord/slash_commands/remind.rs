@@ -8,7 +8,6 @@ use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
     CommandData, CommandInteraction,
 };
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::remind::RemindCommandFailure::{
@@ -16,10 +15,11 @@ use crate::discord::slash_commands::remind::RemindCommandFailure::{
 };
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, verify_guild_slash_command, CommandDataExt,
+    reply_to_interaction_str, verify_guild_slash_command, CommandDataExt,
     GuildSlashCommandInteraction,
 };
 use crate::service::reminder::ReminderService;
+use crate::service::Services;
 
 pub struct RemindCommand;
 
@@ -87,7 +87,7 @@ impl SlashCommand for RemindCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -101,10 +101,11 @@ impl SlashCommand for RemindCommand {
         let options = match generate_options(&interaction.data) {
             Ok(options) => options,
             Err(DurationParseError(duration)) => {
-                invisible_failure_reply(
-                    &*context.http,
+                reply_to_interaction_str(
+                    &context.http,
                     interaction,
                     &format!("Failed to understand duration: {}", duration),
+                    true,
                 )
                 .await;
                 return Ok(());
@@ -130,11 +131,12 @@ impl SlashCommand for RemindCommand {
             )
             .await
         {
-            Ok(_) => invisible_success_reply(&context.http, interaction, "Success.").await,
-            Err(_) => invisible_failure_reply(
+            Ok(_) => reply_to_interaction_str(&context.http, interaction, "Success.", true).await,
+            Err(_) => reply_to_interaction_str(
                 &context.http,
                 interaction,
                 "Could not save the reminder for unknown reasons, this incident has been logged.",
+                true,
             )
             .await,
         }

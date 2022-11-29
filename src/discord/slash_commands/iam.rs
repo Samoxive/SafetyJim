@@ -7,15 +7,15 @@ use serenity::model::application::interaction::application_command::{
     CommandData, CommandInteraction,
 };
 use serenity::model::id::RoleId;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, verify_guild_slash_command, CommandDataExt,
+    reply_to_interaction_str, verify_guild_slash_command, CommandDataExt,
     GuildSlashCommandInteraction, SerenityErrorExt,
 };
 use crate::service::iam_role::IAMRoleService;
+use crate::service::Services;
 
 pub struct IAMCommand;
 
@@ -59,7 +59,7 @@ impl SlashCommand for IAMCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -84,10 +84,11 @@ impl SlashCommand for IAMCommand {
             .is_iam_role(guild_id, options.role_id)
             .await
         {
-            invisible_failure_reply(
+            reply_to_interaction_str(
                 &context.http,
                 interaction,
                 "Could not find a role with specified name!",
+                true,
             )
             .await;
             return Ok(());
@@ -110,10 +111,10 @@ impl SlashCommand for IAMCommand {
                     _ => bail!("failed to issue discord member role add {}", err),
                 };
 
-                invisible_failure_reply(&context.http, interaction, error_message).await;
+                reply_to_interaction_str(&context.http, interaction, error_message, true).await;
             }
         } else {
-            invisible_success_reply(&context.http, interaction, "Assigned!").await;
+            reply_to_interaction_str(&context.http, interaction, "Assigned!", true).await;
         }
 
         Ok(())

@@ -9,13 +9,11 @@ use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
     CommandData, CommandInteraction,
 };
-use typemap_rev::TypeMap;
 
 use crate::discord::slash_commands::xkcd::XkcdCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
-use crate::discord::util::{
-    invisible_failure_reply, reply_with_str, verify_guild_slash_command, CommandDataExt,
-};
+use crate::discord::util::{reply_to_interaction_str, verify_guild_slash_command, CommandDataExt};
+use crate::service::Services;
 use crate::Config;
 
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36";
@@ -99,7 +97,7 @@ impl SlashCommand for XkcdCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        _services: &TypeMap,
+        _services: &Services,
     ) -> anyhow::Result<()> {
         let _ = verify_guild_slash_command(interaction)?;
 
@@ -121,10 +119,11 @@ impl SlashCommand for XkcdCommand {
         {
             Ok(response) => response,
             Err(_) => {
-                invisible_failure_reply(
-                    &*context.http,
+                reply_to_interaction_str(
+                    &context.http,
                     interaction,
                     "Failed to search for xkcd comic!",
+                    true,
                 )
                 .await;
                 return Ok(());
@@ -134,12 +133,13 @@ impl SlashCommand for XkcdCommand {
         let link_href = parse_ddg_response(&response);
 
         if let Some(link) = link_href {
-            reply_with_str(&*context.http, interaction, &link).await;
+            let _ = reply_to_interaction_str(&context.http, interaction, &link, false).await;
         } else {
-            invisible_failure_reply(
-                &*context.http,
+            reply_to_interaction_str(
+                &context.http,
                 interaction,
                 "Failed to find a relevant xkcd comic! Shocking, I know.",
+                true,
             )
             .await;
         }

@@ -2,10 +2,10 @@ use std::num::NonZeroU64;
 
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
-use typemap_rev::TypeMap;
 
-use crate::database::hardbans::Hardban;
 use crate::server::model::user::UserModel;
+use crate::database::hardbans::Hardban;
+use crate::service::Services;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,7 +18,7 @@ pub struct HardbanModel {
 }
 
 impl HardbanModel {
-    pub async fn from_hardban(services: &TypeMap, hardban: &Hardban) -> HardbanModel {
+    pub async fn from_hardban(services: &Services, hardban: &Hardban) -> HardbanModel {
         let user = if let Some(id) = NonZeroU64::new(hardban.user_id as u64) {
             let user_id = UserId(id);
             UserModel::from_id(services, user_id).await

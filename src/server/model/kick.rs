@@ -2,10 +2,10 @@ use std::num::NonZeroU64;
 
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
-use typemap_rev::TypeMap;
 
-use crate::database::kicks::Kick;
 use crate::server::model::user::UserModel;
+use crate::database::kicks::Kick;
+use crate::service::Services;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,7 +19,7 @@ pub struct KickModel {
 }
 
 impl KickModel {
-    pub async fn from_kick(services: &TypeMap, kick: &Kick) -> KickModel {
+    pub async fn from_kick(services: &Services, kick: &Kick) -> KickModel {
         let user = if let Some(id) = NonZeroU64::new(kick.user_id as u64) {
             let user_id = UserId(id);
             UserModel::from_id(services, user_id).await

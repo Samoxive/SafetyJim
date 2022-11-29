@@ -8,16 +8,16 @@ use serenity::model::application::interaction::application_command::{
 };
 use serenity::model::id::UserId;
 use serenity::prelude::Mentionable;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::tag::TagCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, reply_with_str, verify_guild_slash_command, CommandDataExt,
+    reply_to_interaction_str, verify_guild_slash_command, CommandDataExt,
     GuildSlashCommandInteraction,
 };
 use crate::service::tag::TagService;
+use crate::service::Services;
 
 pub struct TagCommand;
 
@@ -73,7 +73,7 @@ impl SlashCommand for TagCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -98,10 +98,11 @@ impl SlashCommand for TagCommand {
             if let Some(content) = tag_service.get_tag_content(guild_id, options.name).await {
                 content
             } else {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "Could not find a tag with that name!",
+                    true,
                 )
                 .await;
                 return Ok(());
@@ -112,7 +113,7 @@ impl SlashCommand for TagCommand {
             content.push_str(&mention_user.mention().to_string())
         }
 
-        reply_with_str(&context.http, interaction, &content).await;
+        let _ = reply_to_interaction_str(&context.http, interaction, &content, false).await;
         Ok(())
     }
 }

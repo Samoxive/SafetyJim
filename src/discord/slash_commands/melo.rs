@@ -3,11 +3,11 @@ use serenity::builder::CreateCommand;
 use serenity::client::Context;
 use serenity::model::application::command::CommandType;
 use serenity::model::application::interaction::application_command::CommandInteraction;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::SlashCommand;
-use crate::discord::util::reply_with_str;
+use crate::discord::util::reply_to_interaction_str;
+use crate::service::Services;
 
 pub struct MeloCommand;
 
@@ -29,9 +29,9 @@ impl SlashCommand for MeloCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        _services: &TypeMap,
+        _services: &Services,
     ) -> anyhow::Result<()> {
-        reply_with_str(&context.http, interaction, ":melon:").await;
+        let _ = reply_to_interaction_str(&context.http, interaction, ":melon:", false).await;
 
         Ok(())
     }

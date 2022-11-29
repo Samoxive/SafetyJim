@@ -1,23 +1,23 @@
-use anyhow::bail;
+use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use reqwest::{Client, ClientBuilder};
 use serde::Deserialize;
-use serenity::builder::{
-    CreateCommand, CreateCommandOption, CreateEmbed, CreateEmbedFooter, CreateInteractionResponse,
-    CreateInteractionResponseMessage,
-};
+use serenity::builder::{CreateCommand, CreateCommandOption, CreateEmbed, CreateEmbedFooter};
 use serenity::client::Context;
 use serenity::model::application::command::{CommandOptionType, CommandType};
 use serenity::model::application::interaction::application_command::{
     CommandData, CommandInteraction,
 };
-use typemap_rev::TypeMap;
 
 use crate::constants::EMBED_COLOR;
 use crate::discord::slash_commands::weather::WeatherCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
-use crate::discord::util::{invisible_failure_reply, verify_guild_slash_command, CommandDataExt};
+use crate::discord::util::{
+    reply_to_interaction_embed, reply_to_interaction_str, verify_guild_slash_command,
+    CommandDataExt,
+};
+use crate::service::Services;
 use crate::util::now;
 use crate::Config;
 
@@ -122,7 +122,7 @@ impl SlashCommand for WeatherCommand {
         context: &Context,
         interaction: &CommandInteraction,
         config: &Config,
-        _services: &TypeMap,
+        _services: &Services,
     ) -> anyhow::Result<()> {
         let _ = verify_guild_slash_command(interaction)?;
 
@@ -147,17 +147,23 @@ impl SlashCommand for WeatherCommand {
         {
             Ok(response) => response,
             Err(_err) => {
-                invisible_failure_reply(&*context.http, interaction, "Failed to get address data!")
-                    .await;
+                reply_to_interaction_str(
+                    &context.http,
+                    interaction,
+                    "Failed to get address data!",
+                    true,
+                )
+                .await;
                 return Ok(());
             }
         };
 
         if geocode_response.status != "OK" {
-            invisible_failure_reply(
-                &*context.http,
+            reply_to_interaction_str(
+                &context.http,
                 interaction,
                 "Could not detect given address!",
+                true,
             )
             .await;
             return Ok(());
@@ -166,8 +172,13 @@ impl SlashCommand for WeatherCommand {
         let geocode_result = if let Some(result) = geocode_response.results.first() {
             result
         } else {
-            invisible_failure_reply(&*context.http, interaction, "Failed to get address data!")
-                .await;
+            reply_to_interaction_str(
+                &context.http,
+                interaction,
+                "Failed to get address data!",
+                true,
+            )
+            .await;
             return Ok(());
         };
 
@@ -188,15 +199,21 @@ impl SlashCommand for WeatherCommand {
         {
             Ok(response) => response,
             Err(_) => {
-                invisible_failure_reply(&*context.http, interaction, "Failed to get weather data!")
-                    .await;
+                reply_to_interaction_str(
+                    &context.http,
+                    interaction,
+                    "Failed to get weather data!",
+                    true,
+                )
+                .await;
                 return Ok(());
             }
         };
 
         let local_time_offset = darksky_response.offset;
         let local_timestamp = now() as i64 + (local_time_offset * 60 * 60) as i64;
-        let local_date = NaiveDateTime::from_timestamp(local_timestamp, 0);
+        let local_date = NaiveDateTime::from_timestamp_opt(local_timestamp, 0)
+            .ok_or_else(|| anyhow!("invalid timestamp from darksky"))?;
         let local_date_formatted = local_date.format("%a, %d %b %Y %H:%M:%S GMT ");
         let local_date_str = if local_time_offset > 0 {
             format!("{} +{}", local_date_formatted, local_time_offset)
@@ -240,13 +257,7 @@ impl SlashCommand for WeatherCommand {
             .field("Humidity", &format!("{}%", humidity), true)
             .description(description);
 
-        let data = CreateInteractionResponseMessage::new().add_embed(embed);
-
-        let response = CreateInteractionResponse::Message(data);
-
-        let _ = interaction
-            .create_interaction_response(&*context.http, response)
-            .await;
+        reply_to_interaction_embed(&context.http, interaction, embed, false).await;
 
         Ok(())
     }

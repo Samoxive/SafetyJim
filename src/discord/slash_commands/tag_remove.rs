@@ -7,18 +7,18 @@ use serenity::model::application::interaction::application_command::{
     CommandData, CommandInteraction,
 };
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::database::settings::Setting;
 use crate::discord::slash_commands::tag_remove::TagRemoveCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, is_staff, verify_guild_slash_command,
-    CommandDataExt, GuildSlashCommandInteraction,
+    is_staff, reply_to_interaction_str, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction,
 };
 use crate::service::setting::SettingService;
 use crate::service::tag::{RemoveTagFailure, TagService};
+use crate::service::Services;
 
 pub struct TagRemoveCommand;
 
@@ -73,7 +73,7 @@ impl SlashCommand for TagRemoveCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -100,10 +100,11 @@ impl SlashCommand for TagRemoveCommand {
         // Discord check for *any* permissions instead of *all*, don't remove this check.
         if !is_authorized(&setting, permissions) {
             // TODO(sam): use unauthorized reply function
-            invisible_failure_reply(
-                &*context.http,
+            reply_to_interaction_str(
+                &context.http,
                 interaction,
                 "You don't have enough permissions to execute this command! ",
+                true,
             )
             .await;
             return Ok(());
@@ -116,15 +117,17 @@ impl SlashCommand for TagRemoveCommand {
         };
 
         match tag_service.remove_tag(guild_id, options.name).await {
-            Ok(_) => invisible_success_reply(&context.http, interaction, "Success.").await,
+            Ok(_) => reply_to_interaction_str(&context.http, interaction, "Success.", true).await,
             Err(RemoveTagFailure::TagDoesNotExist) => {
-                invisible_failure_reply(&context.http, interaction, "Tag does not exist!").await
+                reply_to_interaction_str(&context.http, interaction, "Tag does not exist!", true)
+                    .await;
             }
             Err(RemoveTagFailure::Unknown) => {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "Failed to remove tag, this incident was logged.",
+                    true,
                 )
                 .await
             }

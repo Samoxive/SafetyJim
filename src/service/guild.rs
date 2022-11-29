@@ -31,6 +31,7 @@ pub struct CachedRole {
     pub permissions: Permissions,
 }
 
+#[derive(Debug)]
 pub struct CachedUser {
     pub tag: String,
     pub avatar_url: String,
@@ -159,7 +160,7 @@ impl GuildService {
             member_id,
             member_roles,
             guild_id,
-            &*guild_roles,
+            &guild_roles,
             guild_owner_id,
         )
         .ok_or(GetPermissionsFailure::Calculation)

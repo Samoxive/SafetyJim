@@ -5,13 +5,13 @@ use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use tracing::error;
-use typemap_rev::TypeMap;
 
 use crate::constants::{JIM_ID, JIM_ID_AND_TAG};
 use crate::database::settings::{get_action_duration_for_auto_mod_action, Setting};
 use crate::discord::message_processors::MessageProcessor;
 use crate::discord::util::{execute_mod_action, is_staff, SerenityErrorExt};
 use crate::service::guild::GuildService;
+use crate::service::Services;
 
 const REASON: &str = "Sending invite links";
 
@@ -29,7 +29,7 @@ impl MessageProcessor for InviteLinkProcessor {
         author: &User,
         permissions: Permissions,
         setting: &Setting,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<bool> {
         if !setting.invite_link_remover {
             return Ok(false);
@@ -65,7 +65,7 @@ impl MessageProcessor for InviteLinkProcessor {
             Ok(_) => {
                 execute_mod_action(
                     setting.invite_link_remover_action,
-                    &*context.http,
+                    &context.http,
                     guild_id,
                     &guild.name,
                     setting,

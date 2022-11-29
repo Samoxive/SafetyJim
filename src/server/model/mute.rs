@@ -2,10 +2,10 @@ use std::num::NonZeroU64;
 
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
-use typemap_rev::TypeMap;
 
-use crate::database::mutes::Mute;
 use crate::server::model::user::UserModel;
+use crate::database::mutes::Mute;
+use crate::service::Services;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,7 +21,7 @@ pub struct MuteModel {
 }
 
 impl MuteModel {
-    pub async fn from_mute(services: &TypeMap, mute: &Mute) -> MuteModel {
+    pub async fn from_mute(services: &Services, mute: &Mute) -> MuteModel {
         let user = if let Some(id) = NonZeroU64::new(mute.user_id as u64) {
             let user_id = UserId(id);
             UserModel::from_id(services, user_id).await

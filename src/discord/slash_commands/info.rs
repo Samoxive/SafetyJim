@@ -1,25 +1,21 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{
-    CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateInteractionResponse,
-    CreateInteractionResponseMessage,
-};
+use serenity::builder::{CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter};
 use serenity::client::bridge::gateway::ShardId;
 use serenity::client::Context;
 use serenity::model::application::command::CommandType;
 use serenity::model::application::interaction::application_command::CommandInteraction;
-use serenity::model::channel::MessageFlags;
-use tracing::error;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::{
     AVATAR_URL, EMBED_COLOR, GITHUB_LINK, INVITE_LINK, START_EPOCH, SUPPORT_SERVER_INVITE_LINK,
 };
 use crate::discord::slash_commands::SlashCommand;
+use crate::discord::util::reply_to_interaction_embed;
 use crate::service::ban::BanService;
 use crate::service::guild_statistic::GuildStatisticService;
 use crate::service::shard_statistic::ShardStatisticService;
+use crate::service::Services;
 use crate::util::now;
 
 pub struct InfoCommand;
@@ -42,7 +38,7 @@ impl SlashCommand for InfoCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let shard_id = context.shard_id;
         let shard_info = if let Some(service) = services.get::<ShardStatisticService>() {
@@ -124,19 +120,7 @@ impl SlashCommand for InfoCommand {
             )))
             .color(EMBED_COLOR);
 
-        let response_message = CreateInteractionResponseMessage::new()
-            .flags(MessageFlags::EPHEMERAL)
-            .add_embed(embed);
-
-        let response = CreateInteractionResponse::Message(response_message);
-
-        interaction
-            .create_interaction_response(&context.http, response)
-            .await
-            .map_err(|err| {
-                error!("failed to reply to interaction {}", err);
-                err
-            })?;
+        reply_to_interaction_embed(&context.http, interaction, embed, true).await;
 
         Ok(())
     }

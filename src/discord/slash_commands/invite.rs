@@ -7,10 +7,10 @@ use serenity::client::Context;
 use serenity::model::application::command::CommandType;
 use serenity::model::application::interaction::application_command::CommandInteraction;
 use tracing::error;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::SlashCommand;
+use crate::service::Services;
 
 const SUPPORT_SERVER_INVITE_LINK: &str = "https://discord.io/safetyjim";
 const JIM_INVITE_LINK: &str = "https://discord.com/api/oauth2/authorize?client_id=881152939530534913&permissions=0&scope=bot%20applications.commands";
@@ -35,11 +35,11 @@ impl SlashCommand for InviteCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        _services: &TypeMap,
+        _services: &Services,
     ) -> anyhow::Result<()> {
         let components = vec![CreateActionRow::Buttons(vec![
-            CreateButton::new_link("Invite Jim!", JIM_INVITE_LINK),
-            CreateButton::new_link("Join our support server!", SUPPORT_SERVER_INVITE_LINK),
+            CreateButton::new_link("Invite Jim!").label(JIM_INVITE_LINK),
+            CreateButton::new_link("Join our support server!").label(SUPPORT_SERVER_INVITE_LINK),
         ])];
 
         let data = CreateInteractionResponseMessage::new()
@@ -49,7 +49,7 @@ impl SlashCommand for InviteCommand {
         let response = CreateInteractionResponse::Message(data);
 
         interaction
-            .create_interaction_response(&context.http, response)
+            .create_response(&context.http, response)
             .await
             .map_err(|err| {
                 error!("failed to reply to interaction {}", err);

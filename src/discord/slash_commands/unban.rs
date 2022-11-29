@@ -8,16 +8,16 @@ use serenity::model::application::interaction::application_command::{
 };
 use serenity::model::user::User;
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord::slash_commands::unban::UnbanCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, invisible_success_reply, unauthorized_reply,
-    verify_guild_slash_command, CommandDataExt, GuildSlashCommandInteraction, UserExt,
+    reply_to_interaction_str, unauthorized_reply, verify_guild_slash_command, CommandDataExt,
+    GuildSlashCommandInteraction, UserExt,
 };
 use crate::service::ban::{BanService, UnbanFailure};
+use crate::service::Services;
 
 pub struct UnbanCommand;
 
@@ -66,7 +66,7 @@ impl SlashCommand for UnbanCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -77,7 +77,7 @@ impl SlashCommand for UnbanCommand {
         let mod_user = &interaction.user;
 
         if !is_authorized(permissions) {
-            unauthorized_reply(&*context.http, interaction, Permissions::BAN_MEMBERS).await;
+            unauthorized_reply(&context.http, interaction, Permissions::BAN_MEMBERS).await;
             return Ok(());
         }
 
@@ -104,29 +104,32 @@ impl SlashCommand for UnbanCommand {
             .await
         {
             Ok(_) => {
-                invisible_success_reply(&context.http, interaction, "Success.").await;
+                reply_to_interaction_str(&context.http, interaction, "Success.", true).await;
             }
             Err(UnbanFailure::UserNotBanned) => {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "Specified user is not banned!",
+                    true,
                 )
                 .await;
             }
             Err(UnbanFailure::Unauthorized) => {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "I don't have enough permissions to do this action!",
+                    true,
                 )
                 .await;
             }
             Err(UnbanFailure::Unknown) => {
-                invisible_failure_reply(
+                reply_to_interaction_str(
                     &context.http,
                     interaction,
                     "Could not unban specified user for unknown reasons, this incident has been logged.",
+                    true,
                 )
                     .await;
             }

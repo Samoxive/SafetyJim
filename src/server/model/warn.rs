@@ -2,10 +2,10 @@ use std::num::NonZeroU64;
 
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
-use typemap_rev::TypeMap;
 
-use crate::database::warns::Warn;
 use crate::server::model::user::UserModel;
+use crate::database::warns::Warn;
+use crate::service::Services;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,7 +19,7 @@ pub struct WarnModel {
 }
 
 impl WarnModel {
-    pub async fn from_warn(services: &TypeMap, warn: &Warn) -> WarnModel {
+    pub async fn from_warn(services: &Services, warn: &Warn) -> WarnModel {
         let user = if let Some(id) = NonZeroU64::new(warn.user_id as u64) {
             let user_id = UserId(id);
             UserModel::from_id(services, user_id).await

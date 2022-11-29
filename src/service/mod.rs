@@ -52,7 +52,9 @@ pub mod tag;
 pub mod user_secret;
 pub mod warn;
 
-pub async fn create_services(config: Arc<Config>, pool: Arc<PgPool>) -> anyhow::Result<TypeMap> {
+pub type Services = TypeMap;
+
+pub async fn create_services(config: Arc<Config>, pool: Arc<PgPool>) -> anyhow::Result<Services> {
     let bans_repository = BansRepository(pool.clone());
     let hardbans_repository = HardbansRepository(pool.clone());
     let iam_roles_repository = IAMRolesRepository(pool.clone());
@@ -120,7 +122,7 @@ pub async fn create_services(config: Arc<Config>, pool: Arc<PgPool>) -> anyhow::
     let shard_statistic_service = ShardStatisticService::new();
     let guild_service = GuildService::new();
 
-    let mut services = TypeMap::new();
+    let mut services = Services::new();
     services.insert::<BanService>(ban_service);
     services.insert::<HardbanService>(hardban_service);
     services.insert::<IAMRoleService>(iam_role_service);

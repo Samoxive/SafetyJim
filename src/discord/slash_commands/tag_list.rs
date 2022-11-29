@@ -1,23 +1,19 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::builder::{
-    CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateInteractionResponse,
-    CreateInteractionResponseMessage,
-};
+use serenity::builder::{CreateCommand, CreateEmbed, CreateEmbedAuthor};
 use serenity::client::Context;
 use serenity::model::application::command::CommandType;
 use serenity::model::application::interaction::application_command::CommandInteraction;
-use serenity::model::channel::MessageFlags;
-use tracing::error;
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
 use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::{
-    invisible_failure_reply, verify_guild_slash_command, GuildSlashCommandInteraction,
+    reply_to_interaction_embed, reply_to_interaction_str, verify_guild_slash_command,
+    GuildSlashCommandInteraction,
 };
 use crate::service::tag::TagService;
+use crate::service::Services;
 
 pub struct TagListCommand;
 
@@ -39,7 +35,7 @@ impl SlashCommand for TagListCommand {
         context: &Context,
         interaction: &CommandInteraction,
         _config: &Config,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id,
@@ -56,8 +52,13 @@ impl SlashCommand for TagListCommand {
         let tags = tag_service.get_tag_names(guild_id).await;
 
         if tags.is_empty() {
-            invisible_failure_reply(&context.http, interaction, "No tags have been added yet!")
-                .await;
+            reply_to_interaction_str(
+                &context.http,
+                interaction,
+                "No tags have been added yet!",
+                true,
+            )
+            .await;
         } else {
             let tags_str = tags
                 .iter()
@@ -70,19 +71,7 @@ impl SlashCommand for TagListCommand {
                 .description(tags_str)
                 .colour(EMBED_COLOR);
 
-            let data = CreateInteractionResponseMessage::new()
-                .flags(MessageFlags::EPHEMERAL)
-                .add_embed(embed);
-
-            let response = CreateInteractionResponse::Message(data);
-
-            interaction
-                .create_interaction_response(&context.http, response)
-                .await
-                .map_err(|err| {
-                    error!("failed to reply to interaction {}", err);
-                    err
-                })?;
+            reply_to_interaction_embed(&context.http, interaction, embed, true).await;
         }
 
         Ok(())

@@ -10,7 +10,6 @@ use serenity::prelude::Mentionable;
 use tokio::select;
 use tokio::time::interval;
 use tracing::{error, warn};
-use typemap_rev::TypeMap;
 
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
 use crate::service::ban::BanService;
@@ -19,9 +18,10 @@ use crate::service::join::JoinService;
 use crate::service::mute::MuteService;
 use crate::service::reminder::ReminderService;
 use crate::service::setting::SettingService;
+use crate::service::Services;
 use crate::util::Shutdown;
 
-pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<TypeMap>, shutdown: Shutdown) {
+pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: Shutdown) {
     let http_1 = http.clone();
     let services_1 = services.clone();
     let mut receiver_1 = shutdown.subscribe();
@@ -34,7 +34,7 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<TypeMap>, shutdown: Sh
                     return;
                 }
             };
-            allow_users(&*http_1, &*services_1).await;
+            allow_users(&http_1, &services_1).await;
         }
     });
 
@@ -51,7 +51,7 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<TypeMap>, shutdown: Sh
                 }
             };
 
-            unmute_users(&*http_2, &*services_2).await;
+            unmute_users(&http_2, &services_2).await;
         }
     });
 
@@ -67,7 +67,7 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<TypeMap>, shutdown: Sh
                     return;
                 }
             };
-            unban_users(&*http_3, &*services_3).await;
+            unban_users(&http_3, &services_3).await;
         }
     });
 
@@ -81,12 +81,12 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<TypeMap>, shutdown: Sh
                     return;
                 }
             };
-            remind_reminders(&*http, &*services).await;
+            remind_reminders(&http, &services).await;
         }
     });
 }
 
-pub async fn allow_users(http: &Http, services: &TypeMap) {
+pub async fn allow_users(http: &Http, services: &Services) {
     let join_service = if let Some(service) = services.get::<JoinService>() {
         service
     } else {
@@ -158,7 +158,7 @@ pub async fn allow_users(http: &Http, services: &TypeMap) {
     }
 }
 
-pub async fn unmute_users(http: &Http, services: &TypeMap) {
+pub async fn unmute_users(http: &Http, services: &Services) {
     let mute_service = if let Some(service) = services.get::<MuteService>() {
         service
     } else {
@@ -226,7 +226,7 @@ pub async fn unmute_users(http: &Http, services: &TypeMap) {
     }
 }
 
-pub async fn unban_users(http: &Http, services: &TypeMap) {
+pub async fn unban_users(http: &Http, services: &Services) {
     let ban_service = if let Some(service) = services.get::<BanService>() {
         service
     } else {
@@ -268,7 +268,7 @@ pub async fn unban_users(http: &Http, services: &TypeMap) {
     }
 }
 
-pub async fn remind_reminders(http: &Http, services: &TypeMap) {
+pub async fn remind_reminders(http: &Http, services: &Services) {
     let reminder_service = if let Some(service) = services.get::<ReminderService>() {
         service
     } else {

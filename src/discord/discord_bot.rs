@@ -25,7 +25,6 @@ use tokio::select;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 use tracing::{error, warn};
-use typemap_rev::TypeMap;
 
 use crate::config::Config;
 use crate::discord;
@@ -33,7 +32,7 @@ use crate::discord::message_processors::{get_all_processors, MessageProcessors};
 use crate::discord::scheduled::run_scheduled_tasks;
 use crate::discord::slash_commands::SlashCommands;
 use crate::discord::util::{
-    invisible_success_reply, verify_guild_message_create, verify_guild_message_update,
+    reply_to_interaction_str, verify_guild_message_create, verify_guild_message_update,
     CommandDataExt, GuildMessageCreated, GuildMessageUpdated,
 };
 use crate::flags::Flags;
@@ -44,6 +43,7 @@ use crate::service::mute::MuteService;
 use crate::service::setting::SettingService;
 use crate::service::shard_statistic::ShardStatisticService;
 use crate::service::tag::TagService;
+use crate::service::Services;
 use crate::util::Shutdown;
 
 const SHARD_LATENCY_POLLING_INTERVAL: u64 = 60;
@@ -54,7 +54,7 @@ pub struct DiscordBot {
 
 async fn feed_shard_statistics(
     shard_manager: Arc<Mutex<ShardManager>>,
-    services: Arc<TypeMap>,
+    services: Arc<Services>,
     shutdown: Shutdown,
 ) {
     let mut receiver = shutdown.subscribe();
@@ -83,7 +83,7 @@ impl DiscordBot {
     pub async fn new(
         config: Arc<Config>,
         flags: Arc<Flags>,
-        services: Arc<TypeMap>,
+        services: Arc<Services>,
         shutdown: Shutdown,
     ) -> Result<DiscordBot, Box<dyn Error>> {
         let slash_commands = discord::slash_commands::get_all_commands();
@@ -140,7 +140,7 @@ struct DiscordEventHandler {
     config: Arc<Config>,
     slash_commands: SlashCommands,
     message_processors: MessageProcessors,
-    services: Arc<TypeMap>,
+    services: Arc<Services>,
     created_slash_commands: Mutex<bool>,
 }
 
@@ -325,7 +325,7 @@ impl EventHandler for DiscordEventHandler {
         }
 
         let role_id = match mute_service
-            .fetch_muted_role_id(&ctx.http, &*self.services, guild_id)
+            .fetch_muted_role_id(&ctx.http, &self.services, guild_id)
             .await
         {
             Ok(role) => role,
@@ -480,8 +480,8 @@ impl EventHandler for DiscordEventHandler {
                     message.id,
                     &message.author,
                     permissions,
-                    &*setting,
-                    &*self.services,
+                    &setting,
+                    &self.services,
                 )
                 .await
             {
@@ -563,8 +563,8 @@ impl EventHandler for DiscordEventHandler {
                     message.id,
                     author,
                     permissions,
-                    &*setting,
-                    &*self.services,
+                    &setting,
+                    &self.services,
                 )
                 .await
             {
@@ -654,8 +654,10 @@ impl EventHandler for DiscordEventHandler {
                         .collect(),
                 );
 
+                let builder = serenity::builder::CreateInteractionResponse::Autocomplete(response);
+
                 let _ = autocomplete_interaction
-                    .create_autocomplete_response(&*ctx.http, response)
+                    .create_response(&*ctx.http, builder)
                     .await
                     .map_err(|err| {
                         error!("failed to create autocomplete response {}", err);
@@ -669,10 +671,11 @@ impl EventHandler for DiscordEventHandler {
         if let Interaction::Command(command) = interaction {
             // TODO(sam): maybe remove this check later and rely on dm_permission field of command
             if command.guild_id.is_none() || command.member.is_none() {
-                invisible_success_reply(
-                    &*ctx.http,
+                let _ = reply_to_interaction_str(
+                    &ctx.http,
                     &command,
                     "Jim's commands can only be used in servers.",
+                    true,
                 )
                 .await;
                 return;

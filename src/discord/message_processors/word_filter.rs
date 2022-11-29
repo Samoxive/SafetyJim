@@ -7,7 +7,6 @@ use serenity::model::user::User;
 use serenity::model::Permissions;
 use smol_str::SmolStr;
 use tracing::{error, warn};
-use typemap_rev::TypeMap;
 
 use crate::constants::{DEFAULT_BLOCKED_WORDS, JIM_ID, JIM_ID_AND_TAG};
 use crate::database::settings::{
@@ -16,6 +15,7 @@ use crate::database::settings::{
 use crate::discord::message_processors::MessageProcessor;
 use crate::discord::util::{execute_mod_action, is_staff, SerenityErrorExt};
 use crate::service::guild::GuildService;
+use crate::service::Services;
 
 const REASON: &str = "Using blocklisted word(s).";
 
@@ -70,7 +70,7 @@ impl MessageProcessor for WordFilterProcessor {
         author: &User,
         permissions: Permissions,
         setting: &Setting,
-        services: &TypeMap,
+        services: &Services,
     ) -> anyhow::Result<bool> {
         if !setting.word_filter {
             return Ok(false);
@@ -120,7 +120,7 @@ impl MessageProcessor for WordFilterProcessor {
             Ok(_) => {
                 execute_mod_action(
                     setting.word_filter_action,
-                    &*context.http,
+                    &context.http,
                     guild_id,
                     &guild.name,
                     setting,

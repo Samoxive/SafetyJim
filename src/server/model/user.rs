@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
-use typemap_rev::TypeMap;
 
 use crate::service::guild::GuildService;
+use crate::service::Services;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -23,7 +23,7 @@ impl Default for UserModel {
 }
 
 impl UserModel {
-    pub async fn from_id(services: &TypeMap, user_id: UserId) -> UserModel {
+    pub async fn from_id(services: &Services, user_id: UserId) -> UserModel {
         let user_model = if let Some(guild_service) = services.get::<GuildService>() {
             guild_service
                 .get_user(user_id)
