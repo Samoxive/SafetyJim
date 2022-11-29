@@ -14,6 +14,8 @@ pub struct Config {
     pub server_secret: String,
     pub server_port: u16,
     pub cors_origin: String,
+    pub loki_url: String,
+    pub loki_host_label: String,
 }
 
 pub fn get_config() -> envy::Result<Config> {
