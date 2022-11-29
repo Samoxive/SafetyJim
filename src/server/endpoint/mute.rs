@@ -1,54 +1,41 @@
-use std::num::NonZeroU64;
+use std::sync::Arc;
 
-use actix_web::{get, post, web, HttpResponse, Responder};
+use axum::extract::{Path, Query, State};
+use axum::response::{IntoResponse, Response};
+use axum::Json;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use serenity::model::id::GuildId;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
+use serenity::all::Permissions;
 
 use crate::server::endpoint::ModLogPaginationParams;
 use crate::server::model::mute::MuteModel;
-use crate::server::{
-    apply_mod_log_update_checks, apply_private_endpoint_fetch_checks, PrivateEndpointKind,
-};
+use crate::server::{extract_service, ModLogEndpointParams, ModPermission};
 use crate::service::mute::MuteService;
-use crate::Config;
+use crate::service::Services;
+
+pub struct MuteModPermission;
+
+impl ModPermission for MuteModPermission {
+    fn permission() -> Permissions {
+        Permissions::MANAGE_ROLES
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct GetMutesResponse {
+pub struct GetMutesResponse {
     current_page: u32,
     total_pages: u32,
     entries: Vec<MuteModel>,
 }
 
-#[get("/guilds/{guild_id}/mutes")]
+// /guilds/:guild_id/mutes
 pub async fn get_mutes(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    guild_id: web::Path<NonZeroU64>,
-    mod_log_params: web::Query<ModLogPaginationParams>,
-) -> impl Responder {
-    let guild_id = GuildId(guild_id.into_inner());
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let mute_service = if let Some(service) = services.get::<MuteService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    Query(mod_log_params): Query<ModLogPaginationParams>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<MuteModPermission>,
+) -> Result<Json<GetMutesResponse>, StatusCode> {
+    let mute_service = extract_service::<MuteService>(&services).map_err(|err| err.0)?;
 
     let mut mutes = vec![];
     let fetched_mutes = mute_service
@@ -60,91 +47,78 @@ pub async fn get_mutes(
 
     let page_count = mute_service.fetch_guild_mute_count(guild_id).await / 10 + 1;
 
-    HttpResponse::Ok().json(GetMutesResponse {
+    Ok(Json(GetMutesResponse {
         current_page: mod_log_params.page.get(),
         total_pages: page_count as u32,
         entries: mutes,
-    })
+    }))
 }
 
-#[get("/guilds/{guild_id}/mutes/{mute_id}")]
+#[derive(Deserialize)]
+pub struct MuteIdParam {
+    pub mute_id: i32,
+}
+
+// /guilds/:guild_id/mutes/:mute_id
 pub async fn get_mute(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-) -> impl Responder {
-    let (guild_id, mute_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let mute_service = if let Some(service) = services.get::<MuteService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<MuteModPermission>,
+    Path(MuteIdParam { mute_id }): Path<MuteIdParam>,
+) -> Result<Json<MuteModel>, Response> {
+    let mute_service =
+        extract_service::<MuteService>(&services).map_err(|err| err.into_response())?;
 
     let mute = if let Some(mute) = mute_service.fetch_mute(mute_id).await {
         mute
     } else {
-        return HttpResponse::NotFound().json("Mute with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Mute with given id doesn't exist!"),
+        )
+            .into_response());
     };
+
+    if mute.guild_id != guild_id.0.get() as i64 {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given mute id doesn't belong to your guild!"),
+        )
+            .into_response());
+    }
 
     let mute_model = MuteModel::from_mute(&services, &mute).await;
 
-    HttpResponse::Ok().json(mute_model)
+    Ok(Json(mute_model))
 }
 
-#[post("/guilds/{guild_id}/mutes/{mute_id}")]
+// /guilds/:guild_id/mutes/:mute_id
 pub async fn update_mute(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-    mut new_mute: web::Json<MuteModel>,
-) -> impl Responder {
-    let (guild_id, mute_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) = apply_mod_log_update_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        Permissions::MANAGE_ROLES,
-    )
-    .await
-    {
-        return response;
-    }
-
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<MuteModPermission>,
+    Path(MuteIdParam { mute_id }): Path<MuteIdParam>,
+    Json(mut new_mute): Json<MuteModel>,
+) -> Result<(), Response> {
     new_mute.reason = new_mute.reason.trim().to_string();
 
-    let mute_service = if let Some(service) = services.get::<MuteService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let mute_service =
+        extract_service::<MuteService>(&services).map_err(|err| err.into_response())?;
 
     let mut mute = if let Some(mute) = mute_service.fetch_mute(mute_id).await {
         mute
     } else {
-        return HttpResponse::NotFound().json("Mute with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Mute with given id doesn't exist!"),
+        )
+            .into_response());
     };
 
     if mute.guild_id != guild_id.0.get() as i64 {
-        return HttpResponse::Forbidden().json("Given mute id doesn't belong to your guild!");
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given mute id doesn't belong to your guild!"),
+        )
+            .into_response());
     }
 
     if mute.id != new_mute.id
@@ -152,7 +126,11 @@ pub async fn update_mute(
         || mute.mute_time != new_mute.action_time
         || mute.moderator_user_id.to_string() != new_mute.moderator_user.id
     {
-        return HttpResponse::BadRequest().json("Read only properties were modified!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Read only properties were modified!"),
+        )
+            .into_response());
     }
 
     if mute.unmuted {
@@ -161,13 +139,16 @@ pub async fn update_mute(
             mute.expire_time != new_mute.expiration_time
         {
             // changing expiration time
-            return HttpResponse::BadRequest()
-                .json("You can't change expiration property after user has been unmuted.");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("You can't change expiration property after user has been unmuted."),
+            )
+                .into_response());
         }
     }
 
     if mute.pardoned && !new_mute.pardoned {
-        return HttpResponse::BadRequest().json("You can't un-pardon a mute!");
+        return Err((StatusCode::BAD_REQUEST, Json("You can't un-pardon a mute!")).into_response());
     }
 
     mute.expire_time = new_mute.expiration_time;
@@ -182,5 +163,5 @@ pub async fn update_mute(
 
     mute_service.update_mute(mute).await;
 
-    HttpResponse::Ok().finish()
+    Ok(())
 }

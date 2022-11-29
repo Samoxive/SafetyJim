@@ -1,30 +1,23 @@
-use actix_web::{get, web, HttpResponse, Responder};
-use typemap_rev::TypeMap;
+use std::sync::Arc;
 
-use crate::server::is_authenticated;
+use axum::extract::State;
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
+
 use crate::server::model::guild::GuildModel;
 use crate::server::model::self_user::SelfUserModel;
+use crate::server::{extract_service, User};
 use crate::service::user_secret::UserSecretService;
-use crate::Config;
+use crate::service::Services;
 
-#[get("/@me")]
+// /@me
 pub async fn get_self(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-) -> impl Responder {
-    let user_id = if let Some(id) = is_authenticated(&config, &services, &req).await {
-        id
-    } else {
-        return HttpResponse::Unauthorized().finish();
-    };
-
-    let user_secret_service = if let Some(service) = services.get::<UserSecretService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
-
+    State(services): State<Arc<Services>>,
+    User(user_id): User,
+) -> Result<Json<SelfUserModel>, Response> {
+    let user_secret_service =
+        extract_service::<UserSecretService>(&services).map_err(|err| err.into_response())?;
     let self_user_guilds: Vec<GuildModel> = match user_secret_service
         .get_self_user_guilds(&services, user_id)
         .await
@@ -37,18 +30,18 @@ pub async fn get_self(
                 icon_url: guild.icon_url.clone(),
             })
             .collect(),
-        Err(_) => return HttpResponse::Unauthorized().finish(),
+        Err(_) => return Err(StatusCode::UNAUTHORIZED.into_response()),
     };
 
     let self_user = match user_secret_service.get_self_user(user_id).await {
         Ok(self_user) => self_user,
-        Err(_) => return HttpResponse::Unauthorized().finish(),
+        Err(_) => return Err(StatusCode::UNAUTHORIZED.into_response()),
     };
 
-    HttpResponse::Ok().json(SelfUserModel {
+    Ok(Json(SelfUserModel {
         id: self_user.id.to_string(),
         name: self_user.tag.clone(),
         avatar_url: self_user.avatar_url.clone(),
         guilds: self_user_guilds,
-    })
+    }))
 }

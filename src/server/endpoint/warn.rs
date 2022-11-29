@@ -1,54 +1,41 @@
-use std::num::NonZeroU64;
+use std::sync::Arc;
 
-use actix_web::{get, post, web, HttpResponse, Responder};
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use serde::{Deserialize, Serialize};
-use serenity::model::id::GuildId;
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::server::endpoint::ModLogPaginationParams;
 use crate::server::model::warn::WarnModel;
-use crate::server::{
-    apply_mod_log_update_checks, apply_private_endpoint_fetch_checks, PrivateEndpointKind,
-};
+use crate::server::{extract_service, ModLogEndpointParams, ModPermission};
 use crate::service::warn::WarnService;
-use crate::Config;
+use crate::service::Services;
+
+pub struct WarnModPermission;
+
+impl ModPermission for WarnModPermission {
+    fn permission() -> Permissions {
+        Permissions::KICK_MEMBERS
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct GetWarnsResponse {
+pub struct GetWarnsResponse {
     current_page: u32,
     total_pages: u32,
     entries: Vec<WarnModel>,
 }
 
-#[get("/guilds/{guild_id}/warns")]
+// /guilds/:guild_id/warns
 pub async fn get_warns(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    guild_id: web::Path<NonZeroU64>,
-    mod_log_params: web::Query<ModLogPaginationParams>,
-) -> impl Responder {
-    let guild_id = GuildId(guild_id.into_inner());
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let warn_service = if let Some(service) = services.get::<WarnService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    Query(mod_log_params): Query<ModLogPaginationParams>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<WarnModPermission>,
+) -> Result<Json<GetWarnsResponse>, StatusCode> {
+    let warn_service = extract_service::<WarnService>(&services).map_err(|err| err.0)?;
 
     let mut warns = vec![];
     let fetched_warns = warn_service
@@ -60,91 +47,78 @@ pub async fn get_warns(
 
     let page_count = warn_service.fetch_guild_warn_count(guild_id).await / 10 + 1;
 
-    HttpResponse::Ok().json(GetWarnsResponse {
+    Ok(Json(GetWarnsResponse {
         current_page: mod_log_params.page.get(),
         total_pages: page_count as u32,
         entries: warns,
-    })
+    }))
 }
 
-#[get("/guilds/{guild_id}/warns/{warn_id}")]
+#[derive(Deserialize)]
+pub struct WarnIdParam {
+    pub warn_id: i32,
+}
+
+// /guilds/:guild_id/warns/:warn_id
 pub async fn get_warn(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-) -> impl Responder {
-    let (guild_id, warn_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let warn_service = if let Some(service) = services.get::<WarnService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<WarnModPermission>,
+    Path(WarnIdParam { warn_id }): Path<WarnIdParam>,
+) -> Result<Json<WarnModel>, Response> {
+    let warn_service =
+        extract_service::<WarnService>(&services).map_err(|err| err.into_response())?;
 
     let warn = if let Some(warn) = warn_service.fetch_warn(warn_id).await {
         warn
     } else {
-        return HttpResponse::NotFound().json("Warn with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Warn with given id doesn't exist!"),
+        )
+            .into_response());
     };
+
+    if warn.guild_id != guild_id.0.get() as i64 {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given warn id doesn't belong to your guild!"),
+        )
+            .into_response());
+    }
 
     let warn_model = WarnModel::from_warn(&services, &warn).await;
 
-    HttpResponse::Ok().json(warn_model)
+    Ok(Json(warn_model))
 }
 
-#[post("/guilds/{guild_id}/warns/{warn_id}")]
+// /guilds/:guild_id/warns/:warn_id
 pub async fn update_warn(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-    mut new_warn: web::Json<WarnModel>,
-) -> impl Responder {
-    let (guild_id, warn_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) = apply_mod_log_update_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        Permissions::KICK_MEMBERS,
-    )
-    .await
-    {
-        return response;
-    }
-
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<WarnModPermission>,
+    Path(WarnIdParam { warn_id }): Path<WarnIdParam>,
+    Json(mut new_warn): Json<WarnModel>,
+) -> Result<(), Response> {
     new_warn.reason = new_warn.reason.trim().to_string();
 
-    let warn_service = if let Some(service) = services.get::<WarnService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let warn_service =
+        extract_service::<WarnService>(&services).map_err(|err| err.into_response())?;
 
     let mut warn = if let Some(warn) = warn_service.fetch_warn(warn_id).await {
         warn
     } else {
-        return HttpResponse::NotFound().json("Warn with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Warn with given id doesn't exist!"),
+        )
+            .into_response());
     };
 
     if warn.guild_id != guild_id.0.get() as i64 {
-        return HttpResponse::Forbidden().json("Given warn id doesn't belong to your guild!");
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given warn id doesn't belong to your guild!"),
+        )
+            .into_response());
     }
 
     if warn.id != new_warn.id
@@ -152,11 +126,15 @@ pub async fn update_warn(
         || warn.warn_time != new_warn.action_time
         || warn.moderator_user_id.to_string() != new_warn.moderator_user.id
     {
-        return HttpResponse::BadRequest().json("Read only properties were modified!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Read only properties were modified!"),
+        )
+            .into_response());
     }
 
     if warn.pardoned && !new_warn.pardoned {
-        return HttpResponse::BadRequest().json("You can't un-pardon a warn!");
+        return Err((StatusCode::BAD_REQUEST, Json("You can't un-pardon a warn!")).into_response());
     }
 
     warn.reason = if new_warn.reason.is_empty() {
@@ -168,5 +146,5 @@ pub async fn update_warn(
 
     warn_service.update_warn(warn).await;
 
-    HttpResponse::Ok().finish()
+    Ok(())
 }

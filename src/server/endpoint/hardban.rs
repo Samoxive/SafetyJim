@@ -1,54 +1,41 @@
-use std::num::NonZeroU64;
+use std::sync::Arc;
 
-use actix_web::{get, post, web, HttpResponse, Responder};
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use serde::{Deserialize, Serialize};
-use serenity::model::id::GuildId;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
+use serenity::all::Permissions;
 
 use crate::server::endpoint::ModLogPaginationParams;
 use crate::server::model::hardban::HardbanModel;
-use crate::server::{
-    apply_mod_log_update_checks, apply_private_endpoint_fetch_checks, PrivateEndpointKind,
-};
+use crate::server::{extract_service, ModLogEndpointParams, ModPermission};
 use crate::service::hardban::HardbanService;
-use crate::Config;
+use crate::service::Services;
+
+pub struct HardbanModPermission;
+
+impl ModPermission for HardbanModPermission {
+    fn permission() -> Permissions {
+        Permissions::BAN_MEMBERS
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct GetHardbansResponse {
+pub struct GetHardbansResponse {
     current_page: u32,
     total_pages: u32,
     entries: Vec<HardbanModel>,
 }
 
-#[get("/guilds/{guild_id}/hardbans")]
+// /guilds/:guild_id/hardbans
 pub async fn get_hardbans(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    guild_id: web::Path<NonZeroU64>,
-    mod_log_params: web::Query<ModLogPaginationParams>,
-) -> impl Responder {
-    let guild_id = GuildId(guild_id.into_inner());
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let hardban_service = if let Some(service) = services.get::<HardbanService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    Query(mod_log_params): Query<ModLogPaginationParams>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<HardbanModPermission>,
+) -> Result<Json<GetHardbansResponse>, StatusCode> {
+    let hardban_service = extract_service::<HardbanService>(&services).map_err(|err| err.0)?;
 
     let mut hardbans = vec![];
     let fetched_hardbans = hardban_service
@@ -60,86 +47,78 @@ pub async fn get_hardbans(
 
     let page_count = hardban_service.fetch_guild_hardban_count(guild_id).await / 10 + 1;
 
-    HttpResponse::Ok().json(GetHardbansResponse {
+    Ok(Json(GetHardbansResponse {
         current_page: mod_log_params.page.get(),
         total_pages: page_count as u32,
         entries: hardbans,
-    })
+    }))
 }
 
-#[get("/guilds/{guild_id}/hardbans/{hardban_id}")]
+#[derive(Deserialize)]
+pub struct HardbanIdParam {
+    pub hardban_id: i32,
+}
+
+// /guilds/:guild_id/hardbans/:hardban_id
 pub async fn get_hardban(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-) -> impl Responder {
-    let (guild_id, hardban_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let hardban_service = if let Some(service) = services.get::<HardbanService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<HardbanModPermission>,
+    Path(HardbanIdParam { hardban_id }): Path<HardbanIdParam>,
+) -> Result<Json<HardbanModel>, Response> {
+    let hardban_service =
+        extract_service::<HardbanService>(&services).map_err(|err| err.into_response())?;
 
     let hardban = if let Some(hardban) = hardban_service.fetch_hardban(hardban_id).await {
         hardban
     } else {
-        return HttpResponse::NotFound().json("Hardban with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Hardban with given id doesn't exist!"),
+        )
+            .into_response());
     };
+
+    if hardban.guild_id != guild_id.0.get() as i64 {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given hardban id doesn't belong to your guild!"),
+        )
+            .into_response());
+    }
 
     let hardban_model = HardbanModel::from_hardban(&services, &hardban).await;
 
-    HttpResponse::Ok().json(hardban_model)
+    Ok(Json(hardban_model))
 }
 
-#[post("/guilds/{guild_id}/hardbans/{hardban_id}")]
+// /guilds/:guild_id/hardbans/:hardban_id
 pub async fn update_hardban(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-    mut new_hardban: web::Json<HardbanModel>,
-) -> impl Responder {
-    let (guild_id, hardban_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) =
-        apply_mod_log_update_checks(&config, &services, &req, guild_id, Permissions::BAN_MEMBERS)
-            .await
-    {
-        return response;
-    }
-
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<HardbanModPermission>,
+    Path(HardbanIdParam { hardban_id }): Path<HardbanIdParam>,
+    Json(mut new_hardban): Json<HardbanModel>,
+) -> Result<(), Response> {
     new_hardban.reason = new_hardban.reason.trim().to_string();
 
-    let hardban_service = if let Some(service) = services.get::<HardbanService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let hardban_service =
+        extract_service::<HardbanService>(&services).map_err(|err| err.into_response())?;
 
     let mut hardban = if let Some(hardban) = hardban_service.fetch_hardban(hardban_id).await {
         hardban
     } else {
-        return HttpResponse::NotFound().json("Hardban with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Hardban with given id doesn't exist!"),
+        )
+            .into_response());
     };
 
     if hardban.guild_id != guild_id.0.get() as i64 {
-        return HttpResponse::Forbidden().json("Given hardban id doesn't belong to your guild!");
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given hardban id doesn't belong to your guild!"),
+        )
+            .into_response());
     }
 
     if hardban.id != new_hardban.id
@@ -147,7 +126,11 @@ pub async fn update_hardban(
         || hardban.hardban_time != new_hardban.action_time
         || hardban.moderator_user_id.to_string() != new_hardban.moderator_user.id
     {
-        return HttpResponse::BadRequest().json("Read only properties were modified!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Read only properties were modified!"),
+        )
+            .into_response());
     }
 
     hardban.reason = if new_hardban.reason.is_empty() {
@@ -158,5 +141,5 @@ pub async fn update_hardban(
 
     hardban_service.update_hardban(hardban).await;
 
-    HttpResponse::Ok().finish()
+    Ok(())
 }

@@ -1,54 +1,41 @@
-use std::num::NonZeroU64;
+use std::sync::Arc;
 
-use actix_web::{get, post, web, HttpResponse, Responder};
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use serde::{Deserialize, Serialize};
-use serenity::model::id::GuildId;
-use serenity::model::Permissions;
-use typemap_rev::TypeMap;
+use serenity::all::Permissions;
 
 use crate::server::endpoint::ModLogPaginationParams;
 use crate::server::model::ban::BanModel;
-use crate::server::{
-    apply_mod_log_update_checks, apply_private_endpoint_fetch_checks, PrivateEndpointKind,
-};
+use crate::server::{extract_service, ModLogEndpointParams, ModPermission};
 use crate::service::ban::BanService;
-use crate::Config;
+use crate::service::Services;
+
+pub struct BanModPermission;
+
+impl ModPermission for BanModPermission {
+    fn permission() -> Permissions {
+        Permissions::BAN_MEMBERS
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct GetBansResponse {
+pub struct GetBansResponse {
     current_page: u32,
     total_pages: u32,
     entries: Vec<BanModel>,
 }
 
-#[get("/guilds/{guild_id}/bans")]
+// /guilds/:guild_id/bans
 pub async fn get_bans(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    guild_id: web::Path<NonZeroU64>,
-    mod_log_params: web::Query<ModLogPaginationParams>,
-) -> impl Responder {
-    let guild_id = GuildId(guild_id.into_inner());
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let ban_service = if let Some(service) = services.get::<BanService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    Query(mod_log_params): Query<ModLogPaginationParams>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<BanModPermission>,
+) -> Result<Json<GetBansResponse>, StatusCode> {
+    let ban_service = extract_service::<BanService>(&services).map_err(|err| err.0)?;
 
     let mut bans = vec![];
     let fetched_bans = ban_service
@@ -60,86 +47,78 @@ pub async fn get_bans(
 
     let page_count = ban_service.fetch_guild_ban_count(guild_id).await / 10 + 1;
 
-    HttpResponse::Ok().json(GetBansResponse {
+    Ok(Json(GetBansResponse {
         current_page: mod_log_params.page.get(),
         total_pages: page_count as u32,
         entries: bans,
-    })
+    }))
 }
 
-#[get("/guilds/{guild_id}/bans/{ban_id}")]
+#[derive(Deserialize)]
+pub struct BanIdParam {
+    pub ban_id: i32,
+}
+
+// /guilds/:guild_id/bans/:ban_id
 pub async fn get_ban(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-) -> impl Responder {
-    let (guild_id, ban_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let ban_service = if let Some(service) = services.get::<BanService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<BanModPermission>,
+    Path(BanIdParam { ban_id }): Path<BanIdParam>,
+) -> Result<Json<BanModel>, Response> {
+    let ban_service =
+        extract_service::<BanService>(&services).map_err(|err| err.into_response())?;
 
     let ban = if let Some(ban) = ban_service.fetch_ban(ban_id).await {
         ban
     } else {
-        return HttpResponse::NotFound().json("Ban with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Ban with given id doesn't exist!"),
+        )
+            .into_response());
     };
+
+    if ban.guild_id != guild_id.0.get() as i64 {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given ban id doesn't belong to your guild!"),
+        )
+            .into_response());
+    }
 
     let ban_model = BanModel::from_ban(&services, &ban).await;
 
-    HttpResponse::Ok().json(ban_model)
+    Ok(Json(ban_model))
 }
 
-#[post("/guilds/{guild_id}/bans/{ban_id}")]
+// /guilds/:guild_id/bans/:ban_id
 pub async fn update_ban(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-    mut new_ban: web::Json<BanModel>,
-) -> impl Responder {
-    let (guild_id, ban_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) =
-        apply_mod_log_update_checks(&config, &services, &req, guild_id, Permissions::BAN_MEMBERS)
-            .await
-    {
-        return response;
-    }
-
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<BanModPermission>,
+    Path(BanIdParam { ban_id }): Path<BanIdParam>,
+    Json(mut new_ban): Json<BanModel>,
+) -> Result<(), Response> {
     new_ban.reason = new_ban.reason.trim().to_string();
 
-    let ban_service = if let Some(service) = services.get::<BanService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let ban_service =
+        extract_service::<BanService>(&services).map_err(|err| err.into_response())?;
 
     let mut ban = if let Some(ban) = ban_service.fetch_ban(ban_id).await {
         ban
     } else {
-        return HttpResponse::NotFound().json("Ban with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Ban with given id doesn't exist!"),
+        )
+            .into_response());
     };
 
     if ban.guild_id != guild_id.0.get() as i64 {
-        return HttpResponse::Forbidden().json("Given ban id doesn't belong to your guild!");
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given ban id doesn't belong to your guild!"),
+        )
+            .into_response());
     }
 
     if ban.id != new_ban.id
@@ -147,7 +126,11 @@ pub async fn update_ban(
         || ban.ban_time != new_ban.action_time
         || ban.moderator_user_id.to_string() != new_ban.moderator_user.id
     {
-        return HttpResponse::BadRequest().json("Read only properties were modified!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Read only properties were modified!"),
+        )
+            .into_response());
     }
 
     if ban.unbanned {
@@ -156,8 +139,11 @@ pub async fn update_ban(
             ban.expire_time != new_ban.expiration_time
         {
             // changing expiration time
-            return HttpResponse::BadRequest()
-                .json("You can't change expiration property after user has been unbanned.");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("You can't change expiration property after user has been unbanned."),
+            )
+                .into_response());
         }
     }
 
@@ -172,5 +158,5 @@ pub async fn update_ban(
 
     ban_service.update_ban(ban).await;
 
-    HttpResponse::Ok().finish()
+    Ok(())
 }

@@ -1,29 +1,32 @@
 use std::num::NonZeroU64;
+use std::sync::Arc;
 
-use actix_web::{get, post, web, HttpResponse, Responder};
+use axum::extract::{Path, State};
+use axum::http::StatusCode;
+use axum::response::{Html, IntoResponse, Response};
+use axum::{Form, Json};
 use serde::{Deserialize, Serialize};
-use serenity::model::id::{GuildId, RoleId, UserId};
+use serenity::all::{GuildId, RoleId, UserId};
 use tracing::{error, warn};
-use typemap_rev::TypeMap;
 
+use crate::server::extract_service;
+use crate::config::Config;
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
-use crate::Config;
+use crate::service::Services;
 
 const CAPTCHA_TEMPLATE: &str = include_str!("captcha.html");
 const CAPTCHA_VERIFICATION_URL: &str = "https://google.com/recaptcha/api/siteverify";
 
-#[get("/captcha/{guild_id}/{user_id}")]
-pub async fn get_captcha_page(path: web::Path<(u64, u64)>) -> impl Responder {
-    // we don't check guild and users' existence in it because
-    // it doesn't matter when initially displaying the captcha
-    // by skipping the checks we can just shove the static html
-    // for every request. maybe in the future we can display
-    // guild info above the captcha but ¯\_(ツ)_/¯
-    let (_guild_id, _user_id) = path.into_inner();
-    HttpResponse::Ok()
-        .content_type("text/html")
-        .body(CAPTCHA_TEMPLATE)
+#[derive(Deserialize)]
+pub struct CaptchaParams {
+    guild_id: NonZeroU64,
+    user_id: NonZeroU64,
+}
+
+// /captcha/:guild_id/:user_id
+pub async fn get_captcha_page(_path: Path<CaptchaParams>) -> Html<&'static str> {
+    Html(CAPTCHA_TEMPLATE)
 }
 
 #[derive(Serialize, Deserialize)]
@@ -60,46 +63,42 @@ async fn validate_captcha_response(secret: &str, response_id: &str) -> anyhow::R
         .unwrap_or(false))
 }
 
-#[post("/captcha/{guild_id}/{user_id}")]
+// /captcha/:guild_id/:user_id
 pub async fn submit_captcha(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    path: web::Path<(NonZeroU64, NonZeroU64)>,
-    body: web::Form<CaptchaModel>,
-) -> impl Responder {
-    let (guild_id, user_id) = path.into_inner();
+    State(settings): State<Arc<Services>>,
+    State(config): State<Arc<Config>>,
+    Path(CaptchaParams { guild_id, user_id }): Path<CaptchaParams>,
+    body: Form<CaptchaModel>,
+) -> Result<Json<&'static str>, Response> {
     let guild_id = GuildId(guild_id);
     let user_id = UserId(user_id);
 
     match validate_captcha_response(&config.recaptcha_secret, &body.g_recaptcha_response).await {
         Ok(true) => (),
-        Ok(false) => return HttpResponse::Forbidden().finish(),
+        Ok(false) => return Err(StatusCode::FORBIDDEN.into_response()),
         Err(err) => {
             error!("failed to get captcha validation from google {:?}", err);
-            return HttpResponse::InternalServerError().finish();
+            return Err(StatusCode::INTERNAL_SERVER_ERROR.into_response());
         }
     }
 
-    let setting_service = if let Some(service) = services.get::<SettingService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
-
-    let guild_service = if let Some(service) = services.get::<GuildService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let setting_service =
+        extract_service::<SettingService>(&settings).map_err(|err| err.into_response())?;
+    let guild_service =
+        extract_service::<GuildService>(&settings).map_err(|err| err.into_response())?;
 
     let _guild = match guild_service.get_guild(guild_id).await {
         Ok(guild) => guild,
-        Err(_) => return HttpResponse::NotFound().finish(),
+        Err(_) => return Err(StatusCode::NOT_FOUND.into_response()),
     };
 
     let setting = setting_service.get_setting(guild_id).await;
     if !setting.join_captcha {
-        return HttpResponse::Forbidden().json("This guild doesn't have join captcha enabled!");
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("This guild doesn't have join captcha enabled!"),
+        )
+            .into_response());
     }
 
     let role_id = if let Some(id) = setting.holding_room_role_id {
@@ -107,11 +106,19 @@ pub async fn submit_captcha(
             Some(id) => RoleId(id),
             _ => {
                 warn!("found setting with invalid holding room id! {:?}", setting);
-                return HttpResponse::BadRequest().json("Holding room role is invalid!");
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json("Holding room role is invalid!"),
+                )
+                    .into_response());
             }
         }
     } else {
-        return HttpResponse::BadRequest().json("Holding room role isn't set up!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Holding room role isn't set up!"),
+        )
+            .into_response());
     };
 
     let _ = guild_service
@@ -125,5 +132,7 @@ pub async fn submit_captcha(
         )
         .await;
 
-    HttpResponse::Ok().body("You have been approved to join! You can close this window.")
+    Ok(Json(
+        "You have been approved to join! You can close this window.",
+    ))
 }

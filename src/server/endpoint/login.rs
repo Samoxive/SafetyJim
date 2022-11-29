@@ -1,43 +1,42 @@
-use actix_web::{post, web, HttpResponse, Responder};
+use std::sync::Arc;
+
+use axum::extract::{Query, State};
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use serde::{Deserialize, Serialize};
 use tracing::error;
-use typemap_rev::TypeMap;
 
-use crate::server::generate_token;
+use crate::server::{extract_service, generate_token};
+use crate::config::Config;
 use crate::service::user_secret::UserSecretService;
-use crate::Config;
+use crate::service::Services;
 
 #[derive(Serialize, Deserialize)]
 pub struct LoginParams {
     code: String,
 }
 
-#[post("/login")]
+// /login
 pub async fn login(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    login_params: web::Query<LoginParams>,
-) -> impl Responder {
-    let user_secrets_service = if let Some(service) = services.get::<UserSecretService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    State(config): State<Arc<Config>>,
+    Query(login_params): Query<LoginParams>,
+) -> Result<Json<String>, Response> {
+    let user_secrets_service =
+        extract_service::<UserSecretService>(&services).map_err(|err| err.into_response())?;
 
-    let user_id = match user_secrets_service
-        .log_in_as_user(login_params.code.clone())
-        .await
-    {
+    let user_id = match user_secrets_service.log_in_as_user(login_params.code).await {
         Ok(user_id) => user_id,
         Err(err) => {
             error!("failed to log user in through discord oauth! {}", err);
-            return HttpResponse::BadRequest().finish();
+            return Err(StatusCode::BAD_REQUEST.into_response());
         }
     };
 
     if let Some(token) = generate_token(&config.server_secret, user_id) {
-        HttpResponse::Ok().json(token)
+        Ok(Json(token))
     } else {
-        HttpResponse::InternalServerError().finish()
+        Err(StatusCode::INTERNAL_SERVER_ERROR.into_response())
     }
 }

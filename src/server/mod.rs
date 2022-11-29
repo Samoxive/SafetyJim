@@ -1,23 +1,33 @@
 use std::error::Error;
-use std::net::Ipv6Addr;
+use std::marker::PhantomData;
+use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::num::NonZeroU64;
 use std::sync::Arc;
 
-use actix_cors::Cors;
-use actix_web::http::header::{HeaderName, CONTENT_TYPE};
-use actix_web::{get, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use async_trait::async_trait;
+use axum::extract::Path;
+use axum::extract::{FromRef, FromRequestParts};
+use axum::http::header::{HeaderName, CONTENT_TYPE};
+use axum::http::request::Parts;
+use axum::http::{HeaderValue, Method, StatusCode};
+use axum::response::{IntoResponse, Response};
+use axum::routing::*;
+use axum::{Json, Router};
 use jsonwebtoken::errors::ErrorKind;
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::Algorithm;
+use jsonwebtoken::Header;
+use jsonwebtoken::Validation;
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey};
 use lazy_static::lazy_static;
-use serde::{Deserialize, Serialize};
-use serenity::model::id::{GuildId, UserId};
+use serde::Deserialize;
+use serde::Serialize;
+use serenity::all::GuildId;
+use serenity::model::id::UserId;
 use serenity::model::Permissions;
+use tower_http::cors::CorsLayer;
 use tracing::error;
-use typemap_rev::TypeMap;
 use uuid::Uuid;
 
-use crate::database::settings::{PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, PRIVACY_STAFF_ONLY};
-use crate::discord::util::is_staff;
 use crate::server::endpoint::ban::{get_ban, get_bans, update_ban};
 use crate::server::endpoint::captcha::{get_captcha_page, submit_captcha};
 use crate::server::endpoint::hardban::{get_hardban, get_hardbans, update_hardban};
@@ -28,11 +38,14 @@ use crate::server::endpoint::self_user::get_self;
 use crate::server::endpoint::settings::{get_setting, reset_setting, update_setting};
 use crate::server::endpoint::softban::{get_softban, get_softbans, update_softban};
 use crate::server::endpoint::warn::{get_warn, get_warns, update_warn};
-use crate::service::guild::{CachedMember, GuildService};
+use crate::database::settings::{PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, PRIVACY_STAFF_ONLY};
+use crate::discord::util::is_staff;
+use crate::service::guild::GuildService;
 use crate::service::invalid_uuid::InvalidUUIDService;
 use crate::service::setting::SettingService;
+use crate::service::Services;
 use crate::util::now;
-use crate::Config;
+use crate::{Config, Shutdown};
 
 mod endpoint;
 mod model;
@@ -43,14 +56,14 @@ lazy_static! {
 }
 
 #[derive(Deserialize, Serialize)]
-struct JwtClaims {
+pub struct JwtClaims {
     #[serde(rename = "userId")]
-    user_id: String,
-    uuid: Uuid,
-    exp: u64,
+    pub user_id: String,
+    pub uuid: Uuid,
+    pub exp: u64,
 }
 
-fn verify_token(secret: &str, token: &str) -> Option<JwtClaims> {
+pub fn verify_token(secret: &str, token: &str) -> Option<JwtClaims> {
     match decode::<JwtClaims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
@@ -67,7 +80,7 @@ fn verify_token(secret: &str, token: &str) -> Option<JwtClaims> {
     }
 }
 
-fn generate_token(secret: &str, user_id: UserId) -> Option<String> {
+pub fn generate_token(secret: &str, user_id: UserId) -> Option<String> {
     let user_id = user_id.to_string();
     let expires_at = now() + 7 * 24 * 60 * 60;
     let uuid = Uuid::new_v4();
@@ -90,255 +103,230 @@ fn generate_token(secret: &str, user_id: UserId) -> Option<String> {
     }
 }
 
-async fn is_authenticated(
-    config: &Config,
-    services: &TypeMap,
-    req: &HttpRequest,
-) -> Option<UserId> {
-    let token = req
-        .headers()
-        .get(HeaderName::from_static("token")) // optimize into constant?
-        .map(|value| value.to_str())
-        .and_then(|result| result.ok())?;
+#[derive(Clone, FromRef)]
+pub struct AxumState {
+    pub config: Arc<Config>,
+    pub services: Arc<Services>,
+}
 
-    let claims = verify_token(&config.server_secret, token)?;
-
-    let invalid_uuid_service = services.get::<InvalidUUIDService>()?;
-
-    if invalid_uuid_service.is_uuid_invalid(claims.uuid).await {
-        None
+pub fn extract_service<T: typemap_rev::TypeMapKey>(
+    services: &Services,
+) -> Result<&T::Value, (StatusCode, &'static str)> {
+    if let Some(service) = services.get::<T>() {
+        Ok(service)
     } else {
-        match claims.user_id.parse::<NonZeroU64>() {
-            Ok(id) => Some(UserId(id)),
-            Err(_) => {
-                // secret leaked or we have a problem with token generation
-                error!("received a token with valid signature with invalid user id");
-                None
+        let status_code = StatusCode::INTERNAL_SERVER_ERROR;
+        Err((status_code, status_code.canonical_reason().unwrap()))
+    }
+}
+
+pub struct User(pub UserId);
+
+#[async_trait]
+impl FromRequestParts<AxumState> for User {
+    type Rejection = StatusCode;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AxumState,
+    ) -> Result<Self, Self::Rejection> {
+        let token = if let Some(token) = parts.headers.get("token") {
+            token.to_str().map_err(|_err| StatusCode::BAD_REQUEST)?
+        } else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+
+        let claims = if let Some(claims) = verify_token(&state.config.server_secret, token) {
+            claims
+        } else {
+            return Err(StatusCode::UNAUTHORIZED);
+        };
+
+        let invalid_uuid_service =
+            extract_service::<InvalidUUIDService>(&state.services).map_err(|err| err.0)?;
+        if invalid_uuid_service.is_uuid_invalid(claims.uuid).await {
+            Err(StatusCode::UNAUTHORIZED)
+        } else {
+            match claims.user_id.parse::<NonZeroU64>() {
+                Ok(id) => Ok(User(UserId(id))),
+                Err(_) => {
+                    // secret leaked or we have a problem with token generation
+                    error!("received a token with valid signature with invalid user id");
+                    Err(StatusCode::UNAUTHORIZED)
+                }
             }
         }
     }
 }
 
-pub async fn check_authentication(
-    config: &Config,
-    services: &TypeMap,
-    req: &HttpRequest,
-) -> Result<UserId, HttpResponse> {
-    is_authenticated(config, services, req)
-        .await
-        .ok_or_else(|| HttpResponse::Unauthorized().json("Invalid token!"))
+pub struct ModLogEndpointParams<T: ModPermission>(GuildId, PhantomData<T>);
+
+#[derive(Deserialize)]
+pub struct GuildPathParams {
+    pub guild_id: NonZeroU64,
 }
 
-pub enum PrivateEndpointKind {
-    ModLog,
-    Settings,
+pub trait ModPermission {
+    fn permission() -> Permissions;
 }
 
-async fn is_authorized_to_view_private_endpoint(
-    services: &TypeMap,
-    guild_id: GuildId,
-    permissions: Permissions,
-    endpoint_kind: PrivateEndpointKind,
-) -> bool {
-    let setting_service = if let Some(service) = services.get::<SettingService>() {
-        service
-    } else {
-        return false;
-    };
+#[async_trait]
+impl<T: ModPermission> FromRequestParts<AxumState> for ModLogEndpointParams<T> {
+    type Rejection = Response;
 
-    let setting = setting_service.get_setting(guild_id).await;
-    let privacy_setting = match endpoint_kind {
-        PrivateEndpointKind::Settings => setting.privacy_settings,
-        PrivateEndpointKind::ModLog => setting.privacy_mod_log,
-    };
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AxumState,
+    ) -> Result<Self, Self::Rejection> {
+        let is_read = match parts.method {
+            Method::GET => true,
+            Method::POST => false,
+            _ => return Err(StatusCode::METHOD_NOT_ALLOWED.into_response()),
+        };
 
-    if privacy_setting == PRIVACY_EVERYONE {
-        true
-    } else if privacy_setting == PRIVACY_STAFF_ONLY {
-        is_staff(permissions)
-    } else if privacy_setting == PRIVACY_ADMIN_ONLY {
-        permissions.administrator()
-    } else {
-        false
-    }
-}
+        let Path(GuildPathParams { guild_id }) =
+            Path::<GuildPathParams>::from_request_parts(parts, state)
+                .await
+                .map_err(|_err| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
 
-pub async fn check_authorization_to_view_private_endpoint(
-    services: &TypeMap,
-    guild_id: GuildId,
-    permissions: Permissions,
-    endpoint_kind: PrivateEndpointKind,
-) -> Option<HttpResponse> {
-    if is_authorized_to_view_private_endpoint(services, guild_id, permissions, endpoint_kind).await
-    {
-        None
-    } else {
-        Some(
-            HttpResponse::Forbidden()
-                .json("Server settings prevent you from viewing private information!"),
-        )
-    }
-}
+        let guild_id = GuildId(guild_id);
 
-pub async fn is_guild_endpoint(
-    services: &TypeMap,
-    guild_id: GuildId,
-    user_id: UserId,
-) -> Option<(Arc<CachedMember>, Permissions)> {
-    let guild_service = services.get::<GuildService>()?;
-
-    let member = guild_service.get_member(guild_id, user_id).await.ok()?;
-
-    let permissions = if let Ok(permissions) = guild_service
-        .get_permissions(user_id, &member.roles, guild_id)
-        .await
-    {
-        permissions
-    } else {
-        return None;
-    };
-
-    Some((member, permissions))
-}
-
-pub async fn check_guild_endpoint(
-    services: &TypeMap,
-    guild_id: GuildId,
-    user_id: UserId,
-) -> Result<(Arc<CachedMember>, Permissions), HttpResponse> {
-    is_guild_endpoint(services, guild_id, user_id)
-        .await
-        .ok_or_else(|| {
-            HttpResponse::Forbidden().json("This server either doesn't exist or you aren't in it!")
-        })
-}
-
-pub async fn apply_private_endpoint_fetch_checks(
-    config: &Config,
-    services: &TypeMap,
-    req: &HttpRequest,
-    guild_id: GuildId,
-    endpoint_kind: PrivateEndpointKind,
-) -> Result<(), HttpResponse> {
-    let user_id = match check_authentication(config, services, req).await {
-        Ok(user_id) => user_id,
-        Err(response) => return Err(response),
-    };
-
-    let (_, permissions) = match check_guild_endpoint(services, guild_id, user_id).await {
-        Ok((member, permissions)) => (member, permissions),
-        Err(response) => return Err(response),
-    };
-
-    if let Some(response) =
-        check_authorization_to_view_private_endpoint(services, guild_id, permissions, endpoint_kind)
+        let User(user_id) = User::from_request_parts(parts, state)
             .await
-    {
-        return Err(response);
-    }
+            .map_err(|err| err.into_response())?;
 
-    Ok(())
+        let guild_service =
+            extract_service::<GuildService>(&state.services).map_err(|err| err.into_response())?;
+
+        let member = guild_service
+            .get_member(guild_id, user_id)
+            .await
+            .map_err(|_err| {
+                (
+                    StatusCode::FORBIDDEN,
+                    Json("This server either doesn't exist or you aren't in it!"),
+                )
+                    .into_response()
+            })?;
+
+        let permissions = guild_service
+            .get_permissions(user_id, &member.roles, guild_id)
+            .await
+            .map_err(|_err| {
+                (
+                    StatusCode::FORBIDDEN,
+                    Json("This server either doesn't exist or you aren't in it!"),
+                )
+                    .into_response()
+            })?;
+
+        let setting_service = extract_service::<SettingService>(&state.services)
+            .map_err(|err| err.into_response())?;
+        let setting = setting_service.get_setting(guild_id).await;
+
+        let privacy_setting = setting.privacy_mod_log;
+        if is_read {
+            let is_authorized = if privacy_setting == PRIVACY_EVERYONE {
+                true
+            } else if privacy_setting == PRIVACY_STAFF_ONLY {
+                is_staff(permissions)
+            } else if privacy_setting == PRIVACY_ADMIN_ONLY {
+                permissions.administrator()
+            } else {
+                false
+            };
+
+            if !is_authorized {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    Json("Server settings prevent you from viewing private information!"),
+                )
+                    .into_response());
+            }
+        } else {
+            let required_permission = T::permission();
+            let is_authorized = permissions.contains(Permissions::ADMINISTRATOR)
+                || permissions.contains(required_permission);
+
+            if !is_authorized {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    Json("You don't have permissions to change moderator log history!"),
+                )
+                    .into_response());
+            }
+        }
+
+        Ok(ModLogEndpointParams(guild_id, PhantomData))
+    }
 }
 
-pub async fn apply_mod_log_update_checks(
-    config: &Config,
-    services: &TypeMap,
-    req: &HttpRequest,
-    guild_id: GuildId,
-    required_permission: Permissions,
-) -> Result<(), HttpResponse> {
-    let user_id = match check_authentication(config, services, req).await {
-        Ok(user_id) => user_id,
-        Err(response) => return Err(response),
-    };
-
-    let (_, permissions) = match check_guild_endpoint(services, guild_id, user_id).await {
-        Ok((member, permissions)) => (member, permissions),
-        Err(response) => return Err(response),
-    };
-
-    if permissions.contains(Permissions::ADMINISTRATOR) || permissions.contains(required_permission)
-    {
-        Ok(())
-    } else {
-        Err(HttpResponse::Forbidden()
-            .json("You don't have permissions to change moderator log history!"))
-    }
-}
-
-pub async fn apply_setting_update_checks(
-    config: &Config,
-    services: &TypeMap,
-    req: &HttpRequest,
-    guild_id: GuildId,
-) -> Result<(), HttpResponse> {
-    let user_id = match check_authentication(config, services, req).await {
-        Ok(user_id) => user_id,
-        Err(response) => return Err(response),
-    };
-
-    let (_, permissions) = match check_guild_endpoint(services, guild_id, user_id).await {
-        Ok((member, permissions)) => (member, permissions),
-        Err(response) => return Err(response),
-    };
-
-    if permissions.contains(Permissions::ADMINISTRATOR) {
-        Ok(())
-    } else {
-        Err(HttpResponse::Forbidden().json("You don't have permissions to change server settings!"))
-    }
-}
-
-#[get("/")]
-async fn index() -> impl Responder {
+async fn root() -> &'static str {
     "Welcome to Safety Jim API."
 }
 
-pub async fn run_server(config: Arc<Config>, services: Arc<TypeMap>) -> Result<(), Box<dyn Error>> {
+async fn shutdown_signal(shutdown: Shutdown) {
+    let mut receiver = shutdown.subscribe();
+
+    let _ = receiver.recv().await;
+}
+
+pub async fn run_server(
+    config: Arc<Config>,
+    services: Arc<Services>,
+    shutdown: Shutdown,
+) -> Result<(), Box<dyn Error>> {
     let port = config.server_port;
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::from(config.clone()))
-            .app_data(web::Data::from(services.clone()))
-            .service(index)
-            .service(get_self)
-            .service(get_bans)
-            .service(get_ban)
-            .service(update_ban)
-            .service(get_captcha_page)
-            .service(submit_captcha)
-            .service(get_hardbans)
-            .service(get_hardban)
-            .service(update_hardban)
-            .service(get_kicks)
-            .service(get_kick)
-            .service(update_kick)
-            .service(login)
-            .service(get_mutes)
-            .service(get_mute)
-            .service(update_mute)
-            .service(get_setting)
-            .service(update_setting)
-            .service(reset_setting)
-            .service(get_softbans)
-            .service(get_softban)
-            .service(update_softban)
-            .service(get_warns)
-            .service(get_warn)
-            .service(update_warn)
-            .wrap(
-                Cors::default()
-                    .allowed_origin(&config.cors_origin)
-                    // needed for captcha endpoint, actix-cors doesn't actually check if request is for CORS
-                    .allowed_origin(&config.self_url)
-                    .allowed_methods(vec!["GET", "POST", "DELETE"])
-                    .allowed_headers(vec![CONTENT_TYPE, HeaderName::from_static("token")])
-                    .max_age(None),
-            )
-    })
-    .bind((Ipv6Addr::UNSPECIFIED, port))?
-    .run()
-    .await?;
+    let cors_origin = config.cors_origin.parse::<HeaderValue>()?;
+    let state = AxumState { config, services };
+    let app = Router::new()
+        .route("/", get(root))
+        .route("/@me", get(get_self))
+        .route("/login", post(login))
+        .route("/guilds/:guild_id/settings", get(get_setting))
+        .route("/guilds/:guild_id/settings", post(update_setting))
+        .route("/guilds/:guild_id/settings", delete(reset_setting))
+        .route("/captcha/:guild_id/:user_id", get(get_captcha_page))
+        .route("/captcha/:guild_id/:user_id", post(submit_captcha))
+        .route("/guilds/:guild_id/bans", get(get_bans))
+        .route("/guilds/:guild_id/bans/:ban_id", get(get_ban))
+        .route("/guilds/:guild_id/bans/:ban_id", post(update_ban))
+        .route("/guilds/:guild_id/hardbans", get(get_hardbans))
+        .route("/guilds/:guild_id/hardbans/:hardban_id", get(get_hardban))
+        .route(
+            "/guilds/:guild_id/hardbans/:hardban_id",
+            post(update_hardban),
+        )
+        .route("/guilds/:guild_id/kicks", get(get_kicks))
+        .route("/guilds/:guild_id/kicks/:kick_id", get(get_kick))
+        .route("/guilds/:guild_id/kicks/:kick_id", post(update_kick))
+        .route("/guilds/:guild_id/mutes", get(get_mutes))
+        .route("/guilds/:guild_id/mutes/:mute_id", get(get_mute))
+        .route("/guilds/:guild_id/mutes/:mute_id", post(update_mute))
+        .route("/guilds/:guild_id/softbans", get(get_softbans))
+        .route("/guilds/:guild_id/softbans/:softban_id", get(get_softban))
+        .route(
+            "/guilds/:guild_id/softbans/:softban_id",
+            post(update_softban),
+        )
+        .route("/guilds/:guild_id/warns", get(get_warns))
+        .route("/guilds/:guild_id/warns/:warn_id", get(get_warn))
+        .route("/guilds/:guild_id/warns/:warn_id", post(update_warn))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(cors_origin)
+                .allow_headers([CONTENT_TYPE, HeaderName::from_static("token")])
+                .allow_methods([Method::GET, Method::POST, Method::DELETE]),
+        )
+        .with_state(state);
+
+    let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
+
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal(shutdown))
+        .await
+        .unwrap();
 
     Ok(())
 }

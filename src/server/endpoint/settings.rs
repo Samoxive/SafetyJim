@@ -1,81 +1,166 @@
 use std::num::NonZeroU64;
+use std::sync::Arc;
 
-use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use serenity::model::id::{ChannelId, GuildId, RoleId};
-use typemap_rev::TypeMap;
+use async_trait::async_trait;
+use axum::extract::{FromRequestParts, Path, State};
+use axum::http::request::Parts;
+use axum::http::{Method, StatusCode};
+use axum::response::{IntoResponse, Response};
+use axum::Json;
+use serenity::all::{ChannelId, GuildId, RoleId};
+use serenity::model::Permissions;
 
-use crate::database::settings::{
-    Setting, ACTION_HARDBAN, ACTION_NOTHING, DURATION_TYPE_DAYS, DURATION_TYPE_SECONDS,
-    PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, WORD_FILTER_LEVEL_HIGH, WORD_FILTER_LEVEL_LOW,
-};
 use crate::server::model::channel::ChannelModel;
 use crate::server::model::guild::GuildModel;
 use crate::server::model::role::RoleModel;
 use crate::server::model::setting::SettingModel;
-use crate::server::{
-    apply_private_endpoint_fetch_checks, apply_setting_update_checks, PrivateEndpointKind,
+use crate::server::{extract_service, AxumState, GuildPathParams, User};
+use crate::database::settings::{
+    Setting, ACTION_HARDBAN, ACTION_NOTHING, DURATION_TYPE_DAYS, DURATION_TYPE_SECONDS,
+    PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, PRIVACY_STAFF_ONLY, WORD_FILTER_LEVEL_HIGH,
+    WORD_FILTER_LEVEL_LOW,
 };
+use crate::discord::util::is_staff;
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
-use crate::Config;
+use crate::service::Services;
 
-#[get("/guilds/{guild_id}/settings")]
-pub async fn get_setting(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    guild_id: web::Path<NonZeroU64>,
-) -> impl Responder {
-    let guild_id = GuildId(guild_id.into_inner());
+pub struct SettingEndpointParams(GuildId);
 
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::Settings,
-    )
-    .await
-    {
-        return response;
+#[async_trait]
+impl FromRequestParts<AxumState> for SettingEndpointParams {
+    type Rejection = Response;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AxumState,
+    ) -> Result<Self, Self::Rejection> {
+        let is_read = match parts.method {
+            Method::GET => true,
+            Method::POST => false,
+            Method::DELETE => false,
+            _ => return Err(StatusCode::METHOD_NOT_ALLOWED.into_response()),
+        };
+
+        let Path(GuildPathParams { guild_id }) =
+            Path::<GuildPathParams>::from_request_parts(parts, state)
+                .await
+                .map_err(|_err| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+        let guild_id = GuildId(guild_id);
+
+        let User(user_id) = User::from_request_parts(parts, state)
+            .await
+            .map_err(|err| err.into_response())?;
+
+        let guild_service =
+            extract_service::<GuildService>(&state.services).map_err(|err| err.into_response())?;
+
+        let member = guild_service
+            .get_member(guild_id, user_id)
+            .await
+            .map_err(|_err| {
+                (
+                    StatusCode::FORBIDDEN,
+                    Json("This server either doesn't exist or you aren't in it!"),
+                )
+                    .into_response()
+            })?;
+
+        let permissions = guild_service
+            .get_permissions(user_id, &member.roles, guild_id)
+            .await
+            .map_err(|_err| {
+                (
+                    StatusCode::FORBIDDEN,
+                    Json("This server either doesn't exist or you aren't in it!"),
+                )
+                    .into_response()
+            })?;
+
+        let setting_service = extract_service::<SettingService>(&state.services)
+            .map_err(|err| err.into_response())?;
+        let setting = setting_service.get_setting(guild_id).await;
+
+        let privacy_setting = setting.privacy_settings;
+        if is_read {
+            let is_authorized = if privacy_setting == PRIVACY_EVERYONE {
+                true
+            } else if privacy_setting == PRIVACY_STAFF_ONLY {
+                is_staff(permissions)
+            } else if privacy_setting == PRIVACY_ADMIN_ONLY {
+                permissions.administrator()
+            } else {
+                false
+            };
+
+            if !is_authorized {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    Json("Server settings prevent you from viewing private information!"),
+                )
+                    .into_response());
+            }
+        } else {
+            let is_authorized = permissions.contains(Permissions::ADMINISTRATOR);
+
+            if !is_authorized {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    Json("You don't have permissions to change server settings!"),
+                )
+                    .into_response());
+            }
+        }
+
+        Ok(SettingEndpointParams(guild_id))
     }
+}
 
-    let guild_service = if let Some(service) = services.get::<GuildService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+// /guilds/:guild_id/settings
+pub async fn get_setting(
+    State(services): State<Arc<Services>>,
+    SettingEndpointParams(guild_id): SettingEndpointParams,
+) -> Result<Json<SettingModel>, Response> {
+    let guild_service =
+        extract_service::<GuildService>(&services).map_err(|err| err.into_response())?;
 
     // TODO(sam): front end doesn't really use this data, remove?
     let guild = match guild_service.get_guild(guild_id).await {
         Ok(guild) => guild,
         Err(_) => {
-            return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("Failed to fetch guild data, is Jim in this server?"),
+            )
+                .into_response());
         }
     };
 
     let channels = match guild_service.get_channels(guild_id).await {
         Ok(channels) => channels,
         Err(_) => {
-            return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("Failed to fetch guild data, is Jim in this server?"),
+            )
+                .into_response());
         }
     };
 
     let roles = match guild_service.get_roles(guild_id).await {
         Ok(roles) => roles,
         Err(_) => {
-            return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("Failed to fetch guild data, is Jim in this server?"),
+            )
+                .into_response());
         }
     };
 
-    let setting_service = if let Some(service) = services.get::<SettingService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let setting_service =
+        extract_service::<SettingService>(&services).map_err(|err| err.into_response())?;
 
     let setting = setting_service.get_setting(guild_id).await;
 
@@ -104,8 +189,8 @@ pub async fn get_setting(
         })
         .map(|(id, channel)| ChannelModel::from_guild_channel(id, channel));
 
-    HttpResponse::Ok().json(SettingModel {
-        guild: GuildModel::from_cached_guild(guild_id, &*guild),
+    Ok(Json(SettingModel {
+        guild: GuildModel::from_cached_guild(guild_id, &guild),
         channels: channels
             .iter()
             .map(|(id, channel)| ChannelModel::from_guild_channel(*id, channel))
@@ -153,42 +238,37 @@ pub async fn get_setting(
         warn_action_duration_type: setting.warn_action_duration_type,
         mods_can_edit_tags: setting.mods_can_edit_tags,
         spam_filter: setting.spam_filter,
-    })
+    }))
 }
 
-#[post("/guilds/{guild_id}/settings")]
+// /guilds/:guild_id/settings
 pub async fn update_setting(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    guild_id: web::Path<NonZeroU64>,
-    mut new_setting: web::Json<SettingModel>,
-) -> impl Responder {
-    let guild_id = GuildId(guild_id.into_inner());
-
-    if let Err(response) = apply_setting_update_checks(&config, &services, &req, guild_id).await {
-        return response;
-    }
-
-    let guild_service = if let Some(service) = services.get::<GuildService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    SettingEndpointParams(guild_id): SettingEndpointParams,
+    Json(mut new_setting): Json<SettingModel>,
+) -> Result<(), Response> {
+    let guild_service =
+        extract_service::<GuildService>(&services).map_err(|err| err.into_response())?;
 
     let channels = match guild_service.get_channels(guild_id).await {
         Ok(channels) => channels,
         Err(_) => {
-            return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("Failed to fetch guild data, is Jim in this server?"),
+            )
+                .into_response());
         }
     };
 
     let roles = match guild_service.get_roles(guild_id).await {
         Ok(roles) => roles,
         Err(_) => {
-            return HttpResponse::BadRequest()
-                .json("Failed to fetch guild data, is Jim in this server?");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("Failed to fetch guild data, is Jim in this server?"),
+            )
+                .into_response());
         }
     };
 
@@ -208,14 +288,20 @@ pub async fn update_setting(
         let channel_id = match channel.id.parse::<NonZeroU64>() {
             Ok(id) => ChannelId(id),
             Err(_) => {
-                return HttpResponse::BadRequest()
-                    .json("Selected moderator log channel id is invalid!");
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json("Selected moderator log channel id is invalid!"),
+                )
+                    .into_response());
             }
         };
 
         if channels.get(&channel_id).is_none() {
-            return HttpResponse::BadRequest()
-                .json("Selected moderator log channel doesn't exist!");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("Selected moderator log channel doesn't exist!"),
+            )
+                .into_response());
         }
 
         channel_id.get() as i64
@@ -228,14 +314,20 @@ pub async fn update_setting(
             let channel_id = match channel.id.parse::<NonZeroU64>() {
                 Ok(id) => ChannelId(id),
                 Err(_) => {
-                    return HttpResponse::BadRequest()
-                        .json("Selected welcome message channel id is invalid!");
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        Json("Selected welcome message channel id is invalid!"),
+                    )
+                        .into_response());
                 }
             };
 
             if channels.get(&channel_id).is_none() {
-                return HttpResponse::BadRequest()
-                    .json("Selected welcome message channel doesn't exist!");
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json("Selected welcome message channel doesn't exist!"),
+                )
+                    .into_response());
             }
 
             channel_id.get() as i64
@@ -247,179 +339,299 @@ pub async fn update_setting(
         let role_id = match role.id.parse::<NonZeroU64>() {
             Ok(id) => RoleId(id),
             Err(_) => {
-                return HttpResponse::BadRequest()
-                    .json("Selected holding room role id is invalid!");
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json("Selected holding room role id is invalid!"),
+                )
+                    .into_response());
             }
         };
 
         if roles.get(&role_id).is_none() {
-            return HttpResponse::BadRequest().json("Selected holding room role doesn't exist!");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("Selected holding room role doesn't exist!"),
+            )
+                .into_response());
         }
 
         Some(role_id.get() as i64)
     } else {
         if new_setting.join_captcha || new_setting.holding_room {
-            return HttpResponse::BadRequest().json("You can't enable join captcha or holding room without setting a holding room role!");
+            return Err((StatusCode::BAD_REQUEST, Json("You can't enable join captcha or holding room without setting a holding room role!")).into_response());
         }
 
         None
     };
 
     if new_setting.join_captcha && new_setting.holding_room {
-        return HttpResponse::BadRequest()
-            .json("You can't enable both holding room and join captcha at the same time!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("You can't enable both holding room and join captcha at the same time!"),
+        )
+            .into_response());
     }
 
     if new_setting.holding_room_minutes < 0 {
-        return HttpResponse::BadRequest().json("Holding room minutes cannot be negative!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Holding room minutes cannot be negative!"),
+        )
+            .into_response());
     }
 
     if new_setting.message.is_empty() {
-        return HttpResponse::BadRequest().json("Welcome message cannot be empty!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Welcome message cannot be empty!"),
+        )
+            .into_response());
     } else if new_setting.message.len() >= 1750 {
-        return HttpResponse::BadRequest().json("Welcome message cannot be too long!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Welcome message cannot be too long!"),
+        )
+            .into_response());
     }
 
     if let Some(blocklist) = new_setting.word_filter_blocklist.as_ref() {
         if blocklist.len() > 2000 {
-            return HttpResponse::BadRequest().json("Word filter blocklist cannot be too long!");
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("Word filter blocklist cannot be too long!"),
+            )
+                .into_response());
         }
     }
 
     if new_setting.word_filter_level != WORD_FILTER_LEVEL_LOW
         && new_setting.word_filter_level != WORD_FILTER_LEVEL_HIGH
     {
-        return HttpResponse::BadRequest().json("Invalid value for word filter level!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for word filter level!"),
+        )
+            .into_response());
     }
 
     if new_setting.word_filter_action < ACTION_NOTHING
         || new_setting.word_filter_action > ACTION_HARDBAN
     {
-        return HttpResponse::BadRequest().json("Invalid value for word filter action!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for word filter action!"),
+        )
+            .into_response());
     }
 
     if new_setting.word_filter_action_duration < 0 {
-        return HttpResponse::BadRequest().json("Invalid value for word filter action duration!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for word filter action duration!"),
+        )
+            .into_response());
     }
 
     if new_setting.word_filter_action_duration_type < DURATION_TYPE_SECONDS
         || new_setting.word_filter_action_duration_type > DURATION_TYPE_DAYS
     {
-        return HttpResponse::BadRequest()
-            .json("Invalid value for word filter action duration type!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for word filter action duration type!"),
+        )
+            .into_response());
     }
 
     if new_setting.invite_link_remover_action < ACTION_NOTHING
         || new_setting.invite_link_remover_action > ACTION_HARDBAN
     {
-        return HttpResponse::BadRequest().json("Invalid value for invite link remover action!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for invite link remover action!"),
+        )
+            .into_response());
     }
 
     if new_setting.invite_link_remover_action_duration < 0 {
-        return HttpResponse::BadRequest()
-            .json("Invalid value for invite link remover action duration!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for invite link remover action duration!"),
+        )
+            .into_response());
     }
 
     if new_setting.invite_link_remover_action_duration_type < DURATION_TYPE_SECONDS
         || new_setting.invite_link_remover_action_duration_type > DURATION_TYPE_DAYS
     {
-        return HttpResponse::BadRequest()
-            .json("Invalid value for invite link remover action duration type!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for invite link remover action duration type!"),
+        )
+            .into_response());
     }
 
     if new_setting.softban_threshold < 0 {
-        return HttpResponse::BadRequest().json("Invalid value for softban threshold!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for softban threshold!"),
+        )
+            .into_response());
     }
 
     if new_setting.softban_action < ACTION_NOTHING || new_setting.softban_action > ACTION_HARDBAN {
-        return HttpResponse::BadRequest().json("Invalid value for softban action!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for softban action!"),
+        )
+            .into_response());
     }
 
     if new_setting.softban_action_duration < 0 {
-        return HttpResponse::BadRequest().json("Invalid value for softban action duration!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for softban action duration!"),
+        )
+            .into_response());
     }
 
     if new_setting.softban_action_duration_type < DURATION_TYPE_SECONDS
         || new_setting.softban_action_duration_type > DURATION_TYPE_DAYS
     {
-        return HttpResponse::BadRequest().json("Invalid value for softban action duration type!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for softban action duration type!"),
+        )
+            .into_response());
     }
 
     if new_setting.kick_threshold < 0 {
-        return HttpResponse::BadRequest().json("Invalid value for kick threshold!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for kick threshold!"),
+        )
+            .into_response());
     }
 
     if new_setting.kick_action < ACTION_NOTHING || new_setting.kick_action > ACTION_HARDBAN {
-        return HttpResponse::BadRequest().json("Invalid value for kick action!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for kick action!"),
+        )
+            .into_response());
     }
 
     if new_setting.kick_action_duration < 0 {
-        return HttpResponse::BadRequest().json("Invalid value for kick action duration!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for kick action duration!"),
+        )
+            .into_response());
     }
 
     if new_setting.kick_action_duration_type < DURATION_TYPE_SECONDS
         || new_setting.kick_action_duration_type > DURATION_TYPE_DAYS
     {
-        return HttpResponse::BadRequest().json("Invalid value for kick action duration type!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for kick action duration type!"),
+        )
+            .into_response());
     }
 
     if new_setting.mute_threshold < 0 {
-        return HttpResponse::BadRequest().json("Invalid value for mute threshold!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for mute threshold!"),
+        )
+            .into_response());
     }
 
     if new_setting.mute_action < ACTION_NOTHING || new_setting.mute_action > ACTION_HARDBAN {
-        return HttpResponse::BadRequest().json("Invalid value for mute action!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for mute action!"),
+        )
+            .into_response());
     }
 
     if new_setting.mute_action_duration < 0 {
-        return HttpResponse::BadRequest().json("Invalid value for mute action duration!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for mute action duration!"),
+        )
+            .into_response());
     }
 
     if new_setting.mute_action_duration_type < DURATION_TYPE_SECONDS
         || new_setting.mute_action_duration_type > DURATION_TYPE_DAYS
     {
-        return HttpResponse::BadRequest().json("Invalid value for mute action duration type!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for mute action duration type!"),
+        )
+            .into_response());
     }
 
     if new_setting.warn_threshold < 0 {
-        return HttpResponse::BadRequest().json("Invalid value for warn threshold!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for warn threshold!"),
+        )
+            .into_response());
     }
 
     if new_setting.warn_action < ACTION_NOTHING || new_setting.warn_action > ACTION_HARDBAN {
-        return HttpResponse::BadRequest().json("Invalid value for warn action!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for warn action!"),
+        )
+            .into_response());
     }
 
     if new_setting.warn_action_duration < 0 {
-        return HttpResponse::BadRequest().json("Invalid value for warn action duration!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for warn action duration!"),
+        )
+            .into_response());
     }
 
     if new_setting.warn_action_duration_type < DURATION_TYPE_SECONDS
         || new_setting.warn_action_duration_type > DURATION_TYPE_DAYS
     {
-        return HttpResponse::BadRequest().json("Invalid value for warn action duration type!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for warn action duration type!"),
+        )
+            .into_response());
     }
 
     if new_setting.privacy_settings < PRIVACY_EVERYONE
         || new_setting.privacy_settings > PRIVACY_ADMIN_ONLY
     {
-        return HttpResponse::BadRequest().json("Invalid value for moderator log privacy!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for moderator log privacy!"),
+        )
+            .into_response());
     }
 
     if new_setting.privacy_mod_log < PRIVACY_EVERYONE
         || new_setting.privacy_mod_log > PRIVACY_ADMIN_ONLY
     {
-        return HttpResponse::BadRequest().json("Invalid value for moderator log privacy!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Invalid value for moderator log privacy!"),
+        )
+            .into_response());
     }
 
     if new_setting.guild.id != guild_id.to_string() {
-        return HttpResponse::BadRequest().json("Invalid guild id!");
+        return Err((StatusCode::BAD_REQUEST, Json("Invalid guild id!")).into_response());
     }
 
-    let setting_service = if let Some(service) = services.get::<SettingService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let setting_service =
+        extract_service::<SettingService>(&services).map_err(|err| err.into_response())?;
 
     setting_service
         .update_setting(
@@ -471,29 +683,18 @@ pub async fn update_setting(
         )
         .await;
 
-    HttpResponse::Ok().finish()
+    Ok(())
 }
 
-#[delete("/guilds/{guild_id}/settings")]
+// /guilds/:guild_id/settings
 pub async fn reset_setting(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    guild_id: web::Path<NonZeroU64>,
-) -> impl Responder {
-    let guild_id = GuildId(guild_id.into_inner());
-
-    if let Err(response) = apply_setting_update_checks(&config, &services, &req, guild_id).await {
-        return response;
-    }
-
-    let setting_service = if let Some(service) = services.get::<SettingService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    SettingEndpointParams(guild_id): SettingEndpointParams,
+) -> Result<(), Response> {
+    let setting_service =
+        extract_service::<SettingService>(&services).map_err(|err| err.into_response())?;
 
     setting_service.reset_setting(guild_id).await;
 
-    HttpResponse::Ok().finish()
+    Ok(())
 }

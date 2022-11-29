@@ -1,54 +1,41 @@
-use std::num::NonZeroU64;
+use std::sync::Arc;
 
-use actix_web::{get, post, web, HttpResponse, Responder};
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use serde::{Deserialize, Serialize};
-use serenity::model::id::GuildId;
 use serenity::model::Permissions;
-use typemap_rev::TypeMap;
 
 use crate::server::endpoint::ModLogPaginationParams;
 use crate::server::model::softban::SoftbanModel;
-use crate::server::{
-    apply_mod_log_update_checks, apply_private_endpoint_fetch_checks, PrivateEndpointKind,
-};
+use crate::server::{extract_service, ModLogEndpointParams, ModPermission};
 use crate::service::softban::SoftbanService;
-use crate::Config;
+use crate::service::Services;
+
+pub struct SoftbanModPermission;
+
+impl ModPermission for SoftbanModPermission {
+    fn permission() -> Permissions {
+        Permissions::BAN_MEMBERS
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct GetSoftbansResponse {
+pub struct GetSoftbansResponse {
     current_page: u32,
     total_pages: u32,
     entries: Vec<SoftbanModel>,
 }
 
-#[get("/guilds/{guild_id}/softbans")]
+// /guilds/:guild_id/softbans
 pub async fn get_softbans(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    guild_id: web::Path<NonZeroU64>,
-    mod_log_params: web::Query<ModLogPaginationParams>,
-) -> impl Responder {
-    let guild_id = GuildId(guild_id.into_inner());
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let softban_service = if let Some(service) = services.get::<SoftbanService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    Query(mod_log_params): Query<ModLogPaginationParams>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<SoftbanModPermission>,
+) -> Result<Json<GetSoftbansResponse>, StatusCode> {
+    let softban_service = extract_service::<SoftbanService>(&services).map_err(|err| err.0)?;
 
     let mut softbans = vec![];
     let fetched_softbans = softban_service
@@ -60,86 +47,78 @@ pub async fn get_softbans(
 
     let page_count = softban_service.fetch_guild_softban_count(guild_id).await / 10 + 1;
 
-    HttpResponse::Ok().json(GetSoftbansResponse {
+    Ok(Json(GetSoftbansResponse {
         current_page: mod_log_params.page.get(),
         total_pages: page_count as u32,
         entries: softbans,
-    })
+    }))
 }
 
-#[get("/guilds/{guild_id}/softbans/{softban_id}")]
+#[derive(Deserialize)]
+pub struct SoftbanIdParam {
+    pub softban_id: i32,
+}
+
+// /guilds/:guild_id/softbans/:softban_id
 pub async fn get_softban(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-) -> impl Responder {
-    let (guild_id, softban_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) = apply_private_endpoint_fetch_checks(
-        &config,
-        &services,
-        &req,
-        guild_id,
-        PrivateEndpointKind::ModLog,
-    )
-    .await
-    {
-        return response;
-    }
-
-    let softban_service = if let Some(service) = services.get::<SoftbanService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<SoftbanModPermission>,
+    Path(SoftbanIdParam { softban_id }): Path<SoftbanIdParam>,
+) -> Result<Json<SoftbanModel>, Response> {
+    let softban_service =
+        extract_service::<SoftbanService>(&services).map_err(|err| err.into_response())?;
 
     let softban = if let Some(softban) = softban_service.fetch_softban(softban_id).await {
         softban
     } else {
-        return HttpResponse::NotFound().json("Softban with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Softban with given id doesn't exist!"),
+        )
+            .into_response());
     };
+
+    if softban.guild_id != guild_id.0.get() as i64 {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given softban id doesn't belong to your guild!"),
+        )
+            .into_response());
+    }
 
     let softban_model = SoftbanModel::from_softban(&services, &softban).await;
 
-    HttpResponse::Ok().json(softban_model)
+    Ok(Json(softban_model))
 }
 
-#[post("/guilds/{guild_id}/softbans/{softban_id}")]
+// /guilds/:guild_id/softbans/:softban_id
 pub async fn update_softban(
-    config: web::Data<Config>,
-    services: web::Data<TypeMap>,
-    req: actix_web::HttpRequest,
-    path: web::Path<(NonZeroU64, i32)>,
-    mut new_softban: web::Json<SoftbanModel>,
-) -> impl Responder {
-    let (guild_id, softban_id) = path.into_inner();
-    let guild_id = GuildId(guild_id);
-
-    if let Err(response) =
-        apply_mod_log_update_checks(&config, &services, &req, guild_id, Permissions::BAN_MEMBERS)
-            .await
-    {
-        return response;
-    }
-
+    State(services): State<Arc<Services>>,
+    ModLogEndpointParams(guild_id, _): ModLogEndpointParams<SoftbanModPermission>,
+    Path(SoftbanIdParam { softban_id }): Path<SoftbanIdParam>,
+    Json(mut new_softban): Json<SoftbanModel>,
+) -> Result<(), Response> {
     new_softban.reason = new_softban.reason.trim().to_string();
 
-    let softban_service = if let Some(service) = services.get::<SoftbanService>() {
-        service
-    } else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let softban_service =
+        extract_service::<SoftbanService>(&services).map_err(|err| err.into_response())?;
 
     let mut softban = if let Some(softban) = softban_service.fetch_softban(softban_id).await {
         softban
     } else {
-        return HttpResponse::NotFound().json("Softban with given id doesn't exist!");
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json("Softban with given id doesn't exist!"),
+        )
+            .into_response());
     };
 
     if softban.guild_id != guild_id.0.get() as i64 {
-        return HttpResponse::Forbidden().json("Given softban id doesn't belong to your guild!");
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json("Given softban id doesn't belong to your guild!"),
+        )
+            .into_response());
     }
 
     if softban.id != new_softban.id
@@ -147,11 +126,19 @@ pub async fn update_softban(
         || softban.softban_time != new_softban.action_time
         || softban.moderator_user_id.to_string() != new_softban.moderator_user.id
     {
-        return HttpResponse::BadRequest().json("Read only properties were modified!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("Read only properties were modified!"),
+        )
+            .into_response());
     }
 
     if softban.pardoned && !new_softban.pardoned {
-        return HttpResponse::BadRequest().json("You can't un-pardon a softban!");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json("You can't un-pardon a softban!"),
+        )
+            .into_response());
     }
 
     softban.reason = if new_softban.reason.is_empty() {
@@ -163,5 +150,5 @@ pub async fn update_softban(
 
     softban_service.update_softban(softban).await;
 
-    HttpResponse::Ok().finish()
+    Ok(())
 }
