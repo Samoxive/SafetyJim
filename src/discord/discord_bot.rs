@@ -647,6 +647,7 @@ impl EventHandler for DiscordEventHandler {
                 let response = CreateAutocompleteResponse::default().set_choices(
                     tag_choices
                         .iter()
+                        .take(25)
                         .map(|tag| AutocompleteChoice {
                             name: tag.clone(),
                             value: Value::String(tag.clone()),
