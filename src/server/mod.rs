@@ -25,9 +25,12 @@ use serenity::all::GuildId;
 use serenity::model::id::UserId;
 use serenity::model::Permissions;
 use tower_http::cors::CorsLayer;
+use tower_http::trace::TraceLayer;
 use tracing::error;
 use uuid::Uuid;
 
+use crate::database::settings::{PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, PRIVACY_STAFF_ONLY};
+use crate::discord::util::is_staff;
 use crate::server::endpoint::ban::{get_ban, get_bans, update_ban};
 use crate::server::endpoint::captcha::{get_captcha_page, submit_captcha};
 use crate::server::endpoint::hardban::{get_hardban, get_hardbans, update_hardban};
@@ -38,8 +41,6 @@ use crate::server::endpoint::self_user::get_self;
 use crate::server::endpoint::settings::{get_setting, reset_setting, update_setting};
 use crate::server::endpoint::softban::{get_softban, get_softbans, update_softban};
 use crate::server::endpoint::warn::{get_warn, get_warns, update_warn};
-use crate::database::settings::{PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, PRIVACY_STAFF_ONLY};
-use crate::discord::util::is_staff;
 use crate::service::guild::GuildService;
 use crate::service::invalid_uuid::InvalidUUIDService;
 use crate::service::setting::SettingService;
@@ -318,6 +319,7 @@ pub async fn run_server(
                 .allow_headers([CONTENT_TYPE, HeaderName::from_static("token")])
                 .allow_methods([Method::GET, Method::POST, Method::DELETE]),
         )
+        .layer(TraceLayer::new_for_http())
         .with_state(state);
 
     let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
