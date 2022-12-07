@@ -1,6 +1,7 @@
 insert into settings (guild_id,
                       mod_log,
                       mod_log_channel_id,
+                      report_channel_id,
                       holding_room,
                       holding_room_role_id,
                       holding_room_minutes,
@@ -39,5 +40,5 @@ insert into settings (guild_id,
                       mods_can_edit_tags,
                       spam_filter)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
-        $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40)
+        $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41)
 returning *;

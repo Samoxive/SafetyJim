@@ -10,17 +10,17 @@ use axum::Json;
 use serenity::all::{ChannelId, GuildId, RoleId};
 use serenity::model::Permissions;
 
-use crate::server::model::channel::ChannelModel;
-use crate::server::model::guild::GuildModel;
-use crate::server::model::role::RoleModel;
-use crate::server::model::setting::SettingModel;
-use crate::server::{extract_service, AxumState, GuildPathParams, User};
 use crate::database::settings::{
     Setting, ACTION_HARDBAN, ACTION_NOTHING, DURATION_TYPE_DAYS, DURATION_TYPE_SECONDS,
     PRIVACY_ADMIN_ONLY, PRIVACY_EVERYONE, PRIVACY_STAFF_ONLY, WORD_FILTER_LEVEL_HIGH,
     WORD_FILTER_LEVEL_LOW,
 };
 use crate::discord::util::is_staff;
+use crate::server::model::channel::ChannelModel;
+use crate::server::model::guild::GuildModel;
+use crate::server::model::role::RoleModel;
+use crate::server::model::setting::SettingModel;
+use crate::server::{extract_service, AxumState, GuildPathParams, User};
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
 use crate::service::Services;
@@ -173,6 +173,15 @@ pub async fn get_setting(
         })
         .map(|(id, channel)| ChannelModel::from_guild_channel(id, channel));
 
+    let report_channel = NonZeroU64::new(setting.report_channel_id as u64)
+        .map(ChannelId)
+        .and_then(|channel_id| {
+            channels
+                .get(&channel_id)
+                .map(|channel| (channel_id, channel))
+        })
+        .map(|(id, channel)| ChannelModel::from_guild_channel(id, channel));
+
     let holding_room_role = setting
         .holding_room_role_id
         .and_then(|id| NonZeroU64::new(id as u64))
@@ -201,6 +210,7 @@ pub async fn get_setting(
             .collect(),
         mod_log: setting.mod_log,
         mod_log_channel,
+        report_channel,
         holding_room: setting.holding_room,
         holding_room_role,
         holding_room_minutes: setting.holding_room_minutes,
@@ -300,6 +310,31 @@ pub async fn update_setting(
             return Err((
                 StatusCode::BAD_REQUEST,
                 Json("Selected moderator log channel doesn't exist!"),
+            )
+                .into_response());
+        }
+
+        channel_id.get() as i64
+    } else {
+        0
+    };
+
+    let report_channel_id = if let Some(channel) = new_setting.report_channel.as_ref() {
+        let channel_id = match channel.id.parse::<NonZeroU64>() {
+            Ok(id) => ChannelId(id),
+            Err(_) => {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json("Selected report channel id is invalid!"),
+                )
+                    .into_response());
+            }
+        };
+
+        if channels.get(&channel_id).is_none() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json("Selected report channel channel doesn't exist!"),
             )
                 .into_response());
         }
@@ -640,6 +675,7 @@ pub async fn update_setting(
                 guild_id: guild_id.0.get() as i64,
                 mod_log: new_setting.mod_log,
                 mod_log_channel_id,
+                report_channel_id,
                 holding_room: new_setting.holding_room,
                 holding_room_role_id,
                 holding_room_minutes: new_setting.holding_room_minutes,

@@ -60,6 +60,7 @@ pub struct Setting {
     pub guild_id: i64,
     pub mod_log: bool,
     pub mod_log_channel_id: i64,
+    pub report_channel_id: i64,
     pub holding_room: bool,
     pub holding_room_role_id: Option<i64>,
     pub holding_room_minutes: i32,
@@ -105,6 +106,7 @@ impl Setting {
             guild_id: guild_id.0.get() as i64,
             mod_log: false,
             mod_log_channel_id: 0,
+            report_channel_id: 0,
             holding_room: false,
             holding_room_role_id: None,
             holding_room_minutes: 3,
@@ -168,6 +170,7 @@ impl SettingsRepository {
             .bind(setting.guild_id)
             .bind(setting.mod_log)
             .bind(setting.mod_log_channel_id)
+            .bind(setting.report_channel_id)
             .bind(setting.holding_room)
             .bind(setting.holding_room_role_id)
             .bind(setting.holding_room_minutes)
@@ -214,6 +217,7 @@ impl SettingsRepository {
             .bind(setting.guild_id)
             .bind(setting.mod_log)
             .bind(setting.mod_log_channel_id)
+            .bind(setting.report_channel_id)
             .bind(setting.holding_room)
             .bind(setting.holding_room_role_id)
             .bind(setting.holding_room_minutes)

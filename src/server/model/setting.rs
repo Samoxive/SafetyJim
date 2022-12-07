@@ -12,6 +12,7 @@ pub struct SettingModel {
     pub roles: Vec<RoleModel>,
     pub mod_log: bool,
     pub mod_log_channel: Option<ChannelModel>,
+    pub report_channel: Option<ChannelModel>,
     pub holding_room: bool,
     pub holding_room_role: Option<RoleModel>,
     pub holding_room_minutes: i32,

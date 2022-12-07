@@ -3,6 +3,7 @@ create table if not exists settings
     guild_id                                 bigint  not null primary key,
     mod_log                                  boolean not null,
     mod_log_channel_id                       bigint  not null,
+    report_channel_id                        bigint  not null,
     holding_room                             boolean not null,
     holding_room_role_id                     bigint,
     holding_room_minutes                     integer not null,

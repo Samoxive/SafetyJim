@@ -1,3 +1,4 @@
+use serenity::all::{CommandType, CreateCommand, CreateEmbed};
 use std::error::Error;
 use std::num::NonZeroU64;
 use std::process::exit;
@@ -5,7 +6,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use serenity::async_trait;
-use serenity::builder::{AutocompleteChoice, CreateAutocompleteResponse, CreateMessage};
+use serenity::builder::{
+    AutocompleteChoice, CreateAutocompleteResponse, CreateEmbedFooter, CreateMessage,
+};
 use serenity::client::bridge::gateway::ShardManager;
 use serenity::client::{Context, EventHandler};
 use serenity::gateway::ActivityData;
@@ -18,6 +21,7 @@ use serenity::model::gateway::{GatewayIntents, Ready};
 use serenity::model::guild::{Guild, Member, PartialGuild, Role, UnavailableGuild};
 use serenity::model::id::{ApplicationId, ChannelId, GuildId, RoleId};
 use serenity::model::user::{CurrentUser, User};
+use serenity::model::Color;
 use serenity::prelude::Mentionable;
 use serenity::Client;
 use simsearch::{SearchOptions, SimSearch};
@@ -33,7 +37,7 @@ use crate::discord::scheduled::run_scheduled_tasks;
 use crate::discord::slash_commands::SlashCommands;
 use crate::discord::util::{
     reply_to_interaction_str, verify_guild_message_create, verify_guild_message_update,
-    CommandDataExt, GuildMessageCreated, GuildMessageUpdated,
+    CommandDataExt, GuildMessageCreated, GuildMessageUpdated, UserExt,
 };
 use crate::flags::Flags;
 use crate::service::guild::GuildService;
@@ -155,11 +159,11 @@ async fn initialize_slash_commands(
             .0
             .iter()
             .map(|(_, slash_command)| slash_command.create_command())
+            .chain([CreateCommand::new("Report").kind(CommandType::Message)].into_iter())
             .collect(),
     )
     .await?;
     warn!("initialized slash commands!");
-
     Ok(())
 }
 
@@ -671,28 +675,93 @@ impl EventHandler for DiscordEventHandler {
 
         if let Interaction::Command(command) = interaction {
             // TODO(sam): maybe remove this check later and rely on dm_permission field of command
-            if command.guild_id.is_none() || command.member.is_none() {
-                let _ = reply_to_interaction_str(
-                    &ctx.http,
-                    &command,
-                    "Jim's commands can only be used in servers.",
-                    true,
-                )
-                .await;
-                return;
-            }
+            let (guild_id, member) = match (command.guild_id, &command.member) {
+                (Some(guild_id), Some(member)) => (guild_id, member.as_ref()),
+                _ => {
+                    let _ = reply_to_interaction_str(
+                        &ctx.http,
+                        &command,
+                        "Jim's commands can only be used in servers.",
+                        true,
+                    )
+                    .await;
+                    return;
+                }
+            };
 
-            let name = &command.data.name;
-            let slash_command_handler = self.slash_commands.0.get(name.as_str());
-            if let Some(slash_command_handler) = slash_command_handler {
-                if let Err(err) = slash_command_handler
-                    .handle_command(&ctx, &command, &self.config, self.services.as_ref())
-                    .await
-                {
-                    error!(
-                        name = name.as_str(),
-                        "failed to handle slash command {}", err
-                    );
+            match command.data.kind {
+                CommandType::ChatInput => {
+                    let name = &command.data.name;
+                    let slash_command_handler = self.slash_commands.0.get(name.as_str());
+                    if let Some(slash_command_handler) = slash_command_handler {
+                        if let Err(err) = slash_command_handler
+                            .handle_command(&ctx, &command, &self.config, self.services.as_ref())
+                            .await
+                        {
+                            error!(
+                                name = name.as_str(),
+                                "failed to handle slash command {}", err
+                            );
+                        }
+                    }
+                }
+                CommandType::Message => {
+                    let name = &command.data.name;
+                    if name != "Report" {
+                        // we only have one message command
+                        error!(
+                            "received a message command with unknown name {:?}",
+                            &command
+                        );
+                        return;
+                    }
+
+                    let reported_message = match command.data.resolved.messages.iter().next() {
+                        Some((_id, message)) => message,
+                        None => {
+                            error!(
+                                "received a message command without targeted message {:?}",
+                                &command
+                            );
+                            return;
+                        }
+                    };
+
+                    let setting = if let Some(service) = self.services.get::<SettingService>() {
+                        service.get_setting(guild_id).await
+                    } else {
+                        return;
+                    };
+
+                    if !setting.mod_log {
+                        reply_to_interaction_str(&*ctx.http, &command, "This server doesn't have reporting enabled!", true).await;
+                        return;
+                    }
+
+                    let embed = CreateEmbed::default()
+                        .color(Color::new(0xFF2900))
+                        .timestamp(reported_message.timestamp)
+                        .title("Message Report")
+                        .field("Reporter:", member.user.tag_and_id(), false)
+                        .field("Reported:", reported_message.author.tag_and_id(), false)
+                        .field("Message Link:", reported_message.id.link(reported_message.channel_id, Some(guild_id)), false)
+                        .footer(CreateEmbedFooter::new("Message sent on"));
+
+                    let message = CreateMessage::default().add_embed(embed);
+
+                    let report_channel_id =
+                        if let Some(id) = NonZeroU64::new(setting.report_channel_id as u64) {
+                            ChannelId(id)
+                        } else {
+                            reply_to_interaction_str(&*ctx.http, &command, "This server doesn't have reporting enabled!", true).await;
+                            return;
+                        };
+
+                    let _ = report_channel_id.send_message(&*ctx.http, message).await;
+                    reply_to_interaction_str(&*ctx.http, &command, "Reported.", true).await;
+                }
+                _ => {
+                    error!("received an unknown command {:?}", &command);
                 }
             }
         }
