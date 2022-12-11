@@ -24,6 +24,33 @@ pub const DISCORD_CDN_BASE: &str = "https://cdn.discordapp.com";
 
 pub static START_EPOCH: OnceCell<u64> = OnceCell::new();
 pub static DEFAULT_BLOCKED_WORDS: OnceCell<Vec<SmolStr>> = OnceCell::new();
+pub static PROGRAMMING_LANGUAGES: [(&'static str, &'static str); 25] = [
+    ("None", "none"),
+    ("Bash", "sh"),
+    ("C", "c"),
+    ("C#", "cs"),
+    ("C++", "cpp"),
+    ("CSS", "css"),
+    ("Dockerfile", "docker"),
+    ("Go", "go"),
+    ("HTML/XML", "html"),
+    ("Haskell", "hs"),
+    ("JSON", "json"),
+    ("Java", "java"),
+    ("JavaScript", "js"),
+    ("Kotlin", "kt"),
+    ("Lua", "lua"),
+    ("Markdown", "md"),
+    ("Objective C", "objc"),
+    ("PHP", "php"),
+    ("Perl", "pl"),
+    ("Python", "python"),
+    ("Ruby", "rb"),
+    ("Rust", "rs"),
+    ("SQL", "sql"),
+    ("TypeScript", "ts"),
+    ("YAML", "yml"),
+];
 
 pub async fn initialize_statics() -> Result<(), Box<dyn Error>> {
     START_EPOCH

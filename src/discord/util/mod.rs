@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_recursion::async_recursion;
+use serenity::all::CreateAllowedMentions;
 use serenity::builder::{
     CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
     EditInteractionResponse,
@@ -306,7 +307,10 @@ pub async fn edit_deferred_interaction_response(
     interaction: &CommandInteraction,
     content: &str,
 ) {
-    let builder = EditInteractionResponse::default().content(content);
+    let builder = EditInteractionResponse::default()
+        .content(content)
+        .allowed_mentions(CreateAllowedMentions::new())
+        .components(vec![]);
 
     let _ = interaction
         .edit_response(http, builder)

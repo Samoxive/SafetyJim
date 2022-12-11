@@ -1,17 +1,21 @@
-use serenity::all::{CommandType, CreateCommand, CreateEmbed};
+use serenity::all::{
+    CommandType, ComponentInteractionDataKind, CreateCommand, CreateEmbed,
+    CreateInteractionResponse, CreateInteractionResponseMessage, CreateSelectMenuOption,
+};
 use std::error::Error;
 use std::num::NonZeroU64;
-use std::process::exit;
 use std::sync::Arc;
 use std::time::Duration;
 
 use serenity::async_trait;
 use serenity::builder::{
-    AutocompleteChoice, CreateAutocompleteResponse, CreateEmbedFooter, CreateMessage,
+    AutocompleteChoice, CreateActionRow, CreateAutocompleteResponse, CreateEmbedFooter,
+    CreateMessage, CreateSelectMenu, CreateSelectMenuKind, EditInteractionResponse,
 };
 use serenity::client::bridge::gateway::ShardManager;
 use serenity::client::{Context, EventHandler};
 use serenity::gateway::ActivityData;
+use serenity::http::Http;
 use serenity::json::Value;
 use serenity::model::application::command::Command;
 use serenity::model::application::interaction::Interaction;
@@ -31,15 +35,16 @@ use tokio::time::sleep;
 use tracing::{error, warn};
 
 use crate::config::Config;
+use crate::constants::PROGRAMMING_LANGUAGES;
 use crate::discord;
 use crate::discord::message_processors::{get_all_processors, MessageProcessors};
 use crate::discord::scheduled::run_scheduled_tasks;
 use crate::discord::slash_commands::SlashCommands;
 use crate::discord::util::{
-    reply_to_interaction_str, verify_guild_message_create, verify_guild_message_update,
-    CommandDataExt, GuildMessageCreated, GuildMessageUpdated, UserExt,
+    defer_interaction, edit_deferred_interaction_response, reply_to_interaction_str,
+    verify_guild_message_create, verify_guild_message_update, CommandDataExt, GuildMessageCreated,
+    GuildMessageUpdated, UserExt,
 };
-use crate::flags::Flags;
 use crate::service::guild::GuildService;
 use crate::service::guild_statistic::GuildStatisticService;
 use crate::service::join::JoinService;
@@ -86,19 +91,16 @@ async fn feed_shard_statistics(
 impl DiscordBot {
     pub async fn new(
         config: Arc<Config>,
-        flags: Arc<Flags>,
         services: Arc<Services>,
         shutdown: Shutdown,
     ) -> Result<DiscordBot, Box<dyn Error>> {
         let slash_commands = discord::slash_commands::get_all_commands();
 
         let handler = DiscordEventHandler {
-            create_slash_commands: flags.create_slash_commands,
             config: config.clone(),
             services: services.clone(),
             slash_commands,
             message_processors: get_all_processors(),
-            created_slash_commands: Mutex::new(false),
         };
 
         let application_id = ApplicationId::new(config.oauth_client_id.parse()?);
@@ -140,26 +142,30 @@ impl DiscordBot {
 }
 
 struct DiscordEventHandler {
-    create_slash_commands: bool,
     config: Arc<Config>,
     slash_commands: SlashCommands,
     message_processors: MessageProcessors,
     services: Arc<Services>,
-    created_slash_commands: Mutex<bool>,
 }
 
-async fn initialize_slash_commands(
-    ctx: &Context,
+pub async fn initialize_slash_commands(
+    http: &Http,
     slash_commands: &SlashCommands,
 ) -> Result<(), serenity::Error> {
     warn!("initializing slash commands");
     let _ = Command::set_global_application_commands(
-        &ctx.http,
+        http,
         slash_commands
             .0
             .iter()
             .map(|(_, slash_command)| slash_command.create_command())
-            .chain([CreateCommand::new("Report").kind(CommandType::Message)].into_iter())
+            .chain(
+                [
+                    CreateCommand::new("Report").kind(CommandType::Message),
+                    CreateCommand::new("Format Code").kind(CommandType::Message),
+                ]
+                .into_iter(),
+            )
             .collect(),
     )
     .await?;
@@ -593,20 +599,6 @@ impl EventHandler for DiscordEventHandler {
         let shard_status = format!("over users. [{} / {}]", shard.0, shard.1);
         let activity = ActivityData::watching(shard_status);
         ctx.set_activity(Some(activity));
-
-        if self.create_slash_commands {
-            let mut created_guard = self.created_slash_commands.lock().await;
-            let created = *created_guard;
-
-            if !created {
-                if let Err(err) = initialize_slash_commands(&ctx, &self.slash_commands).await {
-                    error!("failed to create slash commands {}", err);
-                    exit(-1);
-                }
-
-                *created_guard = true;
-            }
-        }
     }
 
     async fn user_update(&self, _ctx: Context, _old: Option<CurrentUser>, new: CurrentUser) {
@@ -707,16 +699,7 @@ impl EventHandler for DiscordEventHandler {
                 }
                 CommandType::Message => {
                     let name = &command.data.name;
-                    if name != "Report" {
-                        // we only have one message command
-                        error!(
-                            "received a message command with unknown name {:?}",
-                            &command
-                        );
-                        return;
-                    }
-
-                    let reported_message = match command.data.resolved.messages.iter().next() {
+                    let target_message = match command.data.resolved.messages.iter().next() {
                         Some((_id, message)) => message,
                         None => {
                             error!(
@@ -727,38 +710,172 @@ impl EventHandler for DiscordEventHandler {
                         }
                     };
 
-                    let setting = if let Some(service) = self.services.get::<SettingService>() {
-                        service.get_setting(guild_id).await
-                    } else {
-                        return;
-                    };
-
-                    if !setting.mod_log {
-                        reply_to_interaction_str(&*ctx.http, &command, "This server doesn't have reporting enabled!", true).await;
-                        return;
-                    }
-
-                    let embed = CreateEmbed::default()
-                        .color(Color::new(0xFF2900))
-                        .timestamp(reported_message.timestamp)
-                        .title("Message Report")
-                        .field("Reporter:", member.user.tag_and_id(), false)
-                        .field("Reported:", reported_message.author.tag_and_id(), false)
-                        .field("Message Link:", reported_message.id.link(reported_message.channel_id, Some(guild_id)), false)
-                        .footer(CreateEmbedFooter::new("Message sent on"));
-
-                    let message = CreateMessage::default().add_embed(embed);
-
-                    let report_channel_id =
-                        if let Some(id) = NonZeroU64::new(setting.report_channel_id as u64) {
-                            ChannelId(id)
+                    if name == "Report" {
+                        let setting = if let Some(service) = self.services.get::<SettingService>() {
+                            service.get_setting(guild_id).await
                         } else {
-                            reply_to_interaction_str(&*ctx.http, &command, "This server doesn't have reporting enabled!", true).await;
                             return;
                         };
 
-                    let _ = report_channel_id.send_message(&*ctx.http, message).await;
-                    reply_to_interaction_str(&*ctx.http, &command, "Reported.", true).await;
+                        if !setting.mod_log {
+                            reply_to_interaction_str(
+                                &ctx.http,
+                                &command,
+                                "This server doesn't have reporting enabled!",
+                                true,
+                            )
+                            .await;
+                            return;
+                        }
+
+                        let embed = CreateEmbed::default()
+                            .color(Color::new(0xFF2900))
+                            .timestamp(target_message.timestamp)
+                            .title("Message Report")
+                            .field("Reporter:", member.user.tag_and_id(), false)
+                            .field("Reported:", target_message.author.tag_and_id(), false)
+                            .field(
+                                "Message Link:",
+                                target_message
+                                    .id
+                                    .link(target_message.channel_id, Some(guild_id)),
+                                false,
+                            )
+                            .footer(CreateEmbedFooter::new("Message sent on"));
+
+                        let message = CreateMessage::default().add_embed(embed);
+
+                        let report_channel_id =
+                            if let Some(id) = NonZeroU64::new(setting.report_channel_id as u64) {
+                                ChannelId(id)
+                            } else {
+                                reply_to_interaction_str(
+                                    &ctx.http,
+                                    &command,
+                                    "This server doesn't have reporting enabled!",
+                                    true,
+                                )
+                                .await;
+                                return;
+                            };
+
+                        let _ = report_channel_id.send_message(&ctx.http, message).await;
+                        reply_to_interaction_str(&ctx.http, &command, "Reported.", true).await;
+                    } else if name == "Format Code" {
+                        if target_message.content.is_empty() {
+                            reply_to_interaction_str(
+                                &ctx.http,
+                                &command,
+                                "Message has no content.",
+                                true,
+                            )
+                            .await;
+                            return;
+                        }
+
+                        if target_message.content.contains("```") {
+                            reply_to_interaction_str(
+                                &ctx.http,
+                                &command,
+                                "Message already contains a code block.",
+                                true,
+                            )
+                            .await;
+                            return;
+                        }
+
+                        if let Err(err) = defer_interaction(&ctx.http, &command).await {
+                            error!("failed to defer an interaction {:?} {:?}", err, &command);
+                            return;
+                        }
+
+                        let language_select = EditInteractionResponse::new().components(vec![
+                            CreateActionRow::SelectMenu(
+                                CreateSelectMenu::new(
+                                    "language_select",
+                                    CreateSelectMenuKind::String {
+                                        options: PROGRAMMING_LANGUAGES
+                                            .iter()
+                                            .map(|(label, value)| {
+                                                CreateSelectMenuOption::new(*label, *value)
+                                            })
+                                            .collect(),
+                                    },
+                                )
+                                .placeholder("No language selected"),
+                            ),
+                        ]);
+
+                        let language_select_message =
+                            match command.edit_response(&ctx.http, language_select).await {
+                                Ok(message) => message,
+                                Err(_) => {
+                                    edit_deferred_interaction_response(
+                                        &ctx.http,
+                                        &command,
+                                        &format!("```\n{}\n```", &target_message.content),
+                                    )
+                                    .await;
+                                    return;
+                                }
+                            };
+
+                        let component_interaction = match language_select_message
+                            .component_interaction_collector(&ctx.shard)
+                            .timeout(Duration::from_secs(10))
+                            .collect_single()
+                            .await
+                        {
+                            Some(interaction) => interaction,
+                            None => {
+                                edit_deferred_interaction_response(
+                                    &ctx.http,
+                                    &command,
+                                    &format!("```\n{}\n```", &target_message.content),
+                                )
+                                .await;
+                                return;
+                            }
+                        };
+
+                        let selected_language = match &component_interaction.data.kind {
+                            ComponentInteractionDataKind::StringSelect { values } => {
+                                match values.get(0).map(|value| value.as_str()) {
+                                    Some("None") => "",
+                                    Some(value) => value,
+                                    None => {
+                                        error!("no string select value received from component interaction {:?}", &component_interaction);
+                                        return;
+                                    }
+                                }
+                            }
+                            _ => {
+                                error!("different component interaction data was received than expected {:?}", &component_interaction);
+                                return;
+                            }
+                        };
+
+                        let formatted_content =
+                            format!("```{}\n{}\n```", selected_language, &target_message.content);
+
+                        let _ = component_interaction
+                            .create_response(
+                                &ctx.http,
+                                CreateInteractionResponse::UpdateMessage(
+                                    CreateInteractionResponseMessage::new()
+                                        .content(&formatted_content)
+                                        .components(vec![]),
+                                ),
+                            )
+                            .await;
+                    } else {
+                        // we only have two message commands
+                        error!(
+                            "received a message command with unknown name {:?}",
+                            &command
+                        );
+                        return;
+                    }
                 }
                 _ => {
                     error!("received an unknown command {:?}", &command);
