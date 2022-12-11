@@ -7,8 +7,10 @@ use std::io;
 use std::sync::Arc;
 
 use mimalloc::MiMalloc;
+use serenity::all::ApplicationId;
+use serenity::http::Http;
 use tokio::spawn;
-use tracing::Level;
+use tracing::{error, Level};
 use tracing_loki::url::Url;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter, Layer};
@@ -18,7 +20,7 @@ use util::Shutdown;
 use crate::config::{get_config, Config};
 use crate::constants::initialize_statics;
 use crate::database::setup_database_pool;
-use crate::discord::discord_bot::DiscordBot;
+use crate::discord::discord_bot::{initialize_slash_commands, DiscordBot};
 use crate::flags::Flags;
 // use crate::server::run_server;
 use crate::service::create_services;
@@ -26,12 +28,12 @@ use crate::service::create_services;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-mod server;
 mod config;
 mod constants;
 mod database;
 mod discord;
 mod flags;
+mod server;
 mod service;
 mod util;
 
@@ -60,19 +62,31 @@ fn setup_logging(config: &Config) -> Result<(), Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let flags = Arc::new(argh::from_env::<Flags>());
+    let flags = argh::from_env::<Flags>();
     let config = Arc::new(get_config()?);
     setup_logging(&config)?;
 
     initialize_statics().await?;
+
+    if flags.create_slash_commands {
+        let http = Http::new(&config.discord_token);
+        http.set_application_id(ApplicationId(config.oauth_client_id.parse()?));
+        let slash_commands = discord::slash_commands::get_all_commands();
+        initialize_slash_commands(&http, &slash_commands)
+            .await
+            .map_err(|err| {
+                error!("failed to create slash commands {}", &err);
+                err
+            })?;
+        return Ok(());
+    }
 
     let shutdown = Shutdown::new();
 
     let pool = Arc::new(setup_database_pool(&config).await?);
     let services = Arc::new(create_services(config.clone(), pool.clone()).await?);
 
-    let mut bot =
-        DiscordBot::new(config.clone(), flags, services.clone(), shutdown.clone()).await?;
+    let mut bot = DiscordBot::new(config.clone(), services.clone(), shutdown.clone()).await?;
     let shard_manager = bot.client.shard_manager.clone();
 
     let bot_future = spawn(async move { bot.connect().await });
