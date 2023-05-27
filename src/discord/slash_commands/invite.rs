@@ -1,11 +1,10 @@
 use async_trait::async_trait;
+use serenity::all::{CommandInteraction, CommandType};
 use serenity::builder::{
     CreateActionRow, CreateButton, CreateCommand, CreateInteractionResponse,
     CreateInteractionResponseMessage,
 };
 use serenity::client::Context;
-use serenity::model::application::command::CommandType;
-use serenity::model::application::interaction::application_command::CommandInteraction;
 use tracing::error;
 
 use crate::config::Config;

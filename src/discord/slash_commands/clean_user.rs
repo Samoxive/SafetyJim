@@ -2,13 +2,10 @@ use std::future::ready;
 
 use anyhow::bail;
 use async_trait::async_trait;
+use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
 use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
 use serenity::futures::StreamExt;
-use serenity::model::application::command::{CommandOptionType, CommandType};
-use serenity::model::application::interaction::application_command::{
-    CommandData, CommandInteraction,
-};
 use serenity::model::id::{MessageId, UserId};
 use serenity::model::Permissions;
 

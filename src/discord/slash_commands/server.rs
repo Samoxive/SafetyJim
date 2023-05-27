@@ -1,9 +1,8 @@
 use anyhow::bail;
 use async_trait::async_trait;
+use serenity::all::{CommandInteraction, CommandType};
 use serenity::builder::{CreateCommand, CreateEmbed, CreateEmbedAuthor};
 use serenity::client::Context;
-use serenity::model::application::command::CommandType;
-use serenity::model::application::interaction::application_command::CommandInteraction;
 use tracing::error;
 
 use crate::config::Config;
@@ -74,27 +73,30 @@ impl SlashCommand for ServerCommand {
             .colour(EMBED_COLOR)
             .field(
                 "Server Owner",
-                &format!("{} ({})", owner.tag, guild.owner_id),
+                format!("{} ({})", owner.tag, guild.owner_id),
                 true,
             )
             .field(
                 "Member Count",
-                &format!("{}", guild.approximate_member_count.unwrap_or(0)),
+                format!("{}", guild.approximate_member_count.unwrap_or(0)),
                 true,
             )
             .field(
                 "Created On",
-                &format!("<t:{}>", guild.id.created_at().unix_timestamp()),
+                format!("<t:{}>", guild.id.created_at().unix_timestamp()),
                 true,
             )
             .field(
                 "Boost Count",
-                &guild.premium_subscription_count.to_string(),
+                guild
+                    .premium_subscription_count
+                    .unwrap_or_default()
+                    .to_string(),
                 true,
             )
-            .field("Boost Tier", &format!("{:?}", guild.premium_tier), true)
-            .field("NSFW Tier", &format!("{:?}", guild.nsfw_level), true)
-            .field("Server Features", &guild.features.join(" | "), false);
+            .field("Boost Tier", format!("{:?}", guild.premium_tier), true)
+            .field("NSFW Tier", format!("{:?}", guild.nsfw_level), true)
+            .field("Server Features", guild.features.join(" | "), false);
 
         reply_to_interaction_embed(&context.http, interaction, embed, true).await;
 

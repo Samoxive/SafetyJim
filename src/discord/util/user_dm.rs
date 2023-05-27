@@ -44,13 +44,13 @@ impl ModActionKind {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Banned until", &value, false)
+                embed.field("Banned until", value, false)
             }
             ModActionKind::Mute { expiration_time } => {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Muted until", &value, false)
+                embed.field("Muted until", value, false)
             }
             _ => embed,
         }

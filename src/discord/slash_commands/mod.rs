@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use serenity::all::CommandInteraction;
 use serenity::builder::CreateCommand;
 use serenity::client::Context;
-use serenity::model::application::interaction::application_command::CommandInteraction;
 
 use crate::config::Config;
 use crate::service::Services;

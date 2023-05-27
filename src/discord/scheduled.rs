@@ -283,7 +283,7 @@ pub async fn remind_reminders(http: &Http, services: &Services) {
 
     let expired_reminders = reminder_service.fetch_expired_reminders().await;
     for expired_reminder in expired_reminders {
-        let timestamp = match Timestamp::from_unix_timestamp(expired_reminder.create_time as i64) {
+        let timestamp = match Timestamp::from_unix_timestamp(expired_reminder.create_time) {
             Ok(t) => t,
             Err(_) => {
                 warn!(

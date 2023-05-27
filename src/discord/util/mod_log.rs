@@ -46,13 +46,13 @@ impl ModLogAction {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Banned until", &value, false)
+                embed.field("Banned until", value, false)
             }
             ModLogAction::Mute { expiration_time } => {
                 let value = expiration_time
                     .map(|time| format!("<t:{}>", time))
                     .unwrap_or_else(|| "Indefinitely".into());
-                embed.field("Muted until", &value, false)
+                embed.field("Muted until", value, false)
             }
             _ => embed,
         }
@@ -102,15 +102,15 @@ pub async fn create_mod_log_entry(
         .timestamp(timestamp)
         .field(
             "Action",
-            &format!("{} - #{}", action.name(), entity_id),
+            format!("{} - #{}", action.name(), entity_id),
             false,
         )
-        .field("User:", &target_user.tag_and_id(), false)
+        .field("User:", target_user.tag_and_id(), false)
         .field("Reason:", reason, false)
         .field("Responsible Moderator:", mod_user_tag_and_id, false);
 
     if let Some(action_channel_id) = action_channel_id {
-        embed = embed.field("Channel", &action_channel_id.mention().to_string(), false);
+        embed = embed.field("Channel", action_channel_id.mention().to_string(), false);
     }
 
     embed = action.create_expiration_date_field(embed);

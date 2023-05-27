@@ -24,7 +24,7 @@ pub const DISCORD_CDN_BASE: &str = "https://cdn.discordapp.com";
 
 pub static START_EPOCH: OnceCell<u64> = OnceCell::new();
 pub static DEFAULT_BLOCKED_WORDS: OnceCell<Vec<SmolStr>> = OnceCell::new();
-pub static PROGRAMMING_LANGUAGES: [(&'static str, &'static str); 25] = [
+pub static PROGRAMMING_LANGUAGES: [(&str, &str); 25] = [
     ("None", "none"),
     ("Bash", "sh"),
     ("C", "c"),

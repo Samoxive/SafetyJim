@@ -1,11 +1,8 @@
 use anyhow::bail;
 use async_trait::async_trait;
+use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
 use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::{CommandOptionType, CommandType};
-use serenity::model::application::interaction::application_command::{
-    CommandData, CommandInteraction,
-};
 use serenity::model::id::UserId;
 use serenity::prelude::Mentionable;
 

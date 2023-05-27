@@ -1,8 +1,7 @@
 use async_trait::async_trait;
+use serenity::all::{CommandInteraction, CommandType};
 use serenity::builder::CreateCommand;
 use serenity::client::Context;
-use serenity::model::application::command::CommandType;
-use serenity::model::application::interaction::application_command::CommandInteraction;
 
 use crate::config::Config;
 use crate::discord::slash_commands::SlashCommand;

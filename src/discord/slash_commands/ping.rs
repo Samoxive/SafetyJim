@@ -1,10 +1,9 @@
 use anyhow::bail;
 use async_trait::async_trait;
+use serenity::all::{CommandInteraction, CommandType};
 use serenity::builder::{CreateCommand, CreateEmbed, CreateEmbedAuthor};
-use serenity::client::bridge::gateway::ShardId;
 use serenity::client::Context;
-use serenity::model::application::command::CommandType;
-use serenity::model::application::interaction::application_command::CommandInteraction;
+use serenity::gateway::ShardId;
 
 use crate::config::Config;
 use crate::constants::{AVATAR_URL, EMBED_COLOR};

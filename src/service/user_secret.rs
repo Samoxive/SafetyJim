@@ -234,7 +234,7 @@ impl UserSecretService {
                 err
             })?;
 
-        if response.scope != "identify guilds" {
+        if response.scope != "identify guilds" && response.scope != "guilds identify" {
             error!("discord returned a different scope! {}", response.scope);
             bail!("discord oauth login failed");
         }

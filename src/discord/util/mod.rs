@@ -3,15 +3,14 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_recursion::async_recursion;
-use serenity::all::CreateAllowedMentions;
+use serenity::all::{
+    CommandData, CommandDataOptionValue, CommandInteraction, CreateAllowedMentions,
+};
 use serenity::builder::{
     CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
     EditInteractionResponse,
 };
 use serenity::http::{Http, HttpError};
-use serenity::model::application::interaction::application_command::{
-    CommandData, CommandDataOptionValue, CommandInteraction,
-};
 use serenity::model::channel::{Message, MessageFlags, PartialChannel};
 use serenity::model::event::MessageUpdateEvent;
 use serenity::model::guild::{Member, PartialMember, Role};

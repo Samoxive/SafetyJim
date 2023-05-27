@@ -1,11 +1,8 @@
 use anyhow::bail;
 use async_trait::async_trait;
+use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
 use serenity::builder::{CreateCommand, CreateCommandOption, CreateEmbed, CreateEmbedAuthor};
 use serenity::client::Context;
-use serenity::model::application::command::{CommandOptionType, CommandType};
-use serenity::model::application::interaction::application_command::{
-    CommandData, CommandInteraction,
-};
 use serenity::model::guild::PartialMember;
 use serenity::model::user::User;
 
@@ -71,11 +68,11 @@ fn generate_member_embed(guild: &CachedGuild, member: &PartialMember, user: &Use
     CreateEmbed::default()
         .author(CreateEmbedAuthor::new(known_as).icon_url(user.face()))
         .title(title)
-        .field("ID", &user.id.to_string(), false)
-        .field("User Flags", &flags, false)
-        .field("Registered On", &created_at, true)
-        .field("Joined On", &joined_at, true)
-        .field("Boost Status", &boost_status, true)
+        .field("ID", user.id.to_string(), false)
+        .field("User Flags", flags, false)
+        .field("Registered On", created_at, true)
+        .field("Joined On", joined_at, true)
+        .field("Boost Status", boost_status, true)
         .colour(EMBED_COLOR)
 }
 
@@ -90,9 +87,9 @@ fn generate_user_embed(user: &User) -> CreateEmbed {
     CreateEmbed::default()
         .author(CreateEmbedAuthor::new(user.tag()).icon_url(user.face()))
         .title("Discord User")
-        .field("ID", &user.id.to_string(), false)
-        .field("User Flags", &flags, false)
-        .field("Registered On", &created_at, false)
+        .field("ID", user.id.to_string(), false)
+        .field("User Flags", flags, false)
+        .field("Registered On", created_at, false)
         .colour(EMBED_COLOR)
 }
 

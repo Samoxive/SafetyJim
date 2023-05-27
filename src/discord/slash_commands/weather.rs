@@ -3,12 +3,9 @@ use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use reqwest::{Client, ClientBuilder};
 use serde::Deserialize;
+use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
 use serenity::builder::{CreateCommand, CreateCommandOption, CreateEmbed, CreateEmbedFooter};
 use serenity::client::Context;
-use serenity::model::application::command::{CommandOptionType, CommandType};
-use serenity::model::application::interaction::application_command::{
-    CommandData, CommandInteraction,
-};
 
 use crate::constants::EMBED_COLOR;
 use crate::discord::slash_commands::weather::WeatherCommandOptionFailure::MissingOption;
@@ -251,10 +248,10 @@ impl SlashCommand for WeatherCommand {
             .field("Summary", &summary, false)
             .field(
                 "Temperature",
-                &format!("{} °C / {} °F", temp_c as i32, temp_f as i32),
+                format!("{} °C / {} °F", temp_c as i32, temp_f as i32),
                 true,
             )
-            .field("Humidity", &format!("{}%", humidity), true)
+            .field("Humidity", format!("{}%", humidity), true)
             .description(description);
 
         reply_to_interaction_embed(&context.http, interaction, embed, false).await;

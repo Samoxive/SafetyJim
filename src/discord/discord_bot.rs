@@ -1,24 +1,22 @@
-use serenity::all::{
-    CommandType, ComponentInteractionDataKind, CreateCommand, CreateEmbed,
-    CreateInteractionResponse, CreateInteractionResponseMessage, CreateSelectMenuOption,
-};
 use std::error::Error;
 use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::time::Duration;
 
+use serenity::all::{
+    Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind,
+    CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
+    CreateSelectMenuOption, Interaction,
+};
 use serenity::async_trait;
 use serenity::builder::{
     AutocompleteChoice, CreateActionRow, CreateAutocompleteResponse, CreateEmbedFooter,
     CreateMessage, CreateSelectMenu, CreateSelectMenuKind, EditInteractionResponse,
 };
-use serenity::client::bridge::gateway::ShardManager;
 use serenity::client::{Context, EventHandler};
-use serenity::gateway::ActivityData;
+use serenity::gateway::{ActivityData, ShardManager};
 use serenity::http::Http;
 use serenity::json::Value;
-use serenity::model::application::command::Command;
-use serenity::model::application::interaction::Interaction;
 use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
 use serenity::model::event::{GuildMemberUpdateEvent, MessageUpdateEvent};
 use serenity::model::gateway::{GatewayIntents, Ready};
@@ -80,7 +78,7 @@ async fn feed_shard_statistics(
             _ = receiver.recv() => {
                 return;
             }
-        };
+        }
 
         shard_statistic_service
             .update_latencies(&*shard_manager.lock().await)
@@ -116,9 +114,7 @@ impl DiscordBot {
         .await?;
 
         if let Some(guild_service) = services.get::<GuildService>() {
-            guild_service
-                .insert_http(client.cache_and_http.http.clone())
-                .await;
+            guild_service.insert_http(client.http.clone()).await;
         }
 
         tokio::spawn(feed_shard_statistics(
@@ -127,11 +123,7 @@ impl DiscordBot {
             shutdown.clone(),
         ));
 
-        run_scheduled_tasks(
-            client.cache_and_http.http.clone(),
-            services.clone(),
-            shutdown.clone(),
-        );
+        run_scheduled_tasks(client.http.clone(), services.clone(), shutdown.clone());
 
         Ok(DiscordBot { client })
     }
@@ -153,12 +145,12 @@ pub async fn initialize_slash_commands(
     slash_commands: &SlashCommands,
 ) -> Result<(), serenity::Error> {
     warn!("initializing slash commands");
-    let _ = Command::set_global_application_commands(
+    let _ = Command::set_global_commands(
         http,
         slash_commands
             .0
-            .iter()
-            .map(|(_, slash_command)| slash_command.create_command())
+            .values()
+            .map(|slash_command| slash_command.create_command())
             .chain(
                 [
                     CreateCommand::new("Report").kind(CommandType::Message),
@@ -644,14 +636,11 @@ impl EventHandler for DiscordEventHandler {
                     tag_choices
                         .iter()
                         .take(25)
-                        .map(|tag| AutocompleteChoice {
-                            name: tag.clone(),
-                            value: Value::String(tag.clone()),
-                        })
+                        .map(|tag| AutocompleteChoice::new(tag.clone(), Value::String(tag.clone())))
                         .collect(),
                 );
 
-                let builder = serenity::builder::CreateInteractionResponse::Autocomplete(response);
+                let builder = CreateInteractionResponse::Autocomplete(response);
 
                 let _ = autocomplete_interaction
                     .create_response(&*ctx.http, builder)
@@ -820,23 +809,25 @@ impl EventHandler for DiscordEventHandler {
                                 }
                             };
 
-                        let component_interaction = match language_select_message
-                            .component_interaction_collector(&ctx.shard)
-                            .timeout(Duration::from_secs(10))
-                            .collect_single()
-                            .await
-                        {
-                            Some(interaction) => interaction,
-                            None => {
-                                edit_deferred_interaction_response(
-                                    &ctx.http,
-                                    &command,
-                                    &format!("```\n{}\n```", &target_message.content),
-                                )
-                                .await;
-                                return;
-                            }
-                        };
+                        let component_interaction =
+                            match ComponentInteractionCollector::new(&ctx.shard)
+                                .timeout(Duration::from_secs(10))
+                                .message_id(language_select_message.id)
+                                .author_id(command.user.id)
+                                .next()
+                                .await
+                            {
+                                Some(interaction) => interaction,
+                                None => {
+                                    edit_deferred_interaction_response(
+                                        &ctx.http,
+                                        &command,
+                                        &format!("```\n{}\n```", &target_message.content),
+                                    )
+                                    .await;
+                                    return;
+                                }
+                            };
 
                         let selected_language = match &component_interaction.data.kind {
                             ComponentInteractionDataKind::StringSelect { values } => {

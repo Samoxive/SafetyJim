@@ -3,12 +3,9 @@ use async_trait::async_trait;
 use regex::Regex;
 use reqwest::{Client, ClientBuilder};
 use scraper::{Html, Selector};
+use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
 use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::client::Context;
-use serenity::model::application::command::{CommandOptionType, CommandType};
-use serenity::model::application::interaction::application_command::{
-    CommandData, CommandInteraction,
-};
 
 use crate::discord::slash_commands::xkcd::XkcdCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;

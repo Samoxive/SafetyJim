@@ -1,10 +1,9 @@
 use anyhow::bail;
 use async_trait::async_trait;
+use serenity::all::{CommandInteraction, CommandType};
 use serenity::builder::{CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter};
-use serenity::client::bridge::gateway::ShardId;
 use serenity::client::Context;
-use serenity::model::application::command::CommandType;
-use serenity::model::application::interaction::application_command::CommandInteraction;
+use serenity::gateway::ShardId;
 
 use crate::config::Config;
 use crate::constants::{
@@ -85,18 +84,18 @@ impl SlashCommand for InfoCommand {
             ))
             .field(
                 "Server Count",
-                &guild_statistics.guild_count.to_string(),
+                guild_statistics.guild_count.to_string(),
                 true,
             )
             .field(
                 "User Count",
-                &guild_statistics.member_count.to_string(),
+                guild_statistics.member_count.to_string(),
                 true,
             )
             .field("\u{200E}", "\u{200E}", true)
             .field(
                 "Websocket Ping",
-                &format!(
+                format!(
                     "Shard {}: {}ms\nAverage: {}ms",
                     shard_string,
                     shard_info.current_shard_latency,
@@ -108,7 +107,7 @@ impl SlashCommand for InfoCommand {
             .field("\u{200E}", "\u{200E}", true)
             .field(
                 "Links",
-                &format!(
+                format!(
                     "[Support]({}) | [Github]({}) | [Invite]({})",
                     SUPPORT_SERVER_INVITE_LINK, GITHUB_LINK, INVITE_LINK
                 ),
