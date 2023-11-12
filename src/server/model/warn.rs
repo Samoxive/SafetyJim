@@ -21,14 +21,14 @@ pub struct WarnModel {
 impl WarnModel {
     pub async fn from_warn(services: &Services, warn: &Warn) -> WarnModel {
         let user = if let Some(id) = NonZeroU64::new(warn.user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             Default::default()
         };
 
         let moderator_user = if let Some(id) = NonZeroU64::new(warn.moderator_user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             Default::default()

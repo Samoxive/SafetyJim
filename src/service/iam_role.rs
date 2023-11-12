@@ -33,7 +33,7 @@ impl IAMRoleService {
         role_id: RoleId,
     ) -> Option<IAMRole> {
         self.repository
-            .fetch_guild_iam_role(guild_id.0.get() as i64, role_id.0.get() as i64)
+            .fetch_guild_iam_role(guild_id.get() as i64, role_id.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch guild iam role {:?}", err);
@@ -45,7 +45,7 @@ impl IAMRoleService {
 
     pub async fn _fetch_guild_iam_roles(&self, guild_id: GuildId) -> Vec<IAMRole> {
         self.repository
-            ._fetch_guild_iam_roles(guild_id.0.get() as i64)
+            ._fetch_guild_iam_roles(guild_id.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch guild iam roles {:?}", err);
@@ -62,8 +62,8 @@ impl IAMRoleService {
     ) -> Result<(), InsertIAMRoleFailure> {
         let role = IAMRole {
             id: 0,
-            guild_id: guild_id.0.get() as i64,
-            role_id: role_id.0.get() as i64,
+            guild_id: guild_id.get() as i64,
+            role_id: role_id.get() as i64,
         };
 
         match self.repository.insert_iam_role(role).await {
@@ -83,7 +83,7 @@ impl IAMRoleService {
     ) -> Result<(), RemoveIAMRoleFailure> {
         let role = match self
             .repository
-            .fetch_guild_iam_role(guild_id.0.get() as i64, role_id.0.get() as i64)
+            .fetch_guild_iam_role(guild_id.get() as i64, role_id.get() as i64)
             .await
         {
             Ok(Some(role)) => role,

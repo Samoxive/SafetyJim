@@ -1,12 +1,12 @@
 use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::time::Duration;
+use serenity::all::Mentionable;
 
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::http::Http;
 use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
 use serenity::model::Timestamp;
-use serenity::prelude::Mentionable;
 use tokio::select;
 use tokio::time::interval;
 use tracing::{error, warn};
@@ -25,7 +25,7 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: S
     let http_1 = http.clone();
     let services_1 = services.clone();
     let mut receiver_1 = shutdown.subscribe();
-    let _ = tokio::spawn(async move {
+    drop(tokio::spawn(async move {
         let mut interval = interval(Duration::from_secs(5));
         loop {
             select! {
@@ -36,12 +36,12 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: S
             };
             allow_users(&http_1, &services_1).await;
         }
-    });
+    }));
 
     let http_2 = http.clone();
     let services_2 = services.clone();
     let mut receiver_2 = shutdown.subscribe();
-    let _ = tokio::spawn(async move {
+    drop(tokio::spawn(async move {
         let mut interval = interval(Duration::from_secs(10));
         loop {
             select! {
@@ -53,12 +53,12 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: S
 
             unmute_users(&http_2, &services_2).await;
         }
-    });
+    }));
 
     let http_3 = http.clone();
     let services_3 = services.clone();
     let mut receiver_3 = shutdown.subscribe();
-    let _ = tokio::spawn(async move {
+    drop(tokio::spawn(async move {
         let mut interval = interval(Duration::from_secs(30));
         loop {
             select! {
@@ -69,10 +69,10 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: S
             };
             unban_users(&http_3, &services_3).await;
         }
-    });
+    }));
 
     let mut receiver_4 = shutdown.subscribe();
-    let _ = tokio::spawn(async move {
+    drop(tokio::spawn(async move {
         let mut interval = interval(Duration::from_secs(5));
         loop {
             select! {
@@ -83,7 +83,7 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: S
             };
             remind_reminders(&http, &services).await;
         }
-    });
+    }));
 }
 
 pub async fn allow_users(http: &Http, services: &Services) {
@@ -102,7 +102,7 @@ pub async fn allow_users(http: &Http, services: &Services) {
     let expired_joins = join_service.get_expired_joins().await;
     for expired_join in expired_joins {
         let guild_id = if let Some(id) = NonZeroU64::new(expired_join.guild_id as u64) {
-            GuildId(id)
+            GuildId::new(id.get())
         } else {
             warn!(
                 "found expired join with invalid guild id! {:?}",
@@ -118,7 +118,7 @@ pub async fn allow_users(http: &Http, services: &Services) {
             if let Some(holding_room_role_id) = setting.holding_room_role_id {
                 // these aren't likely to be zero but we need sanity checks to avoid panic
                 let user_id = if let Some(id) = NonZeroU64::new(expired_join.user_id as u64) {
-                    UserId(id)
+                    UserId::new(id.get())
                 } else {
                     warn!(
                         "found expired join with invalid user id! {:?}",
@@ -129,7 +129,7 @@ pub async fn allow_users(http: &Http, services: &Services) {
                 };
 
                 let role_id = if let Some(id) = NonZeroU64::new(holding_room_role_id as u64) {
-                    RoleId(id)
+                    RoleId::new(id.get())
                 } else {
                     warn!(
                         "found expired join in guild with invalid role id! {:?}",
@@ -174,7 +174,7 @@ pub async fn unmute_users(http: &Http, services: &Services) {
     let expired_mutes = mute_service.fetch_expired_mutes().await;
     for expired_mute in expired_mutes {
         let guild_id = if let Some(id) = NonZeroU64::new(expired_mute.guild_id as u64) {
-            GuildId(id)
+            GuildId::new(id.get())
         } else {
             warn!(
                 "found expired mute with invalid guild id! {:?}",
@@ -198,7 +198,7 @@ pub async fn unmute_users(http: &Http, services: &Services) {
         {
             // these aren't likely to be zero but we need sanity checks to avoid panic
             let user_id = if let Some(id) = NonZeroU64::new(expired_mute.user_id as u64) {
-                UserId(id)
+                UserId::new(id.get())
             } else {
                 warn!(
                     "found expired mute with invalid user id! {:?}",
@@ -237,7 +237,7 @@ pub async fn unban_users(http: &Http, services: &Services) {
     for expired_ban in expired_bans {
         // these aren't likely to be zero but we need sanity checks to avoid panic
         let guild_id = if let Some(id) = NonZeroU64::new(expired_ban.guild_id as u64) {
-            GuildId(id)
+            GuildId::new(id.get())
         } else {
             warn!("found expired ban with invalid guild id! {:?}", expired_ban);
             ban_service.invalidate_ban(expired_ban.id).await;
@@ -245,7 +245,7 @@ pub async fn unban_users(http: &Http, services: &Services) {
         };
 
         let user_id = if let Some(id) = NonZeroU64::new(expired_ban.user_id as u64) {
-            UserId(id)
+            UserId::new(id.get())
         } else {
             warn!("found expired ban with invalid user id! {:?}", expired_ban);
             ban_service.invalidate_ban(expired_ban.id).await;
@@ -305,7 +305,7 @@ pub async fn remind_reminders(http: &Http, services: &Services) {
             .colour(EMBED_COLOR);
 
         let guild_id = if let Some(id) = NonZeroU64::new(expired_reminder.guild_id as u64) {
-            GuildId(id)
+            GuildId::new(id.get())
         } else {
             warn!(
                 "found expired reminder with invalid guild id! {:?}",
@@ -318,7 +318,7 @@ pub async fn remind_reminders(http: &Http, services: &Services) {
         };
 
         let channel_id = if let Some(id) = NonZeroU64::new(expired_reminder.channel_id as u64) {
-            ChannelId(id)
+            ChannelId::new(id.get())
         } else {
             warn!(
                 "found expired reminder with invalid channel id! {:?}",
@@ -331,7 +331,7 @@ pub async fn remind_reminders(http: &Http, services: &Services) {
         };
 
         let user_id = if let Some(id) = NonZeroU64::new(expired_reminder.user_id as u64) {
-            UserId(id)
+            UserId::new(id.get())
         } else {
             warn!(
                 "found expired reminder with invalid user id! {:?}",

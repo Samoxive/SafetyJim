@@ -51,7 +51,7 @@ fn generate_options(
         Err(_) => return Err(MassbanCommandOptionFailure::UserIdParsingFailed),
     };
 
-    let user_ids: Vec<UserId> = user_ids.into_iter().map(UserId).collect();
+    let user_ids: Vec<UserId> = user_ids.into_iter().map(NonZeroU64::get).map(UserId::new).collect();
 
     Ok(MassbanCommandOptions {
         target_users: user_ids,
@@ -199,7 +199,7 @@ impl SlashCommand for MassbanCommand {
                         edit_deferred_interaction_response(
                             &context.http,
                             interaction,
-                            &format!("Couldn't find user for given id: {}.", target_user_id.0),
+                            &format!("Couldn't find user for given id: {}.", target_user_id.get()),
                         )
                         .await;
                         return Ok(());

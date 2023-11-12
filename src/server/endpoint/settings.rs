@@ -47,7 +47,7 @@ impl FromRequestParts<AxumState> for SettingEndpointParams {
                 .await
                 .map_err(|_err| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
 
-        let guild_id = GuildId(guild_id);
+        let guild_id = GuildId::new(guild_id.get());
 
         let User(user_id) = User::from_request_parts(parts, state)
             .await
@@ -165,7 +165,8 @@ pub async fn get_setting(
     let setting = setting_service.get_setting(guild_id).await;
 
     let mod_log_channel = NonZeroU64::new(setting.mod_log_channel_id as u64)
-        .map(ChannelId)
+        .map(NonZeroU64::get)
+        .map(ChannelId::new)
         .and_then(|channel_id| {
             channels
                 .get(&channel_id)
@@ -174,7 +175,8 @@ pub async fn get_setting(
         .map(|(id, channel)| ChannelModel::from_guild_channel(id, channel));
 
     let report_channel = NonZeroU64::new(setting.report_channel_id as u64)
-        .map(ChannelId)
+        .map(NonZeroU64::get)
+        .map(ChannelId::new)
         .and_then(|channel_id| {
             channels
                 .get(&channel_id)
@@ -185,12 +187,14 @@ pub async fn get_setting(
     let holding_room_role = setting
         .holding_room_role_id
         .and_then(|id| NonZeroU64::new(id as u64))
-        .map(RoleId)
+        .map(NonZeroU64::get)
+        .map(RoleId::new)
         .and_then(|role_id| roles.get(&role_id).map(|role| (role_id, role)))
         .map(|(role_id, role)| RoleModel::from_role(role_id, role));
 
     let welcome_channel = NonZeroU64::new(setting.welcome_message_channel_id as u64)
-        .map(ChannelId)
+        .map(NonZeroU64::get)
+        .map(ChannelId::new)
         .and_then(|channel_id| {
             channels
                 .get(&channel_id)
@@ -296,7 +300,7 @@ pub async fn update_setting(
 
     let mod_log_channel_id = if let Some(channel) = new_setting.mod_log_channel.as_ref() {
         let channel_id = match channel.id.parse::<NonZeroU64>() {
-            Ok(id) => ChannelId(id),
+            Ok(id) => ChannelId::new(id.get()),
             Err(_) => {
                 return Err((
                     StatusCode::BAD_REQUEST,
@@ -321,7 +325,7 @@ pub async fn update_setting(
 
     let report_channel_id = if let Some(channel) = new_setting.report_channel.as_ref() {
         let channel_id = match channel.id.parse::<NonZeroU64>() {
-            Ok(id) => ChannelId(id),
+            Ok(id) => ChannelId::new(id.get()),
             Err(_) => {
                 return Err((
                     StatusCode::BAD_REQUEST,
@@ -347,7 +351,7 @@ pub async fn update_setting(
     let welcome_message_channel_id =
         if let Some(channel) = new_setting.welcome_message_channel.as_ref() {
             let channel_id = match channel.id.parse::<NonZeroU64>() {
-                Ok(id) => ChannelId(id),
+                Ok(id) => ChannelId::new(id.get()),
                 Err(_) => {
                     return Err((
                         StatusCode::BAD_REQUEST,
@@ -372,7 +376,7 @@ pub async fn update_setting(
 
     let holding_room_role_id = if let Some(role) = new_setting.holding_room_role.as_ref() {
         let role_id = match role.id.parse::<NonZeroU64>() {
-            Ok(id) => RoleId(id),
+            Ok(id) => RoleId::new(id.get()),
             Err(_) => {
                 return Err((
                     StatusCode::BAD_REQUEST,
@@ -672,7 +676,7 @@ pub async fn update_setting(
         .update_setting(
             guild_id,
             Setting {
-                guild_id: guild_id.0.get() as i64,
+                guild_id: guild_id.get() as i64,
                 mod_log: new_setting.mod_log,
                 mod_log_channel_id,
                 report_channel_id,

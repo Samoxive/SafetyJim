@@ -78,7 +78,7 @@ pub async fn get_mute(
             .into_response());
     };
 
-    if mute.guild_id != guild_id.0.get() as i64 {
+    if mute.guild_id != guild_id.get() as i64 {
         return Err((
             StatusCode::FORBIDDEN,
             Json("Given mute id doesn't belong to your guild!"),
@@ -113,7 +113,7 @@ pub async fn update_mute(
             .into_response());
     };
 
-    if mute.guild_id != guild_id.0.get() as i64 {
+    if mute.guild_id != guild_id.get() as i64 {
         return Err((
             StatusCode::FORBIDDEN,
             Json("Given mute id doesn't belong to your guild!"),

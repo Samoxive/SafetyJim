@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use serenity::all::ShardId;
 
-use serenity::gateway::{ShardId, ShardManager};
+use serenity::gateway::ShardManager;
 use tokio::sync::Mutex;
 use typemap_rev::TypeMapKey;
 

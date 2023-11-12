@@ -21,14 +21,14 @@ pub struct SoftbanModel {
 impl SoftbanModel {
     pub async fn from_softban(services: &Services, softban: &Softban) -> SoftbanModel {
         let user = if let Some(id) = NonZeroU64::new(softban.user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             Default::default()
         };
 
         let moderator_user = if let Some(id) = NonZeroU64::new(softban.moderator_user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             Default::default()

@@ -70,8 +70,8 @@ pub async fn submit_captcha(
     Path(CaptchaParams { guild_id, user_id }): Path<CaptchaParams>,
     body: Form<CaptchaModel>,
 ) -> Result<Json<&'static str>, Response> {
-    let guild_id = GuildId(guild_id);
-    let user_id = UserId(user_id);
+    let guild_id = GuildId::new(guild_id.get());
+    let user_id = UserId::new(user_id.get());
 
     match validate_captcha_response(&config.recaptcha_secret, &body.g_recaptcha_response).await {
         Ok(true) => (),
@@ -103,7 +103,7 @@ pub async fn submit_captcha(
 
     let role_id = if let Some(id) = setting.holding_room_role_id {
         match NonZeroU64::new(id as u64) {
-            Some(id) => RoleId(id),
+            Some(id) => RoleId::new(id.get()),
             _ => {
                 warn!("found setting with invalid holding room id! {:?}", setting);
                 return Err((

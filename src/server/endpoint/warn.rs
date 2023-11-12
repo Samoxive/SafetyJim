@@ -78,7 +78,7 @@ pub async fn get_warn(
             .into_response());
     };
 
-    if warn.guild_id != guild_id.0.get() as i64 {
+    if warn.guild_id != guild_id.get() as i64 {
         return Err((
             StatusCode::FORBIDDEN,
             Json("Given warn id doesn't belong to your guild!"),
@@ -113,7 +113,7 @@ pub async fn update_warn(
             .into_response());
     };
 
-    if warn.guild_id != guild_id.0.get() as i64 {
+    if warn.guild_id != guild_id.get() as i64 {
         return Err((
             StatusCode::FORBIDDEN,
             Json("Given warn id doesn't belong to your guild!"),

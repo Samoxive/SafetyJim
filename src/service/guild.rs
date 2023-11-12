@@ -171,7 +171,7 @@ impl GuildService {
         guild_id: GuildId,
         user_id: UserId,
     ) -> Result<Arc<CachedMember>, GetMemberFailure> {
-        let member = if let Some(cached_member) = self.member_cache.get(&(guild_id, user_id)) {
+        let member = if let Some(cached_member) = self.member_cache.get(&(guild_id, user_id)).await {
             cached_member
         } else if let Ok(fetched_member) = guild_id.member(&*self.http().await, user_id).await {
             let new_cached_member = Arc::new(CachedMember {
@@ -193,7 +193,7 @@ impl GuildService {
         &self,
         guild_id: GuildId,
     ) -> Result<Arc<HashMap<RoleId, CachedRole>>, GetRolesFailure> {
-        let roles = if let Some(cached_roles) = self.role_cache.get(&guild_id) {
+        let roles = if let Some(cached_roles) = self.role_cache.get(&guild_id).await {
             cached_roles
         } else if let Ok(fetched_roles) = guild_id.roles(&*self.http().await).await {
             let new_cached_roles = Arc::new(
@@ -226,7 +226,7 @@ impl GuildService {
         &self,
         guild_id: GuildId,
     ) -> Result<Arc<HashMap<ChannelId, CachedChannel>>, GetChannelsFailure> {
-        let channels = if let Some(cached_channels) = self.channel_cache.get(&guild_id) {
+        let channels = if let Some(cached_channels) = self.channel_cache.get(&guild_id).await {
             cached_channels
         } else if let Ok(fetched_channels) = guild_id.channels(&*self.http().await).await {
             let new_cached_channels = Arc::new(
@@ -247,7 +247,7 @@ impl GuildService {
     }
 
     pub async fn get_user(&self, user_id: UserId) -> Result<Arc<CachedUser>, GetUserFailure> {
-        let user = if let Some(cached_user) = self.user_cache.get(&user_id) {
+        let user = if let Some(cached_user) = self.user_cache.get(&user_id).await {
             cached_user
         } else if let Ok(fetched_user) = user_id.to_user(&*self.http().await).await {
             let new_cached_user = Arc::new(CachedUser {
@@ -267,7 +267,7 @@ impl GuildService {
     }
 
     pub async fn get_guild(&self, guild_id: GuildId) -> Result<Arc<CachedGuild>, GetGuildFailure> {
-        let guild = if let Some(cached_guild) = self.guild_cache.get(&guild_id) {
+        let guild = if let Some(cached_guild) = self.guild_cache.get(&guild_id).await {
             cached_guild
         } else if let Ok(fetched_guild) = guild_id.to_partial_guild(&*self.http().await).await {
             let fetched_guild = Arc::new(CachedGuild {

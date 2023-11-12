@@ -78,7 +78,7 @@ pub async fn get_hardban(
             .into_response());
     };
 
-    if hardban.guild_id != guild_id.0.get() as i64 {
+    if hardban.guild_id != guild_id.get() as i64 {
         return Err((
             StatusCode::FORBIDDEN,
             Json("Given hardban id doesn't belong to your guild!"),
@@ -113,7 +113,7 @@ pub async fn update_hardban(
             .into_response());
     };
 
-    if hardban.guild_id != guild_id.0.get() as i64 {
+    if hardban.guild_id != guild_id.get() as i64 {
         return Err((
             StatusCode::FORBIDDEN,
             Json("Given hardban id doesn't belong to your guild!"),

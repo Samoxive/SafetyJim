@@ -21,14 +21,14 @@ pub struct KickModel {
 impl KickModel {
     pub async fn from_kick(services: &Services, kick: &Kick) -> KickModel {
         let user = if let Some(id) = NonZeroU64::new(kick.user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             Default::default()
         };
 
         let moderator_user = if let Some(id) = NonZeroU64::new(kick.moderator_user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             Default::default()

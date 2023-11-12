@@ -103,7 +103,7 @@ pub struct Setting {
 impl Setting {
     pub fn default(guild_id: GuildId) -> Self {
         Setting {
-            guild_id: guild_id.0.get() as i64,
+            guild_id: guild_id.get() as i64,
             mod_log: false,
             mod_log_channel_id: 0,
             report_channel_id: 0,

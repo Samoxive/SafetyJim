@@ -149,7 +149,7 @@ pub fn get_permissions(
         return Some(Permissions::ADMINISTRATOR);
     }
 
-    let everyone = match guild_roles.get(&RoleId(guild_id.0)) {
+    let everyone = match guild_roles.get(&RoleId::new(guild_id.get())) {
         Some(everyone) => everyone,
         None => {
             return None;
@@ -179,7 +179,7 @@ pub trait UserExt {
 
 impl UserExt for User {
     fn tag_and_id(&self) -> String {
-        format!("{} ({})", self.tag(), self.id.0)
+        format!("{} ({})", self.tag(), self.id.get())
     }
 }
 
@@ -572,7 +572,7 @@ pub async fn execute_mod_action(
     } else {
         warn!(
             action_kind = action_kind,
-            guild_id = guild_id.0,
+            guild_id = guild_id.get(),
             "invalid state for mod action duration type!"
         );
     }

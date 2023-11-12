@@ -46,7 +46,7 @@ impl KickService {
         let now = now();
         let mod_log_channel_id = if setting.mod_log {
             if let Some(id) = NonZeroU64::new(setting.mod_log_channel_id as u64) {
-                Some(ChannelId(id))
+                Some(ChannelId::new(id.get()))
             } else {
                 warn!(
                     "found setting with invalid mod log channel id! {:?}",
@@ -88,9 +88,9 @@ impl KickService {
 
         let kick_entry = Kick {
             id: 0,
-            user_id: target_user.id.0.get() as i64,
-            moderator_user_id: mod_user_id.0.get() as i64,
-            guild_id: guild_id.0.get() as i64,
+            user_id: target_user.id.get() as i64,
+            moderator_user_id: mod_user_id.get() as i64,
+            guild_id: guild_id.get() as i64,
             kick_time: now as i64,
             reason: reason.clone(),
             pardoned: false,
@@ -165,7 +165,7 @@ impl KickService {
 
     pub async fn fetch_guild_kicks(&self, guild_id: GuildId, page: NonZeroU32) -> Vec<Kick> {
         self.repository
-            .fetch_guild_kicks(guild_id.0.get() as i64, page.get())
+            .fetch_guild_kicks(guild_id.get() as i64, page.get())
             .await
             .map_err(|err| {
                 error!("failed to fetch guild kicks {:?}", err);
@@ -177,7 +177,7 @@ impl KickService {
 
     pub async fn fetch_guild_kick_count(&self, guild_id: GuildId) -> i64 {
         self.repository
-            .fetch_guild_kick_count(guild_id.0.get() as i64)
+            .fetch_guild_kick_count(guild_id.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch guild kick count {:?}", err);
@@ -189,7 +189,7 @@ impl KickService {
 
     pub async fn fetch_actionable_kick_count(&self, guild_id: GuildId, user_id: UserId) -> i64 {
         self.repository
-            .fetch_actionable_kick_count(guild_id.0.get() as i64, user_id.0.get() as i64)
+            .fetch_actionable_kick_count(guild_id.get() as i64, user_id.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch actionable kick count {:?}", err);

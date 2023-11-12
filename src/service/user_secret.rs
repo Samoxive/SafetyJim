@@ -127,7 +127,7 @@ async fn fetch_self_user(client: &Client, access_token: &str) -> anyhow::Result<
         })?;
 
     let user_id = match response.id.parse::<NonZeroU64>() {
-        Ok(id) => UserId(id),
+        Ok(id) => UserId::new(id.get()),
         Err(err) => {
             error!("failed to parse self user id from discord {}", err);
             bail!(err);
@@ -168,7 +168,7 @@ pub async fn fetch_self_user_guilds(
         .into_iter()
         .map(|guild| {
             let guild_id = match guild.id.parse::<NonZeroU64>() {
-                Ok(id) => GuildId(id),
+                Ok(id) => GuildId::new(id.get()),
                 Err(err) => {
                     error!("failed to parse self user guild id from discord {}", err);
                     return Err(err);
@@ -244,7 +244,7 @@ impl UserSecretService {
 
         self.repository
             .upsert_user_secret(UserSecret {
-                user_id: self_user.id.0.get() as i64,
+                user_id: self_user.id.get() as i64,
                 access_token: response.access_token,
             })
             .await
@@ -263,7 +263,7 @@ impl UserSecretService {
     }
 
     pub async fn get_self_user(&self, user_id: UserId) -> anyhow::Result<Arc<SelfUser>> {
-        let self_user = if let Some(cached_self_user) = self.self_user_cache.get(&user_id) {
+        let self_user = if let Some(cached_self_user) = self.self_user_cache.get(&user_id).await {
             cached_self_user
         } else {
             let fetched_self_user = match self.fetch_self_user(user_id).await {
@@ -286,7 +286,7 @@ impl UserSecretService {
     pub async fn fetch_self_user(&self, user_id: UserId) -> anyhow::Result<SelfUser> {
         let access_token = match self
             .repository
-            .fetch_user_secret(user_id.0.get() as i64)
+            .fetch_user_secret(user_id.get() as i64)
             .await
         {
             Ok(Some(secret)) => secret.access_token,
@@ -317,7 +317,7 @@ impl UserSecretService {
         user_id: UserId,
     ) -> anyhow::Result<Arc<Vec<SelfGuild>>> {
         let self_user_guilds =
-            if let Some(cached_self_user_guilds) = self.self_user_guilds_cache.get(&user_id) {
+            if let Some(cached_self_user_guilds) = self.self_user_guilds_cache.get(&user_id).await {
                 cached_self_user_guilds
             } else {
                 let fetched_self_user_guilds =
@@ -340,7 +340,7 @@ impl UserSecretService {
     ) -> anyhow::Result<Vec<SelfGuild>> {
         let access_token = match self
             .repository
-            .fetch_user_secret(user_id.0.get() as i64)
+            .fetch_user_secret(user_id.get() as i64)
             .await
         {
             Ok(Some(secret)) => secret.access_token,

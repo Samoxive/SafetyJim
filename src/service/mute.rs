@@ -138,7 +138,7 @@ impl MuteService {
         let expiration_time = duration.map(|duration| now + duration.as_secs());
         let mod_log_channel_id = if setting.mod_log {
             if let Some(id) = NonZeroU64::new(setting.mod_log_channel_id as u64) {
-                Some(ChannelId(id))
+                Some(ChannelId::new(id.get()))
             } else {
                 warn!(
                     "found setting with invalid mod log channel id! {:?}",
@@ -187,9 +187,9 @@ impl MuteService {
 
         let mute_entry = Mute {
             id: 0,
-            user_id: target_user.id.0.get() as i64,
-            moderator_user_id: mod_user_id.0.get() as i64,
-            guild_id: guild_id.0.get() as i64,
+            user_id: target_user.id.get() as i64,
+            moderator_user_id: mod_user_id.get() as i64,
+            guild_id: guild_id.get() as i64,
             mute_time: now as i64,
             expire_time: expiration_time.unwrap_or(0) as i64,
             reason: reason.clone(),
@@ -320,7 +320,7 @@ impl MuteService {
 
     pub async fn fetch_guild_mutes(&self, guild_id: GuildId, page: NonZeroU32) -> Vec<Mute> {
         self.repository
-            .fetch_guild_mutes(guild_id.0.get() as i64, page.get())
+            .fetch_guild_mutes(guild_id.get() as i64, page.get())
             .await
             .map_err(|err| {
                 error!("failed to fetch guild mutes {:?}", err);
@@ -332,7 +332,7 @@ impl MuteService {
 
     pub async fn fetch_guild_mute_count(&self, guild_id: GuildId) -> i64 {
         self.repository
-            .fetch_guild_mute_count(guild_id.0.get() as i64)
+            .fetch_guild_mute_count(guild_id.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch guild mute count {:?}", err);
@@ -356,7 +356,7 @@ impl MuteService {
 
     pub async fn fetch_valid_mutes(&self, guild_id: GuildId, user_id: UserId) -> Vec<Mute> {
         self.repository
-            .fetch_valid_mutes(guild_id.0.get() as i64, user_id.0.get() as i64)
+            .fetch_valid_mutes(guild_id.get() as i64, user_id.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch valid mutes {:?}", err);
@@ -368,7 +368,7 @@ impl MuteService {
 
     pub async fn fetch_actionable_mute_count(&self, guild_id: GuildId, user_id: UserId) -> i64 {
         self.repository
-            .fetch_actionable_mute_count(guild_id.0.get() as i64, user_id.0.get() as i64)
+            .fetch_actionable_mute_count(guild_id.get() as i64, user_id.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to fetch actionable mute count {:?}", err);
@@ -403,7 +403,7 @@ impl MuteService {
     pub async fn invalidate_previous_user_mutes(&self, guild_id: GuildId, user_id: UserId) {
         let _ = self
             .repository
-            .invalidate_previous_user_mutes(guild_id.0.get() as i64, user_id.0.get() as i64)
+            .invalidate_previous_user_mutes(guild_id.get() as i64, user_id.get() as i64)
             .await
             .map_err(|err| {
                 error!("failed to invalidate previous user mutes {:?}", err);

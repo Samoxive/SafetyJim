@@ -22,7 +22,7 @@ pub struct BanModel {
 impl BanModel {
     pub async fn from_ban(services: &Services, ban: &Ban) -> BanModel {
         let user = if let Some(id) = NonZeroU64::new(ban.user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             // should never happen since user ids come from Discord
@@ -30,7 +30,7 @@ impl BanModel {
         };
 
         let moderator_user = if let Some(id) = NonZeroU64::new(ban.moderator_user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             Default::default()

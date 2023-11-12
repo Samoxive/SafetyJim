@@ -23,14 +23,14 @@ pub struct MuteModel {
 impl MuteModel {
     pub async fn from_mute(services: &Services, mute: &Mute) -> MuteModel {
         let user = if let Some(id) = NonZeroU64::new(mute.user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             Default::default()
         };
 
         let moderator_user = if let Some(id) = NonZeroU64::new(mute.moderator_user_id as u64) {
-            let user_id = UserId(id);
+            let user_id = UserId::new(id.get());
             UserModel::from_id(services, user_id).await
         } else {
             Default::default()

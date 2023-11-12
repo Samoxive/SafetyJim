@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use serenity::all::{CommandInteraction, CommandType};
 use serenity::builder::{CreateCommand, CreateEmbed, CreateEmbedAuthor};
 use serenity::client::Context;
-use serenity::gateway::ShardId;
 
 use crate::config::Config;
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
@@ -36,7 +35,7 @@ impl SlashCommand for PingCommand {
     ) -> anyhow::Result<()> {
         let shard_id = context.shard_id;
         let shard_info = if let Some(service) = services.get::<ShardStatisticService>() {
-            service.get_shard_latency_info(ShardId(shard_id)).await
+            service.get_shard_latency_info(shard_id).await
         } else {
             bail!("couldn't get shard statistic service!");
         };

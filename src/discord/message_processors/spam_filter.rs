@@ -84,7 +84,7 @@ impl MessageProcessor for SpamFilterProcessor {
         {
             let cache = self.message_hash_cache.lock().await;
             let cache_key = (guild_id, author.id);
-            if let Some(mut record) = cache.get(&cache_key) {
+            if let Some(mut record) = cache.get(&cache_key).await {
                 // we recorded user earlier, see if hash is same
                 if record.hash == message_hash {
                     if record.count >= REPETITION_THRESHOLD {
