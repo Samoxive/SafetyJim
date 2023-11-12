@@ -1,7 +1,6 @@
 extern crate serenity;
 extern crate typemap_rev;
 
-use std::collections::HashMap;
 use std::error::Error;
 use std::io;
 use std::sync::Arc;
@@ -11,7 +10,6 @@ use serenity::all::ApplicationId;
 use serenity::http::Http;
 use tokio::spawn;
 use tracing::{error, Level};
-use tracing_loki::url::Url;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::{filter::LevelFilter, fmt, EnvFilter, Layer};
 
@@ -37,25 +35,17 @@ mod server;
 mod service;
 mod util;
 
-fn setup_logging(config: &Config) -> Result<(), Box<dyn Error>> {
-    let (loki_layer, loki_task) = tracing_loki::layer(
-        Url::parse(&config.loki_url)?,
-        HashMap::from([("host".into(), config.loki_host_label.clone())]),
-        HashMap::new(),
-    )?;
-
+fn setup_logging() -> Result<(), Box<dyn Error>> {
     let subscriber = tracing_subscriber::registry()
-        .with(EnvFilter::from_default_env().add_directive(Level::DEBUG.into()))
+        .with(EnvFilter::from_default_env().add_directive(Level::INFO.into()))
         .with(
             fmt::Layer::new()
+                .with_ansi(false)
                 .with_writer(io::stdout)
-                .with_filter(LevelFilter::TRACE),
-        )
-        .with(loki_layer);
+                .with_filter(LevelFilter::INFO),
+        );
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-
-    spawn(loki_task);
 
     Ok(())
 }
@@ -64,13 +54,13 @@ fn setup_logging(config: &Config) -> Result<(), Box<dyn Error>> {
 async fn main() -> Result<(), Box<dyn Error>> {
     let flags = argh::from_env::<Flags>();
     let config = Arc::new(get_config()?);
-    setup_logging(&config)?;
+    setup_logging()?;
 
     initialize_statics().await?;
 
     if flags.create_slash_commands {
         let http = Http::new(&config.discord_token);
-        http.set_application_id(ApplicationId(config.oauth_client_id.parse()?));
+        http.set_application_id(ApplicationId::new(config.oauth_client_id.parse()?));
         let slash_commands = discord::slash_commands::get_all_commands();
         initialize_slash_commands(&http, &slash_commands)
             .await
@@ -97,7 +87,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         shard_shutdown.shutdown();
 
-        shard_manager.lock().await.shutdown_all().await;
+        shard_manager.shutdown_all().await;
         pool.close().await;
     });
 
