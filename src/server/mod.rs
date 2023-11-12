@@ -5,7 +5,7 @@ use std::num::NonZeroU64;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use axum::extract::Path;
+use axum::extract::{Path, State};
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::header::{HeaderName, CONTENT_TYPE};
 use axum::http::request::Parts;
@@ -47,6 +47,7 @@ use crate::service::setting::SettingService;
 use crate::service::Services;
 use crate::util::now;
 use crate::{Config, Shutdown};
+use crate::service::watchdog::WatchdogService;
 
 mod endpoint;
 mod model;
@@ -149,7 +150,7 @@ impl FromRequestParts<AxumState> for User {
             Err(StatusCode::UNAUTHORIZED)
         } else {
             match claims.user_id.parse::<NonZeroU64>() {
-                Ok(id) => Ok(User(UserId(id))),
+                Ok(id) => Ok(User(UserId::new(id.get()))),
                 Err(_) => {
                     // secret leaked or we have a problem with token generation
                     error!("received a token with valid signature with invalid user id");
@@ -190,7 +191,7 @@ impl<T: ModPermission> FromRequestParts<AxumState> for ModLogEndpointParams<T> {
                 .await
                 .map_err(|_err| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
 
-        let guild_id = GuildId(guild_id);
+        let guild_id = GuildId::new(guild_id.get());
 
         let User(user_id) = User::from_request_parts(parts, state)
             .await
@@ -266,6 +267,18 @@ async fn root() -> &'static str {
     "Welcome to Safety Jim API."
 }
 
+async fn health_check(State(settings): State<Arc<Services>>) -> StatusCode {
+    if let Some(service) = settings.get::<WatchdogService>() {
+        if service.is_healthy().await {
+            StatusCode::OK
+        } else {
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    } else {
+        StatusCode::INTERNAL_SERVER_ERROR
+    }
+}
+
 async fn shutdown_signal(shutdown: Shutdown) {
     let mut receiver = shutdown.subscribe();
 
@@ -282,6 +295,7 @@ pub async fn run_server(
     let state = AxumState { config, services };
     let app = Router::new()
         .route("/", get(root))
+        .route("/health_check", get(health_check))
         .route("/@me", get(get_self))
         .route("/login", post(login))
         .route("/guilds/:guild_id/settings", get(get_setting))

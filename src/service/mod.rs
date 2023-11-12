@@ -34,6 +34,7 @@ use crate::service::guild::GuildService;
 use crate::service::guild_statistic::GuildStatisticService;
 use crate::service::shard_statistic::ShardStatisticService;
 use crate::Config;
+use crate::service::watchdog::WatchdogService;
 
 pub mod ban;
 pub mod guild;
@@ -51,6 +52,7 @@ pub mod softban;
 pub mod tag;
 pub mod user_secret;
 pub mod warn;
+pub mod watchdog;
 
 pub type Services = TypeMap;
 
@@ -121,6 +123,7 @@ pub async fn create_services(config: Arc<Config>, pool: Arc<PgPool>) -> anyhow::
     let guild_statistic_service = GuildStatisticService::new();
     let shard_statistic_service = ShardStatisticService::new();
     let guild_service = GuildService::new();
+    let watchdog_service = WatchdogService::new();
 
     let mut services = Services::new();
     services.insert::<BanService>(ban_service);
@@ -139,6 +142,7 @@ pub async fn create_services(config: Arc<Config>, pool: Arc<PgPool>) -> anyhow::
     services.insert::<GuildStatisticService>(guild_statistic_service);
     services.insert::<ShardStatisticService>(shard_statistic_service);
     services.insert::<GuildService>(guild_service);
+    services.insert::<WatchdogService>(watchdog_service);
 
     Ok(services)
 }

@@ -3,17 +3,13 @@ use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::time::Duration;
 
-use serenity::all::{
-    Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind,
-    CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
-    CreateSelectMenuOption, Interaction,
-};
+use serenity::all::{Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind, CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage, CreateSelectMenuOption, Event, Interaction};
 use serenity::async_trait;
 use serenity::builder::{
     AutocompleteChoice, CreateActionRow, CreateAutocompleteResponse, CreateEmbedFooter,
     CreateMessage, CreateSelectMenu, CreateSelectMenuKind, EditInteractionResponse,
 };
-use serenity::client::{Context, EventHandler};
+use serenity::client::{Context, EventHandler, RawEventHandler};
 use serenity::gateway::{ActivityData, ShardManager};
 use serenity::http::Http;
 use serenity::json::Value;
@@ -28,7 +24,6 @@ use serenity::prelude::Mentionable;
 use serenity::Client;
 use simsearch::{SearchOptions, SimSearch};
 use tokio::select;
-use tokio::sync::Mutex;
 use tokio::time::sleep;
 use tracing::{error, warn};
 
@@ -51,6 +46,7 @@ use crate::service::setting::SettingService;
 use crate::service::shard_statistic::ShardStatisticService;
 use crate::service::tag::TagService;
 use crate::service::Services;
+use crate::service::watchdog::WatchdogService;
 use crate::util::Shutdown;
 
 const SHARD_LATENCY_POLLING_INTERVAL: u64 = 60;
@@ -60,7 +56,7 @@ pub struct DiscordBot {
 }
 
 async fn feed_shard_statistics(
-    shard_manager: Arc<Mutex<ShardManager>>,
+    shard_manager: Arc<ShardManager>,
     services: Arc<Services>,
     shutdown: Shutdown,
 ) {
@@ -81,7 +77,7 @@ async fn feed_shard_statistics(
         }
 
         shard_statistic_service
-            .update_latencies(&*shard_manager.lock().await)
+            .update_latencies(&shard_manager)
             .await;
     }
 }
@@ -101,6 +97,10 @@ impl DiscordBot {
             message_processors: get_all_processors(),
         };
 
+        let raw_handler = DiscordRawEventHandler {
+            services: services.clone(),
+        };
+
         let application_id = ApplicationId::new(config.oauth_client_id.parse()?);
         let client = Client::builder(
             &config.discord_token,
@@ -110,6 +110,7 @@ impl DiscordBot {
                 | GatewayIntents::MESSAGE_CONTENT,
         )
         .event_handler(handler)
+        .raw_event_handler(raw_handler)
         .application_id(application_id)
         .await?;
 
@@ -130,6 +131,19 @@ impl DiscordBot {
 
     pub async fn connect(&mut self) -> Result<(), Arc<serenity::Error>> {
         self.client.start_autosharded().await.map_err(Arc::new)
+    }
+}
+
+struct DiscordRawEventHandler {
+    services: Arc<Services>,
+}
+
+#[async_trait]
+impl RawEventHandler for DiscordRawEventHandler {
+    async fn raw_event(&self, _ctx: Context, _ev: Event) {
+        if let Some(service) = self.services.get::<WatchdogService>() {
+            service.feed().await;
+        }
     }
 }
 
@@ -273,7 +287,7 @@ impl EventHandler for DiscordEventHandler {
             };
 
             if let Some(id) = NonZeroU64::new(setting.welcome_message_channel_id as u64) {
-                let channel_id = ChannelId(id);
+                let channel_id = ChannelId::new(id.get());
                 let message = CreateMessage::default().content(content);
 
                 let _ = channel_id
@@ -298,7 +312,7 @@ impl EventHandler for DiscordEventHandler {
             if let Ok(dm_channel) = new_member.user.id.create_dm_channel(&ctx.http).await {
                 let content = format!(
                     "Welcome to {}! To enter you must complete this captcha.\n{}/captcha/{}/{}",
-                    &guild.name, self.config.self_url, guild_id.0, new_member.user.id.0
+                    &guild.name, self.config.self_url, guild_id.get(), new_member.user.id.get()
                 );
                 let message = CreateMessage::default().content(content);
 
@@ -585,7 +599,7 @@ impl EventHandler for DiscordEventHandler {
     async fn ready(&self, ctx: Context, data_about_bot: Ready) {
         let shard = data_about_bot
             .shard
-            .map(|info| (info.id, info.total))
+            .map(|info| (info.id.0, info.total))
             .unwrap_or((0, 1));
         // Watching over users. [0 / 1]
         let shard_status = format!("over users. [{} / {}]", shard.0, shard.1);
@@ -736,7 +750,7 @@ impl EventHandler for DiscordEventHandler {
 
                         let report_channel_id =
                             if let Some(id) = NonZeroU64::new(setting.report_channel_id as u64) {
-                                ChannelId(id)
+                                ChannelId::new(id.get())
                             } else {
                                 reply_to_interaction_str(
                                     &ctx.http,
