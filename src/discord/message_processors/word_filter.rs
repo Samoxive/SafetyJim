@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::client::Context;
+use serenity::all::Context;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
@@ -116,7 +116,10 @@ impl MessageProcessor for WordFilterProcessor {
             setting.word_filter_action_duration,
         );
 
-        match channel_id.delete_message(&context.http, message_id).await {
+        match channel_id
+            .delete_message(&context.http, message_id, Some(REASON))
+            .await
+        {
             Ok(_) => {
                 execute_mod_action(
                     setting.word_filter_action,

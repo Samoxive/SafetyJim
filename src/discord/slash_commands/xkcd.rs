@@ -3,9 +3,12 @@ use async_trait::async_trait;
 use regex::Regex;
 use reqwest::{Client, ClientBuilder};
 use scraper::{Html, Selector};
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
-use serenity::client::Context;
 
 use crate::discord::slash_commands::xkcd::XkcdCommandOptionFailure::MissingOption;
 use crate::discord::slash_commands::SlashCommand;
@@ -78,7 +81,8 @@ impl SlashCommand for XkcdCommand {
         CreateCommand::new("xkcd")
             .kind(CommandType::ChatInput)
             .description("searches xkcd comics with given description or partial title")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .add_option(
                 CreateCommandOption::new(
                     CommandOptionType::String,

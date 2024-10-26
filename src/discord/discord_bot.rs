@@ -1,23 +1,26 @@
+use std::collections::VecDeque;
 use std::error::Error;
-use std::num::NonZeroU64;
+use std::num::{NonZeroU16, NonZeroU64};
 use std::sync::Arc;
 use std::time::Duration;
 
-use serenity::all::{Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind, CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage, CreateSelectMenuOption, Event, Interaction};
+use serenity::all::{
+    Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind, Context,
+    CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
+    CreateSelectMenuOption, Event, EventHandler, Interaction, RawEventHandler,
+};
 use serenity::async_trait;
 use serenity::builder::{
     AutocompleteChoice, CreateActionRow, CreateAutocompleteResponse, CreateEmbedFooter,
     CreateMessage, CreateSelectMenu, CreateSelectMenuKind, EditInteractionResponse,
 };
-use serenity::client::{Context, EventHandler, RawEventHandler};
 use serenity::gateway::{ActivityData, ShardManager};
 use serenity::http::Http;
-use serenity::json::Value;
-use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
+use serenity::model::channel::{GuildChannel, Message, MessageType};
 use serenity::model::event::{GuildMemberUpdateEvent, MessageUpdateEvent};
 use serenity::model::gateway::{GatewayIntents, Ready};
 use serenity::model::guild::{Guild, Member, PartialGuild, Role, UnavailableGuild};
-use serenity::model::id::{ApplicationId, ChannelId, GuildId, RoleId};
+use serenity::model::id::{ChannelId, GuildId, RoleId};
 use serenity::model::user::{CurrentUser, User};
 use serenity::model::Color;
 use serenity::prelude::Mentionable;
@@ -45,8 +48,8 @@ use crate::service::mute::MuteService;
 use crate::service::setting::SettingService;
 use crate::service::shard_statistic::ShardStatisticService;
 use crate::service::tag::TagService;
-use crate::service::Services;
 use crate::service::watchdog::WatchdogService;
+use crate::service::Services;
 use crate::util::Shutdown;
 
 const SHARD_LATENCY_POLLING_INTERVAL: u64 = 60;
@@ -101,7 +104,6 @@ impl DiscordBot {
             services: services.clone(),
         };
 
-        let application_id = ApplicationId::new(config.oauth_client_id.parse()?);
         let client = Client::builder(
             &config.discord_token,
             GatewayIntents::GUILDS
@@ -111,7 +113,6 @@ impl DiscordBot {
         )
         .event_handler(handler)
         .raw_event_handler(raw_handler)
-        .application_id(application_id)
         .await?;
 
         if let Some(guild_service) = services.get::<GuildService>() {
@@ -140,7 +141,7 @@ struct DiscordRawEventHandler {
 
 #[async_trait]
 impl RawEventHandler for DiscordRawEventHandler {
-    async fn raw_event(&self, _ctx: Context, _ev: Event) {
+    async fn raw_event(&self, _ctx: Context, _ev: &Event) {
         if let Some(service) = self.services.get::<WatchdogService>() {
             service.feed().await;
         }
@@ -161,7 +162,7 @@ pub async fn initialize_slash_commands(
     warn!("initializing slash commands");
     let _ = Command::set_global_commands(
         http,
-        slash_commands
+        &slash_commands
             .0
             .values()
             .map(|slash_command| slash_command.create_command())
@@ -172,7 +173,7 @@ pub async fn initialize_slash_commands(
                 ]
                 .into_iter(),
             )
-            .collect(),
+            .collect::<Vec<_>>(),
     )
     .await?;
     warn!("initialized slash commands!");
@@ -193,7 +194,7 @@ impl EventHandler for DiscordEventHandler {
         &self,
         _ctx: Context,
         new: GuildChannel,
-        _messages: Option<Vec<Message>>,
+        _messages: Option<VecDeque<Message>>,
     ) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
@@ -202,13 +203,11 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn channel_update(&self, _ctx: Context, _old: Option<Channel>, new: Channel) {
-        if let Some(guild_channel) = new.guild() {
-            if let Some(guild_service) = self.services.get::<GuildService>() {
-                guild_service
-                    .invalidate_cached_guild_channels(guild_channel.guild_id)
-                    .await;
-            }
+    async fn channel_update(&self, _ctx: Context, _old: Option<GuildChannel>, new: GuildChannel) {
+        if let Some(guild_service) = self.services.get::<GuildService>() {
+            guild_service
+                .invalidate_cached_guild_channels(new.guild_id)
+                .await;
         }
     }
 
@@ -261,10 +260,10 @@ impl EventHandler for DiscordEventHandler {
 
         if setting.invite_link_remover && new_member.user.name.contains("discord.gg/") {
             let _ = guild_id
-                .kick_with_reason(
-                    &*ctx.http,
+                .kick(
+                    &ctx.http,
                     new_member.user.id,
-                    "Username contains invite link",
+                    Some("Username contains invite link"),
                 )
                 .await
                 .map_err(|err| {
@@ -291,7 +290,7 @@ impl EventHandler for DiscordEventHandler {
                 let message = CreateMessage::default().content(content);
 
                 let _ = channel_id
-                    .send_message(&*ctx.http, message)
+                    .send_message(&ctx.http, message)
                     .await
                     .map_err(|err| {
                         error!("failed to send welcome message {}", err);
@@ -312,7 +311,10 @@ impl EventHandler for DiscordEventHandler {
             if let Ok(dm_channel) = new_member.user.id.create_dm_channel(&ctx.http).await {
                 let content = format!(
                     "Welcome to {}! To enter you must complete this captcha.\n{}/captcha/{}/{}",
-                    &guild.name, self.config.self_url, guild_id.get(), new_member.user.id.get()
+                    &guild.name,
+                    self.config.self_url,
+                    guild_id.get(),
+                    new_member.user.id.get()
                 );
                 let message = CreateMessage::default().content(content);
 
@@ -439,7 +441,7 @@ impl EventHandler for DiscordEventHandler {
     }
 
     async fn message(&self, ctx: Context, message: Message) {
-        if message.author.bot {
+        if message.author.bot() {
             return;
         }
 
@@ -532,7 +534,7 @@ impl EventHandler for DiscordEventHandler {
             return;
         };
 
-        if author.bot {
+        if author.bot() {
             return;
         }
 
@@ -600,7 +602,7 @@ impl EventHandler for DiscordEventHandler {
         let shard = data_about_bot
             .shard
             .map(|info| (info.id.0, info.total))
-            .unwrap_or((0, 1));
+            .unwrap_or((0, NonZeroU16::new(1).unwrap()));
         // Watching over users. [0 / 1]
         let shard_status = format!("over users. [{} / {}]", shard.0, shard.1);
         let activity = ActivityData::watching(shard_status);
@@ -650,14 +652,14 @@ impl EventHandler for DiscordEventHandler {
                     tag_choices
                         .iter()
                         .take(25)
-                        .map(|tag| AutocompleteChoice::new(tag.clone(), Value::String(tag.clone())))
-                        .collect(),
+                        .map(|tag| AutocompleteChoice::new(tag.clone(), tag.as_str()))
+                        .collect::<Vec<_>>(),
                 );
 
                 let builder = CreateInteractionResponse::Autocomplete(response);
 
                 let _ = autocomplete_interaction
-                    .create_response(&*ctx.http, builder)
+                    .create_response(&ctx.http, builder)
                     .await
                     .map_err(|err| {
                         error!("failed to create autocomplete response {}", err);
@@ -703,7 +705,7 @@ impl EventHandler for DiscordEventHandler {
                 CommandType::Message => {
                     let name = &command.data.name;
                     let target_message = match command.data.resolved.messages.iter().next() {
-                        Some((_id, message)) => message,
+                        Some(message) => message,
                         None => {
                             error!(
                                 "received a message command without targeted message {:?}",
@@ -824,7 +826,7 @@ impl EventHandler for DiscordEventHandler {
                             };
 
                         let component_interaction =
-                            match ComponentInteractionCollector::new(&ctx.shard)
+                            match ComponentInteractionCollector::new(ctx.shard.clone())
                                 .timeout(Duration::from_secs(10))
                                 .message_id(language_select_message.id)
                                 .author_id(command.user.id)
@@ -845,7 +847,7 @@ impl EventHandler for DiscordEventHandler {
 
                         let selected_language = match &component_interaction.data.kind {
                             ComponentInteractionDataKind::StringSelect { values } => {
-                                match values.get(0).map(|value| value.as_str()) {
+                                match values.first().map(|value| value.as_str()) {
                                     Some("None") => "",
                                     Some(value) => value,
                                     None => {

@@ -4,35 +4,35 @@ version = "5.0.0"
 edition = "2021"
 
 [dependencies]
-anyhow = { version = "1.0.75", features = ["backtrace"] }
+anyhow = { version = "1.0.91", features = ["backtrace"] }
 argh = "0.1.12"
-async-recursion = "1.0.5"
-async-trait = "0.1.74"
-axum = { version = "0.6.20", features = ["macros"] }
-axum-extra = { version = "0.8.0", features = ["typed-routing"] }
-chrono = "0.4.31"
+async-recursion = "1.1.1"
+async-trait = "0.1.82"
+axum = { version = "0.7.7", features = ["macros"] }
+axum-extra = { version = "0.9.4", features = ["typed-routing"] }
+chrono = "0.4.38"
 envy = "0.4.2"
 humantime = "2.1.0"
-jsonwebtoken = "9.1.0"
+jsonwebtoken = "9.2.0"
 lazy_static = "1.4.0"
-mimalloc = { version = "0.1.39", default-features = false }
-moka = { version = "0.12.1", features = ["future"] }
-once_cell = "1.18.0"
-regex = "1.10.2"
-reqwest = { version = "0.11.22", default-features = false, features = ["rustls-tls-native-roots", "gzip", "json"] }
-scraper = "0.18.1"
-serde = { version = "1.0.192", features = ["derive"] }
-serde_json = "1.0.108"
-serenity = { git = "https://github.com/serenity-rs/serenity/", branch = "next", default-features = false, features = ["rustls_backend", "builder", "client", "gateway", "http", "model", "unstable_discord_api", "collector"] }
-simsearch = "0.2.4"
-smol_str = "0.2.0"
-sqlx = { version = "0.7.2", features = ["postgres", "runtime-tokio-rustls", "uuid"] }
-thiserror = "1.0.50"
-tokio = { version = "1.34.0", features = ["full"] }
-tower-http = { version = "0.4.4", features = ["cors", "trace"] }
+mimalloc = { version = "0.1.41", default-features = false }
+moka = { version = "0.12.7", features = ["future"] }
+once_cell = "1.19.0"
+regex = "1.10.3"
+reqwest = { version = "0.12.4", default-features = false, features = ["rustls-tls-native-roots", "gzip", "json"] }
+scraper = "0.20.0"
+serde = { version = "1.0.213", features = ["derive"] }
+serde_json = "1.0.132"
+serenity = { git = "https://github.com/serenity-rs/serenity/", branch = "next", default-features = false, features = ["rustls_backend", "builder", "gateway", "http", "model", "collector", "unstable"] }
+simsearch = "0.2.5"
+smol_str = "0.3.1"
+sqlx = { version = "0.8.2", features = ["postgres", "runtime-tokio-rustls", "uuid"] }
+thiserror = "1.0.65"
+tokio = { version = "1.41.0", features = ["full"] }
+tower-http = { version = "0.6.1", features = ["cors", "trace"] }
 tracing = "0.1.40"
-tracing-appender = "0.2.2"
+tracing-appender = "0.2.3"
 tracing-futures = "0.2.5"
-tracing-subscriber = { version = "0.3.17", features = ["json", "registry", "env-filter"] }
+tracing-subscriber = { version = "0.3.18", features = ["json", "registry", "env-filter"] }
 typemap_rev = "0.3.0"
-uuid = { version = "1.5.0", features = ["serde", "v4"] }
+uuid = { version = "1.8.0", features = ["serde", "v4"] }

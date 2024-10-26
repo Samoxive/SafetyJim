@@ -1,8 +1,11 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
-use serenity::client::Context;
 use serenity::model::id::RoleId;
 
 use crate::config::Config;
@@ -44,7 +47,8 @@ impl SlashCommand for IAMCommand {
         CreateCommand::new("iam")
             .kind(CommandType::ChatInput)
             .description("self assigns specified role")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::Role, "role", "role to assign")
                     .required(true),

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
-use serenity::all::{CommandInteraction, CommandType};
+use serenity::all::Context;
+use serenity::all::{CommandInteraction, CommandType, InstallationContext, InteractionContext};
 use serenity::builder::CreateCommand;
-use serenity::client::Context;
 
 use crate::config::Config;
 use crate::discord::slash_commands::SlashCommand;
@@ -20,7 +20,8 @@ impl SlashCommand for MeloCommand {
         CreateCommand::new("melo")
             .kind(CommandType::ChatInput)
             .description("melo.")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
     }
 
     async fn handle_command(

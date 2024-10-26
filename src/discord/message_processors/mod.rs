@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use serenity::client::Context;
+use serenity::all::Context;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::model::user::User;
 use serenity::model::Permissions;

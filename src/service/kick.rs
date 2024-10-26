@@ -71,7 +71,7 @@ impl KickService {
 
         let audit_log_reason = format!("Banned by {} - {}", mod_user_tag_and_id, reason);
         match guild_id
-            .kick_with_reason(http, target_user.id, &audit_log_reason)
+            .kick(http, target_user.id, Some(&audit_log_reason))
             .await
         {
             Ok(_) => (),

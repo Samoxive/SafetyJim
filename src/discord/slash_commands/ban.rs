@@ -2,9 +2,12 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
-use serenity::client::Context;
 use serenity::model::user::User;
 use serenity::model::Permissions;
 
@@ -76,7 +79,8 @@ impl SlashCommand for BanCommand {
         CreateCommand::new("ban")
             .kind(CommandType::ChatInput)
             .description("bans given user, time can be given for a temporary ban")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to ban")

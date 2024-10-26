@@ -72,7 +72,7 @@ impl SoftbanService {
 
         let audit_log_reason = format!("Softbanned by {} - {}", mod_user_tag_and_id, reason);
         match guild_id
-            .ban_with_reason(http, target_user.id, days, audit_log_reason)
+            .ban(http, target_user.id, days, Some(&audit_log_reason))
             .await
         {
             Ok(_) => (),
@@ -87,7 +87,10 @@ impl SoftbanService {
             }
         }
 
-        match guild_id.unban(http, target_user.id).await {
+        match guild_id
+            .unban(http, target_user.id, Some(&audit_log_reason))
+            .await
+        {
             Ok(_) => (),
             Err(err) => {
                 return match err.discord_error_code() {

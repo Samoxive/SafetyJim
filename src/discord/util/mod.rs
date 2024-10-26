@@ -5,13 +5,14 @@ use anyhow::bail;
 use async_recursion::async_recursion;
 use serenity::all::{
     CommandData, CommandDataOptionValue, CommandInteraction, CreateAllowedMentions,
+    InteractionResponseFlags,
 };
 use serenity::builder::{
     CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
     EditInteractionResponse,
 };
 use serenity::http::{Http, HttpError};
-use serenity::model::channel::{Message, MessageFlags, PartialChannel};
+use serenity::model::channel::{Message, PartialChannel};
 use serenity::model::event::MessageUpdateEvent;
 use serenity::model::guild::{Member, PartialMember, Role};
 use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId, UserId};
@@ -241,9 +242,11 @@ pub fn verify_guild_message_update(message: &MessageUpdateEvent) -> Option<Guild
     })
 }
 
-fn create_interaction_response_message(is_ephemeral: bool) -> CreateInteractionResponseMessage {
+fn create_interaction_response_message<'a>(
+    is_ephemeral: bool,
+) -> CreateInteractionResponseMessage<'a> {
     if is_ephemeral {
-        CreateInteractionResponseMessage::new().flags(MessageFlags::EPHEMERAL)
+        CreateInteractionResponseMessage::new().flags(InteractionResponseFlags::EPHEMERAL)
     } else {
         CreateInteractionResponseMessage::new()
     }
@@ -255,7 +258,7 @@ fn create_interaction_response_message(is_ephemeral: bool) -> CreateInteractionR
 async fn reply_to_interaction(
     http: &Http,
     interaction: &CommandInteraction,
-    response_data: CreateInteractionResponseMessage,
+    response_data: CreateInteractionResponseMessage<'_>,
 ) {
     let interaction_response = CreateInteractionResponse::Message(response_data);
 
@@ -274,7 +277,8 @@ pub async fn reply_to_interaction_str(
     content: &str,
     is_ephemeral: bool,
 ) {
-    let response_data = create_interaction_response_message(is_ephemeral).content(content);
+    let response_data =
+        create_interaction_response_message(is_ephemeral).content(content.to_string());
 
     reply_to_interaction(http, interaction, response_data).await;
 }
@@ -282,7 +286,7 @@ pub async fn reply_to_interaction_str(
 pub async fn reply_to_interaction_embed(
     http: &Http,
     interaction: &CommandInteraction,
-    embed: CreateEmbed,
+    embed: CreateEmbed<'_>,
     is_ephemeral: bool,
 ) {
     let response_data = create_interaction_response_message(is_ephemeral).add_embed(embed);
@@ -346,6 +350,7 @@ pub async fn clean_messages(
     http: &Http,
     channel: ChannelId,
     messages: Vec<MessageId>,
+    mod_user: &User,
 ) -> Result<(), CleanMessagesFailure> {
     let mut old_messages = vec![];
     let mut new_messages = vec![];
@@ -360,10 +365,15 @@ pub async fn clean_messages(
         }
     }
 
+    let reason = format!("Clean operation initiated by mod {}", mod_user.tag_and_id());
     let result = if new_messages.len() >= 2 {
-        channel.delete_messages(http, new_messages).await
+        channel
+            .delete_messages(http, &new_messages, Some(&reason))
+            .await
     } else if new_messages.len() == 1 {
-        channel.delete_message(http, new_messages[0]).await
+        channel
+            .delete_message(http, new_messages[0], Some(&reason))
+            .await
     } else {
         Ok(())
     };
@@ -380,7 +390,10 @@ pub async fn clean_messages(
 
     let mut result = Ok(());
     for message_id in old_messages {
-        if let Err(err) = channel.delete_message(http, message_id).await {
+        if let Err(err) = channel
+            .delete_message(http, message_id, Some(&reason))
+            .await
+        {
             result = Err(err);
             break;
         }
@@ -400,13 +413,13 @@ pub async fn clean_messages(
 }
 
 pub trait SerenityErrorExt {
-    fn discord_error_code(&self) -> Option<isize>;
+    fn discord_error_code(&self) -> Option<u32>;
 }
 
 impl SerenityErrorExt for Error {
-    fn discord_error_code(&self) -> Option<isize> {
+    fn discord_error_code(&self) -> Option<u32> {
         match self {
-            Error::Http(HttpError::UnsuccessfulRequest(response)) => Some(response.error.code),
+            Error::Http(HttpError::UnsuccessfulRequest(response)) => Some(response.error.code.0),
             _ => None,
         }
     }

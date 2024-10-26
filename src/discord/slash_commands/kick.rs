@@ -1,8 +1,11 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
-use serenity::client::Context;
 use serenity::model::user::User;
 use serenity::model::Permissions;
 
@@ -59,7 +62,8 @@ impl SlashCommand for KickCommand {
         CreateCommand::new("kick")
             .kind(CommandType::ChatInput)
             .description("kicks given user")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .default_member_permissions(Permissions::KICK_MEMBERS)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to kick")

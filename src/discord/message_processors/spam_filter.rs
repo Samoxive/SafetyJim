@@ -5,7 +5,7 @@ use std::time::Duration;
 use anyhow::bail;
 use async_trait::async_trait;
 use moka::future::{Cache, CacheBuilder};
-use serenity::client::Context;
+use serenity::all::Context;
 use serenity::model::id::{ChannelId, GuildId, MessageId, UserId};
 use serenity::model::user::User;
 use serenity::model::Permissions;

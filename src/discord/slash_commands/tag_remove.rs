@@ -1,8 +1,11 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
-use serenity::client::Context;
 use serenity::model::Permissions;
 
 use crate::config::Config;
@@ -57,7 +60,8 @@ impl SlashCommand for TagRemoveCommand {
         CreateCommand::new("tag-remove")
             .kind(CommandType::ChatInput)
             .description("remove previously registered tag")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::String, "name", "tag name to remove")
                     .required(true)

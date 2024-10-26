@@ -38,10 +38,6 @@ impl UserModel {
             None
         };
 
-        if let Some(user_model) = user_model {
-            user_model
-        } else {
-            UserModel::default()
-        }
+        user_model.unwrap_or_default()
     }
 }

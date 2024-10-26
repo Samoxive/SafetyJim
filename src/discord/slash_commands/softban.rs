@@ -1,8 +1,11 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
-use serenity::client::Context;
 use serenity::model::user::User;
 use serenity::model::Permissions;
 
@@ -74,7 +77,8 @@ impl SlashCommand for SoftbanCommand {
         CreateCommand::new("softban")
             .kind(CommandType::ChatInput)
             .description("kicks given user, deleting their last messages, defaults to a day")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to softban")

@@ -7,8 +7,8 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use tracing::error;
 
-use crate::server::{extract_service, generate_token};
 use crate::config::Config;
+use crate::server::{extract_service, generate_token};
 use crate::service::user_secret::UserSecretService;
 use crate::service::Services;
 

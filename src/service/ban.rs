@@ -78,7 +78,7 @@ impl BanService {
 
         let audit_log_reason = format!("Banned by {} - {}", mod_user_tag_and_id, reason);
         match guild_id
-            .ban_with_reason(http, target_user.id, 0, audit_log_reason)
+            .ban(http, target_user.id, 0, Some(&audit_log_reason))
             .await
         {
             Ok(_) => (),

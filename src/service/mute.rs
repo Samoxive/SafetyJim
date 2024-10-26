@@ -19,6 +19,8 @@ use crate::service::guild::{GetRolesFailure, GuildService};
 use crate::service::Services;
 use crate::util::now;
 
+const REASON: &str = "Safety Jim's mute function requires this role.";
+
 impl TypeMapKey for MuteService {
     type Value = MuteService;
 }
@@ -89,7 +91,7 @@ impl MuteService {
             }
         };
 
-        for (_, channel) in channels {
+        for channel in channels {
             if let Err(err) = channel
                 .create_permission(
                     http,
@@ -100,6 +102,7 @@ impl MuteService {
                             | Permissions::SPEAK,
                         kind: PermissionOverwriteType::Role(role.id),
                     },
+                    Some(REASON),
                 )
                 .await
             {

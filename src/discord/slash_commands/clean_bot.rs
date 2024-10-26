@@ -2,9 +2,12 @@ use std::future::ready;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
-use serenity::client::Context;
 use serenity::futures::StreamExt;
 use serenity::model::id::MessageId;
 use serenity::model::Permissions;
@@ -62,7 +65,8 @@ impl SlashCommand for CleanBotCommand {
         CreateCommand::new("clean-bot")
             .kind(CommandType::ChatInput)
             .description("deletes specified number of bot messages")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .default_member_permissions(Permissions::MANAGE_MESSAGES)
             .add_option(
                 CreateCommandOption::new(
@@ -85,7 +89,7 @@ impl SlashCommand for CleanBotCommand {
     ) -> anyhow::Result<()> {
         let GuildSlashCommandInteraction {
             guild_id: _,
-            member: _,
+            member,
             permissions,
         } = verify_guild_slash_command(interaction)?;
 
@@ -125,7 +129,7 @@ impl SlashCommand for CleanBotCommand {
                 ready(
                     message
                         .as_ref()
-                        .map(|message| message.author.bot)
+                        .map(|message| message.author.bot())
                         .unwrap_or(false),
                 )
             })
@@ -150,7 +154,7 @@ impl SlashCommand for CleanBotCommand {
         }
 
         let message_count = message_ids.len();
-        let result = clean_messages(&context.http, channel_id, message_ids).await;
+        let result = clean_messages(&context.http, channel_id, message_ids, &member.user).await;
         let content = match result {
             Ok(_) => format!("Cleared {} message(s).", message_count),
             Err(CleanMessagesFailure::Unauthorized) => "I don't have enough permissions to do that! Required permission: Manage Messages, Read Message History".into(),

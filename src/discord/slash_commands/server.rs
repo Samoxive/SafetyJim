@@ -1,8 +1,8 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandInteraction, CommandType};
+use serenity::all::Context;
+use serenity::all::{CommandInteraction, CommandType, InstallationContext, InteractionContext};
 use serenity::builder::{CreateCommand, CreateEmbed, CreateEmbedAuthor};
-use serenity::client::Context;
 use tracing::error;
 
 use crate::config::Config;
@@ -26,7 +26,8 @@ impl SlashCommand for ServerCommand {
         CreateCommand::new("server")
             .kind(CommandType::ChatInput)
             .description("displays information about the server")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
     }
 
     async fn handle_command(
@@ -64,11 +65,12 @@ impl SlashCommand for ServerCommand {
             .as_ref()
             .map(|code| format!("https://discord.gg/{}", code));
 
+        let icon_url = guild.icon_url();
         let embed = CreateEmbed::default()
             .author(
                 CreateEmbedAuthor::new(format!("{} ({})", guild.name, guild.id))
                     .url(vanity_url.unwrap_or_else(|| "".into()))
-                    .icon_url(guild.icon_url().as_deref().unwrap_or(AVATAR_URL)),
+                    .icon_url(icon_url.as_deref().unwrap_or(AVATAR_URL)),
             )
             .colour(EMBED_COLOR)
             .field(
@@ -78,7 +80,7 @@ impl SlashCommand for ServerCommand {
             )
             .field(
                 "Member Count",
-                format!("{}", guild.approximate_member_count.unwrap_or(0)),
+                format!("{}", guild.approximate_member_count.unwrap_or_default()),
                 true,
             )
             .field(
@@ -96,7 +98,16 @@ impl SlashCommand for ServerCommand {
             )
             .field("Boost Tier", format!("{:?}", guild.premium_tier), true)
             .field("NSFW Tier", format!("{:?}", guild.nsfw_level), true)
-            .field("Server Features", guild.features.join(" | "), false);
+            .field(
+                "Server Features",
+                guild
+                    .features
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<&str>>()
+                    .join(" | "),
+                false,
+            );
 
         reply_to_interaction_embed(&context.http, interaction, embed, true).await;
 

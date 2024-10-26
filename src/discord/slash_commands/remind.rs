@@ -2,9 +2,12 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
-use serenity::client::Context;
 
 use crate::config::Config;
 use crate::discord::slash_commands::remind::RemindCommandFailure::{
@@ -60,7 +63,8 @@ impl SlashCommand for RemindCommand {
         CreateCommand::new("remind")
             .kind(CommandType::ChatInput)
             .description("sets a reminder for a future date, duration defaults to a day")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .add_option(
                 CreateCommandOption::new(
                     CommandOptionType::String,

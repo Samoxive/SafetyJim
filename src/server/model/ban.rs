@@ -3,8 +3,8 @@ use std::num::NonZeroU64;
 use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 
-use crate::server::model::user::UserModel;
 use crate::database::bans::Ban;
+use crate::server::model::user::UserModel;
 use crate::service::Services;
 
 #[derive(Serialize, Deserialize)]

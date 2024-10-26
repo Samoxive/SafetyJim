@@ -2,9 +2,12 @@ use std::num::{NonZeroU64, ParseIntError};
 
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
-use serenity::client::Context;
 use serenity::model::id::UserId;
 use serenity::model::Permissions;
 
@@ -51,7 +54,11 @@ fn generate_options(
         Err(_) => return Err(MassbanCommandOptionFailure::UserIdParsingFailed),
     };
 
-    let user_ids: Vec<UserId> = user_ids.into_iter().map(NonZeroU64::get).map(UserId::new).collect();
+    let user_ids: Vec<UserId> = user_ids
+        .into_iter()
+        .map(NonZeroU64::get)
+        .map(UserId::new)
+        .collect();
 
     Ok(MassbanCommandOptions {
         target_users: user_ids,
@@ -72,7 +79,8 @@ impl SlashCommand for MassbanCommand {
         CreateCommand::new("massban")
             .kind(CommandType::ChatInput)
             .description("hardbans given users in mass")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
                 CreateCommandOption::new(

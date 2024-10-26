@@ -171,11 +171,12 @@ impl GuildService {
         guild_id: GuildId,
         user_id: UserId,
     ) -> Result<Arc<CachedMember>, GetMemberFailure> {
-        let member = if let Some(cached_member) = self.member_cache.get(&(guild_id, user_id)).await {
+        let member = if let Some(cached_member) = self.member_cache.get(&(guild_id, user_id)).await
+        {
             cached_member
         } else if let Ok(fetched_member) = guild_id.member(&*self.http().await, user_id).await {
             let new_cached_member = Arc::new(CachedMember {
-                roles: fetched_member.roles,
+                roles: fetched_member.roles.to_vec(),
             });
             self.member_cache
                 .insert((guild_id, user_id), new_cached_member.clone())
@@ -199,11 +200,11 @@ impl GuildService {
             let new_cached_roles = Arc::new(
                 fetched_roles
                     .into_iter()
-                    .map(|(id, role)| {
+                    .map(|role| {
                         (
-                            id,
+                            role.id,
                             CachedRole {
-                                name: role.name,
+                                name: role.name.to_string(),
                                 permissions: role.permissions,
                             },
                         )
@@ -232,7 +233,14 @@ impl GuildService {
             let new_cached_channels = Arc::new(
                 fetched_channels
                     .into_iter()
-                    .map(|(id, channel)| (id, CachedChannel { name: channel.name }))
+                    .map(|channel| {
+                        (
+                            channel.id,
+                            CachedChannel {
+                                name: channel.name.to_string(),
+                            },
+                        )
+                    })
                     .collect::<HashMap<ChannelId, CachedChannel>>(),
             );
             self.channel_cache
@@ -271,7 +279,7 @@ impl GuildService {
             cached_guild
         } else if let Ok(fetched_guild) = guild_id.to_partial_guild(&*self.http().await).await {
             let fetched_guild = Arc::new(CachedGuild {
-                name: fetched_guild.name.clone(),
+                name: fetched_guild.name.to_string(),
                 icon_url: fetched_guild.icon_url(),
                 owner_id: fetched_guild.owner_id,
             });

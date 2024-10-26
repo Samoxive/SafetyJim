@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serenity::all::ShardId;
+use std::collections::HashMap;
 
 use serenity::gateway::ShardManager;
 use tokio::sync::Mutex;
@@ -10,7 +10,7 @@ impl TypeMapKey for ShardStatisticService {
 }
 
 pub struct ShardStatisticService {
-    shard_latencies: Mutex<HashMap<u32, u64>>,
+    shard_latencies: Mutex<HashMap<u16, u64>>,
 }
 
 pub struct ShardLatencyInfo {

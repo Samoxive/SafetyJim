@@ -38,7 +38,7 @@ impl ModActionKind {
         }
     }
 
-    fn create_expiration_date_field(&self, embed: CreateEmbed) -> CreateEmbed {
+    fn create_expiration_date_field<'a>(&'a self, embed: CreateEmbed<'a>) -> CreateEmbed<'a> {
         match self {
             ModActionKind::Ban { expiration_time } => {
                 let value = expiration_time

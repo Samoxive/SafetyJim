@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use serenity::all::Permissions;
 

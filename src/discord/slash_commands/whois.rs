@@ -1,8 +1,11 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
+use serenity::all::Context;
+use serenity::all::{
+    CommandData, CommandInteraction, CommandOptionType, CommandType, InstallationContext,
+    InteractionContext,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption, CreateEmbed, CreateEmbedAuthor};
-use serenity::client::Context;
 use serenity::model::guild::PartialMember;
 use serenity::model::user::User;
 
@@ -37,7 +40,11 @@ fn generate_options(data: &CommandData) -> Result<WhoisCommandOptions, WhoisComm
     Ok(WhoisCommandOptions { target })
 }
 
-fn generate_member_embed(guild: &CachedGuild, member: &PartialMember, user: &User) -> CreateEmbed {
+fn generate_member_embed<'a>(
+    guild: &'a CachedGuild,
+    member: &'a PartialMember,
+    user: &'a User,
+) -> CreateEmbed<'a> {
     let boost_status = match member.premium_since {
         Some(time) => format!("Since <t:{}>", time.unix_timestamp()),
         None => "Not Boosting".into(),
@@ -103,7 +110,8 @@ impl SlashCommand for WhoisCommand {
         CreateCommand::new("whois")
             .kind(CommandType::ChatInput)
             .description("displays information about given user or server member")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to query")
                     .required(true),

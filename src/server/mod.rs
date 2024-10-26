@@ -5,14 +5,15 @@ use std::num::NonZeroU64;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use axum::extract::{Path, State};
 use axum::extract::{FromRef, FromRequestParts};
+use axum::extract::{Path, State};
 use axum::http::header::{HeaderName, CONTENT_TYPE};
 use axum::http::request::Parts;
-use axum::http::{HeaderValue, Method, StatusCode};
+use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::*;
-use axum::{Json, Router};
+use axum::{http, Json, Router};
+use http::HeaderValue;
 use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::Algorithm;
 use jsonwebtoken::Header;
@@ -44,10 +45,10 @@ use crate::server::endpoint::warn::{get_warn, get_warns, update_warn};
 use crate::service::guild::GuildService;
 use crate::service::invalid_uuid::InvalidUUIDService;
 use crate::service::setting::SettingService;
+use crate::service::watchdog::WatchdogService;
 use crate::service::Services;
 use crate::util::now;
 use crate::{Config, Shutdown};
-use crate::service::watchdog::WatchdogService;
 
 mod endpoint;
 mod model;
@@ -338,8 +339,8 @@ pub async fn run_server(
 
     let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal(shutdown))
         .await
         .unwrap();

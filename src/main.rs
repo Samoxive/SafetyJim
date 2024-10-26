@@ -64,9 +64,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let slash_commands = discord::slash_commands::get_all_commands();
         initialize_slash_commands(&http, &slash_commands)
             .await
-            .map_err(|err| {
+            .inspect_err(|err| {
                 error!("failed to create slash commands {}", &err);
-                err
             })?;
         return Ok(());
     }

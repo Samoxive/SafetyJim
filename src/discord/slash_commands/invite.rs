@@ -1,10 +1,10 @@
 use async_trait::async_trait;
-use serenity::all::{CommandInteraction, CommandType};
+use serenity::all::Context;
+use serenity::all::{CommandInteraction, CommandType, InstallationContext, InteractionContext};
 use serenity::builder::{
     CreateActionRow, CreateButton, CreateCommand, CreateInteractionResponse,
     CreateInteractionResponseMessage,
 };
-use serenity::client::Context;
 use tracing::error;
 
 use crate::config::Config;
@@ -26,7 +26,8 @@ impl SlashCommand for InviteCommand {
         CreateCommand::new("invite")
             .kind(CommandType::ChatInput)
             .description("displays links to invite Jim and get support")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
     }
 
     async fn handle_command(
@@ -36,10 +37,14 @@ impl SlashCommand for InviteCommand {
         _config: &Config,
         _services: &Services,
     ) -> anyhow::Result<()> {
-        let components = vec![CreateActionRow::Buttons(vec![
-            CreateButton::new_link("Invite Jim!").label(JIM_INVITE_LINK),
-            CreateButton::new_link("Join our support server!").label(SUPPORT_SERVER_INVITE_LINK),
-        ])];
+        let components = vec![CreateActionRow::Buttons(
+            vec![
+                CreateButton::new_link("Invite Jim!").label(JIM_INVITE_LINK),
+                CreateButton::new_link("Join our support server!")
+                    .label(SUPPORT_SERVER_INVITE_LINK),
+            ]
+            .into(),
+        )];
 
         let data = CreateInteractionResponseMessage::new()
             .content("Links:")

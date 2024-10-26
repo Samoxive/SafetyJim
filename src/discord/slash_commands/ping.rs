@@ -1,8 +1,8 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::{CommandInteraction, CommandType};
+use serenity::all::Context;
+use serenity::all::{CommandInteraction, CommandType, InstallationContext, InteractionContext};
 use serenity::builder::{CreateCommand, CreateEmbed, CreateEmbedAuthor};
-use serenity::client::Context;
 
 use crate::config::Config;
 use crate::constants::{AVATAR_URL, EMBED_COLOR};
@@ -23,7 +23,8 @@ impl SlashCommand for PingCommand {
         CreateCommand::new("ping")
             .kind(CommandType::ChatInput)
             .description("🏓")
-            .dm_permission(false)
+            .add_integration_type(InstallationContext::Guild)
+            .add_context(InteractionContext::Guild)
     }
 
     async fn handle_command(
