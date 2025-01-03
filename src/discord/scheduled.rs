@@ -33,7 +33,7 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: S
                 _ = receiver_1.recv() => {
                     return;
                 }
-            };
+            }
             allow_users(&http_1, &services_1).await;
         }
     }));
@@ -49,8 +49,7 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: S
                 _ = receiver_2.recv() => {
                     return;
                 }
-            };
-
+            }
             unmute_users(&http_2, &services_2).await;
         }
     }));
@@ -66,7 +65,7 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: S
                 _ = receiver_3.recv() => {
                     return;
                 }
-            };
+            }
             unban_users(&http_3, &services_3).await;
         }
     }));
@@ -80,7 +79,7 @@ pub fn run_scheduled_tasks(http: Arc<Http>, services: Arc<Services>, shutdown: S
                 _ = receiver_4.recv() => {
                     return;
                 }
-            };
+            }
             remind_reminders(&http, &services).await;
         }
     }));
@@ -372,7 +371,7 @@ pub async fn remind_reminders(http: &Http, services: &Services) {
                     .content(user_id.mention().to_string())
                     .add_embed(embed);
 
-                let _ = dm_channel.send_message(http, message).await.map_err(|err| {
+                let _ = dm_channel.id.send_message(http, message).await.map_err(|err| {
                     error!("failed to send DM {}", err);
                     err
                 });

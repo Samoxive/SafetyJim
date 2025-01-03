@@ -96,7 +96,7 @@ pub async fn notify_user_for_mod_action(
 
         let message = CreateMessage::default().add_embed(embed);
 
-        let _ = channel.send_message(http, message).await.map_err(|err| {
+        let _ = channel.id.send_message(http, message).await.map_err(|err| {
             error!("failed to create DM {}", err);
             err
         });

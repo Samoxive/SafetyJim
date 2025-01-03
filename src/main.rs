@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     initialize_statics().await?;
 
     if flags.create_slash_commands {
-        let http = Http::new(&config.discord_token);
+        let http = Http::new(config.discord_token.parse()?);
         http.set_application_id(ApplicationId::new(config.oauth_client_id.parse()?));
         let slash_commands = discord::slash_commands::get_all_commands();
         initialize_slash_commands(&http, &slash_commands)

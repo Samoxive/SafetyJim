@@ -1,7 +1,6 @@
 use std::num::NonZeroU64;
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use axum::extract::{FromRequestParts, Path, State};
 use axum::http::request::Parts;
 use axum::http::{Method, StatusCode};
@@ -27,7 +26,6 @@ use crate::service::Services;
 
 pub struct SettingEndpointParams(GuildId);
 
-#[async_trait]
 impl FromRequestParts<AxumState> for SettingEndpointParams {
     type Rejection = Response;
 

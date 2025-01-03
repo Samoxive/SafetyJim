@@ -66,7 +66,7 @@ fn generate_member_embed<'a>(
         format!("Member of {}", guild.name)
     };
 
-    let created_at = format!("<t:{}>", user.created_at().unix_timestamp());
+    let created_at = format!("<t:{}>", user.id.created_at().unix_timestamp());
     let joined_at = match &member.joined_at {
         Some(time) => format!("<t:{}>", time.unix_timestamp()),
         None => "<unknown>".into(),
@@ -89,7 +89,7 @@ fn generate_user_embed(user: &User) -> CreateEmbed {
         None => "<none>".into(),
     };
 
-    let created_at = format!("<t:{}>", user.created_at().unix_timestamp());
+    let created_at = format!("<t:{}>", user.id.created_at().unix_timestamp());
 
     CreateEmbed::default()
         .author(CreateEmbedAuthor::new(user.tag()).icon_url(user.face()))

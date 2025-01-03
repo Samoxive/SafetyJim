@@ -4,11 +4,7 @@ use std::num::{NonZeroU16, NonZeroU64};
 use std::sync::Arc;
 use std::time::Duration;
 
-use serenity::all::{
-    Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind, Context,
-    CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
-    CreateSelectMenuOption, Event, EventHandler, Interaction, RawEventHandler,
-};
+use serenity::all::{Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind, Context, CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage, CreateSelectMenuOption, Event, EventHandler, Interaction, RawEventHandler};
 use serenity::async_trait;
 use serenity::builder::{
     AutocompleteChoice, CreateActionRow, CreateAutocompleteResponse, CreateEmbedFooter,
@@ -105,7 +101,7 @@ impl DiscordBot {
         };
 
         let client = Client::builder(
-            &config.discord_token,
+            config.discord_token.parse()?,
             GatewayIntents::GUILDS
                 | GatewayIntents::GUILD_MEMBERS
                 | GatewayIntents::GUILD_MESSAGES
@@ -319,6 +315,7 @@ impl EventHandler for DiscordEventHandler {
                 let message = CreateMessage::default().content(content);
 
                 let _ = dm_channel
+                    .id
                     .send_message(&ctx.http, message)
                     .await
                     .map_err(|err| {

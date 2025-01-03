@@ -93,6 +93,7 @@ impl MuteService {
 
         for channel in channels {
             if let Err(err) = channel
+                .id
                 .create_permission(
                     http,
                     PermissionOverwrite {

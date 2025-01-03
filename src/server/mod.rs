@@ -4,7 +4,6 @@ use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::num::NonZeroU64;
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::extract::{Path, State};
 use axum::http::header::{HeaderName, CONTENT_TYPE};
@@ -125,7 +124,6 @@ pub fn extract_service<T: typemap_rev::TypeMapKey>(
 
 pub struct User(pub UserId);
 
-#[async_trait]
 impl FromRequestParts<AxumState> for User {
     type Rejection = StatusCode;
 
@@ -173,7 +171,6 @@ pub trait ModPermission {
     fn permission() -> Permissions;
 }
 
-#[async_trait]
 impl<T: ModPermission> FromRequestParts<AxumState> for ModLogEndpointParams<T> {
     type Rejection = Response;
 
@@ -299,35 +296,35 @@ pub async fn run_server(
         .route("/health_check", get(health_check))
         .route("/@me", get(get_self))
         .route("/login", post(login))
-        .route("/guilds/:guild_id/settings", get(get_setting))
-        .route("/guilds/:guild_id/settings", post(update_setting))
-        .route("/guilds/:guild_id/settings", delete(reset_setting))
-        .route("/captcha/:guild_id/:user_id", get(get_captcha_page))
-        .route("/captcha/:guild_id/:user_id", post(submit_captcha))
-        .route("/guilds/:guild_id/bans", get(get_bans))
-        .route("/guilds/:guild_id/bans/:ban_id", get(get_ban))
-        .route("/guilds/:guild_id/bans/:ban_id", post(update_ban))
-        .route("/guilds/:guild_id/hardbans", get(get_hardbans))
-        .route("/guilds/:guild_id/hardbans/:hardban_id", get(get_hardban))
+        .route("/guilds/{guild_id}/settings", get(get_setting))
+        .route("/guilds/{guild_id}/settings", post(update_setting))
+        .route("/guilds/{guild_id}/settings", delete(reset_setting))
+        .route("/captcha/{guild_id}/{user_id}", get(get_captcha_page))
+        .route("/captcha/{guild_id}/{user_id}", post(submit_captcha))
+        .route("/guilds/{guild_id}/bans", get(get_bans))
+        .route("/guilds/{guild_id}/bans/{ban_id}", get(get_ban))
+        .route("/guilds/{guild_id}/bans/{ban_id}", post(update_ban))
+        .route("/guilds/{guild_id}/hardbans", get(get_hardbans))
+        .route("/guilds/{guild_id}/hardbans/{hardban_id}", get(get_hardban))
         .route(
-            "/guilds/:guild_id/hardbans/:hardban_id",
+            "/guilds/{guild_id}/hardbans/{hardban_id}",
             post(update_hardban),
         )
-        .route("/guilds/:guild_id/kicks", get(get_kicks))
-        .route("/guilds/:guild_id/kicks/:kick_id", get(get_kick))
-        .route("/guilds/:guild_id/kicks/:kick_id", post(update_kick))
-        .route("/guilds/:guild_id/mutes", get(get_mutes))
-        .route("/guilds/:guild_id/mutes/:mute_id", get(get_mute))
-        .route("/guilds/:guild_id/mutes/:mute_id", post(update_mute))
-        .route("/guilds/:guild_id/softbans", get(get_softbans))
-        .route("/guilds/:guild_id/softbans/:softban_id", get(get_softban))
+        .route("/guilds/{guild_id}/kicks", get(get_kicks))
+        .route("/guilds/{guild_id}/kicks/{kick_id}", get(get_kick))
+        .route("/guilds/{guild_id}/kicks/{kick_id}", post(update_kick))
+        .route("/guilds/{guild_id}/mutes", get(get_mutes))
+        .route("/guilds/{guild_id}/mutes/{mute_id}", get(get_mute))
+        .route("/guilds/{guild_id}/mutes/{mute_id}", post(update_mute))
+        .route("/guilds/{guild_id}/softbans", get(get_softbans))
+        .route("/guilds/{guild_id}/softbans/{softban_id}", get(get_softban))
         .route(
-            "/guilds/:guild_id/softbans/:softban_id",
+            "/guilds/{guild_id}/softbans/{softban_id}",
             post(update_softban),
         )
-        .route("/guilds/:guild_id/warns", get(get_warns))
-        .route("/guilds/:guild_id/warns/:warn_id", get(get_warn))
-        .route("/guilds/:guild_id/warns/:warn_id", post(update_warn))
+        .route("/guilds/{guild_id}/warns", get(get_warns))
+        .route("/guilds/{guild_id}/warns/{warn_id}", get(get_warn))
+        .route("/guilds/{guild_id}/warns/{warn_id}", post(update_warn))
         .layer(
             CorsLayer::new()
                 .allow_origin(cors_origin)
