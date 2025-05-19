@@ -4,35 +4,32 @@ version = "5.0.0"
 edition = "2021"
 
 [dependencies]
-anyhow = { version = "1.0.95", features = ["backtrace"] }
+anyhow = { version = "1.0.98", features = ["backtrace"] }
 argh = "0.1.13"
 async-recursion = "1.1.1"
-async-trait = "0.1.84"
-axum = { version = "0.8.1", features = ["macros"] }
-axum-extra = { version = "0.10.0", features = ["typed-routing"] }
-chrono = "0.4.39"
+async-trait = "0.1.88"
+axum = { version = "0.8.3", features = ["macros"] }
+chrono = "0.4.40"
 envy = "0.4.2"
-humantime = "2.1.0"
-jsonwebtoken = "9.3.0"
+humantime = "2.2.0"
+jsonwebtoken = "9.3.1"
 lazy_static = "1.5.0"
-mimalloc = { version = "0.1.43", default-features = false }
-moka = { version = "0.12.9", features = ["future"] }
-once_cell = "1.20.2"
+mimalloc = { version = "0.1.46", default-features = false }
+moka = { version = "0.12.10", features = ["future"] }
+once_cell = "1.21.3"
 regex = "1.11.1"
-reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls-native-roots", "gzip", "json"] }
-scraper = "0.22.0"
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.134"
+reqwest = { version = "0.12.15", default-features = false, features = ["rustls-tls-native-roots", "gzip", "json"] }
+scraper = "0.23.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 serenity = { git = "https://github.com/serenity-rs/serenity/", branch = "next", default-features = false, features = ["rustls_backend", "builder", "gateway", "http", "model", "collector", "unstable"] }
 simsearch = "0.2.5"
 smol_str = "0.3.2"
-sqlx = { version = "0.8.2", features = ["postgres", "runtime-tokio-rustls", "uuid"] }
-thiserror = "2.0.9"
-tokio = { version = "1.42.0", features = ["full"] }
-tower-http = { version = "0.6.2", features = ["cors", "trace"] }
+sqlx = { version = "0.8.4", features = ["postgres", "runtime-tokio-rustls", "uuid"] }
+thiserror = "2.0.12"
+tokio = { version = "1.44.2", features = ["full"] }
+tower-http = { version = "0.6.4", features = ["cors", "trace"] }
 tracing = "0.1.41"
-tracing-appender = "0.2.3"
-tracing-futures = "0.2.5"
 tracing-subscriber = { version = "0.3.19", features = ["json", "registry", "env-filter"] }
 typemap_rev = "0.3.0"
-uuid = { version = "1.11.0", features = ["serde", "v4"] }
+uuid = { version = "1.16.0", features = ["serde", "v4"] }
