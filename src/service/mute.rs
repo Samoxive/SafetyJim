@@ -1,12 +1,12 @@
-use std::num::{NonZeroU32, NonZeroU64};
-use std::time::Duration;
-
+use serenity::all::GenericChannelId;
 use serenity::builder::EditRole;
 use serenity::http::Http;
 use serenity::model::channel::{PermissionOverwrite, PermissionOverwriteType};
-use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
+use serenity::model::id::{GuildId, RoleId, UserId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
+use std::num::{NonZeroU32, NonZeroU64};
+use std::time::Duration;
 use tracing::{error, warn};
 use typemap_rev::TypeMapKey;
 
@@ -130,7 +130,7 @@ impl MuteService {
         guild_name: &str,
         setting: &Setting,
         services: &Services,
-        channel_id: Option<ChannelId>,
+        channel_id: Option<GenericChannelId>,
         mod_user_id: UserId,
         mod_user_tag_and_id: &str,
         target_user: &User,
@@ -142,7 +142,7 @@ impl MuteService {
         let expiration_time = duration.map(|duration| now + duration.as_secs());
         let mod_log_channel_id = if setting.mod_log {
             if let Some(id) = NonZeroU64::new(setting.mod_log_channel_id as u64) {
-                Some(ChannelId::new(id.get()))
+                Some(GenericChannelId::new(id.get()))
             } else {
                 warn!(
                     "found setting with invalid mod log channel id! {:?}",

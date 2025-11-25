@@ -31,7 +31,9 @@ impl ShardStatisticService {
 
         *shard_latencies = HashMap::new();
 
-        for (shard_id, shard) in shard_manager.runners.lock().await.iter() {
+        for runner in shard_manager.runners.iter() {
+            let shard_id = runner.key();
+            let (shard, _) = runner.value();
             if let Some(shard_latency) = shard.latency {
                 shard_latencies.insert(shard_id.0, shard_latency.as_millis() as u64);
             }

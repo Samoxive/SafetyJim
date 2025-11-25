@@ -214,7 +214,7 @@ impl SlashCommand for SoftbanCommand {
                 options
                     .reason
                     .unwrap_or_else(|| "No reason specified".into()),
-                options.days.unwrap_or(1),
+                options.days.unwrap_or(1) as u32,
                 0,
             )
             .await

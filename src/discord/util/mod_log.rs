@@ -1,6 +1,6 @@
+use serenity::all::GenericChannelId;
 use serenity::builder::{CreateEmbed, CreateMessage};
 use serenity::http::Http;
-use serenity::model::id::ChannelId;
 use serenity::model::mention::Mentionable;
 use serenity::model::user::User;
 use serenity::model::{Color, Timestamp};
@@ -77,8 +77,8 @@ impl CreateModLogEntryError {
 
 pub async fn create_mod_log_entry(
     http: &Http,
-    mod_log_channel_id: ChannelId,
-    action_channel_id: Option<ChannelId>,
+    mod_log_channel_id: GenericChannelId,
+    action_channel_id: Option<GenericChannelId>,
     mod_user_tag_and_id: &str,
     target_user: &User,
     action: ModLogAction,

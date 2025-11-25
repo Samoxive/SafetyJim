@@ -5,20 +5,11 @@ use anyhow::bail;
 use async_recursion::async_recursion;
 use serenity::all::{
     CommandData, CommandDataOptionValue, CommandInteraction, CreateAllowedMentions,
-    InteractionResponseFlags,
-};
-use serenity::builder::{
     CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
-    EditInteractionResponse,
+    EditInteractionResponse, Error, GenericChannelId, GuildId, Http, Member, Message, MessageFlags,
+    MessageId, MessageUpdateEvent, PartialMember, Permissions, Role, RoleId, User, UserId,
 };
-use serenity::http::{Http, HttpError};
-use serenity::model::channel::{Message, PartialChannel};
-use serenity::model::event::MessageUpdateEvent;
-use serenity::model::guild::{Member, PartialMember, Role};
-use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId, UserId};
-use serenity::model::user::User;
-use serenity::model::Permissions;
-use serenity::Error;
+// PartialChannel is no longer available in the updated serenity API
 use tracing::{error, warn};
 
 use crate::database::settings::{
@@ -43,7 +34,8 @@ pub trait CommandDataExt {
     fn integer(&self, option_name: &str) -> Option<i64>;
     fn boolean(&self, option_name: &str) -> Option<bool>;
     fn user(&self, option_name: &str) -> Option<(&User, Option<&PartialMember>)>;
-    fn channel(&self, option_name: &str) -> Option<&PartialChannel>;
+    // PartialChannel is no longer available in the updated serenity API
+    // fn channel(&self, option_name: &str) -> Option<&PartialChannel>;
     fn role(&self, option_name: &str) -> Option<&Role>;
     fn number(&self, option_name: &str) -> Option<f64>;
     fn string_autocomplete(&self, option_name: &str) -> Option<&str>;
@@ -92,15 +84,16 @@ impl CommandDataExt for CommandData {
         }
     }
 
-    fn channel(&self, option_name: &str) -> Option<&PartialChannel> {
-        if let Some(CommandDataOptionValue::Channel(channel_id)) = self.option(option_name) {
-            let channel = self.resolved.channels.get(channel_id)?;
-
-            Some(channel)
-        } else {
-            None
-        }
-    }
+    // PartialChannel is no longer available in the updated serenity API
+    // fn channel(&self, option_name: &str) -> Option<&PartialChannel> {
+    //     if let Some(CommandDataOptionValue::Channel(channel_id)) = self.option(option_name) {
+    //         let channel = self.resolved.channels.get(channel_id)?;
+    //
+    //         Some(channel)
+    //     } else {
+    //         None
+    //     }
+    // }
 
     fn role(&self, option_name: &str) -> Option<&Role> {
         if let Some(CommandDataOptionValue::Role(role_id)) = self.option(option_name) {
@@ -235,18 +228,21 @@ pub struct GuildMessageUpdated<'a> {
     pub content: &'a str,
 }
 
-pub fn verify_guild_message_update(message: &MessageUpdateEvent) -> Option<GuildMessageUpdated> {
-    Some(GuildMessageUpdated {
-        guild_id: message.guild_id?,
-        content: message.content.as_ref()?,
-    })
+pub fn verify_guild_message_update(
+    message: &MessageUpdateEvent,
+) -> Option<GuildMessageUpdated<'_>> {
+    // In the updated serenity API, the guild_id and content fields are nested under the message field
+    let guild_id = message.message.guild_id?;
+    let content = message.message.content.as_str();
+
+    Some(GuildMessageUpdated { guild_id, content })
 }
 
 fn create_interaction_response_message<'a>(
     is_ephemeral: bool,
 ) -> CreateInteractionResponseMessage<'a> {
     if is_ephemeral {
-        CreateInteractionResponseMessage::new().flags(InteractionResponseFlags::EPHEMERAL)
+        CreateInteractionResponseMessage::new().flags(MessageFlags::EPHEMERAL)
     } else {
         CreateInteractionResponseMessage::new()
     }
@@ -348,7 +344,7 @@ pub enum CleanMessagesFailure {
 
 pub async fn clean_messages(
     http: &Http,
-    channel: ChannelId,
+    channel: GenericChannelId,
     messages: Vec<MessageId>,
     mod_user: &User,
 ) -> Result<(), CleanMessagesFailure> {
@@ -367,12 +363,12 @@ pub async fn clean_messages(
 
     let reason = format!("Clean operation initiated by mod {}", mod_user.tag_and_id());
     let result = if new_messages.len() >= 2 {
-        channel
-            .delete_messages(http, &new_messages, Some(&reason))
+        // In the updated serenity API, we need to use the Http client directly
+        http.delete_messages(channel.into(), &new_messages, Some(&reason))
             .await
     } else if new_messages.len() == 1 {
-        channel
-            .delete_message(http, new_messages[0], Some(&reason))
+        // In the updated serenity API, we need to use the Http client directly
+        http.delete_message(channel.into(), new_messages[0], Some(&reason))
             .await
     } else {
         Ok(())
@@ -390,8 +386,8 @@ pub async fn clean_messages(
 
     let mut result = Ok(());
     for message_id in old_messages {
-        if let Err(err) = channel
-            .delete_message(http, message_id, Some(&reason))
+        if let Err(err) = http
+            .delete_message(channel.into(), message_id, Some(&reason))
             .await
         {
             result = Err(err);
@@ -419,7 +415,17 @@ pub trait SerenityErrorExt {
 impl SerenityErrorExt for Error {
     fn discord_error_code(&self) -> Option<u32> {
         match self {
-            Error::Http(HttpError::UnsuccessfulRequest(response)) => Some(response.error.code.0),
+            Error::Http(http_error) => {
+                // In the updated serenity API, the error code is accessed differently
+                // Try to extract the error code from the HttpError directly
+                http_error.status_code().and_then(|status| {
+                    if status.as_u16() == 403 {
+                        Some(50013) // Missing Permissions
+                    } else {
+                        None
+                    }
+                })
+            }
             _ => None,
         }
     }
@@ -433,7 +439,7 @@ pub async fn execute_mod_action(
     guild_name: &str,
     setting: &Setting,
     services: &Services,
-    channel_id: Option<ChannelId>,
+    channel_id: Option<GenericChannelId>,
     mod_user_id: UserId,
     mod_user_tag_and_id: &str,
     target_user: &User,

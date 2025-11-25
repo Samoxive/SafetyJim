@@ -237,7 +237,7 @@ impl GuildService {
                         (
                             channel.id,
                             CachedChannel {
-                                name: channel.name.to_string(),
+                                name: channel.base.name.to_string(),
                             },
                         )
                     })
@@ -259,7 +259,7 @@ impl GuildService {
             cached_user
         } else if let Ok(fetched_user) = user_id.to_user(&*self.http().await).await {
             let new_cached_user = Arc::new(CachedUser {
-                tag: fetched_user.tag(),
+                tag: fetched_user.tag().to_string(),
                 avatar_url: fetched_user.face(),
             });
             self.user_cache

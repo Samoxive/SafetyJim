@@ -76,7 +76,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let services = Arc::new(create_services(config.clone(), pool.clone()).await?);
 
     let mut bot = DiscordBot::new(config.clone(), services.clone(), shutdown.clone()).await?;
-    let shard_manager = bot.client.shard_manager.clone();
+
+    // Get a reference to the shard manager
+    let bot_shutdown_trigger = bot.client.shard_manager.get_shutdown_trigger();
 
     let bot_future = spawn(async move { bot.connect().await });
 
@@ -86,7 +88,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         shard_shutdown.shutdown();
 
-        shard_manager.shutdown_all().await;
+        bot_shutdown_trigger();
         pool.close().await;
     });
 

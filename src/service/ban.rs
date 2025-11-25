@@ -1,9 +1,9 @@
+use serenity::all::GenericChannelId;
+use serenity::http::Http;
+use serenity::model::id::{GuildId, UserId};
+use serenity::model::user::User;
 use std::num::{NonZeroU32, NonZeroU64};
 use std::time::Duration;
-
-use serenity::http::Http;
-use serenity::model::id::{ChannelId, GuildId, UserId};
-use serenity::model::user::User;
 use tracing::{error, warn};
 use typemap_rev::TypeMapKey;
 
@@ -41,7 +41,7 @@ impl BanService {
         guild_id: GuildId,
         guild_name: &str,
         setting: &Setting,
-        channel_id: Option<ChannelId>,
+        channel_id: Option<GenericChannelId>,
         mod_user_id: UserId,
         mod_user_tag_and_id: &str,
         target_user: &User,
@@ -53,7 +53,7 @@ impl BanService {
 
         let mod_log_channel_id = if setting.mod_log {
             if let Some(id) = NonZeroU64::new(setting.mod_log_channel_id as u64) {
-                Some(ChannelId::new(id.get()))
+                Some(GenericChannelId::new(id.get()))
             } else {
                 warn!(
                     "found setting with invalid mod log channel id! {:?}",

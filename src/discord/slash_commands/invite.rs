@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use serenity::all::Context;
 use serenity::all::{CommandInteraction, CommandType, InstallationContext, InteractionContext};
 use serenity::builder::{
-    CreateActionRow, CreateButton, CreateCommand, CreateInteractionResponse,
+    CreateButton, CreateCommand, CreateInteractionResponse,
     CreateInteractionResponseMessage,
 };
 use tracing::error;
@@ -37,18 +37,13 @@ impl SlashCommand for InviteCommand {
         _config: &Config,
         _services: &Services,
     ) -> anyhow::Result<()> {
-        let components = vec![CreateActionRow::Buttons(
-            vec![
-                CreateButton::new_link("Invite Jim!").label(JIM_INVITE_LINK),
-                CreateButton::new_link("Join our support server!")
-                    .label(SUPPORT_SERVER_INVITE_LINK),
-            ]
-            .into(),
-        )];
-
         let data = CreateInteractionResponseMessage::new()
             .content("Links:")
-            .components(components);
+            .button(CreateButton::new_link("Invite Jim!").label(JIM_INVITE_LINK))
+            .button(
+                CreateButton::new_link("Join our support server!")
+                    .label(SUPPORT_SERVER_INVITE_LINK),
+            );
 
         let response = CreateInteractionResponse::Message(data);
 

@@ -4,7 +4,11 @@ use std::num::{NonZeroU16, NonZeroU64};
 use std::sync::Arc;
 use std::time::Duration;
 
-use serenity::all::{Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind, Context, CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage, CreateSelectMenuOption, Event, EventHandler, Interaction, RawEventHandler};
+use serenity::all::{
+    Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind, Context,
+    CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
+    CreateSelectMenuOption, Event, EventHandler, Interaction, RawEventHandler,
+};
 use serenity::async_trait;
 use serenity::builder::{
     AutocompleteChoice, CreateActionRow, CreateAutocompleteResponse, CreateEmbedFooter,
@@ -55,7 +59,7 @@ pub struct DiscordBot {
 }
 
 async fn feed_shard_statistics(
-    shard_manager: Arc<ShardManager>,
+    shard_manager: &ShardManager,
     services: Arc<Services>,
     shutdown: Shutdown,
 ) {
@@ -116,7 +120,7 @@ impl DiscordBot {
         }
 
         tokio::spawn(feed_shard_statistics(
-            client.shard_manager.clone(),
+            Arc::clone(&client.shard_manager),
             services.clone(),
             shutdown.clone(),
         ));

@@ -5,8 +5,8 @@ use std::time::Duration;
 use anyhow::bail;
 use async_trait::async_trait;
 use moka::future::{Cache, CacheBuilder};
-use serenity::all::Context;
-use serenity::model::id::{ChannelId, GuildId, MessageId, UserId};
+use serenity::all::{Context, GenericChannelId};
+use serenity::model::id::{GuildId, MessageId, UserId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use tokio::sync::Mutex;
@@ -55,7 +55,7 @@ impl MessageProcessor for SpamFilterProcessor {
         context: &Context,
         message_content: &str,
         guild_id: GuildId,
-        channel_id: ChannelId,
+        channel_id: GenericChannelId,
         _message_id: MessageId,
         author: &User,
         permissions: Permissions,

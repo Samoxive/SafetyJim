@@ -1,11 +1,11 @@
-use serenity::all::Mentionable;
+use serenity::all::{GenericChannelId, Mentionable};
 use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::time::Duration;
 
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::http::Http;
-use serenity::model::id::{ChannelId, GuildId, RoleId, UserId};
+use serenity::model::id::{GuildId, RoleId, UserId};
 use serenity::model::Timestamp;
 use tokio::select;
 use tokio::time::interval;
@@ -317,7 +317,7 @@ pub async fn remind_reminders(http: &Http, services: &Services) {
         };
 
         let channel_id = if let Some(id) = NonZeroU64::new(expired_reminder.channel_id as u64) {
-            ChannelId::new(id.get())
+            GenericChannelId::new(id.get())
         } else {
             warn!(
                 "found expired reminder with invalid channel id! {:?}",
@@ -371,10 +371,15 @@ pub async fn remind_reminders(http: &Http, services: &Services) {
                     .content(user_id.mention().to_string())
                     .add_embed(embed);
 
-                let _ = dm_channel.id.send_message(http, message).await.map_err(|err| {
-                    error!("failed to send DM {}", err);
-                    err
-                });
+                let _ = dm_channel
+                    .id
+                    .widen()
+                    .send_message(http, message)
+                    .await
+                    .map_err(|err| {
+                        error!("failed to send DM {}", err);
+                        err
+                    });
             }
         }
 

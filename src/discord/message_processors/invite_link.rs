@@ -1,7 +1,7 @@
 use anyhow::bail;
 use async_trait::async_trait;
-use serenity::all::Context;
-use serenity::model::id::{ChannelId, GuildId, MessageId};
+use serenity::all::{Context, GenericChannelId};
+use serenity::model::id::{GuildId, MessageId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
 use tracing::error;
@@ -24,7 +24,7 @@ impl MessageProcessor for InviteLinkProcessor {
         context: &Context,
         message_content: &str,
         guild_id: GuildId,
-        channel_id: ChannelId,
+        channel_id: GenericChannelId,
         message_id: MessageId,
         author: &User,
         permissions: Permissions,

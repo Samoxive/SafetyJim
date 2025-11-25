@@ -1,7 +1,7 @@
-use std::time::Duration;
-
-use serenity::model::id::{ChannelId, GuildId};
+use serenity::all::GenericChannelId;
+use serenity::model::id::GuildId;
 use serenity::model::user::User;
+use std::time::Duration;
 use tracing::error;
 use typemap_rev::TypeMapKey;
 
@@ -36,7 +36,7 @@ impl ReminderService {
     pub async fn create_reminder(
         &self,
         guild_id: GuildId,
-        channel_id: ChannelId,
+        channel_id: GenericChannelId,
         user: &User,
         duration: Option<Duration>,
         message: String,

@@ -57,7 +57,7 @@ fn generate_member_embed<'a>(
 
     let known_as = match &member.nick {
         Some(nick) => format!("{} - {}", user.tag(), nick),
-        None => user.tag(),
+        None => user.tag().to_string(),
     };
 
     let title = if guild.owner_id == user.id {
