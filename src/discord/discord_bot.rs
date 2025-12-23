@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::error::Error;
 use std::num::{NonZeroU16, NonZeroU64};
 use std::sync::Arc;
@@ -7,27 +6,26 @@ use std::time::Duration;
 use serenity::all::{
     Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind, Context,
     CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
-    CreateSelectMenuOption, Event, EventHandler, Interaction, RawEventHandler,
+    CreateSelectMenuOption, Event, EventHandler, FullEvent, GenericChannelId, Interaction,
+    RawEventHandler,
 };
 use serenity::async_trait;
 use serenity::builder::{
-    AutocompleteChoice, CreateActionRow, CreateAutocompleteResponse, CreateEmbedFooter,
+    AutocompleteChoice, CreateAutocompleteResponse, CreateEmbedFooter,
     CreateMessage, CreateSelectMenu, CreateSelectMenuKind, EditInteractionResponse,
 };
-use serenity::gateway::{ActivityData, ShardManager};
+use serenity::gateway::ActivityData;
 use serenity::http::Http;
 use serenity::model::channel::{GuildChannel, Message, MessageType};
 use serenity::model::event::{GuildMemberUpdateEvent, MessageUpdateEvent};
 use serenity::model::gateway::{GatewayIntents, Ready};
 use serenity::model::guild::{Guild, Member, PartialGuild, Role, UnavailableGuild};
-use serenity::model::id::{ChannelId, GuildId, RoleId};
+use serenity::model::id::GuildId;
 use serenity::model::user::{CurrentUser, User};
 use serenity::model::Color;
 use serenity::prelude::Mentionable;
 use serenity::Client;
 use simsearch::{SearchOptions, SimSearch};
-use tokio::select;
-use tokio::time::sleep;
 use tracing::{error, warn};
 
 use crate::config::Config;
@@ -46,43 +44,13 @@ use crate::service::guild_statistic::GuildStatisticService;
 use crate::service::join::JoinService;
 use crate::service::mute::MuteService;
 use crate::service::setting::SettingService;
-use crate::service::shard_statistic::ShardStatisticService;
 use crate::service::tag::TagService;
 use crate::service::watchdog::WatchdogService;
 use crate::service::Services;
 use crate::util::Shutdown;
 
-const SHARD_LATENCY_POLLING_INTERVAL: u64 = 60;
-
 pub struct DiscordBot {
     pub client: Client,
-}
-
-async fn feed_shard_statistics(
-    shard_manager: &ShardManager,
-    services: Arc<Services>,
-    shutdown: Shutdown,
-) {
-    let mut receiver = shutdown.subscribe();
-    let shard_statistic_service =
-        if let Some(shard_statistic_service) = services.get::<ShardStatisticService>() {
-            shard_statistic_service
-        } else {
-            return;
-        };
-
-    loop {
-        select! {
-            _ = sleep(Duration::from_secs(SHARD_LATENCY_POLLING_INTERVAL)) => {}
-            _ = receiver.recv() => {
-                return;
-            }
-        }
-
-        shard_statistic_service
-            .update_latencies(&shard_manager)
-            .await;
-    }
 }
 
 impl DiscordBot {
@@ -118,12 +86,6 @@ impl DiscordBot {
         if let Some(guild_service) = services.get::<GuildService>() {
             guild_service.insert_http(client.http.clone()).await;
         }
-
-        tokio::spawn(feed_shard_statistics(
-            Arc::clone(&client.shard_manager),
-            services.clone(),
-            shutdown.clone(),
-        ));
 
         run_scheduled_tasks(client.http.clone(), services.clone(), shutdown.clone());
 
@@ -180,51 +142,40 @@ pub async fn initialize_slash_commands(
     Ok(())
 }
 
-#[async_trait]
-impl EventHandler for DiscordEventHandler {
-    async fn channel_create(&self, _ctx: Context, new: GuildChannel) {
+impl DiscordEventHandler {
+    async fn channel_create(&self, new: &GuildChannel) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
-                .invalidate_cached_guild_channels(new.guild_id)
+                .invalidate_cached_guild_channels(new.base.guild_id)
                 .await;
         }
     }
 
-    async fn channel_delete(
-        &self,
-        _ctx: Context,
-        new: GuildChannel,
-        _messages: Option<VecDeque<Message>>,
-    ) {
+    async fn channel_delete(&self, new: &GuildChannel) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
-                .invalidate_cached_guild_channels(new.guild_id)
+                .invalidate_cached_guild_channels(new.base.guild_id)
                 .await;
         }
     }
 
-    async fn channel_update(&self, _ctx: Context, _old: Option<GuildChannel>, new: GuildChannel) {
+    async fn channel_update(&self, new: &GuildChannel) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
-                .invalidate_cached_guild_channels(new.guild_id)
+                .invalidate_cached_guild_channels(new.base.guild_id)
                 .await;
         }
     }
 
-    async fn guild_create(&self, _ctx: Context, guild: Guild, _is_new: Option<bool>) {
+    async fn guild_create(&self, guild: &Guild) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
-            statistic_service.add_guild(&guild).await;
+            statistic_service.add_guild(guild).await;
         }
     }
 
-    async fn guild_delete(
-        &self,
-        _ctx: Context,
-        incomplete: UnavailableGuild,
-        _full: Option<Guild>,
-    ) {
+    async fn guild_delete(&self, incomplete: &UnavailableGuild) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
-            statistic_service.remove_guild(&incomplete).await;
+            statistic_service.remove_guild(incomplete).await;
         }
 
         if !incomplete.unavailable {
@@ -234,7 +185,7 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_member_addition(&self, ctx: Context, new_member: Member) {
+    async fn guild_member_addition(&self, ctx: &Context, new_member: &Member) {
         let guild_id = new_member.guild_id;
 
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
@@ -286,7 +237,7 @@ impl EventHandler for DiscordEventHandler {
             };
 
             if let Some(id) = NonZeroU64::new(setting.welcome_message_channel_id as u64) {
-                let channel_id = ChannelId::new(id.get());
+                let channel_id = GenericChannelId::new(id.get());
                 let message = CreateMessage::default().content(content);
 
                 let _ = channel_id
@@ -320,6 +271,7 @@ impl EventHandler for DiscordEventHandler {
 
                 let _ = dm_channel
                     .id
+                    .widen()
                     .send_message(&ctx.http, message)
                     .await
                     .map_err(|err| {
@@ -368,13 +320,7 @@ impl EventHandler for DiscordEventHandler {
             });
     }
 
-    async fn guild_member_removal(
-        &self,
-        _ctx: Context,
-        guild_id: GuildId,
-        kicked: User,
-        _member: Option<Member>,
-    ) {
+    async fn guild_member_removal(&self, guild_id: GuildId, kicked: &User) {
         if let Some(statistic_service) = self.services.get::<GuildStatisticService>() {
             statistic_service
                 .decrement_guild_member_count(guild_id)
@@ -393,13 +339,7 @@ impl EventHandler for DiscordEventHandler {
     }
 
     // serenity merged no-cache and cached methods so ignore underscore prefixed parameters, they only exist for cache users.
-    async fn guild_member_update(
-        &self,
-        _ctx: Context,
-        _old: Option<Member>,
-        _new: Option<Member>,
-        new: GuildMemberUpdateEvent,
-    ) {
+    async fn guild_member_update(&self, new: &GuildMemberUpdateEvent) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
                 .invalidate_cached_guild_member(new.guild_id, new.user.id)
@@ -407,7 +347,7 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_role_create(&self, _ctx: Context, new: Role) {
+    async fn guild_role_create(&self, new: &Role) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
                 .invalidate_cached_guild_roles(new.guild_id)
@@ -415,19 +355,13 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_role_delete(
-        &self,
-        _ctx: Context,
-        guild_id: GuildId,
-        _removed_role_id: RoleId,
-        _role: Option<Role>,
-    ) {
+    async fn guild_role_delete(&self, guild_id: GuildId) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service.invalidate_cached_guild_roles(guild_id).await;
         }
     }
 
-    async fn guild_role_update(&self, _ctx: Context, _old: Option<Role>, new: Role) {
+    async fn guild_role_update(&self, new: &Role) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service
                 .invalidate_cached_guild_roles(new.guild_id)
@@ -435,13 +369,13 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn guild_update(&self, _ctx: Context, _old: Option<Guild>, new: PartialGuild) {
+    async fn guild_update(&self, new: &PartialGuild) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service.invalidate_cached_guild(new.id).await;
         }
     }
 
-    async fn message(&self, ctx: Context, message: Message) {
+    async fn message(&self, ctx: &Context, message: &Message) {
         if message.author.bot() {
             return;
         }
@@ -459,7 +393,7 @@ impl EventHandler for DiscordEventHandler {
         }
 
         let (guild_id, member) = if let Some(GuildMessageCreated { guild_id, member }) =
-            verify_guild_message_create(&message)
+            verify_guild_message_create(message)
         {
             (guild_id, member)
         } else {
@@ -492,7 +426,7 @@ impl EventHandler for DiscordEventHandler {
         for (i, processor) in self.message_processors.0.iter().enumerate() {
             match processor
                 .handle_message(
-                    &ctx,
+                    ctx,
                     &message.content,
                     guild_id,
                     message.channel_id,
@@ -514,28 +448,17 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn message_update(
-        &self,
-        ctx: Context,
-        _old: Option<Message>,
-        _new: Option<Message>,
-        message: MessageUpdateEvent,
-    ) {
-        let author = if let Some(author) = &message.author {
-            author
-        } else {
-            return;
-        };
-
+    async fn message_update(&self, ctx: &Context, event: &MessageUpdateEvent) {
+        let message = &event.message;
         let (guild_id, content) = if let Some(GuildMessageUpdated { guild_id, content }) =
-            verify_guild_message_update(&message)
+            verify_guild_message_update(event)
         {
             (guild_id, content)
         } else {
             return;
         };
 
-        if author.bot() {
+        if message.author.bot() {
             return;
         }
 
@@ -557,14 +480,15 @@ impl EventHandler for DiscordEventHandler {
             return;
         };
 
-        let member = if let Ok(member) = guild_service.get_member(guild_id, author.id).await {
+        let member = if let Ok(member) = guild_service.get_member(guild_id, message.author.id).await
+        {
             member
         } else {
             return;
         };
 
         let permissions = if let Ok(permissions) = guild_service
-            .get_permissions(author.id, &member.roles, guild_id)
+            .get_permissions(message.author.id, &member.roles, guild_id)
             .await
         {
             permissions
@@ -575,12 +499,12 @@ impl EventHandler for DiscordEventHandler {
         for (i, processor) in self.message_processors.0.iter().enumerate() {
             match processor
                 .handle_message(
-                    &ctx,
+                    ctx,
                     content,
                     guild_id,
                     message.channel_id,
                     message.id,
-                    author,
+                    &message.author,
                     permissions,
                     &setting,
                     &self.services,
@@ -595,11 +519,9 @@ impl EventHandler for DiscordEventHandler {
                 }
             }
         }
-
-        return;
     }
 
-    async fn ready(&self, ctx: Context, data_about_bot: Ready) {
+    async fn ready(&self, ctx: &Context, data_about_bot: &Ready) {
         let shard = data_about_bot
             .shard
             .map(|info| (info.id.0, info.total))
@@ -610,13 +532,13 @@ impl EventHandler for DiscordEventHandler {
         ctx.set_activity(Some(activity));
     }
 
-    async fn user_update(&self, _ctx: Context, _old: Option<CurrentUser>, new: CurrentUser) {
+    async fn user_update(&self, new: &CurrentUser) {
         if let Some(guild_service) = self.services.get::<GuildService>() {
             guild_service.invalidate_cached_user(new.id).await;
         }
     }
 
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+    async fn interaction_create(&self, ctx: &Context, interaction: &Interaction) {
         if let Interaction::Autocomplete(autocomplete_interaction) = interaction {
             // only tag command has autocomplete so no need to filter based on command name
             if let Some(tag_service) = self.services.get::<TagService>() {
@@ -678,7 +600,7 @@ impl EventHandler for DiscordEventHandler {
                 _ => {
                     let _ = reply_to_interaction_str(
                         &ctx.http,
-                        &command,
+                        command,
                         "Jim's commands can only be used in servers.",
                         true,
                     )
@@ -693,7 +615,7 @@ impl EventHandler for DiscordEventHandler {
                     let slash_command_handler = self.slash_commands.0.get(name.as_str());
                     if let Some(slash_command_handler) = slash_command_handler {
                         if let Err(err) = slash_command_handler
-                            .handle_command(&ctx, &command, &self.config, self.services.as_ref())
+                            .handle_command(ctx, command, &self.config, self.services.as_ref())
                             .await
                         {
                             error!(
@@ -726,7 +648,7 @@ impl EventHandler for DiscordEventHandler {
                         if !setting.mod_log {
                             reply_to_interaction_str(
                                 &ctx.http,
-                                &command,
+                                command,
                                 "This server doesn't have reporting enabled!",
                                 true,
                             )
@@ -734,30 +656,28 @@ impl EventHandler for DiscordEventHandler {
                             return;
                         }
 
+                        let message_link = target_message
+                            .id
+                            .link(target_message.channel_id, Some(guild_id));
+
                         let embed = CreateEmbed::default()
                             .color(Color::new(0xFF2900))
                             .timestamp(target_message.timestamp)
                             .title("Message Report")
                             .field("Reporter:", member.user.tag_and_id(), false)
                             .field("Reported:", target_message.author.tag_and_id(), false)
-                            .field(
-                                "Message Link:",
-                                target_message
-                                    .id
-                                    .link(target_message.channel_id, Some(guild_id)),
-                                false,
-                            )
+                            .field("Message Link:", format!("{}", message_link), false)
                             .footer(CreateEmbedFooter::new("Message sent on"));
 
                         let message = CreateMessage::default().add_embed(embed);
 
                         let report_channel_id =
                             if let Some(id) = NonZeroU64::new(setting.report_channel_id as u64) {
-                                ChannelId::new(id.get())
+                                GenericChannelId::new(id.get())
                             } else {
                                 reply_to_interaction_str(
                                     &ctx.http,
-                                    &command,
+                                    command,
                                     "This server doesn't have reporting enabled!",
                                     true,
                                 )
@@ -766,12 +686,12 @@ impl EventHandler for DiscordEventHandler {
                             };
 
                         let _ = report_channel_id.send_message(&ctx.http, message).await;
-                        reply_to_interaction_str(&ctx.http, &command, "Reported.", true).await;
+                        reply_to_interaction_str(&ctx.http, command, "Reported.", true).await;
                     } else if name == "Format Code" {
                         if target_message.content.is_empty() {
                             reply_to_interaction_str(
                                 &ctx.http,
-                                &command,
+                                command,
                                 "Message has no content.",
                                 true,
                             )
@@ -782,7 +702,7 @@ impl EventHandler for DiscordEventHandler {
                         if target_message.content.contains("```") {
                             reply_to_interaction_str(
                                 &ctx.http,
-                                &command,
+                                command,
                                 "Message already contains a code block.",
                                 true,
                             )
@@ -790,27 +710,25 @@ impl EventHandler for DiscordEventHandler {
                             return;
                         }
 
-                        if let Err(err) = defer_interaction(&ctx.http, &command).await {
+                        if let Err(err) = defer_interaction(&ctx.http, command).await {
                             error!("failed to defer an interaction {:?} {:?}", err, &command);
                             return;
                         }
 
-                        let language_select = EditInteractionResponse::new().components(vec![
-                            CreateActionRow::SelectMenu(
-                                CreateSelectMenu::new(
-                                    "language_select",
-                                    CreateSelectMenuKind::String {
-                                        options: PROGRAMMING_LANGUAGES
-                                            .iter()
-                                            .map(|(label, value)| {
-                                                CreateSelectMenuOption::new(*label, *value)
-                                            })
-                                            .collect(),
-                                    },
-                                )
-                                .placeholder("No language selected"),
-                            ),
-                        ]);
+                        let language_select = EditInteractionResponse::new().select_menu(
+                            CreateSelectMenu::new(
+                                "language_select",
+                                CreateSelectMenuKind::String {
+                                    options: PROGRAMMING_LANGUAGES
+                                        .iter()
+                                        .map(|(label, value)| {
+                                            CreateSelectMenuOption::new(*label, *value)
+                                        })
+                                        .collect(),
+                                },
+                            )
+                            .placeholder("No language selected"),
+                        );
 
                         let language_select_message =
                             match command.edit_response(&ctx.http, language_select).await {
@@ -818,7 +736,7 @@ impl EventHandler for DiscordEventHandler {
                                 Err(_) => {
                                     edit_deferred_interaction_response(
                                         &ctx.http,
-                                        &command,
+                                        command,
                                         &format!("```\n{}\n```", &target_message.content),
                                     )
                                     .await;
@@ -826,25 +744,24 @@ impl EventHandler for DiscordEventHandler {
                                 }
                             };
 
-                        let component_interaction =
-                            match ComponentInteractionCollector::new(ctx.shard.clone())
-                                .timeout(Duration::from_secs(10))
-                                .message_id(language_select_message.id)
-                                .author_id(command.user.id)
-                                .next()
-                                .await
-                            {
-                                Some(interaction) => interaction,
-                                None => {
-                                    edit_deferred_interaction_response(
-                                        &ctx.http,
-                                        &command,
-                                        &format!("```\n{}\n```", &target_message.content),
-                                    )
-                                    .await;
-                                    return;
-                                }
-                            };
+                        let component_interaction = match ComponentInteractionCollector::new(ctx)
+                            .timeout(Duration::from_secs(10))
+                            .message_id(language_select_message.id)
+                            .author_id(command.user.id)
+                            .next()
+                            .await
+                        {
+                            Some(interaction) => interaction,
+                            None => {
+                                edit_deferred_interaction_response(
+                                    &ctx.http,
+                                    command,
+                                    &format!("```\n{}\n```", &target_message.content),
+                                )
+                                .await;
+                                return;
+                            }
+                        };
 
                         let selected_language = match &component_interaction.data.kind {
                             ComponentInteractionDataKind::StringSelect { values } => {
@@ -882,13 +799,72 @@ impl EventHandler for DiscordEventHandler {
                             "received a message command with unknown name {:?}",
                             &command
                         );
-                        return;
                     }
                 }
                 _ => {
                     error!("received an unknown command {:?}", &command);
                 }
             }
+        }
+    }
+}
+
+#[async_trait]
+impl EventHandler for DiscordEventHandler {
+    async fn dispatch(&self, context: &Context, event: &FullEvent) {
+        match event {
+            FullEvent::ChannelCreate { channel } => {
+                self.channel_create(channel).await;
+            }
+            FullEvent::ChannelDelete { channel, .. } => {
+                self.channel_delete(channel).await;
+            }
+            FullEvent::ChannelUpdate { new, .. } => {
+                self.channel_update(new).await;
+            }
+            FullEvent::GuildCreate { guild, .. } => {
+                self.guild_create(guild).await;
+            }
+            FullEvent::GuildDelete { incomplete, .. } => {
+                self.guild_delete(incomplete).await;
+            }
+            FullEvent::GuildMemberAddition { new_member } => {
+                self.guild_member_addition(context, new_member).await;
+            }
+            FullEvent::GuildMemberRemoval { guild_id, user, .. } => {
+                self.guild_member_removal(*guild_id, user).await;
+            }
+            FullEvent::GuildMemberUpdate { event, .. } => {
+                self.guild_member_update(event).await;
+            }
+            FullEvent::GuildRoleCreate { new } => {
+                self.guild_role_create(new).await;
+            }
+            FullEvent::GuildRoleDelete { guild_id, .. } => {
+                self.guild_role_delete(*guild_id).await;
+            }
+            FullEvent::GuildRoleUpdate { new, .. } => {
+                self.guild_role_update(new).await;
+            }
+            FullEvent::GuildUpdate { new_data, .. } => {
+                self.guild_update(new_data).await;
+            }
+            FullEvent::Message { new_message } => {
+                self.message(context, new_message).await;
+            }
+            FullEvent::MessageUpdate { event, .. } => {
+                self.message_update(context, event).await;
+            }
+            FullEvent::Ready { data_about_bot } => {
+                self.ready(context, data_about_bot).await;
+            }
+            FullEvent::UserUpdate { new, .. } => {
+                self.user_update(new).await;
+            }
+            FullEvent::InteractionCreate { interaction } => {
+                self.interaction_create(context, interaction).await;
+            }
+            _ => {}
         }
     }
 }

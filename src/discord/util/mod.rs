@@ -4,10 +4,10 @@ use std::time::Duration;
 use anyhow::bail;
 use async_recursion::async_recursion;
 use serenity::all::{
-    CommandData, CommandDataOptionValue, CommandInteraction, CreateAllowedMentions,
-    CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
-    EditInteractionResponse, Error, GenericChannelId, GuildId, Http, Member, Message, MessageFlags,
-    MessageId, MessageUpdateEvent, PartialMember, Permissions, Role, RoleId, User, UserId,
+    CommandData, CommandDataOptionValue, CommandInteraction, CreateAllowedMentions, CreateEmbed,
+    CreateInteractionResponse, CreateInteractionResponseMessage, EditInteractionResponse, Error,
+    GenericChannelId, GuildId, Http, Member, Message, MessageFlags, MessageId, MessageUpdateEvent,
+    PartialMember, Permissions, Role, RoleId, User, UserId,
 };
 // PartialChannel is no longer available in the updated serenity API
 use tracing::{error, warn};
@@ -364,11 +364,11 @@ pub async fn clean_messages(
     let reason = format!("Clean operation initiated by mod {}", mod_user.tag_and_id());
     let result = if new_messages.len() >= 2 {
         // In the updated serenity API, we need to use the Http client directly
-        http.delete_messages(channel.into(), &new_messages, Some(&reason))
+        http.delete_messages(channel, &new_messages, Some(&reason))
             .await
     } else if new_messages.len() == 1 {
         // In the updated serenity API, we need to use the Http client directly
-        http.delete_message(channel.into(), new_messages[0], Some(&reason))
+        http.delete_message(channel, new_messages[0], Some(&reason))
             .await
     } else {
         Ok(())
@@ -387,7 +387,7 @@ pub async fn clean_messages(
     let mut result = Ok(());
     for message_id in old_messages {
         if let Err(err) = http
-            .delete_message(channel.into(), message_id, Some(&reason))
+            .delete_message(channel, message_id, Some(&reason))
             .await
         {
             result = Err(err);

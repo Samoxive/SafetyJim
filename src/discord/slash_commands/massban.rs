@@ -130,10 +130,7 @@ impl SlashCommand for MassbanCommand {
             }
         };
 
-        if options
-            .target_users
-            .iter()
-            .any(|target| *target == mod_user.id)
+        if options.target_users.contains(&mod_user.id)
         {
             reply_to_interaction_str(
                 &context.http,
@@ -145,7 +142,7 @@ impl SlashCommand for MassbanCommand {
             return Ok(());
         }
 
-        if options.target_users.iter().any(|target| *target == JIM_ID) {
+        if options.target_users.contains(&JIM_ID) {
             reply_to_interaction_str(
                 &context.http,
                 interaction,

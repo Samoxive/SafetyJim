@@ -77,7 +77,7 @@ impl SlashCommand for XkcdCommand {
         "xkcd"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("xkcd")
             .kind(CommandType::ChatInput)
             .description("searches xkcd comics with given description or partial title")

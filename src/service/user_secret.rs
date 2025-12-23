@@ -377,9 +377,7 @@ impl UserSecretService {
         Ok(self_user_guilds
             .into_iter()
             .filter(|user_guild| {
-                filtered_guild_ids
-                    .iter()
-                    .any(|known_guild| *known_guild == user_guild.id)
+                filtered_guild_ids.contains(&user_guild.id)
             })
             .collect())
     }

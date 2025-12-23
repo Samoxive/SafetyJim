@@ -12,7 +12,6 @@ use crate::discord::slash_commands::SlashCommand;
 use crate::discord::util::reply_to_interaction_embed;
 use crate::service::ban::BanService;
 use crate::service::guild_statistic::GuildStatisticService;
-use crate::service::shard_statistic::ShardStatisticService;
 use crate::service::Services;
 use crate::util::now;
 
@@ -40,11 +39,6 @@ impl SlashCommand for InfoCommand {
         services: &Services,
     ) -> anyhow::Result<()> {
         let shard_id = context.shard_id;
-        let shard_info = if let Some(service) = services.get::<ShardStatisticService>() {
-            service.get_shard_latency_info(shard_id).await
-        } else {
-            bail!("couldn't get shard statistic service!");
-        };
 
         let guild_statistics = if let Some(service) = services.get::<GuildStatisticService>() {
             service.get_guild_statistics().await
@@ -71,7 +65,7 @@ impl SlashCommand for InfoCommand {
             "\u{221E}".to_string()
         };
 
-        let shard_string = format!("[{} / {}]", shard_id, shard_info.total_shard_count);
+        let shard_string = format!("[{}]", shard_id);
 
         let embed = CreateEmbed::default()
             .author(
@@ -96,10 +90,8 @@ impl SlashCommand for InfoCommand {
             .field(
                 "Websocket Ping",
                 format!(
-                    "Shard {}: {}ms\nAverage: {}ms",
+                    "Shard {}",
                     shard_string,
-                    shard_info.current_shard_latency,
-                    shard_info.average_shard_latency
                 ),
                 true,
             )

@@ -1,7 +1,7 @@
+use crate::discord::discord_bot::DiscordBot;
 use serenity::all::ShardId;
 use std::collections::HashMap;
-
-use serenity::gateway::ShardManager;
+use std::sync::Arc;
 use tokio::sync::Mutex;
 use typemap_rev::TypeMapKey;
 
@@ -23,20 +23,6 @@ impl ShardStatisticService {
     pub fn new() -> Self {
         ShardStatisticService {
             shard_latencies: Mutex::new(HashMap::new()),
-        }
-    }
-
-    pub async fn update_latencies(&self, shard_manager: &ShardManager) {
-        let mut shard_latencies = self.shard_latencies.lock().await;
-
-        *shard_latencies = HashMap::new();
-
-        for runner in shard_manager.runners.iter() {
-            let shard_id = runner.key();
-            let (shard, _) = runner.value();
-            if let Some(shard_latency) = shard.latency {
-                shard_latencies.insert(shard_id.0, shard_latency.as_millis() as u64);
-            }
         }
     }
 

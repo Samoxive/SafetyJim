@@ -32,7 +32,6 @@ use crate::database::user_secrets::UserSecretsRepository;
 use crate::database::warns::WarnsRepository;
 use crate::service::guild::GuildService;
 use crate::service::guild_statistic::GuildStatisticService;
-use crate::service::shard_statistic::ShardStatisticService;
 use crate::service::watchdog::WatchdogService;
 use crate::Config;
 
@@ -47,7 +46,6 @@ pub mod kick;
 pub mod mute;
 pub mod reminder;
 pub mod setting;
-pub mod shard_statistic;
 pub mod softban;
 pub mod tag;
 pub mod user_secret;
@@ -121,7 +119,6 @@ pub async fn create_services(config: Arc<Config>, pool: Arc<PgPool>) -> anyhow::
         repository: warns_repository,
     };
     let guild_statistic_service = GuildStatisticService::new();
-    let shard_statistic_service = ShardStatisticService::new();
     let guild_service = GuildService::new();
     let watchdog_service = WatchdogService::new();
 
@@ -140,7 +137,6 @@ pub async fn create_services(config: Arc<Config>, pool: Arc<PgPool>) -> anyhow::
     services.insert::<UserSecretService>(user_secrets_service);
     services.insert::<WarnService>(warns_service);
     services.insert::<GuildStatisticService>(guild_statistic_service);
-    services.insert::<ShardStatisticService>(shard_statistic_service);
     services.insert::<GuildService>(guild_service);
     services.insert::<WatchdogService>(watchdog_service);
 

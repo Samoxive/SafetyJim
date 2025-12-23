@@ -2,8 +2,7 @@ use async_trait::async_trait;
 use serenity::all::Context;
 use serenity::all::{CommandInteraction, CommandType, InstallationContext, InteractionContext};
 use serenity::builder::{
-    CreateButton, CreateCommand, CreateInteractionResponse,
-    CreateInteractionResponseMessage,
+    CreateButton, CreateCommand, CreateInteractionResponse, CreateInteractionResponseMessage,
 };
 use tracing::error;
 
