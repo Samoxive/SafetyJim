@@ -51,7 +51,7 @@ impl SlashCommand for RoleRemoveCommand {
         "role-remove"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("role-remove")
             .kind(CommandType::ChatInput)
             .description("unregisters a self assignable role")

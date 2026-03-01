@@ -33,7 +33,7 @@ enum TagEditCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<TagEditCommandOptions, TagEditCommandOptionFailure> {
+) -> Result<TagEditCommandOptions<'_>, TagEditCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
     } else {
@@ -63,7 +63,7 @@ impl SlashCommand for TagEditCommand {
         "tag-edit"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("tag-edit")
             .kind(CommandType::ChatInput)
             .description("edits previously registered tag content")

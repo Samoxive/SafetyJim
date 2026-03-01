@@ -39,7 +39,7 @@ enum MuteCommandOptionFailure<'a> {
     DurationParseError(&'a str),
 }
 
-fn generate_options(data: &CommandData) -> Result<MuteCommandOptions, MuteCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<MuteCommandOptions<'_>, MuteCommandOptionFailure<'_>> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -75,7 +75,7 @@ impl SlashCommand for MuteCommand {
         "mute"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("mute")
             .kind(CommandType::ChatInput)
             .description("mutes given user, time can be given for a temporary mute")

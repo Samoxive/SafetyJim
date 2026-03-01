@@ -21,7 +21,7 @@ impl SlashCommand for InviteCommand {
         "invite"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("invite")
             .kind(CommandType::ChatInput)
             .description("displays links to invite Jim and get support")

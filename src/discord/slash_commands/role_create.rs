@@ -51,7 +51,7 @@ impl SlashCommand for RoleCreateCommand {
         "role-create"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("role-create")
             .kind(CommandType::ChatInput)
             .description("registers a role that can be self assigned via iam command")

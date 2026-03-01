@@ -22,7 +22,7 @@ impl SlashCommand for TagListCommand {
         "tag-list"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("tag-list")
             .kind(CommandType::ChatInput)
             .description("lists previously registered tags")

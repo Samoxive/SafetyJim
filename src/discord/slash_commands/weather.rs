@@ -86,7 +86,7 @@ enum WeatherCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<WeatherCommandOptions, WeatherCommandOptionFailure> {
+) -> Result<WeatherCommandOptions<'_>, WeatherCommandOptionFailure> {
     let address = if let Some(s) = data.string("address") {
         s
     } else {
@@ -102,7 +102,7 @@ impl SlashCommand for WeatherCommand {
         "weather"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("weather")
             .kind(CommandType::ChatInput)
             .description("gives current weather information for given address")

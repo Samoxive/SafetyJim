@@ -39,7 +39,7 @@ enum BanCommandOptionFailure<'a> {
     DurationParseError(&'a str),
 }
 
-fn generate_options(data: &CommandData) -> Result<BanCommandOptions, BanCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<BanCommandOptions<'_>, BanCommandOptionFailure<'_>> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -75,7 +75,7 @@ impl SlashCommand for BanCommand {
         "ban"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("ban")
             .kind(CommandType::ChatInput)
             .description("bans given user, time can be given for a temporary ban")

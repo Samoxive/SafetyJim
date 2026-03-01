@@ -30,7 +30,7 @@ enum WhoisCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<WhoisCommandOptions, WhoisCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<WhoisCommandOptions<'_>, WhoisCommandOptionFailure> {
     let target = if let Some(target) = data.user("user") {
         target
     } else {
@@ -83,7 +83,7 @@ fn generate_member_embed<'a>(
         .colour(EMBED_COLOR)
 }
 
-fn generate_user_embed(user: &User) -> CreateEmbed {
+fn generate_user_embed(user: &User) -> CreateEmbed<'_> {
     let flags = match user.public_flags {
         Some(flags) => format!("{:?}", flags),
         None => "<none>".into(),
@@ -106,7 +106,7 @@ impl SlashCommand for WhoisCommand {
         "whois"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("whois")
             .kind(CommandType::ChatInput)
             .description("displays information about given user or server member")

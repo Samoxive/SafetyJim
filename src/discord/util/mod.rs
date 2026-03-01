@@ -216,7 +216,7 @@ pub struct GuildMessageCreated<'a> {
     pub member: &'a PartialMember,
 }
 
-pub fn verify_guild_message_create(message: &Message) -> Option<GuildMessageCreated> {
+pub fn verify_guild_message_create(message: &Message) -> Option<GuildMessageCreated<'_>> {
     Some(GuildMessageCreated {
         guild_id: message.guild_id?,
         member: message.member.as_ref()?,

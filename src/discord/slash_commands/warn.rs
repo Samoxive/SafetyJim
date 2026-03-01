@@ -33,7 +33,7 @@ enum WarnCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<WarnCommandOptions, WarnCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<WarnCommandOptions<'_>, WarnCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -58,7 +58,7 @@ impl SlashCommand for WarnCommand {
         "warn"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("warn")
             .kind(CommandType::ChatInput)
             .description("warns given user")

@@ -29,7 +29,7 @@ enum UnbanCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<UnbanCommandOptions, UnbanCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<UnbanCommandOptions<'_>, UnbanCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -49,7 +49,7 @@ impl SlashCommand for UnbanCommand {
         "unban"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("unban")
             .kind(CommandType::ChatInput)
             .description("unbans given user")

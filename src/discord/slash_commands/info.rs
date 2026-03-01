@@ -23,7 +23,7 @@ impl SlashCommand for InfoCommand {
         "info"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("info")
             .kind(CommandType::ChatInput)
             .description("displays information about Jim")

@@ -33,7 +33,7 @@ enum TagCreateCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<TagCreateCommandOptions, TagCreateCommandOptionFailure> {
+) -> Result<TagCreateCommandOptions<'_>, TagCreateCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
     } else {
@@ -63,7 +63,7 @@ impl SlashCommand for TagCreateCommand {
         "tag-create"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("tag-create")
             .kind(CommandType::ChatInput)
             .description("registers a message that can be repeated later")

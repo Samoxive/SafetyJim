@@ -30,7 +30,7 @@ enum TagCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<TagCommandOptions, TagCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<TagCommandOptions<'_>, TagCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
     } else {
@@ -48,7 +48,7 @@ impl SlashCommand for TagCommand {
         "tag"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("tag")
             .kind(CommandType::ChatInput)
             .description("repeats previously registered message via tag name")

@@ -39,7 +39,7 @@ enum SoftbanCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<SoftbanCommandOptions, SoftbanCommandOptionFailure> {
+) -> Result<SoftbanCommandOptions<'_>, SoftbanCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -73,7 +73,7 @@ impl SlashCommand for SoftbanCommand {
         "softban"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("softban")
             .kind(CommandType::ChatInput)
             .description("kicks given user, deleting their last messages, defaults to a day")

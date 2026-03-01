@@ -17,7 +17,7 @@ impl SlashCommand for PingCommand {
         "ping"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("ping")
             .kind(CommandType::ChatInput)
             .description("🏓")

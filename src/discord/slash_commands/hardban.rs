@@ -35,7 +35,7 @@ enum HardbanCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<HardbanCommandOptions, HardbanCommandOptionFailure> {
+) -> Result<HardbanCommandOptions<'_>, HardbanCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -60,7 +60,7 @@ impl SlashCommand for HardbanCommand {
         "hardban"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("hardban")
             .kind(CommandType::ChatInput)
             .description("hardbans given user, deleting all messages in last 7 days")

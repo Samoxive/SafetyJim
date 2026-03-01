@@ -61,7 +61,7 @@ impl SlashCommand for CleanBotCommand {
         "clean-bot"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("clean-bot")
             .kind(CommandType::ChatInput)
             .description("deletes specified number of bot messages")

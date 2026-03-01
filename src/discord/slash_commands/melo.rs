@@ -16,7 +16,7 @@ impl SlashCommand for MeloCommand {
         "melo"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("melo")
             .kind(CommandType::ChatInput)
             .description("melo.")

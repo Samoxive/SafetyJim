@@ -32,7 +32,7 @@ enum TagRemoveCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<TagRemoveCommandOptions, TagRemoveCommandOptionFailure> {
+) -> Result<TagRemoveCommandOptions<'_>, TagRemoveCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
     } else {
@@ -56,7 +56,7 @@ impl SlashCommand for TagRemoveCommand {
         "tag-remove"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("tag-remove")
             .kind(CommandType::ChatInput)
             .description("remove previously registered tag")

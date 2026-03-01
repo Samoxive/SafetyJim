@@ -31,7 +31,7 @@ enum UnmuteCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<UnmuteCommandOptions, UnmuteCommandOptionFailure> {
+) -> Result<UnmuteCommandOptions<'_>, UnmuteCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -51,7 +51,7 @@ impl SlashCommand for UnmuteCommand {
         "unmute"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("unmute")
             .kind(CommandType::ChatInput)
             .description("unmutes given user")

@@ -75,7 +75,7 @@ impl SlashCommand for MassbanCommand {
         "massban"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("massban")
             .kind(CommandType::ChatInput)
             .description("hardbans given users in mass")

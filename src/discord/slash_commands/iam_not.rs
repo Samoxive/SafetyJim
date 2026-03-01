@@ -45,7 +45,7 @@ impl SlashCommand for IAMNotCommand {
         "iam-not"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("iam-not")
             .kind(CommandType::ChatInput)
             .description("removes specified self assigned role")

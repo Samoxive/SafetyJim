@@ -43,7 +43,7 @@ enum XkcdCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<XkcdCommandOptions, XkcdCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<XkcdCommandOptions<'_>, XkcdCommandOptionFailure> {
     let description = if let Some(s) = data.string("description") {
         s
     } else {

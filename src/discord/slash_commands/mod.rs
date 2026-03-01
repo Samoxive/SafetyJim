@@ -42,7 +42,7 @@ mod xkcd;
 #[async_trait]
 pub trait SlashCommand {
     fn command_name(&self) -> &'static str;
-    fn create_command(&self) -> CreateCommand;
+    fn create_command(&self) -> CreateCommand<'_>;
     async fn handle_command(
         &self,
         context: &Context,

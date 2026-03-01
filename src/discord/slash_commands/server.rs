@@ -22,7 +22,7 @@ impl SlashCommand for ServerCommand {
         "server"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("server")
             .kind(CommandType::ChatInput)
             .description("displays information about the server")

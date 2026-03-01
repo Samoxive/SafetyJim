@@ -33,7 +33,7 @@ enum RemindCommandFailure<'a> {
     DurationParseError(&'a str),
 }
 
-fn generate_options(data: &CommandData) -> Result<RemindCommandOptions, RemindCommandFailure> {
+fn generate_options(data: &CommandData) -> Result<RemindCommandOptions, RemindCommandFailure<'_>> {
     let message = if let Some(message) = data.string("message").map(String::from) {
         message
     } else {
@@ -59,7 +59,7 @@ impl SlashCommand for RemindCommand {
         "remind"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("remind")
             .kind(CommandType::ChatInput)
             .description("sets a reminder for a future date, duration defaults to a day")

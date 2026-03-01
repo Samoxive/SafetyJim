@@ -43,7 +43,7 @@ impl SlashCommand for IAMCommand {
         "iam"
     }
 
-    fn create_command(&self) -> CreateCommand {
+    fn create_command(&self) -> CreateCommand<'_> {
         CreateCommand::new("iam")
             .kind(CommandType::ChatInput)
             .description("self assigns specified role")
