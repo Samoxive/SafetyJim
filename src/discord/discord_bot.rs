@@ -61,16 +61,16 @@ impl DiscordBot {
     ) -> Result<DiscordBot, Box<dyn Error>> {
         let slash_commands = discord::slash_commands::get_all_commands();
 
-        let handler = DiscordEventHandler {
+        let handler = Arc::new(DiscordEventHandler {
             config: config.clone(),
             services: services.clone(),
             slash_commands,
             message_processors: get_all_processors(),
-        };
+        });
 
-        let raw_handler = DiscordRawEventHandler {
+        let raw_handler = Arc::new(DiscordRawEventHandler {
             services: services.clone(),
-        };
+        });
 
         let client = Client::builder(
             config.discord_token.parse()?,
