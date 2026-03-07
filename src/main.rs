@@ -52,6 +52,8 @@ fn setup_logging() -> Result<(), Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    rustls::crypto::ring::default_provider().install_default().expect("Failed to install rustls crypto provider");
+    
     let flags = argh::from_env::<Flags>();
     let config = Arc::new(get_config()?);
     setup_logging()?;

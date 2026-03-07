@@ -1,4 +1,4 @@
-FROM rust:1.83.0-slim-bookworm AS builder
+FROM rust:1.93.1-slim AS builder
 
 WORKDIR /app
 COPY . .
@@ -6,8 +6,9 @@ RUN set -eux; \
 	 	cargo build --release --locked; \
 		objcopy --compress-debug-sections target/release/safetyjim ./safetyjim
 
-FROM debian:12.8-slim
+FROM debian:13.3-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 RUN rm -rf /var/lib/{apt,dpkg,cache,log}/;
 
 WORKDIR app

@@ -33,3 +33,4 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["json", "registry", "env-filter"] }
 typemap_rev = "0.4.0"
 uuid = { version = "1.21.0", features = ["serde", "v4"] }
+rustls = { version = "0.23.37"}
