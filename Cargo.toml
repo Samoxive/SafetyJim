@@ -13,7 +13,7 @@ axum-extra = { version = "0.12.6", features = ["typed-routing"] }
 chrono = "0.4.45"
 envy = "0.4.2"
 humantime = "2.4.0"
-jsonwebtoken = "11.0.0"
+jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
 lazy_static = "1.5.0"
 mimalloc = { version = "0.1.52", default-features = false }
 moka = { version = "0.12.15", features = ["future"] }

@@ -8,7 +8,10 @@ RUN set -eux; \
 
 FROM debian:12.2-slim
 
-RUN rm -rf /var/lib/{apt,dpkg,cache,log}/;
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends ca-certificates; \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/* /var/log/*
 
 WORKDIR app
 
