@@ -2,6 +2,7 @@ use anyhow::anyhow;
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::client::Context;
+use serenity::model::channel::Attachment;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
@@ -64,6 +65,7 @@ impl MessageProcessor for WordFilterProcessor {
         &self,
         context: &Context,
         message_content: &str,
+        _attachments: &[Attachment],
         guild_id: GuildId,
         channel_id: ChannelId,
         message_id: MessageId,
@@ -77,6 +79,10 @@ impl MessageProcessor for WordFilterProcessor {
         }
 
         if is_staff(permissions) {
+            return Ok(false);
+        }
+
+        if message_content.is_empty() {
             return Ok(false);
         }
 

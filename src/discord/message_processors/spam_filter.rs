@@ -6,6 +6,7 @@ use anyhow::bail;
 use async_trait::async_trait;
 use moka::future::{Cache, CacheBuilder};
 use serenity::client::Context;
+use serenity::model::channel::Attachment;
 use serenity::model::id::{ChannelId, GuildId, MessageId, UserId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
@@ -19,7 +20,7 @@ use crate::service::guild::GuildService;
 use crate::service::hardban::HardbanService;
 use crate::service::Services;
 
-const REASON: &str = "Spamming messages with same content";
+const REASON: &str = "Spamming messages with the same content or attachments";
 const REPETITION_THRESHOLD: u8 = 4;
 
 #[derive(Clone)]
@@ -30,6 +31,20 @@ pub struct MessageRepetitionRecord {
 
 pub struct SpamFilterProcessor {
     message_hash_cache: Mutex<Cache<(GuildId, UserId), MessageRepetitionRecord>>,
+}
+fn hash_message(message_content: &str, attachments: &[Attachment]) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    message_content.hash(&mut hasher);
+    attachments.len().hash(&mut hasher);
+
+    for attachment in attachments {
+        attachment.filename.hash(&mut hasher);
+        attachment.size.hash(&mut hasher);
+        attachment.content_type.hash(&mut hasher);
+        attachment.dimensions().hash(&mut hasher);
+    }
+
+    hasher.finish()
 }
 
 impl SpamFilterProcessor {
@@ -54,6 +69,7 @@ impl MessageProcessor for SpamFilterProcessor {
         &self,
         context: &Context,
         message_content: &str,
+        attachments: &[Attachment],
         guild_id: GuildId,
         channel_id: ChannelId,
         _message_id: MessageId,
@@ -76,9 +92,7 @@ impl MessageProcessor for SpamFilterProcessor {
         // if hash is same, check if repetition is >= 5, if it is, hardban the user and invalidate cache
         // if it isn't, increment repetition and insert again
         // if hash is different, insert new hash with one repetition
-        let mut hasher = DefaultHasher::new();
-        message_content.hash(&mut hasher);
-        let message_hash = hasher.finish();
+        let message_hash = hash_message(message_content, attachments);
 
         // critical section
         {

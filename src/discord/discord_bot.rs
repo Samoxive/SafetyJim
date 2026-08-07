@@ -449,10 +449,6 @@ impl EventHandler for DiscordEventHandler {
             return;
         }
 
-        if message.content.is_empty() {
-            return;
-        }
-
         if message.kind != MessageType::Regular && message.kind != MessageType::InlineReply {
             return;
         }
@@ -493,6 +489,7 @@ impl EventHandler for DiscordEventHandler {
                 .handle_message(
                     &ctx,
                     &message.content,
+                    &message.attachments,
                     guild_id,
                     message.channel_id,
                     message.id,
@@ -526,10 +523,13 @@ impl EventHandler for DiscordEventHandler {
             return;
         };
 
-        let (guild_id, content) = if let Some(GuildMessageUpdated { guild_id, content }) =
-            verify_guild_message_update(&message)
+        let (guild_id, content, attachments) = if let Some(GuildMessageUpdated {
+            guild_id,
+            content,
+            attachments,
+        }) = verify_guild_message_update(&message)
         {
-            (guild_id, content)
+            (guild_id, content, attachments)
         } else {
             return;
         };
@@ -576,6 +576,7 @@ impl EventHandler for DiscordEventHandler {
                 .handle_message(
                     &ctx,
                     content,
+                    attachments.unwrap_or(&[]),
                     guild_id,
                     message.channel_id,
                     message.id,

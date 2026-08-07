@@ -1,6 +1,7 @@
 use anyhow::bail;
 use async_trait::async_trait;
 use serenity::client::Context;
+use serenity::model::channel::Attachment;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::model::user::User;
 use serenity::model::Permissions;
@@ -23,6 +24,7 @@ impl MessageProcessor for InviteLinkProcessor {
         &self,
         context: &Context,
         message_content: &str,
+        _attachments: &[Attachment],
         guild_id: GuildId,
         channel_id: ChannelId,
         message_id: MessageId,

@@ -12,7 +12,7 @@ use serenity::builder::{
     EditInteractionResponse,
 };
 use serenity::http::{Http, HttpError};
-use serenity::model::channel::Message;
+use serenity::model::channel::{Attachment, Message};
 use serenity::model::event::MessageUpdateEvent;
 use serenity::model::guild::{Member, PartialMember, Role};
 use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId, UserId};
@@ -204,6 +204,7 @@ pub fn verify_guild_message_create(message: &Message) -> Option<GuildMessageCrea
 pub struct GuildMessageUpdated<'a> {
     pub guild_id: GuildId,
     pub content: &'a str,
+    pub attachments: Option<&'a [Attachment]>,
 }
 
 pub fn verify_guild_message_update(
@@ -212,6 +213,7 @@ pub fn verify_guild_message_update(
     Some(GuildMessageUpdated {
         guild_id: message.guild_id?,
         content: message.content.as_ref()?,
+        attachments: message.attachments.as_deref(),
     })
 }
 
