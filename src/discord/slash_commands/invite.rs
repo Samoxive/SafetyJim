@@ -26,7 +26,7 @@ impl SlashCommand for InviteCommand {
         CreateCommand::new("invite")
             .kind(CommandType::ChatInput)
             .description("displays links to invite Jim and get support")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
     }
 
     async fn handle_command(

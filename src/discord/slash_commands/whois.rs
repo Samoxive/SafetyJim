@@ -27,7 +27,9 @@ enum WhoisCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<WhoisCommandOptions, WhoisCommandOptionFailure> {
+fn generate_options(
+    data: &CommandData,
+) -> Result<WhoisCommandOptions<'_>, WhoisCommandOptionFailure> {
     let target = if let Some(target) = data.user("user") {
         target
     } else {
@@ -103,7 +105,7 @@ impl SlashCommand for WhoisCommand {
         CreateCommand::new("whois")
             .kind(CommandType::ChatInput)
             .description("displays information about given user or server member")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to query")
                     .required(true),

@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serenity::all::ShardId;
+use std::collections::HashMap;
 
 use serenity::gateway::ShardManager;
 use tokio::sync::Mutex;
@@ -41,7 +41,7 @@ impl ShardStatisticService {
     pub async fn get_shard_latency_info(&self, shard_id: ShardId) -> ShardLatencyInfo {
         let shard_latencies = self.shard_latencies.lock().await;
 
-        if shard_latencies.len() == 0 {
+        if shard_latencies.is_empty() {
             return ShardLatencyInfo {
                 current_shard_latency: 0,
                 average_shard_latency: 0,

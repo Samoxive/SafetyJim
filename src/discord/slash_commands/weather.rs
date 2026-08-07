@@ -1,6 +1,5 @@
 use anyhow::{anyhow, bail};
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
 use reqwest::{Client, ClientBuilder};
 use serde::Deserialize;
 use serenity::all::{CommandData, CommandInteraction, CommandOptionType, CommandType};
@@ -83,7 +82,7 @@ enum WeatherCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<WeatherCommandOptions, WeatherCommandOptionFailure> {
+) -> Result<WeatherCommandOptions<'_>, WeatherCommandOptionFailure> {
     let address = if let Some(s) = data.string("address") {
         s
     } else {
@@ -103,7 +102,7 @@ impl SlashCommand for WeatherCommand {
         CreateCommand::new("weather")
             .kind(CommandType::ChatInput)
             .description("gives current weather information for given address")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .add_option(
                 CreateCommandOption::new(
                     CommandOptionType::String,
@@ -209,7 +208,7 @@ impl SlashCommand for WeatherCommand {
 
         let local_time_offset = darksky_response.offset;
         let local_timestamp = now() as i64 + (local_time_offset * 60 * 60) as i64;
-        let local_date = NaiveDateTime::from_timestamp_opt(local_timestamp, 0)
+        let local_date = chrono::DateTime::from_timestamp(local_timestamp, 0)
             .ok_or_else(|| anyhow!("invalid timestamp from darksky"))?;
         let local_date_formatted = local_date.format("%a, %d %b %Y %H:%M:%S GMT ");
         let local_date_str = if local_time_offset > 0 {

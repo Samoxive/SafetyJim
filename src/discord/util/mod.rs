@@ -5,13 +5,14 @@ use anyhow::bail;
 use async_recursion::async_recursion;
 use serenity::all::{
     CommandData, CommandDataOptionValue, CommandInteraction, CreateAllowedMentions,
+    InteractionResponseFlags,
 };
 use serenity::builder::{
     CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
     EditInteractionResponse,
 };
 use serenity::http::{Http, HttpError};
-use serenity::model::channel::{Message, MessageFlags, PartialChannel};
+use serenity::model::channel::Message;
 use serenity::model::event::MessageUpdateEvent;
 use serenity::model::guild::{Member, PartialMember, Role};
 use serenity::model::id::{ChannelId, GuildId, MessageId, RoleId, UserId};
@@ -40,11 +41,8 @@ pub trait CommandDataExt {
     fn option(&self, option_name: &str) -> Option<&CommandDataOptionValue>;
     fn string(&self, option_name: &str) -> Option<&str>;
     fn integer(&self, option_name: &str) -> Option<i64>;
-    fn boolean(&self, option_name: &str) -> Option<bool>;
     fn user(&self, option_name: &str) -> Option<(&User, Option<&PartialMember>)>;
-    fn channel(&self, option_name: &str) -> Option<&PartialChannel>;
     fn role(&self, option_name: &str) -> Option<&Role>;
-    fn number(&self, option_name: &str) -> Option<f64>;
     fn string_autocomplete(&self, option_name: &str) -> Option<&str>;
 }
 
@@ -72,14 +70,6 @@ impl CommandDataExt for CommandData {
         }
     }
 
-    fn boolean(&self, option_name: &str) -> Option<bool> {
-        if let Some(CommandDataOptionValue::Boolean(b)) = self.option(option_name) {
-            Some(*b)
-        } else {
-            None
-        }
-    }
-
     fn user(&self, option_name: &str) -> Option<(&User, Option<&PartialMember>)> {
         if let Some(CommandDataOptionValue::User(user_id)) = self.option(option_name) {
             let user = self.resolved.users.get(user_id)?;
@@ -91,29 +81,11 @@ impl CommandDataExt for CommandData {
         }
     }
 
-    fn channel(&self, option_name: &str) -> Option<&PartialChannel> {
-        if let Some(CommandDataOptionValue::Channel(channel_id)) = self.option(option_name) {
-            let channel = self.resolved.channels.get(channel_id)?;
-
-            Some(channel)
-        } else {
-            None
-        }
-    }
-
     fn role(&self, option_name: &str) -> Option<&Role> {
         if let Some(CommandDataOptionValue::Role(role_id)) = self.option(option_name) {
             let role = self.resolved.roles.get(role_id)?;
 
             Some(role)
-        } else {
-            None
-        }
-    }
-
-    fn number(&self, option_name: &str) -> Option<f64> {
-        if let Some(CommandDataOptionValue::Number(n)) = self.option(option_name) {
-            Some(*n)
         } else {
             None
         }
@@ -222,7 +194,7 @@ pub struct GuildMessageCreated<'a> {
     pub member: &'a PartialMember,
 }
 
-pub fn verify_guild_message_create(message: &Message) -> Option<GuildMessageCreated> {
+pub fn verify_guild_message_create(message: &Message) -> Option<GuildMessageCreated<'_>> {
     Some(GuildMessageCreated {
         guild_id: message.guild_id?,
         member: message.member.as_ref()?,
@@ -234,7 +206,9 @@ pub struct GuildMessageUpdated<'a> {
     pub content: &'a str,
 }
 
-pub fn verify_guild_message_update(message: &MessageUpdateEvent) -> Option<GuildMessageUpdated> {
+pub fn verify_guild_message_update(
+    message: &MessageUpdateEvent,
+) -> Option<GuildMessageUpdated<'_>> {
     Some(GuildMessageUpdated {
         guild_id: message.guild_id?,
         content: message.content.as_ref()?,
@@ -243,7 +217,7 @@ pub fn verify_guild_message_update(message: &MessageUpdateEvent) -> Option<Guild
 
 fn create_interaction_response_message(is_ephemeral: bool) -> CreateInteractionResponseMessage {
     if is_ephemeral {
-        CreateInteractionResponseMessage::new().flags(MessageFlags::EPHEMERAL)
+        CreateInteractionResponseMessage::new().flags(InteractionResponseFlags::EPHEMERAL)
     } else {
         CreateInteractionResponseMessage::new()
     }

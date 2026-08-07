@@ -30,7 +30,7 @@ enum TagCreateCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<TagCreateCommandOptions, TagCreateCommandOptionFailure> {
+) -> Result<TagCreateCommandOptions<'_>, TagCreateCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
     } else {
@@ -64,7 +64,7 @@ impl SlashCommand for TagCreateCommand {
         CreateCommand::new("tag-create")
             .kind(CommandType::ChatInput)
             .description("registers a message that can be repeated later")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .add_option(
                 CreateCommandOption::new(CommandOptionType::String, "name", "tag name to create")
                     .required(true),

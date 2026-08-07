@@ -33,8 +33,8 @@ use crate::database::warns::WarnsRepository;
 use crate::service::guild::GuildService;
 use crate::service::guild_statistic::GuildStatisticService;
 use crate::service::shard_statistic::ShardStatisticService;
-use crate::Config;
 use crate::service::watchdog::WatchdogService;
+use crate::Config;
 
 pub mod ban;
 pub mod guild;

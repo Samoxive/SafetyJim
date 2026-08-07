@@ -30,7 +30,9 @@ enum KickCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<KickCommandOptions, KickCommandOptionFailure> {
+fn generate_options(
+    data: &CommandData,
+) -> Result<KickCommandOptions<'_>, KickCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -59,7 +61,7 @@ impl SlashCommand for KickCommand {
         CreateCommand::new("kick")
             .kind(CommandType::ChatInput)
             .description("kicks given user")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::KICK_MEMBERS)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to kick")

@@ -52,7 +52,7 @@ impl SlashCommand for RoleCreateCommand {
         CreateCommand::new("role-create")
             .kind(CommandType::ChatInput)
             .description("registers a role that can be self assigned via iam command")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::ADMINISTRATOR)
             .add_option(
                 CreateCommandOption::new(

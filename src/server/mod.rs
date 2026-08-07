@@ -4,9 +4,8 @@ use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::num::NonZeroU64;
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use axum::extract::{Path, State};
 use axum::extract::{FromRef, FromRequestParts};
+use axum::extract::{Path, State};
 use axum::http::header::{HeaderName, CONTENT_TYPE};
 use axum::http::request::Parts;
 use axum::http::{HeaderValue, Method, StatusCode};
@@ -44,10 +43,10 @@ use crate::server::endpoint::warn::{get_warn, get_warns, update_warn};
 use crate::service::guild::GuildService;
 use crate::service::invalid_uuid::InvalidUUIDService;
 use crate::service::setting::SettingService;
+use crate::service::watchdog::WatchdogService;
 use crate::service::Services;
 use crate::util::now;
 use crate::{Config, Shutdown};
-use crate::service::watchdog::WatchdogService;
 
 mod endpoint;
 mod model;
@@ -124,7 +123,6 @@ pub fn extract_service<T: typemap_rev::TypeMapKey>(
 
 pub struct User(pub UserId);
 
-#[async_trait]
 impl FromRequestParts<AxumState> for User {
     type Rejection = StatusCode;
 
@@ -152,7 +150,6 @@ impl FromRequestParts<AxumState> for User {
             match claims.user_id.parse::<NonZeroU64>() {
                 Ok(id) => Ok(User(UserId::new(id.get()))),
                 Err(_) => {
-                    // secret leaked or we have a problem with token generation
                     error!("received a token with valid signature with invalid user id");
                     Err(StatusCode::UNAUTHORIZED)
                 }
@@ -172,10 +169,8 @@ pub trait ModPermission {
     fn permission() -> Permissions;
 }
 
-#[async_trait]
 impl<T: ModPermission> FromRequestParts<AxumState> for ModLogEndpointParams<T> {
     type Rejection = Response;
-
     async fn from_request_parts(
         parts: &mut Parts,
         state: &AxumState,
@@ -298,35 +293,35 @@ pub async fn run_server(
         .route("/health_check", get(health_check))
         .route("/@me", get(get_self))
         .route("/login", post(login))
-        .route("/guilds/:guild_id/settings", get(get_setting))
-        .route("/guilds/:guild_id/settings", post(update_setting))
-        .route("/guilds/:guild_id/settings", delete(reset_setting))
-        .route("/captcha/:guild_id/:user_id", get(get_captcha_page))
-        .route("/captcha/:guild_id/:user_id", post(submit_captcha))
-        .route("/guilds/:guild_id/bans", get(get_bans))
-        .route("/guilds/:guild_id/bans/:ban_id", get(get_ban))
-        .route("/guilds/:guild_id/bans/:ban_id", post(update_ban))
-        .route("/guilds/:guild_id/hardbans", get(get_hardbans))
-        .route("/guilds/:guild_id/hardbans/:hardban_id", get(get_hardban))
+        .route("/guilds/{guild_id}/settings", get(get_setting))
+        .route("/guilds/{guild_id}/settings", post(update_setting))
+        .route("/guilds/{guild_id}/settings", delete(reset_setting))
+        .route("/captcha/{guild_id}/{user_id}", get(get_captcha_page))
+        .route("/captcha/{guild_id}/{user_id}", post(submit_captcha))
+        .route("/guilds/{guild_id}/bans", get(get_bans))
+        .route("/guilds/{guild_id}/bans/{ban_id}", get(get_ban))
+        .route("/guilds/{guild_id}/bans/{ban_id}", post(update_ban))
+        .route("/guilds/{guild_id}/hardbans", get(get_hardbans))
+        .route("/guilds/{guild_id}/hardbans/{hardban_id}", get(get_hardban))
         .route(
-            "/guilds/:guild_id/hardbans/:hardban_id",
+            "/guilds/{guild_id}/hardbans/{hardban_id}",
             post(update_hardban),
         )
-        .route("/guilds/:guild_id/kicks", get(get_kicks))
-        .route("/guilds/:guild_id/kicks/:kick_id", get(get_kick))
-        .route("/guilds/:guild_id/kicks/:kick_id", post(update_kick))
-        .route("/guilds/:guild_id/mutes", get(get_mutes))
-        .route("/guilds/:guild_id/mutes/:mute_id", get(get_mute))
-        .route("/guilds/:guild_id/mutes/:mute_id", post(update_mute))
-        .route("/guilds/:guild_id/softbans", get(get_softbans))
-        .route("/guilds/:guild_id/softbans/:softban_id", get(get_softban))
+        .route("/guilds/{guild_id}/kicks", get(get_kicks))
+        .route("/guilds/{guild_id}/kicks/{kick_id}", get(get_kick))
+        .route("/guilds/{guild_id}/kicks/{kick_id}", post(update_kick))
+        .route("/guilds/{guild_id}/mutes", get(get_mutes))
+        .route("/guilds/{guild_id}/mutes/{mute_id}", get(get_mute))
+        .route("/guilds/{guild_id}/mutes/{mute_id}", post(update_mute))
+        .route("/guilds/{guild_id}/softbans", get(get_softbans))
+        .route("/guilds/{guild_id}/softbans/{softban_id}", get(get_softban))
         .route(
-            "/guilds/:guild_id/softbans/:softban_id",
+            "/guilds/{guild_id}/softbans/{softban_id}",
             post(update_softban),
         )
-        .route("/guilds/:guild_id/warns", get(get_warns))
-        .route("/guilds/:guild_id/warns/:warn_id", get(get_warn))
-        .route("/guilds/:guild_id/warns/:warn_id", post(update_warn))
+        .route("/guilds/{guild_id}/warns", get(get_warns))
+        .route("/guilds/{guild_id}/warns/{warn_id}", get(get_warn))
+        .route("/guilds/{guild_id}/warns/{warn_id}", post(update_warn))
         .layer(
             CorsLayer::new()
                 .allow_origin(cors_origin)
@@ -338,11 +333,10 @@ pub async fn run_server(
 
     let addr = SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .with_graceful_shutdown(shutdown_signal(shutdown))
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await?;
 
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal(shutdown))
+        .await?;
     Ok(())
 }

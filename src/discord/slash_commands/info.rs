@@ -28,7 +28,7 @@ impl SlashCommand for InfoCommand {
         CreateCommand::new("info")
             .kind(CommandType::ChatInput)
             .description("displays information about Jim")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
     }
 
     async fn handle_command(

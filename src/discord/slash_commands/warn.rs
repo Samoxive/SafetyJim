@@ -30,7 +30,9 @@ enum WarnCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<WarnCommandOptions, WarnCommandOptionFailure> {
+fn generate_options(
+    data: &CommandData,
+) -> Result<WarnCommandOptions<'_>, WarnCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -59,7 +61,7 @@ impl SlashCommand for WarnCommand {
         CreateCommand::new("warn")
             .kind(CommandType::ChatInput)
             .description("warns given user")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::KICK_MEMBERS)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to warn")

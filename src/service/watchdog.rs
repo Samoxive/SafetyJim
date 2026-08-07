@@ -1,6 +1,6 @@
+use serenity::futures::lock::Mutex;
 use std::process::exit;
 use std::time::Instant;
-use serenity::futures::lock::Mutex;
 use tracing::error;
 use typemap_rev::TypeMapKey;
 
@@ -39,7 +39,10 @@ impl WatchdogService {
         if starvation_time < WATCHDOG_TIMER {
             true
         } else {
-            error!("failed health check! haven't been fed for: {}s", starvation_time);
+            error!(
+                "failed health check! haven't been fed for: {}s",
+                starvation_time
+            );
             // we could try a graceful shutdown by signaling the singleton Shutdown instance created in main
             // however this program's main job is processing Discord events, if we no longer receive them there
             // isn't much point trying to gracefully shutdown shards and finish database queries: restart and recover.

@@ -26,7 +26,7 @@ impl SlashCommand for TagListCommand {
         CreateCommand::new("tag-list")
             .kind(CommandType::ChatInput)
             .description("lists previously registered tags")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
     }
 
     async fn handle_command(

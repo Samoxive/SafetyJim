@@ -171,7 +171,8 @@ impl GuildService {
         guild_id: GuildId,
         user_id: UserId,
     ) -> Result<Arc<CachedMember>, GetMemberFailure> {
-        let member = if let Some(cached_member) = self.member_cache.get(&(guild_id, user_id)).await {
+        let member = if let Some(cached_member) = self.member_cache.get(&(guild_id, user_id)).await
+        {
             cached_member
         } else if let Ok(fetched_member) = guild_id.member(&*self.http().await, user_id).await {
             let new_cached_member = Arc::new(CachedMember {

@@ -36,7 +36,7 @@ enum SoftbanCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<SoftbanCommandOptions, SoftbanCommandOptionFailure> {
+) -> Result<SoftbanCommandOptions<'_>, SoftbanCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -74,7 +74,7 @@ impl SlashCommand for SoftbanCommand {
         CreateCommand::new("softban")
             .kind(CommandType::ChatInput)
             .description("kicks given user, deleting their last messages, defaults to a day")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to softban")

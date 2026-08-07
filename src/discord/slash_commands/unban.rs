@@ -26,7 +26,9 @@ enum UnbanCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<UnbanCommandOptions, UnbanCommandOptionFailure> {
+fn generate_options(
+    data: &CommandData,
+) -> Result<UnbanCommandOptions<'_>, UnbanCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -50,7 +52,7 @@ impl SlashCommand for UnbanCommand {
         CreateCommand::new("unban")
             .kind(CommandType::ChatInput)
             .description("unbans given user")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to unban")

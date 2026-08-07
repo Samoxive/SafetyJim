@@ -27,7 +27,7 @@ enum TagCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<TagCommandOptions, TagCommandOptionFailure> {
+fn generate_options(data: &CommandData) -> Result<TagCommandOptions<'_>, TagCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
     } else {
@@ -49,7 +49,7 @@ impl SlashCommand for TagCommand {
         CreateCommand::new("tag")
             .kind(CommandType::ChatInput)
             .description("repeats previously registered message via tag name")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .add_option(
                 CreateCommandOption::new(CommandOptionType::String, "name", "tag name for message")
                     .required(true)

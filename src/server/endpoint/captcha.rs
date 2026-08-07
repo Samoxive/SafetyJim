@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use serenity::all::{GuildId, RoleId, UserId};
 use tracing::{error, warn};
 
-use crate::server::extract_service;
 use crate::config::Config;
+use crate::server::extract_service;
 use crate::service::guild::GuildService;
 use crate::service::setting::SettingService;
 use crate::service::Services;

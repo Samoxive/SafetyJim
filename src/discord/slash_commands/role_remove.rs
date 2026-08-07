@@ -52,7 +52,7 @@ impl SlashCommand for RoleRemoveCommand {
         CreateCommand::new("role-remove")
             .kind(CommandType::ChatInput)
             .description("unregisters a self assignable role")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::ADMINISTRATOR)
             .add_option(
                 CreateCommandOption::new(

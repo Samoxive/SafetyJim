@@ -29,7 +29,7 @@ enum TagRemoveCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<TagRemoveCommandOptions, TagRemoveCommandOptionFailure> {
+) -> Result<TagRemoveCommandOptions<'_>, TagRemoveCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
     } else {
@@ -57,7 +57,7 @@ impl SlashCommand for TagRemoveCommand {
         CreateCommand::new("tag-remove")
             .kind(CommandType::ChatInput)
             .description("remove previously registered tag")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .add_option(
                 CreateCommandOption::new(CommandOptionType::String, "name", "tag name to remove")
                     .required(true)

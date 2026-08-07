@@ -40,7 +40,9 @@ enum XkcdCommandOptionFailure {
     MissingOption,
 }
 
-fn generate_options(data: &CommandData) -> Result<XkcdCommandOptions, XkcdCommandOptionFailure> {
+fn generate_options(
+    data: &CommandData,
+) -> Result<XkcdCommandOptions<'_>, XkcdCommandOptionFailure> {
     let description = if let Some(s) = data.string("description") {
         s
     } else {
@@ -78,7 +80,7 @@ impl SlashCommand for XkcdCommand {
         CreateCommand::new("xkcd")
             .kind(CommandType::ChatInput)
             .description("searches xkcd comics with given description or partial title")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .add_option(
                 CreateCommandOption::new(
                     CommandOptionType::String,

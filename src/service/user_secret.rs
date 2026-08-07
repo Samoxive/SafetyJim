@@ -316,19 +316,20 @@ impl UserSecretService {
         services: &Services,
         user_id: UserId,
     ) -> anyhow::Result<Arc<Vec<SelfGuild>>> {
-        let self_user_guilds =
-            if let Some(cached_self_user_guilds) = self.self_user_guilds_cache.get(&user_id).await {
-                cached_self_user_guilds
-            } else {
-                let fetched_self_user_guilds =
-                    Arc::new(self.fetch_self_user_guilds(services, user_id).await?);
+        let self_user_guilds = if let Some(cached_self_user_guilds) =
+            self.self_user_guilds_cache.get(&user_id).await
+        {
+            cached_self_user_guilds
+        } else {
+            let fetched_self_user_guilds =
+                Arc::new(self.fetch_self_user_guilds(services, user_id).await?);
 
-                self.self_user_guilds_cache
-                    .insert(user_id, fetched_self_user_guilds.clone())
-                    .await;
+            self.self_user_guilds_cache
+                .insert(user_id, fetched_self_user_guilds.clone())
+                .await;
 
-                fetched_self_user_guilds
-            };
+            fetched_self_user_guilds
+        };
 
         Ok(self_user_guilds)
     }
@@ -375,11 +376,7 @@ impl UserSecretService {
 
         Ok(self_user_guilds
             .into_iter()
-            .filter(|user_guild| {
-                filtered_guild_ids
-                    .iter()
-                    .any(|known_guild| *known_guild == user_guild.id)
-            })
+            .filter(|user_guild| filtered_guild_ids.contains(&user_guild.id))
             .collect())
     }
 }

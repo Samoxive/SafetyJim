@@ -51,7 +51,11 @@ fn generate_options(
         Err(_) => return Err(MassbanCommandOptionFailure::UserIdParsingFailed),
     };
 
-    let user_ids: Vec<UserId> = user_ids.into_iter().map(NonZeroU64::get).map(UserId::new).collect();
+    let user_ids: Vec<UserId> = user_ids
+        .into_iter()
+        .map(NonZeroU64::get)
+        .map(UserId::new)
+        .collect();
 
     Ok(MassbanCommandOptions {
         target_users: user_ids,
@@ -72,7 +76,7 @@ impl SlashCommand for MassbanCommand {
         CreateCommand::new("massban")
             .kind(CommandType::ChatInput)
             .description("hardbans given users in mass")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::BAN_MEMBERS)
             .add_option(
                 CreateCommandOption::new(
@@ -122,22 +126,18 @@ impl SlashCommand for MassbanCommand {
             }
         };
 
-        if options
-            .target_users
-            .iter()
-            .any(|target| *target == mod_user.id)
-        {
+        if options.target_users.contains(&mod_user.id) {
             reply_to_interaction_str(
                 &context.http,
                 interaction,
-                "You can't massban yourself, dummy!",
+                "You can't massban yourself!",
                 true,
             )
             .await;
             return Ok(());
         }
 
-        if options.target_users.iter().any(|target| *target == JIM_ID) {
+        if options.target_users.contains(&JIM_ID) {
             reply_to_interaction_str(
                 &context.http,
                 interaction,

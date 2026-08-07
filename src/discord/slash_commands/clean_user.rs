@@ -72,7 +72,7 @@ impl SlashCommand for CleanUserCommand {
         CreateCommand::new("clean-user")
             .kind(CommandType::ChatInput)
             .description("deletes specified number of bot messages")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::MANAGE_MESSAGES)
             .add_option(
                 CreateCommandOption::new(
@@ -133,7 +133,7 @@ impl SlashCommand for CleanUserCommand {
 
         defer_interaction(&context.http, interaction).await?;
 
-        let message_ids_results: Vec<Result<MessageId, serenity::Error>> = channel_id
+        let message_ids_results: Vec<Result<MessageId, Box<serenity::Error>>> = channel_id
             .messages_iter(&context.http)
             .boxed()
             .skip(1)
@@ -148,7 +148,7 @@ impl SlashCommand for CleanUserCommand {
                 )
             })
             .take(options.number as usize)
-            .map(|message| message.map(|message| message.id))
+            .map(|message| message.map(|message| message.id).map_err(Box::new))
             .collect()
             .await;
 

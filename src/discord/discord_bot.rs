@@ -3,7 +3,11 @@ use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::time::Duration;
 
-use serenity::all::{Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind, CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage, CreateSelectMenuOption, Event, Interaction};
+use serenity::all::{
+    Command, CommandType, ComponentInteractionCollector, ComponentInteractionDataKind,
+    CreateCommand, CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
+    CreateSelectMenuOption, Event, Interaction,
+};
 use serenity::async_trait;
 use serenity::builder::{
     AutocompleteChoice, CreateActionRow, CreateAutocompleteResponse, CreateEmbedFooter,
@@ -13,7 +17,7 @@ use serenity::client::{Context, EventHandler, RawEventHandler};
 use serenity::gateway::{ActivityData, ShardManager};
 use serenity::http::Http;
 use serenity::json::Value;
-use serenity::model::channel::{Channel, GuildChannel, Message, MessageType};
+use serenity::model::channel::{GuildChannel, Message, MessageType};
 use serenity::model::event::{GuildMemberUpdateEvent, MessageUpdateEvent};
 use serenity::model::gateway::{GatewayIntents, Ready};
 use serenity::model::guild::{Guild, Member, PartialGuild, Role, UnavailableGuild};
@@ -22,7 +26,7 @@ use serenity::model::user::{CurrentUser, User};
 use serenity::model::Color;
 use serenity::prelude::Mentionable;
 use serenity::Client;
-use simsearch::{SearchOptions, SimSearch};
+use simsearch::Index;
 use tokio::select;
 use tokio::time::sleep;
 use tracing::{error, warn};
@@ -45,8 +49,8 @@ use crate::service::mute::MuteService;
 use crate::service::setting::SettingService;
 use crate::service::shard_statistic::ShardStatisticService;
 use crate::service::tag::TagService;
-use crate::service::Services;
 use crate::service::watchdog::WatchdogService;
+use crate::service::Services;
 use crate::util::Shutdown;
 
 const SHARD_LATENCY_POLLING_INTERVAL: u64 = 60;
@@ -165,13 +169,10 @@ pub async fn initialize_slash_commands(
             .0
             .values()
             .map(|slash_command| slash_command.create_command())
-            .chain(
-                [
-                    CreateCommand::new("Report").kind(CommandType::Message),
-                    CreateCommand::new("Format Code").kind(CommandType::Message),
-                ]
-                .into_iter(),
-            )
+            .chain([
+                CreateCommand::new("Report").kind(CommandType::Message),
+                CreateCommand::new("Format Code").kind(CommandType::Message),
+            ])
             .collect(),
     )
     .await?;
@@ -202,13 +203,11 @@ impl EventHandler for DiscordEventHandler {
         }
     }
 
-    async fn channel_update(&self, _ctx: Context, _old: Option<Channel>, new: Channel) {
-        if let Some(guild_channel) = new.guild() {
-            if let Some(guild_service) = self.services.get::<GuildService>() {
-                guild_service
-                    .invalidate_cached_guild_channels(guild_channel.guild_id)
-                    .await;
-            }
+    async fn channel_update(&self, _ctx: Context, _old: Option<GuildChannel>, new: GuildChannel) {
+        if let Some(guild_service) = self.services.get::<GuildService>() {
+            guild_service
+                .invalidate_cached_guild_channels(new.guild_id)
+                .await;
         }
     }
 
@@ -312,7 +311,10 @@ impl EventHandler for DiscordEventHandler {
             if let Ok(dm_channel) = new_member.user.id.create_dm_channel(&ctx.http).await {
                 let content = format!(
                     "Welcome to {}! To enter you must complete this captcha.\n{}/captcha/{}/{}",
-                    &guild.name, self.config.self_url, guild_id.get(), new_member.user.id.get()
+                    &guild.name,
+                    self.config.self_url,
+                    guild_id.get(),
+                    new_member.user.id.get()
                 );
                 let message = CreateMessage::default().content(content);
 
@@ -635,7 +637,7 @@ impl EventHandler for DiscordEventHandler {
                 let tag_choices = if tag_option.is_empty() {
                     tags
                 } else {
-                    let mut engine = SimSearch::new_with(SearchOptions::new().threshold(0.75));
+                    let mut engine: Index<usize> = Index::new();
 
                     for (i, tag_name) in tags.iter().enumerate() {
                         engine.insert(i, tag_name);
@@ -643,7 +645,11 @@ impl EventHandler for DiscordEventHandler {
 
                     let results = engine.search(tag_option);
 
-                    results.into_iter().map(|i| tags[i].clone()).collect()
+                    results
+                        .into_iter()
+                        .filter(|hit| hit.score >= 0.75)
+                        .map(|hit| tags[hit.id].clone())
+                        .collect()
                 };
 
                 let response = CreateAutocompleteResponse::default().set_choices(
@@ -845,7 +851,7 @@ impl EventHandler for DiscordEventHandler {
 
                         let selected_language = match &component_interaction.data.kind {
                             ComponentInteractionDataKind::StringSelect { values } => {
-                                match values.get(0).map(|value| value.as_str()) {
+                                match values.first().map(|value| value.as_str()) {
                                     Some("None") => "",
                                     Some(value) => value,
                                     None => {

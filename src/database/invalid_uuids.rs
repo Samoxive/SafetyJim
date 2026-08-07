@@ -4,11 +4,6 @@ use std::sync::Arc;
 use sqlx::types::Uuid;
 use sqlx::{Error, PgPool};
 
-#[derive(sqlx::FromRow)]
-pub struct InvalidUUID {
-    pub user_id: Uuid,
-}
-
 pub struct InvalidUUIDsRepository(pub Arc<PgPool>);
 
 impl InvalidUUIDsRepository {

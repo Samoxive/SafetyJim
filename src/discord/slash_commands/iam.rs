@@ -44,7 +44,7 @@ impl SlashCommand for IAMCommand {
         CreateCommand::new("iam")
             .kind(CommandType::ChatInput)
             .description("self assigns specified role")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .add_option(
                 CreateCommandOption::new(CommandOptionType::Role, "role", "role to assign")
                     .required(true),

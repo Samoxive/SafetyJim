@@ -1,7 +1,7 @@
+use serenity::all::Mentionable;
 use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::time::Duration;
-use serenity::all::Mentionable;
 
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::http::Http;

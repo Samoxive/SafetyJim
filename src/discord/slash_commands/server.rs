@@ -26,7 +26,7 @@ impl SlashCommand for ServerCommand {
         CreateCommand::new("server")
             .kind(CommandType::ChatInput)
             .description("displays information about the server")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
     }
 
     async fn handle_command(

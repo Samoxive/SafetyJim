@@ -30,7 +30,7 @@ enum TagEditCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<TagEditCommandOptions, TagEditCommandOptionFailure> {
+) -> Result<TagEditCommandOptions<'_>, TagEditCommandOptionFailure> {
     let name = if let Some(s) = data.string("name") {
         s
     } else {
@@ -64,7 +64,7 @@ impl SlashCommand for TagEditCommand {
         CreateCommand::new("tag-edit")
             .kind(CommandType::ChatInput)
             .description("edits previously registered tag content")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .add_option(
                 CreateCommandOption::new(CommandOptionType::String, "name", "tag name to edit")
                     .required(true)

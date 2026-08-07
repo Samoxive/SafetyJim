@@ -36,7 +36,9 @@ enum MuteCommandOptionFailure<'a> {
     DurationParseError(&'a str),
 }
 
-fn generate_options(data: &CommandData) -> Result<MuteCommandOptions, MuteCommandOptionFailure> {
+fn generate_options(
+    data: &CommandData,
+) -> Result<MuteCommandOptions<'_>, MuteCommandOptionFailure<'_>> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -76,7 +78,7 @@ impl SlashCommand for MuteCommand {
         CreateCommand::new("mute")
             .kind(CommandType::ChatInput)
             .description("mutes given user, time can be given for a temporary mute")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::MANAGE_ROLES)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to mute")

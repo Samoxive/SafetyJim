@@ -28,7 +28,7 @@ enum UnmuteCommandOptionFailure {
 
 fn generate_options(
     data: &CommandData,
-) -> Result<UnmuteCommandOptions, UnmuteCommandOptionFailure> {
+) -> Result<UnmuteCommandOptions<'_>, UnmuteCommandOptionFailure> {
     let target_user = if let Some((user, _)) = data.user("user") {
         user
     } else {
@@ -52,7 +52,7 @@ impl SlashCommand for UnmuteCommand {
         CreateCommand::new("unmute")
             .kind(CommandType::ChatInput)
             .description("unmutes given user")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .default_member_permissions(Permissions::MANAGE_ROLES)
             .add_option(
                 CreateCommandOption::new(CommandOptionType::User, "user", "target user to unmute")

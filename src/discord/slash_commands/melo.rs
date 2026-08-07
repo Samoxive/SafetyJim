@@ -20,7 +20,7 @@ impl SlashCommand for MeloCommand {
         CreateCommand::new("melo")
             .kind(CommandType::ChatInput)
             .description("melo.")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
     }
 
     async fn handle_command(

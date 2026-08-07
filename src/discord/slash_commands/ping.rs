@@ -23,7 +23,7 @@ impl SlashCommand for PingCommand {
         CreateCommand::new("ping")
             .kind(CommandType::ChatInput)
             .description("🏓")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
     }
 
     async fn handle_command(

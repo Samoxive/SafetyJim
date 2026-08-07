@@ -46,7 +46,7 @@ impl SlashCommand for IAMNotCommand {
         CreateCommand::new("iam-not")
             .kind(CommandType::ChatInput)
             .description("removes specified self assigned role")
-            .dm_permission(false)
+            .contexts(vec![serenity::all::InteractionContext::Guild])
             .add_option(
                 CreateCommandOption::new(CommandOptionType::Role, "role", "role to remove")
                     .required(true),
